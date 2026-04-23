@@ -1,0 +1,106 @@
+// settings/_typography.scss
+//
+// Sistema tipográfico de Blíster.
+//
+// FUENTES:
+//   Overpass — Variable font. Uso exclusivo en H1 (display). Pesos cargados: 300–700.
+//   Nunito   — Variable font. Uso en todo el resto de la interfaz. Pesos cargados: 400–700.
+//
+// CARGA (incluir en index.html antes de cualquier hoja de estilos):
+//   <link rel="preconnect" href="https://fonts.googleapis.com">
+//   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+//   <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300..700&family=Nunito:wght@400..700&display=swap" rel="stylesheet">
+//
+// MODO DISLEXIA:
+//   OpenDyslexic no está disponible en Google Fonts.
+//   Debe servirse como @font-face local desde generic/_fonts.scss.
+//   Descarga: https://opendyslexic.org
+//
+// ESCALA:
+//   Fluida con clamp(). Mínimo absoluto 12px (0.75rem) en todos los tokens.
+//   Unidades en rem. Prohibido usar px en propiedades tipográficas.
+
+:root {
+
+  // ─── FAMILIAS ────────────────────────────────────────────────────────────
+
+  --font-display:   'Overpass', system-ui, sans-serif;
+  --font-body:      'Nunito',   system-ui, sans-serif;
+  --font-dyslexia:  'OpenDyslexic', sans-serif;
+
+
+  // ─── ESCALA — clamp(mínimo, preferido, máximo) ───────────────────────────
+  //
+  //  --text-xs    12–14px  Labels, badges, timestamps, metadatos
+  //  --text-sm    14–16px  Captions, texto secundario de inputs
+  //  --text-base  16–18px  Cuerpo de texto principal
+  //  --text-lg    18–22px  Subtítulos, nombre de medicamento en card
+  //  --text-xl    22–28px  Títulos de sección — H2, H3 (--font-body)
+  //  --text-2xl   28–36px  H1 de pantalla — display (--font-display, Overpass)
+
+  --text-xs:    clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+  --text-sm:    clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+  --text-base:  clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:    clamp(1.125rem, 1rem    + 0.5vw,  1.375rem);
+  --text-xl:    clamp(1.375rem, 1.2rem  + 0.75vw, 1.75rem);
+  --text-2xl:   clamp(1.75rem,  1.5rem  + 1vw,    2.25rem);
+
+
+  // ─── PESOS ───────────────────────────────────────────────────────────────
+  //
+  //  Nunito:   400, 500, 600, 700
+  //  Overpass: 300, 400, 600, 700
+  //  Uso de pesos intermedios (500, 600) requiere --font-body (Nunito).
+
+  --font-weight-regular:   400;
+  --font-weight-medium:    500;
+  --font-weight-semibold:  600;
+  --font-weight-bold:      700;
+
+
+  // ─── INTERLINEADO ────────────────────────────────────────────────────────
+  //
+  //  --leading-tight    H1 display (Overpass, tamaños grandes)
+  //  --leading-snug     Títulos de sección, nombre de medicamento
+  //  --leading-normal   Cuerpo de texto (Nunito requiere espacio generoso)
+  //  --leading-relaxed  Descripciones largas, prospectos, texto de ayuda
+
+  --leading-tight:    1.2;
+  --leading-snug:     1.35;
+  --leading-normal:   1.55;
+  --leading-relaxed:  1.75;
+
+
+  // ─── TRACKING (letter-spacing) ───────────────────────────────────────────
+  //
+  //  --tracking-tight    H1 Overpass a tamaños grandes (--text-2xl)
+  //  --tracking-normal   Cuerpo de texto, títulos de sección
+  //  --tracking-wide     Labels en mayúsculas pequeñas
+  //  --tracking-widest   Badges de estado en mayúsculas (TOMADO, CADUCADO)
+
+  --tracking-tight:   -0.01em;
+  --tracking-normal:   0em;
+  --tracking-wide:     0.05em;
+  --tracking-widest:   0.08em;
+}
+
+
+// ─── MODO DISLEXIA ───────────────────────────────────────────────────────────
+//
+// Activado con data-font="dyslexic" en <html> desde el panel de accesibilidad.
+// Sustituye Nunito por OpenDyslexic y amplía el interlineado.
+
+[data-font="dyslexic"] {
+  --font-body:      'OpenDyslexic', sans-serif;
+  --leading-normal:  1.8;
+  --leading-relaxed: 2;
+}
+
+
+// ─── TAMAÑO BASE AJUSTABLE ───────────────────────────────────────────────────
+//
+// Activado con data-text-size en <html> desde el panel de accesibilidad.
+// Escala el font-size raíz; todos los clamp() se recalculan en cascada.
+
+[data-text-size="large"]  { font-size: 112.5%; }  // 1rem = 18px
+[data-text-size="xlarge"] { font-size: 125%; }    // 1rem = 20px

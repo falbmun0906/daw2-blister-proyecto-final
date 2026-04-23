@@ -1,0 +1,206 @@
+// settings/_colors.scss
+//
+// Paleta de color del sistema de diseño de Blíster.
+//
+// ESTRUCTURA:
+//   1. Superficies y fondos
+//   2. Texto
+//   3. Color primario (verde teal)
+//   4. Color de acento (terracota)
+//   5. Semánticos (error, éxito, advertencia, info)
+//   6. Tokens de dominio (alias clínicos de negocio)
+//
+// TEMAS:
+//   El tema activo se controla con el atributo data-theme="dark" en <html>.
+//   El JS de arranque aplica el atributo antes del primer render para
+//   evitar flash de tema incorrecto (FOIT).
+//   No usar @media (prefers-color-scheme) directamente en componentes.
+//
+// CONVENCIÓN DE USO:
+//   Referenciar siempre variables CSS. Prohibido usar valores hex directamente
+//   fuera de este archivo.
+//   Correcto:   color: var(--color-text);
+//   Incorrecto: color: #3b3b3b;
+//
+// SUPERFICIES ESPECIALES:
+//   --color-brand-surface es el verde medio (#11a498) usado exclusivamente
+//   como fondo en las pantallas de onboarding (00–00.3) y splash (01).
+//   No es un color interactivo. No usar como hover ni como CTA.
+
+:root,
+[data-theme="light"] {
+
+  // ─── SUPERFICIES Y FONDOS ────────────────────────────────────────────────
+
+  --color-bg:                  #f5f5f5;
+  --color-surface:             #ffffff;
+  --color-surface-tinted:      #edf4f3;
+  --color-border:              #cddbda;
+  --color-border-subtle:       rgba(30, 102, 96, 0.10);
+
+  // Fondo exclusivo de pantallas de marca (onboarding, splash)
+  --color-brand-surface:       #11a498;
+  --color-brand-surface-text:  #ffffff;
+
+
+  // ─── TEXTO ───────────────────────────────────────────────────────────────
+
+  --color-text:                #3b3b3b;
+  --color-text-muted:          #6b7a79;
+  --color-text-faint:          #a0afae;
+  --color-text-inverse:        #ffffff;
+  --color-text-on-primary:     #ffffff;
+
+
+  // ─── PRIMARIO — Verde Blíster ─────────────────────────────────────────────
+  //
+  //  --color-primary       Botones CTA, links activos, iconos de navegación activa
+  //  --color-primary-mid   FAB, indicadores activos, badges, barras de progreso
+  //  --color-primary-subtle Avatares del selector de Blíster, chips sin énfasis
+  //  --color-primary-tint  Fondo de ítem seleccionado en lista, highlight de fila
+
+  --color-primary:             #1e6660;
+  --color-primary-hover:       #174f4a;
+  --color-primary-active:      #0f3835;
+  --color-primary-mid:         #11a498;
+  --color-primary-mid-hover:   #0d8a7f;
+  --color-primary-subtle:      #67c2bb;
+  --color-primary-tint:        #edf4f3;
+  --color-primary-border:      #cddbda;
+
+
+  // ─── ACENTO — Terracota ───────────────────────────────────────────────────
+  //
+  //  --color-accent        Highlights secundarios, ilustraciones de onboarding
+  //  --color-accent-subtle Fondo de banners de advertencia, badges de aviso
+
+  --color-accent:              #d97757;
+  --color-accent-hover:        #c0613e;
+  --color-accent-active:       #a34e30;
+  --color-accent-subtle:       #f0c9a2;
+  --color-accent-tint:         #fdf3ec;
+
+
+  // ─── SEMÁNTICOS ──────────────────────────────────────────────────────────
+
+  --color-error:               #d54d4d;
+  --color-error-hover:         #b83c3c;
+  --color-error-subtle:        #ffe6e6;
+  --color-error-border:        rgba(213, 77, 77, 0.25);
+
+  --color-success:             #2a7d4f;
+  --color-success-hover:       #1e5f3a;
+  --color-success-subtle:      #e6f4ed;
+  --color-success-border:      rgba(42, 125, 79, 0.25);
+
+  // --color-warning reutiliza el acento terracota como señal de atención
+  --color-warning:             #d97757;
+  --color-warning-hover:       #c0613e;
+  --color-warning-subtle:      #f0c9a2;
+  --color-warning-border:      rgba(217, 119, 87, 0.25);
+
+  --color-info:                #618cc4;
+  --color-info-hover:          #4a74ab;
+  --color-info-subtle:         #e8eff8;
+  --color-info-border:         rgba(97, 140, 196, 0.25);
+
+
+  // ─── TOKENS DE DOMINIO ───────────────────────────────────────────────────
+  //
+  // Alias con significado clínico. Toda lógica de color de negocio
+  // referencia estos tokens, nunca los semánticos directamente.
+  // Modificar el color de un estado clínico implica cambiar solo este token.
+
+  // Estado de tomas (calendario, pastillero, home)
+  --color-dose-taken:          var(--color-success);
+  --color-dose-taken-bg:       var(--color-success-subtle);
+  --color-dose-pending:        var(--color-text-muted);
+  --color-dose-pending-bg:     var(--color-surface-tinted);
+  --color-dose-skipped:        var(--color-warning);
+  --color-dose-skipped-bg:     var(--color-warning-subtle);
+
+  // Estado de stock (cards del botiquín)
+  --color-stock-ok:            var(--color-success);
+  --color-stock-low:           var(--color-warning);
+  --color-stock-low-bg:        var(--color-accent-subtle);
+  --color-stock-critical:      var(--color-error);
+  --color-stock-critical-bg:   var(--color-error-subtle);
+
+  // Medicamento caducado
+  --color-expired:             var(--color-error);
+  --color-expired-bg:          var(--color-error-subtle);
+
+  // Tratamiento activo (barra de progreso, badge de tratamiento)
+  --color-treatment-active:    var(--color-primary-mid);
+  --color-treatment-active-bg: var(--color-primary-tint);
+
+  // Citas médicas (calendario, detalle de tratamiento)
+  --color-appointment:         var(--color-info);
+  --color-appointment-bg:      var(--color-info-subtle);
+
+  // Selector de Blíster (avatares circulares)
+  --color-blister-avatar-bg:   var(--color-primary-subtle);
+  --color-blister-avatar-text: var(--color-text-on-primary);
+}
+
+
+// ─── TEMA OSCURO ─────────────────────────────────────────────────────────────
+//
+// Los verdes se invierten sobre fondo oscuro:
+// el verde medio (#11a498) actúa como primario interactivo
+// y el verde oscuro (#1e6660) pasa a ser superficie de marca.
+// Los tokens de dominio no se redefinen: apuntan a los semánticos
+// que ya quedan actualizados en este bloque.
+
+[data-theme="dark"] {
+
+  --color-bg:                  #0f1a19;
+  --color-surface:             #162322;
+  --color-surface-tinted:      #1c2d2b;
+  --color-border:              rgba(103, 194, 187, 0.15);
+  --color-border-subtle:       rgba(103, 194, 187, 0.07);
+
+  --color-brand-surface:       #0d7a70;
+  --color-brand-surface-text:  #ffffff;
+
+  --color-text:                #e4efee;
+  --color-text-muted:          #7da8a4;
+  --color-text-faint:          #3f6663;
+  --color-text-inverse:        #0f1a19;
+  --color-text-on-primary:     #ffffff;
+
+  --color-primary:             #11a498;
+  --color-primary-hover:       #67c2bb;
+  --color-primary-active:      #8fd4ce;
+  --color-primary-mid:         #67c2bb;
+  --color-primary-mid-hover:   #8fd4ce;
+  --color-primary-subtle:      #1e3f3d;
+  --color-primary-tint:        #162a28;
+  --color-primary-border:      rgba(103, 194, 187, 0.20);
+
+  --color-accent:              #e8896a;
+  --color-accent-hover:        #f0a085;
+  --color-accent-active:       #d97757;
+  --color-accent-subtle:       #3d2215;
+  --color-accent-tint:         #2a160d;
+
+  --color-error:               #e87070;
+  --color-error-hover:         #f08585;
+  --color-error-subtle:        #3d1515;
+  --color-error-border:        rgba(232, 112, 112, 0.20);
+
+  --color-success:             #4caf7a;
+  --color-success-hover:       #6cc492;
+  --color-success-subtle:      #152a1e;
+  --color-success-border:      rgba(76, 175, 122, 0.20);
+
+  --color-warning:             #e8896a;
+  --color-warning-hover:       #f0a085;
+  --color-warning-subtle:      #3d2215;
+  --color-warning-border:      rgba(232, 137, 106, 0.20);
+
+  --color-info:                #7aa8d8;
+  --color-info-hover:          #96bce4;
+  --color-info-subtle:         #152030;
+  --color-info-border:         rgba(122, 168, 216, 0.20);
+}

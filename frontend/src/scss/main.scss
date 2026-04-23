@@ -1,0 +1,15 @@
+// main.scss
+//
+// Punto de entrada principal de los estilos de Blíster.
+// Importa las capas ITCSS en orden estricto de especificidad creciente.
+// No contiene estilos propios.
+
+@use 'sass:map';
+
+@use 'settings';
+@use 'tools';
+@use 'generic';
+@use 'elements';
+@use 'objects';
+@use 'components';
+@use 'utilities';

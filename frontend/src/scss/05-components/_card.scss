@@ -1,0 +1,52 @@
+// components/_card.scss
+//
+// Estructura base de tarjeta de Blíster.
+// Usada como base para: cards de medicamento (botiquín),
+// cards de tratamiento, ítems de lista del calendario y citas médicas.
+//
+// VARIANTES:
+//   .c-card--interactive  La card es un elemento clicable (añade hover/active)
+//   .c-card--flat         Sin sombra (para cards dentro de otras superficies)
+//   .c-card--highlighted  Borde con color primario (ítem seleccionado o activo)
+
+@use '../tools/mixins' as *;
+
+.c-card {
+  background-color: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-card-y) var(--space-card-x);
+  box-shadow: var(--shadow-sm);
+
+  // ── Variantes ──────────────────────────────────────────────────────────
+
+  &--interactive {
+    cursor: pointer;
+    transition: box-shadow       var(--transition-base),
+                background-color var(--transition-base);
+
+    &:hover {
+      box-shadow: var(--shadow-md);
+      background-color: var(--color-surface-tinted);
+    }
+
+    &:active {
+      box-shadow: var(--shadow-sm);
+      background-color: var(--color-primary-tint);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  &--flat {
+    box-shadow: none;
+    border-color: var(--color-border-subtle);
+  }
+
+  &--highlighted {
+    border-color: var(--color-primary-mid);
+    background-color: var(--color-primary-tint);
+  }
+}

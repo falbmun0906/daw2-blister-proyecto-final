@@ -1,0 +1,125 @@
+// generic/_reset.scss
+//
+// Reset moderno de Blíster.
+// Basado en los principios de Josh Comeau (2021) adaptados
+// a las necesidades de una PWA mobile-first.
+//
+// Aplica box-sizing global, elimina márgenes y paddings por defecto,
+// y establece comportamientos base que evitan los problemas
+// más comunes en interfaces móviles.
+
+@use '../settings';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  // Previene el aumento automático de fuente en iOS al rotar el dispositivo
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+
+  // Suavizado de fuentes en WebKit/Blink
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // Mejora el renderizado de texto
+  text-rendering: optimizeLegibility;
+
+  // Scroll suave respetando preferencias del usuario
+  scroll-behavior: smooth;
+
+  // Padding superior para anclas con cabecera fija
+  scroll-padding-top: var(--size-header-height);
+
+  font-size: 100%; // Base para la escala rem
+}
+
+body {
+  min-height: 100dvh; // dvh en lugar de vh para móviles con barra del navegador
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+
+  // Evita el scroll horizontal accidental en móvil
+  overflow-x: hidden;
+}
+
+// Elementos multimedia: bloque por defecto, nunca desbordan su contenedor
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+// Las imágenes sin altura explícita no colapsan
+img {
+  height: auto;
+}
+
+// Los inputs heredan la tipografía del documento
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+// Elimina el estilo de lista cuando se usa con role="list"
+// (indica que el estilo visual no es relevante semánticamente)
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+
+// Headings y párrafos: balance de texto para evitar líneas huérfanas
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+  line-height: var(--leading-tight);
+}
+
+p {
+  text-wrap: pretty;
+  max-width: 68ch;
+}
+
+// Los enlaces heredan el color del contexto por defecto
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+// Elimina el estilo nativo del botón
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+// Tablas sin espaciado colapsado
+table {
+  border-collapse: collapse;
+}
+
+// Respeto a preferencias de movimiento reducido
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
+}

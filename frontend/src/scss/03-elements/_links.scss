@@ -1,0 +1,23 @@
+// elements/_links.scss
+//
+// Estilos base para enlaces.
+// En la mayoría de contextos de la app los enlaces se estilizan
+// a nivel de componente BEM. Este archivo cubre los casos
+// donde un <a> aparece dentro de texto corrido (prospectos,
+// descripciones de tratamiento, textos legales).
+
+a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--color-primary-hover);
+  }
+
+  &:focus-visible {
+    @use '../tools/mixins' as *;
+    @include focus-ring;
+  }
+}

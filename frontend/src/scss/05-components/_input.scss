@@ -1,0 +1,109 @@
+// components/_input.scss
+//
+// Componente de campo de formulario de Blíster.
+//
+// ESTRUCTURA HTML ESPERADA:
+//   <div class="c-field">
+//     <label class="c-field__label" for="email">Correo electrónico</label>
+//     <input class="c-field__input" type="email" id="email">
+//     <span class="c-field__hint">Texto de ayuda opcional</span>
+//     <span class="c-field__error">Mensaje de error</span>
+//   </div>
+//
+// ESTADOS:
+//   .c-field--error    Campo con error de validación
+//   .c-field--success  Campo validado correctamente
+//   :disabled          Campo deshabilitado
+
+@use '../tools/mixins' as *;
+
+.c-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  &__label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+
+    & > abbr[title='required'] {
+      color: var(--color-error);
+      text-decoration: none;
+      margin-left: var(--space-1);
+    }
+  }
+
+  &__input,
+  &__select,
+  &__textarea {
+    @include touch-target;
+
+    width: 100%;
+    padding: var(--space-input-y) var(--space-input-x);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+
+    transition: border-color var(--transition-fast),
+                box-shadow   var(--transition-fast);
+
+    &::placeholder {
+      color: var(--color-text-faint);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--color-primary-mid);
+      box-shadow: 0 0 0 3px var(--color-primary-tint);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: var(--color-surface-tinted);
+    }
+  }
+
+  &__hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__error {
+    font-size: var(--text-xs);
+    color: var(--color-error);
+    display: none;
+  }
+
+  // ── Estado de error ────────────────────────────────────────────────────
+
+  &--error {
+    .c-field__input,
+    .c-field__select,
+    .c-field__textarea {
+      border-color: var(--color-error);
+
+      &:focus-visible {
+        box-shadow: 0 0 0 3px var(--color-error-subtle);
+      }
+    }
+
+    .c-field__error { display: block; }
+    .c-field__hint  { display: none;  }
+  }
+
+  // ── Estado de éxito ────────────────────────────────────────────────────
+
+  &--success {
+    .c-field__input,
+    .c-field__select,
+    .c-field__textarea {
+      border-color: var(--color-success);
+    }
+  }
+}

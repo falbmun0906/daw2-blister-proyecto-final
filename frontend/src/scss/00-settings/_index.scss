@@ -1,0 +1,18 @@
+// settings/_index.scss
+//
+// Punto de entrada de la capa settings de Blíster.
+// Agrega todos los archivos de tokens en el orden correcto.
+//
+// Esta capa no genera ningún output CSS por sí misma.
+// Solo define variables CSS y tokens disponibles en cascada.
+//
+// ORDEN DE IMPORTACIÓN:
+//   Los archivos deben cargarse antes de cualquier otra capa ITCSS.
+//   El orden dentro de settings es relevante: css-variables referencia
+//   tokens de color y espaciado, por lo que se carga al final.
+
+@forward 'colors';
+@forward 'typography';
+@forward 'spacing';
+@forward 'breakpoints';
+@forward 'css-variables';

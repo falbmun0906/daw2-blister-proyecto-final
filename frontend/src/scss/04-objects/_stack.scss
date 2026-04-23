@@ -1,0 +1,31 @@
+// objects/_stack.scss
+//
+// Objeto de espaciado vertical entre hijos directos.
+// Implementa el patrón "lobotomized owl" para gestionar
+// el espaciado en listas y secciones sin añadir margin
+// al primer o último elemento.
+//
+// USO:
+//   <ul class="o-stack"> ... </ul>
+//   <div class="o-stack o-stack--lg"> ... </div>
+//
+// VARIANTES:
+//   .o-stack--xs    4px  entre ítems (metadatos, badges agrupados)
+//   .o-stack--sm    8px  entre ítems (ítems compactos)
+//   (default)       12px entre ítems (listas de medicamentos, tomas)
+//   .o-stack--md    16px entre ítems (secciones dentro de una card)
+//   .o-stack--lg    24px entre secciones de pantalla
+//   .o-stack--xl    32px entre bloques mayores
+
+.o-stack {
+  display: flex;
+  flex-direction: column;
+
+  & > * + * { margin-top: var(--space-stack); }
+
+  &--xs > * + * { margin-top: var(--space-1); }
+  &--sm > * + * { margin-top: var(--space-2); }
+  &--md > * + * { margin-top: var(--space-4); }
+  &--lg > * + * { margin-top: var(--space-6); }
+  &--xl > * + * { margin-top: var(--space-8); }
+}

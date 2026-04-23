@@ -1,0 +1,8 @@
+// src/scss/_shared.scss
+// 
+// Este archivo NO genera CSS. Solo expone variables Sass y Mixins 
+// para que Vite los inyecte automáticamente en cada componente.
+
+@forward '00-settings/variables';
+@forward '00-settings/breakpoints';
+@forward '01-tools/mixins';

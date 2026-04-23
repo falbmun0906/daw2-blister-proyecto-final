@@ -1,0 +1,42 @@
+// utilities/_accessibility.scss
+//
+// Clases de utilidad para accesibilidad.
+// Prefijo .u- según convención del proyecto.
+
+// Oculto visualmente pero accesible para lectores de pantalla (VoiceOver, TalkBack).
+// Usar en: labels de iconos, textos de contexto para formularios, skip links.
+.u-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// Revierte .u-sr-only cuando el elemento recibe foco (skip links).
+.u-sr-only-focusable:focus,
+.u-sr-only-focusable:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: var(--space-2) var(--space-4);
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+// Oculto para todos incluidos lectores de pantalla.
+// Usar solo para contenido genuinamente irrelevante.
+.u-hidden {
+  display: none !important;
+}
+
+// Visible solo para lectores de pantalla en modo alto contraste.
+@media (forced-colors: active) {
+  .u-sr-only { display: revert; }
+}
