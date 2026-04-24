@@ -5,9 +5,9 @@ import morgan from 'morgan';
 
 import { API_PREFIX, HEALTH_PATH } from './constants/http.constants';
 import { JSON_BODY_LIMIT, URL_ENCODED_LIMIT } from './constants/security.constants';
-import { errorMiddleware } from './middlewares/error.middleware';
-import { notFoundMiddleware } from './middlewares/not-found.middleware';
-import { requestSanitizerMiddleware } from './middlewares/request-sanitizer.middleware';
+import { errorMiddleware } from './middleware/error.middleware';
+import { notFoundMiddleware } from './middleware/not-found.middleware';
+import { requestSanitizerMiddleware } from './middleware/request-sanitizer.middleware';
 
 export interface AppConfig {
   clientOrigin: string;
