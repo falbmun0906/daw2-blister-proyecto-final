@@ -1,1 +1,33 @@
+# backend/.gitignore
+
+# Dependencias
+node_modules/
+
+# Build
+dist/
+
+# Variables de entorno
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Otros
+
 .oculto
