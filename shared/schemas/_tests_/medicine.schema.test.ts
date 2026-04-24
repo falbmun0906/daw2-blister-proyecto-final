@@ -8,6 +8,7 @@ describe('medicine shared schemas', () => {
     const parsed = createMedicineSchema.parse({
       nregist: '123456',
       nombre: ' Paracetamol ',
+      alias: ' Paracetamol casa ',
       pactivos: ' Paracetamol ',
       formaOficial: ' COMPRIMIDO ',
       dosisOficial: ' 500 mg ',
@@ -20,6 +21,7 @@ describe('medicine shared schemas', () => {
 
     expect(parsed.threshold).toBe(5);
     expect(parsed.nombre).toBe('Paracetamol');
+    expect(parsed.alias).toBe('Paracetamol casa');
     expect('ignored' in parsed).toBe(false);
   });
 

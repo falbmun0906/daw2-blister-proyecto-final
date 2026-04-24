@@ -21,6 +21,7 @@ export interface MedicineDocument {
   blisterId: Types.ObjectId;
   nregist: string;
   nombre: string;
+  alias?: string | null;
   pactivos: string;
   formaOficial: string;
   dosisOficial: string;

@@ -50,6 +50,11 @@ const medicineSchema = new Schema<MedicineDocument>({
     trim: true,
     maxlength: 200,
   },
+  alias: {
+    type: String,
+    trim: true,
+    maxlength: 100,
+  },
   pactivos: {
     type: String,
     required: true,

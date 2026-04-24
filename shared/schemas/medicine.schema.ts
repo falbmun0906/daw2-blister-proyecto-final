@@ -30,6 +30,7 @@ const cimaStatusSchema = z.object({
 export const createMedicineSchema = z.object({
   nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
   nombre: nonEmptyTrimmedString('Medicine name', 200),
+  alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
   pactivos: nonEmptyTrimmedString('Active ingredients', 300),
   formaOficial: nonEmptyTrimmedString('Official form', 200),
   dosisOficial: nonEmptyTrimmedString('Official dose', 100),
@@ -45,6 +46,7 @@ export const createMedicineSchema = z.object({
 
 export const updateMedicineSchema = z
   .object({
+    alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
     stock: nonNegativeIntegerSchema('Stock').optional(),
     threshold: nonNegativeIntegerSchema('Threshold').optional(),
     expDate: dateSchema('expDate')

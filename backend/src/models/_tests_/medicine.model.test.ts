@@ -9,6 +9,7 @@ describe('MedicineModel', () => {
       blisterId: new Types.ObjectId(),
       nregist: '123456',
       nombre: 'Paracetamol',
+      alias: 'Paracetamol casa',
       pactivos: 'Paracetamol',
       formaOficial: 'COMPRIMIDO',
       dosisOficial: '500 mg',
@@ -20,6 +21,7 @@ describe('MedicineModel', () => {
 
     expect(medicine.validateSync()).toBeUndefined();
     expect(medicine.threshold).toBe(5);
+    expect(medicine.alias).toBe('Paracetamol casa');
     expect(medicine.cimaStatus).toMatchObject({
       psum: false,
       estado: 1,
