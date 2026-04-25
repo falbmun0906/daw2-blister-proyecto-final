@@ -1,11 +1,16 @@
 import { type Types } from 'mongoose';
 
-import { type SYSTEM_SYNC_STATUS } from '../constants/domain.constants';
-
-export type SystemSyncStatus = (typeof SYSTEM_SYNC_STATUS)[number];
+export interface CimaSyncMeta {
+  lastRunAt: Date | null;
+  lastSuccessAt: Date | null;
+  lastErrorAt: Date | null;
+  lastErrorMessage: string | null;
+  lastCimaSync: string | null;
+}
 
 export interface SystemMetaDocument {
   _id: Types.ObjectId;
-  lastCimaSync: Date;
-  syncStatus: SystemSyncStatus;
+  key: string;
+  value: Record<string, unknown>;
+  updatedAt: Date;
 }

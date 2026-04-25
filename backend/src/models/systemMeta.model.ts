@@ -1,22 +1,29 @@
 import { model, models, Schema } from 'mongoose';
 
-import { SYSTEM_SYNC_STATUS } from '../constants/domain.constants';
 import { type SystemMetaDocument } from '../types/system-meta.types';
 
-const systemMetaSchema = new Schema<SystemMetaDocument>({
-  lastCimaSync: {
-    type: Date,
-    required: true,
-    default: () => new Date(0),
+const systemMetaSchema = new Schema<SystemMetaDocument>(
+  {
+    key: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      maxlength: 100,
+    },
+    value: {
+      type: Schema.Types.Mixed,
+      required: true,
+      default: () => ({}),
+    },
   },
-  syncStatus: {
-    type: String,
-    enum: SYSTEM_SYNC_STATUS,
-    required: true,
-    default: 'idle',
-    trim: true,
+  {
+    timestamps: {
+      createdAt: false,
+      updatedAt: true,
+    },
   },
-});
+);
 
 export const SystemMetaModel =
   models.SystemMeta ?? model<SystemMetaDocument>('SystemMeta', systemMetaSchema);

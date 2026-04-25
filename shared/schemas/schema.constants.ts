@@ -8,6 +8,7 @@ export const notificationTypes = [
   'stock_low',
   'expiration_warning',
   'adherence_forced',
+  'cima_change',
   'system',
 ] as const;
 export const notificationSeverities = ['info', 'warning', 'critical'] as const;

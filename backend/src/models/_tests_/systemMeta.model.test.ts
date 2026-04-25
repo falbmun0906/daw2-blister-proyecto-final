@@ -1,11 +1,18 @@
 import { SystemMetaModel } from '../systemMeta.model';
 
 describe('SystemMetaModel', () => {
-  it('starts the synchronization state as idle', () => {
-    const systemMeta = new SystemMetaModel({});
+  it('stores generic global metadata by unique key', () => {
+    const systemMeta = new SystemMetaModel({
+      key: 'cimaSync',
+      value: {
+        lastCimaSync: '26/04/2026',
+      },
+    });
 
     expect(systemMeta.validateSync()).toBeUndefined();
-    expect(systemMeta.syncStatus).toBe('idle');
-    expect(systemMeta.lastCimaSync).toBeInstanceOf(Date);
+    expect(systemMeta.key).toBe('cimaSync');
+    expect(systemMeta.value).toEqual({
+      lastCimaSync: '26/04/2026',
+    });
   });
 });

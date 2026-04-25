@@ -1,11 +1,10 @@
 import { z } from 'zod';
 
-import { dateSchema } from './common.schema';
-import { systemSyncStatuses } from './schema.constants';
+import { nonEmptyTrimmedString } from './common.schema';
 
 export const systemMetaSchema = z.object({
-  lastCimaSync: dateSchema('lastCimaSync'),
-  syncStatus: z.enum(systemSyncStatuses),
+  key: nonEmptyTrimmedString('Key', 100),
+  value: z.record(z.string(), z.unknown()),
 });
 
 export type SystemMetaInput = z.infer<typeof systemMetaSchema>;
