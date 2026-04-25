@@ -1,8 +1,8 @@
 import { model, models, Schema } from 'mongoose';
 
 import {
-  CIMA_NOTIFICATION_TYPES,
-  NOTIFICATION_CATEGORIES,
+  NOTIFICATION_SEVERITIES,
+  NOTIFICATION_TYPES,
 } from '../constants/domain.constants';
 import { type NotificationDocument } from '../types/notification.types';
 
@@ -16,20 +16,26 @@ const notificationSchema = new Schema<NotificationDocument>({
   blisterId: {
     type: Schema.Types.ObjectId,
     ref: 'Blister',
-    required: true,
+    default: null,
     index: true,
   },
-  category: {
+  type: {
     type: String,
-    enum: NOTIFICATION_CATEGORIES,
+    enum: NOTIFICATION_TYPES,
     required: true,
     trim: true,
   },
-  cimaType: {
+  severity: {
     type: String,
-    enum: CIMA_NOTIFICATION_TYPES,
-    default: null,
+    enum: NOTIFICATION_SEVERITIES,
+    required: true,
     trim: true,
+  },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 120,
   },
   message: {
     type: String,
@@ -37,14 +43,24 @@ const notificationSchema = new Schema<NotificationDocument>({
     trim: true,
     maxlength: 500,
   },
+  metadata: {
+    type: Schema.Types.Mixed,
+    default: null,
+  },
   isRead: {
     type: Boolean,
     required: true,
     default: false,
   },
+  createdAt: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
 });
 
-notificationSchema.index({ userId: 1, isRead: 1 });
+notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ blisterId: 1, type: 1, createdAt: -1 });
 
 export const NotificationModel =
   models.Notification ?? model<NotificationDocument>('Notification', notificationSchema);
