@@ -42,15 +42,107 @@ const loginLimiter = rateLimit({
 
 export const authRouter = Router();
 
+/**
+ * @openapi
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Auth
+ *     responses:
+ *       201:
+ *         description: User registered and session created.
+ *       400:
+ *         description: Validation error.
+ *       409:
+ *         description: Email or username already exists.
+ */
 authRouter.post('/register', registerLimiter, validate({ body: registerSchema }), authRegisterController);
+
+/**
+ * @openapi
+ * /auth/login:
+ *   post:
+ *     summary: Authenticate with email or username
+ *     tags:
+ *       - Auth
+ *     responses:
+ *       200:
+ *         description: Access and refresh tokens issued.
+ *       400:
+ *         description: Validation error.
+ *       401:
+ *         description: Invalid credentials.
+ */
 authRouter.post('/login', loginLimiter, validate({ body: loginSchema }), authLoginController);
+
+/**
+ * @openapi
+ * /auth/refresh:
+ *   post:
+ *     summary: Rotate refresh token credentials
+ *     tags:
+ *       - Auth
+ *     responses:
+ *       200:
+ *         description: Fresh access and refresh tokens.
+ *       400:
+ *         description: Validation error.
+ *       401:
+ *         description: Invalid or expired refresh token.
+ */
 authRouter.post('/refresh', validate({ body: refreshTokenSchema }), authRefreshController);
+
+/**
+ * @openapi
+ * /auth/profile:
+ *   patch:
+ *     summary: Update the authenticated user profile
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile updated.
+ *       400:
+ *         description: Validation error.
+ *       401:
+ *         description: Missing or invalid JWT.
+ */
 authRouter.patch(
   '/profile',
   authenticate,
   validate({ body: updateProfileSchema }),
   authUpdateProfileController,
 );
+
+/**
+ * @openapi
+ * /auth/mcp-token:
+ *   post:
+ *     summary: Create an MCP token for the authenticated user
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: MCP token generated.
+ *       401:
+ *         description: Missing or invalid JWT.
+ *   delete:
+ *     summary: Revoke the authenticated user MCP token
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: MCP token revoked.
+ *       401:
+ *         description: Missing or invalid JWT.
+ */
 authRouter.post(
   '/mcp-token',
   authenticate,

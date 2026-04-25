@@ -32,4 +32,13 @@ describe('app infrastructure', () => {
       },
     });
   });
+
+  it('exposes the generated OpenAPI specification', async () => {
+    const response = await request(app).get('/api/v1/docs.json');
+
+    expect(response.status).toBe(200);
+    expect(response.body.openapi).toBe('3.0.3');
+    expect(response.body.paths['/auth/register']).toBeDefined();
+    expect(response.body.paths['/blisters/{blisterId}/medicines']).toBeDefined();
+  });
 });

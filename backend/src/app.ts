@@ -4,12 +4,15 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { API_PREFIX, AUTH_PREFIX, HEALTH_PATH } from './constants/http.constants';
+import { registerSwagger } from './config/swagger';
 import { JSON_BODY_LIMIT, URL_ENCODED_LIMIT } from './constants/security.constants';
 import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundMiddleware } from './middleware/not-found.middleware';
 import { requestSanitizerMiddleware } from './middleware/request-sanitizer.middleware';
 import { authRouter } from './modules/auth/auth.routes';
 import { blistersRouter } from './modules/blisters/blisters.routes';
+import { externalRouter } from './modules/external/external.routes';
+import { medicinesRouter } from './modules/medicines/medicines.routes';
 
 export interface AppConfig {
   clientOrigin: string;
@@ -48,8 +51,11 @@ export const createApp = ({ clientOrigin, nodeEnv }: AppConfig): Express => {
       },
     });
   });
+  registerSwagger(app);
   app.use(`${API_PREFIX}${AUTH_PREFIX}`, authRouter);
   app.use(`${API_PREFIX}/blisters`, blistersRouter);
+  app.use(`${API_PREFIX}/blisters`, medicinesRouter);
+  app.use(`${API_PREFIX}/external`, externalRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);
