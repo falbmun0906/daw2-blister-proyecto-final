@@ -127,7 +127,7 @@ describe('medicines.service', () => {
       },
     });
 
-    const result = await medicinesCreate(blister._id.toString(), user._id.toString(), {
+    const result = await medicinesCreate(blister._id.toString(), 'CAREGIVER', {
       nregist: '555555',
       alias: 'Antibiotico',
       stock: 20,
@@ -170,7 +170,7 @@ describe('medicines.service', () => {
       },
     });
 
-    await medicinesCreate(blister._id.toString(), user._id.toString(), {
+    await medicinesCreate(blister._id.toString(), 'OWNER', {
       nregist: '777777',
       stock: 10,
       stockUnit: 'pastillas',
@@ -179,7 +179,7 @@ describe('medicines.service', () => {
     });
 
     await expect(
-      medicinesCreate(blister._id.toString(), user._id.toString(), {
+      medicinesCreate(blister._id.toString(), 'OWNER', {
         nregist: '777777',
         stock: 15,
         stockUnit: 'pastillas',
@@ -211,7 +211,7 @@ describe('medicines.service', () => {
     const result = await medicinesUpdate(
       blister._id.toString(),
       medicine._id.toString(),
-      user._id.toString(),
+      'CAREGIVER',
       {
         alias: 'Dolor',
         stock: 12,
@@ -249,12 +249,12 @@ describe('medicines.service', () => {
     });
 
     await expect(
-      medicinesDelete(blister._id.toString(), medicine._id.toString(), caregiver._id.toString()),
+      medicinesDelete(blister._id.toString(), medicine._id.toString(), 'CAREGIVER'),
     ).rejects.toMatchObject({
       code: 'BLISTER_ROLE_FORBIDDEN',
     });
 
-    await medicinesDelete(blister._id.toString(), medicine._id.toString(), owner._id.toString());
+    await medicinesDelete(blister._id.toString(), medicine._id.toString(), 'OWNER');
 
     const stored = await MedicineModel.findById(medicine._id);
     expect(stored).toBeNull();
