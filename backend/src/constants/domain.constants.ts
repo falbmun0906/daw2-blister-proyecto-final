@@ -8,11 +8,15 @@ export const NOTIFICATION_TYPES = [
   'stock_low',
   'expiration_warning',
   'adherence_forced',
+  'cima_change',
   'system',
 ] as const;
 export const NOTIFICATION_SEVERITIES = ['info', 'warning', 'critical'] as const;
 export const EXPIRATION_WARNING_LEVELS = ['30d', '15d', '7d'] as const;
 export const CIMA_MEDICINE_STATUS = [1, 2, 3] as const;
 export const SYSTEM_SYNC_STATUS = ['idle', 'running', 'failed'] as const;
+export const CIMA_CHANGE_TYPES = ['new', 'removed', 'updated'] as const;
 export const ADHERENCE_LOG_UNDO_WINDOW_MS = 10 * 60 * 1000;
 export const NOTIFICATION_DEDUPLICATION_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const CIMA_SYNC_META_KEY = 'cimaSync' as const;
+export const DEFAULT_CIMA_SYNC_LOOKBACK_DAYS = 30;
