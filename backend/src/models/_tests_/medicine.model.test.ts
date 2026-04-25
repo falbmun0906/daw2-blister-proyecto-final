@@ -26,6 +26,9 @@ describe('MedicineModel', () => {
       psum: false,
       estado: 1,
       hasAlerts: false,
+      comerc: false,
+      notas: false,
+      materialesInf: false,
     });
   });
 

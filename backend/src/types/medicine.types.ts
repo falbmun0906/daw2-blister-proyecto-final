@@ -14,6 +14,9 @@ export interface MedicineCimaStatus {
   psum: boolean;
   estado: CimaMedicineState;
   hasAlerts: boolean;
+  comerc: boolean;
+  notas: boolean;
+  materialesInf: boolean;
 }
 
 export interface MedicineDocument {

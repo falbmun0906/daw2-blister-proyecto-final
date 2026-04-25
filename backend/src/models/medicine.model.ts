@@ -25,6 +25,21 @@ const cimaStatusSchema = new Schema<MedicineDocument['cimaStatus']>(
       default: false,
       required: true,
     },
+    comerc: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    notas: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    materialesInf: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
   },
   {
     _id: false,

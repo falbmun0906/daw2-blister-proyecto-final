@@ -80,6 +80,9 @@ describe('external.service', () => {
       estado: 3,
       psum: true,
       hasAlerts: true,
+      comerc: true,
+      notas: true,
+      materialesInf: false,
     });
     expect(result.fotos).toHaveLength(1);
   });

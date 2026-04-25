@@ -6,6 +6,7 @@ import {
 import { AppError } from '../../utils/app-error';
 import {
   type CimaApiItem,
+  type CimaRegistroCambiosItem,
   type CimaApiState,
   type ExternalMedicineInfo,
   type ExternalSearchItem,
@@ -101,6 +102,9 @@ const toMedicineInfo = (medicine: CimaApiItem): ExternalMedicineInfo => {
     estado: toCimaEstado(medicine.estado),
     psum: medicine.psum ?? false,
     hasAlerts: Boolean(medicine.psum || medicine.notas),
+    comerc: medicine.comerc ?? false,
+    notas: medicine.notas ?? false,
+    materialesInf: medicine.materialesInf ?? false,
   };
 
   return {
@@ -159,4 +163,17 @@ export const externalGetMedicineInfo = async (nregist: string): Promise<External
   }
 
   return toMedicineInfo(medicine);
+};
+
+/**
+ * Retrieves the incremental CIMA change registry from the requested dd/mm/yyyy date.
+ */
+export const externalGetRegistroCambios = async (
+  fecha: string,
+): Promise<CimaRegistroCambiosItem[]> => {
+  const payload = await fetchCimaJson<unknown>('/registroCambios', {
+    fecha,
+  });
+
+  return normalizeCimaResponse<CimaRegistroCambiosItem>(payload);
 };

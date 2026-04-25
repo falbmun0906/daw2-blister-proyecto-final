@@ -124,6 +124,9 @@ describe('medicines.service', () => {
         estado: 1,
         psum: false,
         hasAlerts: false,
+        comerc: true,
+        notas: false,
+        materialesInf: false,
       },
     });
 
@@ -167,6 +170,9 @@ describe('medicines.service', () => {
         estado: 1,
         psum: false,
         hasAlerts: false,
+        comerc: true,
+        notas: false,
+        materialesInf: false,
       },
     });
 

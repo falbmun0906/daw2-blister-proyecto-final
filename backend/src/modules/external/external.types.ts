@@ -40,6 +40,13 @@ export interface CimaApiItem {
   triangulo?: boolean;
 }
 
+export interface CimaRegistroCambiosItem {
+  nregistro?: string;
+  fecha?: number | string | null;
+  tipoCambio?: number | null;
+  cambios?: string[];
+}
+
 export interface ExternalSearchItem {
   nregist: string;
   nombre: string;
@@ -71,5 +78,8 @@ export interface ExternalMedicineInfo {
     estado: 1 | 2 | 3;
     psum: boolean;
     hasAlerts: boolean;
+    comerc: boolean;
+    notas: boolean;
+    materialesInf: boolean;
   };
 }
