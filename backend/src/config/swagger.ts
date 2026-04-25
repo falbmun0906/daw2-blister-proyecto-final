@@ -95,6 +95,65 @@ const swaggerSpec = swaggerJSDoc({
             },
           },
         },
+        Notification: {
+          type: 'object',
+          required: [
+            'id',
+            'userId',
+            'blisterId',
+            'type',
+            'severity',
+            'title',
+            'message',
+            'metadata',
+            'isRead',
+            'createdAt',
+          ],
+          properties: {
+            id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            userId: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439012',
+            },
+            blisterId: {
+              type: 'string',
+              nullable: true,
+              example: '507f1f77bcf86cd799439013',
+            },
+            type: {
+              type: 'string',
+              enum: ['stock_low', 'expiration_warning', 'adherence_forced', 'system'],
+            },
+            severity: {
+              type: 'string',
+              enum: ['info', 'warning', 'critical'],
+            },
+            title: {
+              type: 'string',
+              example: 'Stock bajo',
+            },
+            message: {
+              type: 'string',
+              example: 'El medicamento Paracetamol ha alcanzado el umbral minimo de stock.',
+            },
+            metadata: {
+              type: 'object',
+              nullable: true,
+              additionalProperties: true,
+            },
+            isRead: {
+              type: 'boolean',
+              example: false,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+          },
+        },
       },
     },
   },
