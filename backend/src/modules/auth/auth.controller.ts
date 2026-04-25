@@ -21,7 +21,7 @@ import {
   type RefreshTokenInput,
   type RegisterInput,
   type UpdateProfileInput,
-} from '../../../../shared/schemas';
+} from '../../../../shared/schemas/index';
 
 /**
  * Registers a new user and returns the initial auth session.

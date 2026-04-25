@@ -8,7 +8,7 @@ import {
   updateProfileSchema,
   mcpTokenSchema,
   revokeMcpTokenSchema,
-} from '../../../../shared/schemas';
+} from '../../../../shared/schemas/index';
 import {
   AUTH_LOGIN_RATE_LIMIT_MAX,
   AUTH_REGISTER_RATE_LIMIT_MAX,

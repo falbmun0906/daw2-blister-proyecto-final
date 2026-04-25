@@ -29,7 +29,7 @@ import {
   type RefreshTokenInput,
   type RegisterInput,
   type UpdateProfileInput,
-} from '../../../../shared/schemas';
+} from '../../../../shared/schemas/index';
 
 interface PublicUser {
   id: string;

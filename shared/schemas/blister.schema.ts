@@ -10,8 +10,12 @@ export const blisterIdParamsSchema = z.object({
   blisterId: objectIdSchema,
 });
 
+export const blisterParamsSchema = z.object({
+  id: objectIdSchema,
+});
+
 export const memberIdParamsSchema = z.object({
-  blisterId: objectIdSchema,
+  id: objectIdSchema,
   memberId: objectIdSchema,
 });
 

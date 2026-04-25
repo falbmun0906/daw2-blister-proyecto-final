@@ -9,6 +9,7 @@ import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundMiddleware } from './middleware/not-found.middleware';
 import { requestSanitizerMiddleware } from './middleware/request-sanitizer.middleware';
 import { authRouter } from './modules/auth/auth.routes';
+import { blistersRouter } from './modules/blisters/blisters.routes';
 
 export interface AppConfig {
   clientOrigin: string;
@@ -48,6 +49,7 @@ export const createApp = ({ clientOrigin, nodeEnv }: AppConfig): Express => {
     });
   });
   app.use(`${API_PREFIX}${AUTH_PREFIX}`, authRouter);
+  app.use(`${API_PREFIX}/blisters`, blistersRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);
