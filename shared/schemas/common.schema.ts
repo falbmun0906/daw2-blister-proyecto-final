@@ -34,3 +34,8 @@ export const positiveIntegerSchema = (fieldName: string) =>
 
 export const nonNegativeIntegerSchema = (fieldName: string) =>
   z.coerce.number().int().min(0, `${fieldName} cannot be negative.`);
+
+export const collectionPaginationQuerySchema = z.object({
+  page: positiveIntegerSchema('Page').default(1),
+  limit: positiveIntegerSchema('Limit').max(100, 'Limit must be 100 or fewer.').default(20),
+});

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  collectionPaginationQuerySchema,
   futureDateSchema,
   nonEmptyTrimmedString,
   objectIdSchema,
@@ -14,6 +15,8 @@ export const appointmentIdParamsSchema = z.object({
   blisterId: objectIdSchema,
   id: objectIdSchema,
 });
+
+export const appointmentsListQuerySchema = collectionPaginationQuerySchema;
 
 const appointmentBaseSchema = z.object({
   title: nonEmptyTrimmedString('Appointment title', 200),
@@ -31,3 +34,4 @@ export const updateAppointmentSchema = appointmentBaseSchema
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
+export type AppointmentsListQuery = z.infer<typeof appointmentsListQuerySchema>;

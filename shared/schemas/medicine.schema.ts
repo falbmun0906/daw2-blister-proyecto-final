@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 import {
+  collectionPaginationQuerySchema,
   dateSchema,
   nonEmptyTrimmedString,
   nonNegativeIntegerSchema,
   objectIdSchema,
-  positiveIntegerSchema,
 } from './common.schema';
 import {
   stockUnits,
@@ -24,10 +24,7 @@ export const medicineSearchParamsSchema = z.object({
   nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
 });
 
-export const medicinesListQuerySchema = z.object({
-  page: positiveIntegerSchema('Page').default(1),
-  limit: positiveIntegerSchema('Limit').max(100, 'Limit must be 100 or fewer.').default(20),
-});
+export const medicinesListQuerySchema = collectionPaginationQuerySchema;
 
 export const externalSearchQuerySchema = z.object({
   q: nonEmptyTrimmedString('Search query', 100),

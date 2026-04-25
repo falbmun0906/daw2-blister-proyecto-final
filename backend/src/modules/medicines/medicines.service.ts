@@ -1,15 +1,11 @@
 import { Types } from 'mongoose';
 
-import {
-  type BlisterMember,
-  type BlisterRole,
-} from '../../types/blister.types';
+import { type BlisterRole } from '../../types/blister.types';
 import {
   HTTP_STATUS_CONFLICT,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
-import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { AppError } from '../../utils/app-error';
 import {
@@ -74,45 +70,6 @@ const toMedicineView = (medicine: Awaited<ReturnType<typeof MedicineModel.findOn
   cimaStatus: medicine!.cimaStatus,
 });
 
-const ensureBlisterAccess = async (
-  blisterId: string,
-  userId: string,
-  allowedRoles?: BlisterRole[],
-) => {
-  const blister = await BlisterModel.findOne({
-    _id: new Types.ObjectId(blisterId),
-    deletedAt: null,
-  });
-
-  if (!blister) {
-    throw new AppError({
-      code: 'BLISTER_NOT_FOUND',
-      message: 'Blister not found.',
-      statusCode: HTTP_STATUS_NOT_FOUND,
-    });
-  }
-
-  const membership = blister.members.find(
-    (member: BlisterMember) => member.userId.toString() === userId,
-  );
-
-  if (!membership) {
-    throw new AppError({
-      code: 'BLISTER_ACCESS_FORBIDDEN',
-      message: 'You do not have access to this blister.',
-      statusCode: HTTP_STATUS_FORBIDDEN,
-    });
-  }
-
-  if (allowedRoles && !allowedRoles.includes(membership.role)) {
-    throw new AppError({
-      code: 'BLISTER_ROLE_FORBIDDEN',
-      message: 'Your role does not allow this action.',
-      statusCode: HTTP_STATUS_FORBIDDEN,
-    });
-  }
-};
-
 const getMedicineDocument = async (blisterId: string, medicineId: string) => {
   const medicine = await MedicineModel.findOne({
     _id: new Types.ObjectId(medicineId),
@@ -133,16 +90,23 @@ const getMedicineDocument = async (blisterId: string, medicineId: string) => {
 const isMongoDuplicateError = (error: unknown): error is { code: number } =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === 11000;
 
+const ensureWriterRole = (blisterRole: BlisterRole, allowedRoles: BlisterRole[] = WRITER_ROLES): void => {
+  if (!allowedRoles.includes(blisterRole)) {
+    throw new AppError({
+      code: 'BLISTER_ROLE_FORBIDDEN',
+      message: 'Your role does not allow this action.',
+      statusCode: HTTP_STATUS_FORBIDDEN,
+    });
+  }
+};
+
 /**
  * Lists medicines in a blister with standard collection pagination metadata.
  */
 export const medicinesList = async (
   blisterId: string,
-  userId: string,
   query: MedicinesListQuery,
 ): Promise<MedicinesListResult> => {
-  await ensureBlisterAccess(blisterId, userId);
-
   const { page, limit } = query;
   const filter = {
     blisterId: new Types.ObjectId(blisterId),
@@ -171,10 +135,10 @@ export const medicinesList = async (
  */
 export const medicinesCreate = async (
   blisterId: string,
-  userId: string,
+  blisterRole: BlisterRole,
   input: CreateMedicineInput,
 ): Promise<MedicineView> => {
-  await ensureBlisterAccess(blisterId, userId, WRITER_ROLES);
+  ensureWriterRole(blisterRole);
 
   const officialMedicine = await externalGetMedicineInfo(input.nregist);
   const formaOficial = officialMedicine.formaOficial ?? officialMedicine.formaSimplificada ?? 'DESCONOCIDA';
@@ -216,10 +180,10 @@ export const medicinesCreate = async (
 export const medicinesUpdate = async (
   blisterId: string,
   medicineId: string,
-  userId: string,
+  blisterRole: BlisterRole,
   input: UpdateMedicineInput,
 ): Promise<MedicineView> => {
-  await ensureBlisterAccess(blisterId, userId, WRITER_ROLES);
+  ensureWriterRole(blisterRole);
 
   const medicine = await getMedicineDocument(blisterId, medicineId);
 
@@ -250,9 +214,9 @@ export const medicinesUpdate = async (
 export const medicinesDelete = async (
   blisterId: string,
   medicineId: string,
-  userId: string,
+  blisterRole: BlisterRole,
 ): Promise<void> => {
-  await ensureBlisterAccess(blisterId, userId, ['OWNER']);
+  ensureWriterRole(blisterRole, ['OWNER']);
 
   const medicine = await getMedicineDocument(blisterId, medicineId);
   await medicine.deleteOne();

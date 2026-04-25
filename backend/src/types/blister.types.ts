@@ -15,6 +15,10 @@ export interface InviteCode {
   role: BlisterRole;
 }
 
+export interface BlisterAccessLocals {
+  blisterRole: BlisterRole;
+}
+
 export interface BlisterDocument {
   _id: Types.ObjectId;
   name: string;

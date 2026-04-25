@@ -9,10 +9,12 @@ import { JSON_BODY_LIMIT, URL_ENCODED_LIMIT } from './constants/security.constan
 import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundMiddleware } from './middleware/not-found.middleware';
 import { requestSanitizerMiddleware } from './middleware/request-sanitizer.middleware';
+import { appointmentsRouter } from './modules/appointments/appointments.routes';
 import { authRouter } from './modules/auth/auth.routes';
 import { blistersRouter } from './modules/blisters/blisters.routes';
 import { externalRouter } from './modules/external/external.routes';
 import { medicinesRouter } from './modules/medicines/medicines.routes';
+import { treatmentsRouter } from './modules/treatments/treatments.routes';
 
 export interface AppConfig {
   clientOrigin: string;
@@ -55,6 +57,9 @@ export const createApp = ({ clientOrigin, nodeEnv }: AppConfig): Express => {
   app.use(`${API_PREFIX}${AUTH_PREFIX}`, authRouter);
   app.use(`${API_PREFIX}/blisters`, blistersRouter);
   app.use(`${API_PREFIX}/blisters`, medicinesRouter);
+  app.use(`${API_PREFIX}/blisters`, treatmentsRouter);
+  app.use(`${API_PREFIX}/blisters`, appointmentsRouter);
+  app.use(`${API_PREFIX}/blisters/:blisterId/external`, externalRouter);
   app.use(`${API_PREFIX}/external`, externalRouter);
 
   app.use(notFoundMiddleware);

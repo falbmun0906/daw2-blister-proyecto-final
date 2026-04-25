@@ -11,7 +11,7 @@ import {
   externalSearchController,
 } from './external.controller';
 
-export const externalRouter = Router();
+export const externalRouter = Router({ mergeParams: true });
 
 externalRouter.use(authenticate);
 

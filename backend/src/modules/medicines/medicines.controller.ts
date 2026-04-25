@@ -5,6 +5,7 @@ import {
   HTTP_STATUS_OK,
 } from '../../constants/http.constants';
 import { type AuthenticatedRequest } from '../../types/auth.types';
+import { type BlisterRole } from '../../types/blister.types';
 import {
   medicinesCreate,
   medicinesDelete,
@@ -29,7 +30,6 @@ export const medicinesListController = async (
   const query = medicinesListQuerySchema.parse(request.query) as MedicinesListQuery;
   const result = await medicinesList(
     request.params.blisterId as string,
-    authenticatedRequest.auth.userId,
     query,
   );
 
@@ -47,10 +47,9 @@ export const medicinesCreateController = async (
   request: Request,
   response: Response,
 ): Promise<void> => {
-  const authenticatedRequest = request as AuthenticatedRequest;
   const result = await medicinesCreate(
     request.params.blisterId as string,
-    authenticatedRequest.auth.userId,
+    response.locals.blisterRole as BlisterRole,
     request.body as CreateMedicineInput,
   );
 
@@ -67,11 +66,10 @@ export const medicinesUpdateController = async (
   request: Request,
   response: Response,
 ): Promise<void> => {
-  const authenticatedRequest = request as AuthenticatedRequest;
   const result = await medicinesUpdate(
     request.params.blisterId as string,
     request.params.id as string,
-    authenticatedRequest.auth.userId,
+    response.locals.blisterRole as BlisterRole,
     request.body as UpdateMedicineInput,
   );
 
@@ -88,11 +86,10 @@ export const medicinesDeleteController = async (
   request: Request,
   response: Response,
 ): Promise<void> => {
-  const authenticatedRequest = request as AuthenticatedRequest;
   await medicinesDelete(
     request.params.blisterId as string,
     request.params.id as string,
-    authenticatedRequest.auth.userId,
+    response.locals.blisterRole as BlisterRole,
   );
 
   response.status(HTTP_STATUS_OK).json({

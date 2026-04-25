@@ -8,6 +8,7 @@ import {
   updateMedicineSchema,
 } from '../../../../shared/schemas';
 import { authenticate } from '../../middleware/authenticate';
+import { checkBlisterAccess } from '../../middleware/checkBlisterAccess';
 import { validate } from '../../middleware/validate';
 import {
   medicinesCreateController,
@@ -105,11 +106,13 @@ medicinesRouter.use(authenticate);
 medicinesRouter.get(
   '/:blisterId/medicines',
   validate({ params: blisterMedicineParamsSchema, query: medicinesListQuerySchema }),
+  checkBlisterAccess,
   medicinesListController,
 );
 medicinesRouter.post(
   '/:blisterId/medicines',
   validate({ params: blisterMedicineParamsSchema, body: createMedicineSchema }),
+  checkBlisterAccess,
   medicinesCreateController,
 );
 
@@ -172,10 +175,12 @@ medicinesRouter.post(
 medicinesRouter.patch(
   '/:blisterId/medicines/:id',
   validate({ params: medicineIdParamsSchema, body: updateMedicineSchema }),
+  checkBlisterAccess,
   medicinesUpdateController,
 );
 medicinesRouter.delete(
   '/:blisterId/medicines/:id',
   validate({ params: medicineIdParamsSchema }),
+  checkBlisterAccess,
   medicinesDeleteController,
 );

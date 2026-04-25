@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  collectionPaginationQuerySchema,
   dateSchema,
   nonEmptyTrimmedString,
   objectIdSchema,
@@ -15,6 +16,8 @@ export const treatmentIdParamsSchema = z.object({
   blisterId: objectIdSchema,
   id: objectIdSchema,
 });
+
+export const treatmentsListQuerySchema = collectionPaginationQuerySchema;
 
 export const treatmentMedicineSchema = z.object({
   medicineId: objectIdSchema,
@@ -74,3 +77,4 @@ export const updateTreatmentSchema = z
 
 export type CreateTreatmentInput = z.infer<typeof createTreatmentSchema>;
 export type UpdateTreatmentInput = z.infer<typeof updateTreatmentSchema>;
+export type TreatmentsListQuery = z.infer<typeof treatmentsListQuerySchema>;
