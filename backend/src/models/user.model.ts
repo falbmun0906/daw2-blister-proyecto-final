@@ -76,6 +76,17 @@ const userSchema = new Schema<UserDocument>({
     sparse: true,
     select: false,
   },
+  refreshTokenHash: {
+    type: String,
+    trim: true,
+    select: false,
+    default: null,
+  },
+  refreshTokenExpiresAt: {
+    type: Date,
+    default: null,
+    select: false,
+  },
   settings: {
     type: userSettingsSchema,
     default: () => ({}),

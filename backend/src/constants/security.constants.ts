@@ -2,6 +2,7 @@ export const DEFAULT_PORT = 3000;
 export const DEFAULT_ACCESS_TOKEN_TTL = '15m';
 export const DEFAULT_REFRESH_TOKEN_TTL = '7d';
 export const DEFAULT_MCP_TOKEN_TTL_DAYS = 90;
+export const BCRYPT_SALT_ROUNDS = 12;
 export const JSON_BODY_LIMIT = '1mb';
 export const URL_ENCODED_LIMIT = '1mb';
 export const AUTH_LOGIN_RATE_LIMIT_MAX = 10;

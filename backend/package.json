@@ -2,14 +2,14 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Blister backend",
-  "main": "dist/index.js",
+  "main": "dist/backend/src/index.js",
   "scripts": {
     "test": "jest --runInBand",
     "test:coverage": "jest --coverage --runInBand",
     "test:watch": "jest --watch",
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/backend/src/index.js"
   },
   "keywords": [],
   "author": "",

@@ -23,6 +23,8 @@ export interface UserDocument {
   email: string;
   password: string;
   mcpToken?: string | null;
+  refreshTokenHash?: string | null;
+  refreshTokenExpiresAt?: Date | null;
   settings: UserSettings;
   deletedAt?: Date | null;
 }
