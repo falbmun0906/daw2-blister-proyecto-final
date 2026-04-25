@@ -24,6 +24,12 @@ const adherenceLogSchema = new Schema<AdherenceLogDocument>({
     ref: 'Treatment',
     required: true,
   },
+  amount: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0,
+  },
   timestamp: {
     type: Date,
     required: true,

@@ -13,6 +13,7 @@ describe('AdherenceLogModel', () => {
     });
 
     expect(log.validateSync()).toBeUndefined();
+    expect(log.amount).toBe(0);
     expect(log.timestamp).toBeInstanceOf(Date);
     expect(log.isForced).toBe(false);
     expect(log.notes).toBeNull();

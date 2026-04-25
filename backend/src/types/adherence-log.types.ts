@@ -6,6 +6,7 @@ export interface AdherenceLogDocument {
   medicineId: Types.ObjectId;
   userId: Types.ObjectId;
   treatmentId: Types.ObjectId;
+  amount: number;
   timestamp: Date;
   isForced: boolean;
   notes?: string | null;

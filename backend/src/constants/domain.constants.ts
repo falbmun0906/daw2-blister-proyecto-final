@@ -8,3 +8,4 @@ export const NOTIFICATION_CATEGORIES = ['STOCK', 'CIMA', 'INVITE', 'SYSTEM'] as 
 export const CIMA_NOTIFICATION_TYPES = ['psum', 'prosp', 'ft', 'notasSeguridad', 'estado'] as const;
 export const CIMA_MEDICINE_STATUS = [1, 2, 3] as const;
 export const SYSTEM_SYNC_STATUS = ['idle', 'running', 'failed'] as const;
+export const ADHERENCE_LOG_UNDO_WINDOW_MS = 10 * 60 * 1000;
