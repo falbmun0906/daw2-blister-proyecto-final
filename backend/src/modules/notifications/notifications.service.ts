@@ -18,6 +18,9 @@ import {
 } from '../../types/notification.types';
 import { AppError } from '../../utils/app-error';
 import { type NotificationsListQuery } from '../../../../shared/schemas';
+import { type CimaChangeLogDocument } from '../../types/cima-change-log.types';
+
+type PersistedNotification = NonNullable<Awaited<ReturnType<typeof NotificationModel.findOne>>>;
 
 interface NotificationView {
   id: string;
@@ -60,7 +63,7 @@ const EXPIRATION_LEVEL_DAYS: Record<ExpirationWarningLevel, number> = {
 };
 
 const toNotificationView = (
-  notification: NotificationDocument,
+  notification: PersistedNotification,
 ): NotificationView => ({
   id: notification._id.toString(),
   userId: notification.userId.toString(),
@@ -99,14 +102,12 @@ const hasRecentUnreadNotification = async ({
   blisterId,
   userId,
   type,
-  medicineId,
-  level,
+  metadataFilters,
 }: {
   blisterId: Types.ObjectId;
   userId: Types.ObjectId;
   type: NotificationType;
-  medicineId: string;
-  level?: ExpirationWarningLevel;
+  metadataFilters: Record<string, string>;
 }): Promise<boolean> => {
   const createdAt = new Date(Date.now() - NOTIFICATION_DEDUPLICATION_WINDOW_MS);
   const existingNotification = await NotificationModel.exists({
@@ -117,8 +118,9 @@ const hasRecentUnreadNotification = async ({
     createdAt: {
       $gte: createdAt,
     },
-    'metadata.medicineId': medicineId,
-    ...(level ? { 'metadata.level': level } : {}),
+    ...Object.fromEntries(
+      Object.entries(metadataFilters).map(([key, value]) => [`metadata.${key}`, value]),
+    ),
   });
 
   return existingNotification !== null;
@@ -259,7 +261,9 @@ export const notifyStockLow = async (
         blisterId: blister._id,
         userId,
         type: 'stock_low',
-        medicineId: medicine._id.toString(),
+        metadataFilters: {
+          medicineId: medicine._id.toString(),
+        },
       }),
     })),
   );
@@ -287,8 +291,10 @@ export const notifyExpirationWarning = async (
         blisterId: blister._id,
         userId,
         type: 'expiration_warning',
-        medicineId: medicine._id.toString(),
-        level,
+        metadataFilters: {
+          medicineId: medicine._id.toString(),
+          level,
+        },
       }),
     })),
   );
@@ -314,6 +320,96 @@ export const notifyAdherenceForced = async (
     recipientIds.map((userId) =>
       buildForcedAdherenceNotification(userId, adherenceLog, medicine),
     ),
+  );
+};
+
+const getCimaChangeSeverity = (cambios: string[]): NotificationSeverity => {
+  if (cambios.includes('notasSeguridad') || cambios.includes('psum')) {
+    return 'critical';
+  }
+
+  if (cambios.includes('estado') || cambios.includes('comerc')) {
+    return 'warning';
+  }
+
+  return 'info';
+};
+
+const getCimaChangeTitle = (cambios: string[]): string => {
+  if (cambios.includes('notasSeguridad')) {
+    return 'Nueva nota de seguridad en CIMA';
+  }
+
+  if (cambios.includes('psum')) {
+    return 'Nuevo problema de suministro en CIMA';
+  }
+
+  if (cambios.includes('estado')) {
+    return 'Cambio en el estado de autorizacion';
+  }
+
+  if (cambios.includes('comerc')) {
+    return 'Cambio en la comercializacion';
+  }
+
+  if (cambios.includes('ft')) {
+    return 'Actualizacion de ficha tecnica';
+  }
+
+  return 'Actualizacion de prospecto';
+};
+
+/**
+ * Creates user-facing notifications for relevant CIMA changes affecting a medicine.
+ */
+export const notifyCimaChange = async (
+  medicine: MedicineDocument,
+  blister: BlisterDocument,
+  changeLog: CimaChangeLogDocument,
+): Promise<void> => {
+  const recipientIds = getRecipientIdsByRoles(blister, STOCK_ALERT_ROLES);
+  const changeSignature = [
+    changeLog.tipoCambio,
+    changeLog.fechaCambio.toISOString(),
+    ...changeLog.cambios,
+  ].join('|');
+  const duplicateChecks = await Promise.all(
+    recipientIds.map(async (userId) => ({
+      userId,
+      exists: await hasRecentUnreadNotification({
+        blisterId: blister._id,
+        userId,
+        type: 'cima_change',
+        metadataFilters: {
+          medicineId: medicine._id.toString(),
+          changeSignature,
+        },
+      }),
+    })),
+  );
+
+  const severity = getCimaChangeSeverity(changeLog.cambios);
+  const title = getCimaChangeTitle(changeLog.cambios);
+  const message = `${medicine.nombre} ha recibido un cambio relevante en CIMA: ${changeLog.cambios.join(', ')}.`;
+
+  await createNotifications(
+    duplicateChecks
+      .filter((check) => !check.exists)
+      .map((check) => ({
+        userId: check.userId,
+        blisterId: medicine.blisterId,
+        type: 'cima_change' as const,
+        severity,
+        title,
+        message,
+        metadata: {
+          medicineId: medicine._id.toString(),
+          changeLogId: changeLog._id.toString(),
+          nregist: changeLog.nregist,
+          cambios: changeLog.cambios,
+          changeSignature,
+        },
+      })),
   );
 };
 
