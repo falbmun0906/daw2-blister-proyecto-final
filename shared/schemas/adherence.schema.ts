@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
 import {
-  nonNegativeIntegerSchema,
+  collectionPaginationQuerySchema,
   objectIdSchema,
   optionalTrimmedString,
+  positiveIntegerSchema,
 } from './common.schema';
 
 export const blisterLogParamsSchema = z.object({
@@ -15,16 +16,18 @@ export const logIdParamsSchema = z.object({
   id: objectIdSchema,
 });
 
+export const adherenceLogsListQuerySchema = collectionPaginationQuerySchema;
+
 export const createAdherenceLogSchema = z
   .object({
     medicineId: objectIdSchema,
     treatmentId: objectIdSchema,
-    force: z.boolean().default(false),
+    force: z.boolean().optional(),
     notes: optionalTrimmedString(500),
-    amount: nonNegativeIntegerSchema('Amount').optional(),
+    amount: positiveIntegerSchema('Amount').optional(),
   })
   .superRefine((value, context) => {
-    if (value.force && !value.notes) {
+    if (value.force === true && !value.notes) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['notes'],
@@ -34,3 +37,4 @@ export const createAdherenceLogSchema = z
   });
 
 export type CreateAdherenceLogInput = z.infer<typeof createAdherenceLogSchema>;
+export type AdherenceLogsListQuery = z.infer<typeof adherenceLogsListQuerySchema>;

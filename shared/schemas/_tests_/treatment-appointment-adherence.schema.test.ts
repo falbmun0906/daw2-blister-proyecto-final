@@ -1,4 +1,5 @@
 import {
+  adherenceLogsListQuerySchema,
   createAdherenceLogSchema,
 } from '../adherence.schema';
 import {
@@ -53,6 +54,10 @@ describe('treatment, appointment and adherence shared schemas', () => {
       page: 1,
       limit: 20,
     });
+    expect(adherenceLogsListQuerySchema.parse({})).toEqual({
+      page: 1,
+      limit: 20,
+    });
   });
 
   it('requires notes when an adherence log is forced', () => {
@@ -60,6 +65,16 @@ describe('treatment, appointment and adherence shared schemas', () => {
       medicineId: '507f1f77bcf86cd799439011',
       treatmentId: '507f1f77bcf86cd799439012',
       force: true,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects adherence amounts lower than 1 when provided', () => {
+    const result = createAdherenceLogSchema.safeParse({
+      medicineId: '507f1f77bcf86cd799439011',
+      treatmentId: '507f1f77bcf86cd799439012',
+      amount: 0,
     });
 
     expect(result.success).toBe(false);
