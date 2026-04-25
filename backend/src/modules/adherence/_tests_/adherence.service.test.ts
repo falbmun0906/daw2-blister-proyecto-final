@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { AdherenceLogModel } from '../../../models/adherenceLog.model';
 import { BlisterModel } from '../../../models/blister.model';
 import { MedicineModel } from '../../../models/medicine.model';
+import { NotificationModel } from '../../../models/notification.model';
 import { TreatmentModel } from '../../../models/treatment.model';
 import { UserModel } from '../../../models/user.model';
 import {
@@ -125,6 +126,61 @@ describe('adherence.service', () => {
     expect(storedMedicine?.stock).toBe(8);
   });
 
+  it('creates stock-low notifications for owner and caregiver when stock reaches threshold', async () => {
+    const owner = await createUser(`o${Math.random().toString(16).slice(2, 8)}`);
+    const caregiver = await createUser(`cg${Math.random().toString(16).slice(2, 8)}`);
+    const observer = await createUser(`ob${Math.random().toString(16).slice(2, 8)}`);
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+        { userId: observer._id, role: 'OBSERVER' },
+      ],
+    });
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: `${Math.floor(Math.random() * 900000 + 100000)}`,
+      nombre: 'Ibuprofeno',
+      pactivos: 'Ibuprofeno',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '400 mg',
+      iconType: 'pill',
+      stock: 4,
+      stockUnit: 'pastillas',
+      threshold: 2,
+      expDate: new Date('2030-11-01T00:00:00.000Z'),
+    });
+    const treatment = await TreatmentModel.create({
+      blisterId: blister._id,
+      title: 'Tratamiento umbral',
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 2,
+          frequency: 8,
+        },
+      ],
+      startDate: new Date('2030-11-02T00:00:00.000Z'),
+    });
+
+    await adherenceLogsCreate(blister._id.toString(), caregiver._id.toString(), 'CAREGIVER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+    });
+
+    const notifications = await NotificationModel.find({}).sort({ userId: 1 });
+
+    expect(notifications).toHaveLength(2);
+    expect(notifications.map((notification) => notification.type)).toEqual([
+      'stock_low',
+      'stock_low',
+    ]);
+    expect(notifications.map((notification) => notification.userId.toString()).sort()).toEqual(
+      [caregiver._id.toString(), owner._id.toString()].sort(),
+    );
+  });
+
   it('requires force when stock would go below zero', async () => {
     const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER', 1);
 
@@ -158,6 +214,67 @@ describe('adherence.service', () => {
     expect(result.isForced).toBe(true);
     expect(result.amount).toBe(1);
     expect(storedMedicine?.stock).toBe(0);
+  });
+
+  it('creates forced-adherence and stock-low notifications for writer roles', async () => {
+    const owner = await createUser(`fo${Math.random().toString(16).slice(2, 8)}`);
+    const caregiver = await createUser(`fc${Math.random().toString(16).slice(2, 8)}`);
+    const observer = await createUser(`fb${Math.random().toString(16).slice(2, 8)}`);
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+        { userId: observer._id, role: 'OBSERVER' },
+      ],
+    });
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: `${Math.floor(Math.random() * 900000 + 100000)}`,
+      nombre: 'Amoxicilina',
+      pactivos: 'Amoxicilina',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '500 mg',
+      iconType: 'pill',
+      stock: 1,
+      stockUnit: 'pastillas',
+      threshold: 2,
+      expDate: new Date('2030-11-01T00:00:00.000Z'),
+    });
+    const treatment = await TreatmentModel.create({
+      blisterId: blister._id,
+      title: 'Tratamiento forzado',
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 2,
+          frequency: 8,
+        },
+      ],
+      startDate: new Date('2030-11-02T00:00:00.000Z'),
+    });
+
+    await adherenceLogsCreate(blister._id.toString(), caregiver._id.toString(), 'CAREGIVER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+      force: true,
+      notes: 'Se tomo la dosis aunque el stock estaba desactualizado',
+    });
+
+    const notifications = await NotificationModel.find({}).sort({ type: 1, userId: 1 });
+
+    expect(notifications).toHaveLength(4);
+    expect(
+      notifications.filter((notification) => notification.type === 'adherence_forced'),
+    ).toHaveLength(2);
+    expect(
+      notifications.filter((notification) => notification.type === 'stock_low'),
+    ).toHaveLength(2);
+    expect(
+      notifications.every(
+        (notification) => notification.userId.toString() !== observer._id.toString(),
+      ),
+    ).toBe(true);
   });
 
   it('blocks observer writes', async () => {

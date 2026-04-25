@@ -40,5 +40,6 @@ describe('app infrastructure', () => {
     expect(response.body.openapi).toBe('3.0.3');
     expect(response.body.paths['/auth/register']).toBeDefined();
     expect(response.body.paths['/blisters/{blisterId}/medicines']).toBeDefined();
+    expect(response.body.paths['/notifications']).toBeDefined();
   });
 });

@@ -1,0 +1,146 @@
+import { BlisterModel } from '../../../models/blister.model';
+import { NotificationModel } from '../../../models/notification.model';
+import { UserModel } from '../../../models/user.model';
+import {
+  clearTestDatabase,
+  connectTestDatabase,
+  disconnectTestDatabase,
+} from '../../auth/_tests_/auth-test.utils';
+import {
+  notificationsList,
+  notificationsMarkAsRead,
+} from '../notifications.service';
+
+describe('notifications.service', () => {
+  beforeAll(async () => {
+    await connectTestDatabase();
+  });
+
+  afterEach(async () => {
+    await clearTestDatabase();
+  });
+
+  afterAll(async () => {
+    await disconnectTestDatabase();
+  });
+
+  const createUser = async (suffix: string) =>
+    UserModel.create({
+      name: `User ${suffix}`,
+      username: `user${suffix}`,
+      email: `user${suffix}@example.com`,
+      password:
+        '$2b$12$123456789012345678901uY7LwQ3xVw2Cl5EKeosFVJeFt3PcTJS.',
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
+
+  it('lists notifications for the authenticated user with pagination metadata', async () => {
+    const owner = await createUser('notify-list-owner');
+    const otherUser = await createUser('notify-list-other');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [{ userId: owner._id, role: 'OWNER' }],
+    });
+
+    await NotificationModel.create([
+      {
+        userId: owner._id,
+        blisterId: blister._id,
+        type: 'system',
+        severity: 'info',
+        title: 'Primera',
+        message: 'Primera notificacion',
+        createdAt: new Date('2030-01-02T10:00:00.000Z'),
+      },
+      {
+        userId: owner._id,
+        blisterId: blister._id,
+        type: 'stock_low',
+        severity: 'warning',
+        title: 'Segunda',
+        message: 'Segunda notificacion',
+        createdAt: new Date('2030-01-03T10:00:00.000Z'),
+      },
+      {
+        userId: otherUser._id,
+        blisterId: blister._id,
+        type: 'system',
+        severity: 'info',
+        title: 'Ajena',
+        message: 'No debe aparecer',
+        createdAt: new Date('2030-01-04T10:00:00.000Z'),
+      },
+    ]);
+
+    const result = await notificationsList(owner._id.toString(), { page: 1, limit: 1 });
+
+    expect(result.notifications).toHaveLength(1);
+    expect(result.notifications[0]?.title).toBe('Segunda');
+    expect(result.meta).toEqual({
+      page: 1,
+      limit: 1,
+      total: 2,
+      totalPages: 2,
+    });
+  });
+
+  it('marks only the owner notification as read', async () => {
+    const owner = await createUser('notify-read-owner');
+    const otherUser = await createUser('notify-read-other');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: otherUser._id, role: 'CAREGIVER' },
+      ],
+    });
+    const notification = await NotificationModel.create({
+      userId: owner._id,
+      blisterId: blister._id,
+      type: 'system',
+      severity: 'info',
+      title: 'Sistema',
+      message: 'Se ha actualizado la bandeja',
+    });
+
+    const result = await notificationsMarkAsRead(
+      notification._id.toString(),
+      owner._id.toString(),
+    );
+
+    const storedNotification = await NotificationModel.findById(notification._id);
+
+    expect(result.isRead).toBe(true);
+    expect(storedNotification?.isRead).toBe(true);
+  });
+
+  it('returns not found when trying to mark another user notification as read', async () => {
+    const owner = await createUser('notify-404-owner');
+    const otherUser = await createUser('notify-404-other');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: otherUser._id, role: 'CAREGIVER' },
+      ],
+    });
+    const notification = await NotificationModel.create({
+      userId: owner._id,
+      blisterId: blister._id,
+      type: 'system',
+      severity: 'info',
+      title: 'Privada',
+      message: 'Solo visible para owner',
+    });
+
+    await expect(
+      notificationsMarkAsRead(notification._id.toString(), otherUser._id.toString()),
+    ).rejects.toMatchObject({
+      code: 'NOTIFICATION_NOT_FOUND',
+    });
+  });
+});
