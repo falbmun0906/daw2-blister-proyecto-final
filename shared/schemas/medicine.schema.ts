@@ -5,10 +5,9 @@ import {
   nonEmptyTrimmedString,
   nonNegativeIntegerSchema,
   objectIdSchema,
+  positiveIntegerSchema,
 } from './common.schema';
 import {
-  cimaMedicineStates,
-  iconTypes,
   stockUnits,
 } from './schema.constants';
 
@@ -21,27 +20,28 @@ export const medicineIdParamsSchema = z.object({
   id: objectIdSchema,
 });
 
-const cimaStatusSchema = z.object({
-  psum: z.boolean(),
-  estado: z.enum(cimaMedicineStates.map(String) as ['1', '2', '3']).transform((value) => Number(value) as 1 | 2 | 3),
-  hasAlerts: z.boolean(),
+export const medicineSearchParamsSchema = z.object({
+  nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
+});
+
+export const medicinesListQuerySchema = z.object({
+  page: positiveIntegerSchema('Page').default(1),
+  limit: positiveIntegerSchema('Limit').max(100, 'Limit must be 100 or fewer.').default(20),
+});
+
+export const externalSearchQuerySchema = z.object({
+  q: nonEmptyTrimmedString('Search query', 100),
 });
 
 export const createMedicineSchema = z.object({
   nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
-  nombre: nonEmptyTrimmedString('Medicine name', 200),
   alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
-  pactivos: nonEmptyTrimmedString('Active ingredients', 300),
-  formaOficial: nonEmptyTrimmedString('Official form', 200),
-  dosisOficial: nonEmptyTrimmedString('Official dose', 100),
-  iconType: z.enum(iconTypes),
   stock: nonNegativeIntegerSchema('Stock'),
   stockUnit: z.enum(stockUnits),
   threshold: nonNegativeIntegerSchema('Threshold').default(5),
   expDate: dateSchema('expDate').refine((value) => value.getTime() > Date.now(), {
     message: 'expDate must be in the future.',
   }),
-  cimaStatus: cimaStatusSchema.optional(),
 });
 
 export const updateMedicineSchema = z
@@ -61,3 +61,4 @@ export const updateMedicineSchema = z
 
 export type CreateMedicineInput = z.infer<typeof createMedicineSchema>;
 export type UpdateMedicineInput = z.infer<typeof updateMedicineSchema>;
+export type MedicinesListQuery = z.infer<typeof medicinesListQuerySchema>;

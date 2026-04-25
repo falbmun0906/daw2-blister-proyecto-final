@@ -28,7 +28,8 @@ export const validate = ({ body, params, query }: ValidationSchemas): RequestHan
       }
 
       if (query) {
-        request.query = query.parse(request.query) as Request['query'];
+        const parsedQuery = query.parse(request.query) as Record<string, unknown>;
+        Object.assign(request.query as Record<string, unknown>, parsedQuery);
       }
 
       next();
