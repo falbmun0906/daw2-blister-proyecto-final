@@ -8,11 +8,16 @@ import {
   HTTP_STATUS_UNPROCESSABLE_ENTITY,
 } from '../../constants/http.constants';
 import { AdherenceLogModel } from '../../models/adherenceLog.model';
+import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { TreatmentModel } from '../../models/treatment.model';
 import { type BlisterRole } from '../../types/blister.types';
 import { type TreatmentMedicineEntry } from '../../types/treatment.types';
 import { AppError } from '../../utils/app-error';
+import {
+  notifyAdherenceForced,
+  notifyStockLow,
+} from '../notifications/notifications.service';
 import {
   type AdherenceLogsListQuery,
   type CreateAdherenceLogInput,
@@ -98,6 +103,23 @@ const getTreatmentDocument = async (blisterId: string, treatmentId: string) => {
   }
 
   return treatment;
+};
+
+const getBlisterDocument = async (blisterId: string) => {
+  const blister = await BlisterModel.findOne({
+    _id: new Types.ObjectId(blisterId),
+    deletedAt: null,
+  });
+
+  if (!blister) {
+    throw new AppError({
+      code: 'BLISTER_NOT_FOUND',
+      message: 'Blister not found.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+
+  return blister;
 };
 
 const getAdherenceLogDocument = async (blisterId: string, adherenceLogId: string) => {
@@ -219,6 +241,16 @@ export const adherenceLogsCreate = async (
     isForced,
     notes: input.notes ?? null,
   });
+
+  const blister = await getBlisterDocument(blisterId);
+
+  if (medicine.stock <= medicine.threshold) {
+    await notifyStockLow(medicine, blister);
+  }
+
+  if (isForced) {
+    await notifyAdherenceForced(adherenceLog, medicine, blister);
+  }
 
   return toAdherenceLogView(adherenceLog);
 };
