@@ -19,6 +19,11 @@ const config: Config = {
     '!src/**/_tests_/**/*.ts',
     '!../shared/**/_tests_/**/*.ts',
   ],
+  globals: {
+    'ts-jest': {
+      tsconfig: '<rootDir>/tsconfig.test.json',
+    },
+  },
 };
 
 export default config;

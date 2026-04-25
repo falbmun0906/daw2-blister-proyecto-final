@@ -2,10 +2,12 @@ import {
   createAdherenceLogSchema,
 } from '../adherence.schema';
 import {
+  appointmentsListQuerySchema,
   createAppointmentSchema,
 } from '../appointment.schema';
 import {
   createTreatmentSchema,
+  treatmentsListQuerySchema,
   updateTreatmentSchema,
 } from '../treatment.schema';
 
@@ -40,6 +42,17 @@ describe('treatment, appointment and adherence shared schemas', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('applies pagination defaults for treatments and appointments collections', () => {
+    expect(treatmentsListQuerySchema.parse({})).toEqual({
+      page: 1,
+      limit: 20,
+    });
+    expect(appointmentsListQuerySchema.parse({})).toEqual({
+      page: 1,
+      limit: 20,
+    });
   });
 
   it('requires notes when an adherence log is forced', () => {

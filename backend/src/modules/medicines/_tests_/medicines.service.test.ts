@@ -83,7 +83,7 @@ describe('medicines.service', () => {
       },
     ]);
 
-    const result = await medicinesList(blister._id.toString(), user._id.toString(), {
+    const result = await medicinesList(blister._id.toString(), {
       page: 1,
       limit: 1,
     });
