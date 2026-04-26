@@ -16,7 +16,7 @@
 //   :disabled / [aria-disabled="true"]  Opacidad reducida, no interactuable
 //   .c-btn--loading                     Muestra spinner, bloquea interacción
 
-@use '../tools/mixins' as *;
+@use '../01-tools/mixins' as *;
 
 .c-btn {
   @include touch-target;

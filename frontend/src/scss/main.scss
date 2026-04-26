@@ -5,11 +5,12 @@
 // No contiene estilos propios.
 
 @use 'sass:map';
+@use 'shared';
 
-@use 'settings';
-@use 'tools';
-@use 'generic';
-@use 'elements';
-@use 'objects';
-@use 'components';
-@use 'utilities';
+@use '00-settings' as settings;
+@use '01-tools'    as tools;
+@use '02-generic'  as generic;
+@use '03-elements' as elements;
+@use '04-objects'  as objects;
+@use '05-components' as components;
+@use '06-utilities'  as utilities;

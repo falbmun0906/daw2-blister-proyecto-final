@@ -6,6 +6,8 @@
 // donde un <a> aparece dentro de texto corrido (prospectos,
 // descripciones de tratamiento, textos legales).
 
+@use '../01-tools/mixins' as *;
+
 a {
   color: var(--color-primary);
   text-decoration: underline;
@@ -17,7 +19,6 @@ a {
   }
 
   &:focus-visible {
-    @use '../tools/mixins' as *;
     @include focus-ring;
   }
 }

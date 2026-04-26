@@ -1,120 +1,89 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import heroImg from '/pwa-512x512.png'
+import appStoreImg from '/app-store.png'
+import playStoreImg from '/play-store.png'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
       <section id="center">
         <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+          <img
+            src={heroImg}
+            className="base"
+            width="170"
+            height="170"
+            alt="Icono de la PWA Blíster"
+          />
         </div>
+
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+          <p className="eyebrow">PWA sanitaria · Próximamente</p>
+          <h1>Blíster</h1>
+          <p className="subtitle">
+            Gestiona medicación, tratamientos y recordatorios en un único lugar,
+            compartido con tu familia y conectado a fuentes oficiales de
+            medicamentos.
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        <div className="store-badge">
+          <p>Próximamente disponible en</p>
+          <div className="store-badge-row">
+            <img
+              src={appStoreImg}
+              alt="Disponible en App Store"
+              width={150}
+              height={45}
+            />
+            <img
+              src={playStoreImg}
+              alt="Disponible en Google Play"
+              width={150}
+              height={45}
+            />
+          </div>
+        </div>
       </section>
 
-      <div className="ticks"></div>
+      <div className="ticks" />
 
       <section id="next-steps">
         <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
+          <h2>Documentación</h2>
+          <p>Conoce el origen y la visión funcional del proyecto.</p>
           <ul>
             <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
+              <a href="/docs/01-introduccion.html" target="_blank">
+                01 · Introducción
               </a>
             </li>
             <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
+              <a href="/docs/02-descripcion.html" target="_blank">
+                02 · Descripción funcional
               </a>
             </li>
           </ul>
         </div>
+
         <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
+          <h2>Código fuente</h2>
+          <p>Sigue la evolución del proyecto y su desarrollo técnico.</p>
           <ul>
             <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
+              <a
+                href="https://github.com/tu-usuario/tu-repo-blister"
+                target="_blank"
+              >
+                Repositorio en GitHub
               </a>
             </li>
           </ul>
         </div>
       </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      <div className="ticks" />
+      <section id="spacer" />
     </>
   )
 }

@@ -8,7 +8,7 @@
 // y establece comportamientos base que evitan los problemas
 // más comunes en interfaces móviles.
 
-@use '../settings';
+@use '../00-settings' as settings;
 
 *,
 *::before,

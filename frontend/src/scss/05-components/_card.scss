@@ -9,7 +9,7 @@
 //   .c-card--flat         Sin sombra (para cards dentro de otras superficies)
 //   .c-card--highlighted  Borde con color primario (ítem seleccionado o activo)
 
-@use '../tools/mixins' as *;
+@use '../01-tools/mixins' as *;
 
 .c-card {
   background-color: var(--color-surface);

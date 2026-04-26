@@ -3,6 +3,10 @@
 // Este archivo NO genera CSS. Solo expone variables Sass y Mixins 
 // para que Vite los inyecte automáticamente en cada componente.
 
-@forward '00-settings/variables';
-@forward '00-settings/breakpoints';
-@forward '01-tools/mixins';
+@forward '00-settings';
+@forward '01-tools';
+@forward '02-generic';
+@forward '03-elements';
+@forward '04-objects';
+@forward '05-components';
+@forward '06-utilities';

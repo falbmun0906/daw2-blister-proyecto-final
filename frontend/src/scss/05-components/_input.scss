@@ -15,7 +15,7 @@
 //   .c-field--success  Campo validado correctamente
 //   :disabled          Campo deshabilitado
 
-@use '../tools/mixins' as *;
+@use '../01-tools/mixins' as *;
 
 .c-field {
   display: flex;

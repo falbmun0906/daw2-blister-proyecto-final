@@ -11,7 +11,7 @@
 //   .o-container--flush   Sin padding lateral (contenido full-bleed)
 //   .o-container--narrow  Ancho máximo reducido (formularios, onboarding)
 
-@use '../tools/breakpoints' as bp;
+@use '../01-tools/breakpoints' as bp;
 
 .o-container {
   width: 100%;
