@@ -15,7 +15,6 @@ const cimaChangeLogSchema = new Schema<CimaChangeLogDocument>(
       type: String,
       required: true,
       trim: true,
-      match: /^\d+$/,
       index: true,
     },
     tipoCambio: {
