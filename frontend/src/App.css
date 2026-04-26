@@ -100,13 +100,17 @@ h1 span {
 }
 
 .store-badge p {
+  margin: 0 auto;
+  font-size: 12px;
+  line-height: 135%;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--color-text);
-  opacity: 0.76;
-  font-size: 16px;
+  opacity: 0.72;
 }
 
 .store-badge-row {
-  margin-top: 14px;
+  margin-top: 2rem;
   display: flex;
   gap: 16px;
   justify-content: center;
