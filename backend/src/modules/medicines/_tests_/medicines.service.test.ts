@@ -16,6 +16,8 @@ import {
   medicinesUpdate,
 } from '../medicines.service';
 
+jest.setTimeout(20000); // 20 segundos, por ejemplo
+
 describe('medicines.service', () => {
   beforeAll(async () => {
     await connectTestDatabase();

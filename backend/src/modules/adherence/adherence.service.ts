@@ -240,6 +240,7 @@ export const adherenceLogsCreate = async (
     amount: deductedAmount,
     isForced,
     notes: input.notes ?? null,
+    timestamp: input.timestamp ?? new Date(),
   });
 
   const blister = await getBlisterDocument(blisterId);
