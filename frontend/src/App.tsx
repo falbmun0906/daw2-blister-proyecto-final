@@ -1,9 +1,16 @@
+import { useEffect } from 'react'
 import heroImg from '/pwa-512x512.png'
 import appStoreImg from '/app-store.png'
 import playStoreImg from '/play-store.png'
 import './App.css'
+import { syncThemeColorWithSections } from './lib/themeColor'
+
 
 function App() {
+  useEffect(() => {
+    return syncThemeColorWithSections()
+  }, [])
+
   return (
     <>
       <section id="center">
