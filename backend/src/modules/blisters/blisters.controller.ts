@@ -13,12 +13,14 @@ import {
   blistersList,
   blistersListMembers,
   blistersRemoveMember,
+  blistersUpdateMemberRole,
   blistersUpdate,
 } from './blisters.service';
 import {
   type CreateBlisterInput,
   type CreateInviteInput,
   type JoinBlisterInput,
+  type UpdateMemberRoleInput,
   type UpdateBlisterInput,
 } from '../../../../shared/schemas/index';
 
@@ -155,5 +157,26 @@ export const blistersRemoveMemberController = async (
   response.status(HTTP_STATUS_OK).json({
     success: true,
     data: null,
+  });
+};
+
+/**
+ * Updates a member role for a blister owner.
+ */
+export const blistersUpdateMemberRoleController = async (
+  request: Request,
+  response: Response,
+): Promise<void> => {
+  const authenticatedRequest = request as AuthenticatedRequest;
+  const result = await blistersUpdateMemberRole(
+    request.params.id as string,
+    authenticatedRequest.auth.userId,
+    request.params.memberId as string,
+    request.body as UpdateMemberRoleInput,
+  );
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: result,
   });
 };

@@ -16,6 +16,7 @@ import {
   type CreateBlisterInput,
   type CreateInviteInput,
   type JoinBlisterInput,
+  type UpdateMemberRoleInput,
   type UpdateBlisterInput,
 } from '../../../../shared/schemas/index';
 
@@ -349,4 +350,44 @@ export const blistersRemoveMember = async (
       member.userId.toString() !== targetUserId,
   );
   await blister.save();
+};
+
+/**
+ * Updates a blister member role for owners with owner-safety validation.
+ */
+export const blistersUpdateMemberRole = async (
+  blisterId: string,
+  requesterUserId: string,
+  targetUserId: string,
+  input: UpdateMemberRoleInput,
+): Promise<BlisterMemberView[]> => {
+  const blister = await ensureOwnerAccess(blisterId, requesterUserId);
+  const targetMember = findMembership(blister, targetUserId);
+
+  if (!targetMember) {
+    throw new AppError({
+      code: 'BLISTER_MEMBER_NOT_FOUND',
+      message: 'Member not found in blister.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+
+  if (targetMember.role === input.role) {
+    return blister.members.map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => ({
+      userId: member.userId.toString(),
+      role: member.role,
+    }));
+  }
+
+  if (targetMember.role === 'OWNER' && input.role !== 'OWNER') {
+    ensureOwnerProtection(blister, targetUserId);
+  }
+
+  targetMember.role = input.role;
+  await blister.save();
+
+  return blister.members.map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => ({
+    userId: member.userId.toString(),
+    role: member.role,
+  }));
 };

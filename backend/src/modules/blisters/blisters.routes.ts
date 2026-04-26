@@ -6,6 +6,7 @@ import {
   createInviteSchema,
   joinBlisterSchema,
   memberIdParamsSchema,
+  updateMemberRoleSchema,
   updateBlisterSchema,
 } from '../../../../shared/schemas/index';
 import { authenticate } from '../../middleware/authenticate';
@@ -18,6 +19,7 @@ import {
   blistersListController,
   blistersListMembersController,
   blistersRemoveMemberController,
+  blistersUpdateMemberRoleController,
   blistersUpdateController,
 } from './blisters.controller';
 
@@ -200,4 +202,29 @@ blistersRouter.delete(
   '/:id/members/:memberId',
   validate({ params: memberIdParamsSchema }),
   blistersRemoveMemberController,
+);
+
+/**
+ * @openapi
+ * /blisters/{id}/members/{memberId}/role:
+ *   patch:
+ *     summary: Update role for a blister member
+ *     tags:
+ *       - Blisters
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Member role updated.
+ *       403:
+ *         description: Owner role required.
+ *       404:
+ *         description: Member not found.
+ *       409:
+ *         description: Operation would leave the blister without an owner.
+ */
+blistersRouter.patch(
+  '/:id/members/:memberId/role',
+  validate({ params: memberIdParamsSchema, body: updateMemberRoleSchema }),
+  blistersUpdateMemberRoleController,
 );
