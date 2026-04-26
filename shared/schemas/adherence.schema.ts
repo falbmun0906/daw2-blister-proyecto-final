@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   collectionPaginationQuerySchema,
+  dateSchema,
   objectIdSchema,
   optionalTrimmedString,
   positiveIntegerSchema,
@@ -23,6 +24,7 @@ export const createAdherenceLogSchema = z
     medicineId: objectIdSchema,
     treatmentId: objectIdSchema,
     force: z.boolean().optional(),
+    timestamp: dateSchema('timestamp').optional(),
     notes: optionalTrimmedString(500),
     amount: positiveIntegerSchema('Amount').optional(),
   })

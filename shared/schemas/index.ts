@@ -4,6 +4,7 @@ export * from './auth.schema';
 export * from './blister.schema';
 export * from './common.schema';
 export * from './medicine.schema';
+export * from './mcp.schema';
 export * from './notification.schema';
 export * from './schema.constants';
 export * from './settings.schema';

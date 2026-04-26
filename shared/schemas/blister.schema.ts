@@ -19,6 +19,10 @@ export const memberIdParamsSchema = z.object({
   memberId: objectIdSchema,
 });
 
+export const updateMemberRoleSchema = z.object({
+  role: z.enum(blisterRoles),
+});
+
 export const createBlisterSchema = z.object({
   name: nonEmptyTrimmedString('Blister name', 120),
 });
@@ -43,3 +47,4 @@ export type CreateBlisterInput = z.infer<typeof createBlisterSchema>;
 export type UpdateBlisterInput = z.infer<typeof updateBlisterSchema>;
 export type CreateInviteInput = z.infer<typeof createInviteSchema>;
 export type JoinBlisterInput = z.infer<typeof joinBlisterSchema>;
+export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;
