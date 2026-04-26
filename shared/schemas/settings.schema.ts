@@ -10,6 +10,7 @@ export const settingsSchema = z.object({
   theme: z.enum(themeOptions),
   font: z.enum(fontOptions),
   fontSize: z.enum(fontSizeOptions),
+  avatarKey: z.string().trim().min(1).max(100).optional(),
 });
 
 export const updateSettingsSchema = settingsSchema.partial().refine(

@@ -14,6 +14,7 @@ export interface UserSettings {
   theme: ThemeOption;
   font: FontOption;
   fontSize: FontSizeOption;
+  avatarKey?: string;
 }
 
 export interface UserDocument {

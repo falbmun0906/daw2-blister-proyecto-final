@@ -30,6 +30,13 @@ const userSettingsSchema = new Schema<UserDocument['settings']>(
       required: true,
       trim: true,
     },
+    avatarKey: {
+      type: String,
+      trim: true,
+      minlength: 1,
+      maxlength: 100,
+      default: undefined,
+    },
   },
   {
     _id: false,
