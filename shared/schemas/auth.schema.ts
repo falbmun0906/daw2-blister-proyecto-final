@@ -5,7 +5,33 @@ import {
   objectIdSchema,
   optionalTrimmedString,
 } from './common.schema';
+import { settingsSchema } from './settings.schema';
 import { updateSettingsSchema } from './settings.schema';
+
+export const userSchema = z.object({
+  id: objectIdSchema,
+  name: nonEmptyTrimmedString('Name', 100),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, 'Username must be at least 3 characters long.')
+    .max(50, 'Username must be 50 characters or fewer.')
+    .regex(/^[a-z0-9._-]+$/, 'Username contains invalid characters.'),
+  email: z.string().trim().toLowerCase().email('Email must be valid.'),
+  settings: settingsSchema,
+});
+
+export const authTokensSchema = z.object({
+  accessToken: z.string().trim().min(1, 'Access token is required.'),
+  refreshToken: z.string().trim().min(1, 'Refresh token is required.'),
+});
+
+export const authSessionSchema = authTokensSchema.extend({
+  user: userSchema,
+});
+
+export const authProfileSchema = userSchema;
 
 const passwordSchema = z
   .string()
@@ -116,3 +142,6 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type McpTokenInput = z.infer<typeof mcpTokenSchema>;
+export type UserInput = z.infer<typeof userSchema>;
+export type AuthTokensInput = z.infer<typeof authTokensSchema>;
+export type AuthSessionInput = z.infer<typeof authSessionSchema>;
