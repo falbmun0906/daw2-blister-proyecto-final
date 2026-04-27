@@ -1,0 +1,26 @@
+export const ROUTES = {
+  root: '/',
+  landing: '/landing',
+  login: '/login',
+  register: '/register',
+  forgotPassword: '/forgot-password',
+  home: '/home',
+  blisters: '/blisters',
+  createBlister: '/blisters/new',
+  joinBlister: '/blisters/join',
+  blisterDetail: (blisterId: string) => `/blisters/${blisterId}`,
+  blisterMembers: (blisterId: string) => `/blisters/${blisterId}/members`,
+  blisterMedications: (blisterId: string) => `/blisters/${blisterId}/medicines`,
+  blisterTreatments: (blisterId: string) => `/blisters/${blisterId}/treatments`,
+  blisterAppointments: (blisterId: string) => `/blisters/${blisterId}/appointments`,
+  blisterNotifications: (blisterId: string) => `/blisters/${blisterId}/notifications`,
+  medicineDetail: (blisterId: string, medicineId: string) =>
+    `/blisters/${blisterId}/medicines/${medicineId}`,
+  treatmentDetail: (blisterId: string, treatmentId: string) =>
+    `/blisters/${blisterId}/treatments/${treatmentId}`,
+  profile: '/profile',
+  settings: '/settings',
+  accessibility: '/accessibility',
+  mcp: '/mcp',
+  notFound: '*',
+} as const;
