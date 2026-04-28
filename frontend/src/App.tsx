@@ -4,10 +4,16 @@ import { ROUTES } from './constants/routes'
 import { GuestRoute } from './router/GuestRoute'
 import { PrivateRoute } from './router/PrivateRoute'
 import LandingPage from './pages/Landing/LandingPage'
+import OnboardingPage from './pages/Onboarding/OnboardingPage'
+import LoginPage from './pages/Login/LoginPage'
+import RegisterPage from './pages/Register/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPassword/ForgotPasswordPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 
 function AppLayout() {
-  return <Outlet />
+  return (
+    <Outlet />
+  )
 }
 
 function App() {
@@ -16,11 +22,14 @@ function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to={ROUTES.landing} replace />} />
+          <Route path="/" element={<Navigate to={ROUTES.landing} replace />} />
           <Route path={ROUTES.landing} element={<LandingPage />} />
+          <Route path={ROUTES.access} element={<Navigate to={ROUTES.landing} replace />} />
+          <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
           <Route element={<GuestRoute />}>
-            <Route path={ROUTES.login} element={<PlaceholderPage />} />
-            <Route path={ROUTES.register} element={<PlaceholderPage />} />
-            <Route path={ROUTES.forgotPassword} element={<PlaceholderPage />} />
+            <Route path={ROUTES.login} element={<LoginPage />} />
+            <Route path={ROUTES.register} element={<RegisterPage />} />
+            <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
           </Route>
           <Route element={<PrivateRoute />}>
             <Route path={ROUTES.home} element={<PlaceholderPage />} />
