@@ -1,0 +1,201 @@
+.c-onboarding-page {
+  color: var(--color-text);
+
+  &__inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  &__slide {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  /* Imagen cuadrada, pegada a bordes */
+  &__image-frame {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Header superpuesto encima de la imagen */
+  &__header {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    left: var(--space-4);
+    z-index: 2;
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+  }
+
+  &__skip-btn {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    cursor: pointer;
+    text-shadow: none;
+    pointer-events: auto;
+  }
+
+  &__skip-btn--overlay {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Contenido texto base */
+  &__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; // centra verticalmente
+    text-align: center;
+    padding: var(--space-5) var(--space-4) 0;
+    gap: var(--space-3);
+  }
+
+  /* Welcome: agrupa los dos bloques */
+  &__content--welcome {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  &__welcome-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-5);
+  }
+
+  &__welcome-block--top {
+    gap: 2rem; // brand-title + logo
+  }
+
+  &__welcome-block--bottom {
+  }
+
+  &__logo {
+    width: clamp(10rem, 40vw, 14rem);
+    height: auto;
+    margin: 0 auto;
+    filter: drop-shadow(2px 2px 0px grey);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    color: var(--color-text);
+    font-size: var(--text-3xl);
+    line-height: 0.96;
+    letter-spacing: -0.03em;
+    text-align: center;
+  }
+
+  &__title-accent {
+    color: var(--color-accent);
+  }
+
+  &__description {
+    margin: 0;
+    max-width: 28rem;
+    font-size: var(--text-lg);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text);
+    opacity: 0.9;
+  }
+
+  &__brand-title {
+    font-family: var(--font-display);
+    font-size: var(--text-main-title);
+    font-weight: inherit;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-xtight);
+    color: var(--color-text);
+  }
+
+  /* Footer con dots + botón */
+  &__footer {
+    padding: var(--space-4) var(--space-4) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  &__cta {
+    align-self: stretch;
+    margin-top: var(--space-1);
+  }
+}
+
+/* Ajuste fino solo para viewports bajos (ej. iPhone SE) */
+@media (max-height: 700px) {
+  .c-onboarding-page {
+    &__image-frame {
+      max-height: 40vh;
+      aspect-ratio: auto;
+    }
+
+    &__image {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      object-fit: cover;
+    }
+
+    &__content {
+      padding-top: var(--space-4);
+      gap: var(--space-2);
+    }
+
+    &__content--welcome {
+      gap: var(--space-6);
+    }
+
+    &__title {
+      font-size: var(--text-2xl);
+    }
+
+    &__description {
+      font-size: var(--text-base);
+    }
+  }
+}
+
+/* SOLO desktop: compactar un poco welcome, sin tocar las demás */
+@media (min-width: 64rem) {
+  .c-onboarding-page {
+    &__content--welcome {
+      gap: var(--space-8);      // antes var(--space-10)
+    }
+
+    &__welcome-block--top {
+      gap: 1.5rem;              // acerco brand-title y logo
+    }
+
+    &__logo {
+      width: clamp(9rem, 32vw, 12rem); // un pelín más pequeño
+    }
+
+    &__footer {
+      padding-top: var(--space-3);
+      padding-bottom: var(--space-4);
+    }
+  }
+}
