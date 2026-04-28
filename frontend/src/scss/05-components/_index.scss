@@ -1,8 +1,10 @@
 // components/_index.scss
 
 @forward 'button';
+@forward 'auth-layout';
 @forward 'input';
 @forward 'card';
 @forward 'empty-state';
 @forward 'error-state';
+@forward 'onboarding-dots';
 @forward 'skeleton';
