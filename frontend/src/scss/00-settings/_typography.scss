@@ -24,9 +24,9 @@
 
   // ─── FAMILIAS ────────────────────────────────────────────────────────────
 
-  --font-display:   'Overpass', system-ui, sans-serif;
-  --font-body:      'Nunito',   system-ui, sans-serif;
-  --font-dyslexia:  'OpenDyslexic', sans-serif;
+  --font-display: 'Overpass', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  --font-dyslexia: 'OpenDyslexic', sans-serif;
 
 
   // ─── ESCALA — clamp(mínimo, preferido, máximo) ───────────────────────────
@@ -38,12 +38,28 @@
   //  --text-xl    22–28px  Títulos de sección — H2, H3 (--font-body)
   //  --text-2xl   28–36px  H1 de pantalla — display (--font-display, Overpass)
 
-  --text-xs:    clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
-  --text-sm:    clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
-  --text-base:  clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
-  --text-lg:    clamp(1.125rem, 1rem    + 0.5vw,  1.375rem);
-  --text-xl:    clamp(1.375rem, 1.2rem  + 0.75vw, 1.75rem);
-  --text-2xl:   clamp(1.75rem,  1.5rem  + 1vw,    2.25rem);
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  --text-xl: clamp(1.375rem, 1.2rem + 0.75vw, 1.75rem);
+  --text-2xl: clamp(1.75rem, 1.5rem + 1vw, 2.25rem);
+  --text-3xl: clamp(2rem, 1.7rem + 1.1vw, 2.75rem);
+  --text-4xl: clamp(2.5rem, 2rem + 1.4vw, 3.5rem);
+  --text-5xl: clamp(3rem, 2.4rem + 1.8vw, 4.25rem);
+  --text-main-title: 6rem;
+
+  @media (min-width: 48rem) {
+    :root {
+      --text-main-title: 4.5rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    :root {
+      --text-main-title: 5rem;
+    }
+  }
 
 
   // ─── PESOS ───────────────────────────────────────────────────────────────
@@ -52,10 +68,10 @@
   //  Overpass: 300, 400, 600, 700
   //  Uso de pesos intermedios (500, 600) requiere --font-body (Nunito).
 
-  --font-weight-regular:   400;
-  --font-weight-medium:    500;
-  --font-weight-semibold:  600;
-  --font-weight-bold:      700;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 
 
   // ─── INTERLINEADO ────────────────────────────────────────────────────────
@@ -65,10 +81,10 @@
   //  --leading-normal   Cuerpo de texto (Nunito requiere espacio generoso)
   //  --leading-relaxed  Descripciones largas, prospectos, texto de ayuda
 
-  --leading-tight:    1.2;
-  --leading-snug:     1.35;
-  --leading-normal:   1.55;
-  --leading-relaxed:  1.75;
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.75;
 
 
   // ─── TRACKING (letter-spacing) ───────────────────────────────────────────
@@ -78,10 +94,11 @@
   //  --tracking-wide     Labels en mayúsculas pequeñas
   //  --tracking-widest   Badges de estado en mayúsculas (TOMADO, CADUCADO)
 
-  --tracking-tight:   -0.01em;
-  --tracking-normal:   0em;
-  --tracking-wide:     0.05em;
-  --tracking-widest:   0.08em;
+  --tracking-xtight: -0.03em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.05em;
+  --tracking-widest: 0.08em;
 }
 
 
@@ -91,8 +108,8 @@
 // Sustituye Nunito por OpenDyslexic y amplía el interlineado.
 
 [data-font="dyslexic"] {
-  --font-body:      'OpenDyslexic', sans-serif;
-  --leading-normal:  1.8;
+  --font-body: 'OpenDyslexic', sans-serif;
+  --leading-normal: 1.8;
   --leading-relaxed: 2;
 }
 
@@ -102,5 +119,13 @@
 // Activado con data-text-size en <html> desde el panel de accesibilidad.
 // Escala el font-size raíz; todos los clamp() se recalculan en cascada.
 
-[data-text-size="large"]  { font-size: 112.5%; }  // 1rem = 18px
-[data-text-size="xlarge"] { font-size: 125%; }    // 1rem = 20px
+[data-text-size="large"] {
+  font-size: 112.5%;
+}
+
+// 1rem = 18px
+[data-text-size="xlarge"] {
+  font-size: 125%;
+}
+
+// 1rem = 20px

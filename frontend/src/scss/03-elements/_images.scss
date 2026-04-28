@@ -5,8 +5,8 @@
 
 img {
   // Fondo de reserva mientras la imagen carga o si falla
-  background-color: var(--color-surface-tinted);
-  border-radius: var(--radius-sm);
+  background-color: transparent;
+  border-radius: none;
 }
 
 svg {
