@@ -5,6 +5,7 @@
 // VARIANTES:
 //   .c-btn--primary    CTA principal (fondo primario, texto blanco)
 //   .c-btn--secondary  Acción secundaria (borde primario, fondo transparente)
+//   .c-btn--primary-outline Variante de contorno principal
 //   .c-btn--ghost      Acción terciaria (sin borde, solo texto)
 //   .c-btn--danger     Acciones destructivas (eliminar, revocar acceso)
 //
@@ -29,7 +30,7 @@
   padding: var(--space-4) var(--space-6);
   min-height: var(--space-touch-comfortable);
   border-radius: var(--radius-full);
-  border: 2px solid transparent;
+  border: 1px solid transparent;
 
   font-family: var(--font-body);
   font-size: var(--text-sm);
@@ -60,10 +61,28 @@
   &--primary {
     background-color: var(--color-primary-mid);
     color: var(--color-text-on-primary);
-    border-color: var(--color-primary-mid);
+    border-color: var(--color-primary);
 
-    &:hover  { background-color: var(--color-primary-mid-hover); border-color: var(--color-primary-mid-hover); }
+    &:hover  { background-color: var(--color-primary-hover); border-color: var(--color-primary-hover); }
     &:active { background-color: var(--color-primary-active);    border-color: var(--color-primary-active); }
+  }
+
+  &--primary-outline {
+    background-color: transparent;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+
+    &:hover {
+      background-color: var(--color-primary-mid-hover);
+      border-color: var(--color-primary-mid);
+      color: var(--color-text-on-primary);
+    }
+
+    &:active {
+      background-color: var(--color-primary-active);
+      border-color: var(--color-primary-hover);
+      color: var(--color-text-on-primary);
+    }
   }
 
   &--secondary {
