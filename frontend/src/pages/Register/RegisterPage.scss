@@ -1,0 +1,107 @@
+.c-register-page {
+  color: var(--color-text);
+
+  &__inner {
+    gap: var(--space-5);
+  }
+
+  &__header {
+    display: grid;
+    grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
+    align-items: center;
+    column-gap: var(--space-3);
+  }
+
+  &__back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--space-touch-min);
+    min-height: var(--space-touch-min);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-primary);
+  }
+
+  &__back-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-snug);
+    text-align: center;
+    color: var(--color-primary);
+  }
+
+  &__spacer {
+    min-width: var(--space-touch-min);
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  &__checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-tinted);
+  }
+
+  &__checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    cursor: pointer;
+  }
+
+  &__checkbox-input {
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    margin-top: 0.125rem;
+    accent-color: var(--color-primary);
+  }
+
+  &__checkbox-text {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--color-text);
+  }
+
+  &__link,
+  &__login-link {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__error-message {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-error-subtle);
+    color: var(--color-error);
+    font-size: var(--text-xs);
+  }
+
+  &__submit {
+    margin-top: var(--space-1);
+  }
+
+  &__footer {
+    margin: 0;
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+}
