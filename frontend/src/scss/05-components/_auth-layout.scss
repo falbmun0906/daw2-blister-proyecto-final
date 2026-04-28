@@ -1,56 +1,56 @@
 .c-auth-layout {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100dvh;
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  padding: 0;
-
-  &__inner {
-    width: 100%;
-    max-width: 28rem;
-    min-height: 100dvh;
-    margin-inline: auto;
     display: flex;
-    flex-direction: column;
-  }
-
-  @media (min-width: 64rem) {
-    /* Fondo por defecto (login, etc.) */
+    justify-content: center;
+    align-items: center;
+    min-height: 100dvh;
     background-color: var(--color-bg);
+    color: var(--color-text);
+    padding: 0;
 
     &__inner {
-      width: 70.375rem;
-      min-height: 38rem;
-      max-height: 42rem;
-      margin-inline: auto;
-      border-radius: 25px;
-      box-shadow: none;
-      overflow: hidden;
-
-      /* filo terracota fino alrededor */
-      border-inline: 0.1rem solid var(--color-accent);
-      border-block: 0.1rem solid var(--color-accent);
-
-      padding: 0;
-      background-color: var(--color-bg); // <- card gris por defecto
-    }
-
-    /* Modificador: layout usado por onboarding */
-    &.c-onboarding-page {
-      /* fondo exterior brand */
-      background-color: var(--color-brand-surface);
-
-      &__inner {
-        /* la card mantiene el gris interior */
-        background-color: var(--color-bg); // gris de la app
-        min-height: 38rem;
-        max-height: 42rem;
+        width: 100%;
+        max-width: 28rem;
+        min-height: 100dvh;
+        margin-inline: auto;
         display: flex;
-        align-items: stretch;
-        justify-content: center;
-      }
+        flex-direction: column;
     }
-  }
+
+    @media (min-width: 64rem) {
+        /* Fondo por defecto (login, etc.) */
+        background-color: var(--color-bg);
+
+        &__inner {
+            width: 70.375rem;
+            min-height: 38rem;
+            max-height: 42rem;
+            margin-inline: auto;
+            border-radius: 25px;
+            box-shadow: none;
+            overflow: hidden;
+
+            /* filo terracota fino alrededor */
+            border-inline: 0.1rem solid var(--color-accent);
+            border-block: 0.1rem solid var(--color-accent);
+
+            padding: 0;
+            background-color: var(--color-bg); // <- card gris por defecto
+        }
+
+        /* Modificador: layout usado por onboarding */
+        &.c-onboarding-page {
+            /* fondo exterior brand */
+            background-color: var(--color-brand-surface);
+
+            &__inner {
+                /* la card mantiene el gris interior */
+                background-color: var(--color-bg); // gris de la app
+                min-height: 38rem;
+                max-height: 42rem;
+                display: flex;
+                align-items: stretch;
+                justify-content: center;
+            }
+        }
+    }
 }
