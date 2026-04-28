@@ -1,5 +1,7 @@
 import { useId, type ReactNode } from 'react';
 
+import { Button } from './Button';
+
 interface EmptyStateProps {
   title: string;
   description: string;
@@ -19,9 +21,9 @@ export function EmptyState({ title, description, ctaLabel, onCtaClick, children 
       <p className="c-empty-state__description">{description}</p>
       {children}
       {ctaLabel && onCtaClick ? (
-        <button className="c-btn c-btn--primary" type="button" onClick={onCtaClick}>
+        <Button type="button" variant="primary" onClick={onCtaClick}>
           {ctaLabel}
-        </button>
+        </Button>
       ) : null}
     </section>
   );
