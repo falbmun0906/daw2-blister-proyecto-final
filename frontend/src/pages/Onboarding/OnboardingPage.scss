@@ -84,10 +84,8 @@
     }
 
     &__welcome-block--top {
-        gap: 2rem; // brand-title + logo
+        gap: 2rem;
     }
-
-    &__welcome-block--bottom {}
 
     &__logo {
         width: clamp(10rem, 40vw, 14rem);

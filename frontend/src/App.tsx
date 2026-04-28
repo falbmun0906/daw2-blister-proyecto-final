@@ -9,6 +9,7 @@ import LoginPage from './pages/Login/LoginPage'
 import RegisterPage from './pages/Register/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPassword/ForgotPasswordPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { OnboardingRoute } from './router/OnboardingRoute'
 
 function AppLayout() {
   return (
@@ -26,6 +27,10 @@ function App() {
           <Route path={ROUTES.landing} element={<LandingPage />} />
           <Route path={ROUTES.access} element={<Navigate to={ROUTES.landing} replace />} />
           <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
+          {/* Onboarding solo accesible si canReplayOnboarding === true */}
+          <Route element={<OnboardingRoute />}>
+            <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
+          </Route>
           <Route element={<GuestRoute />}>
             <Route path={ROUTES.login} element={<LoginPage />} />
             <Route path={ROUTES.register} element={<RegisterPage />} />

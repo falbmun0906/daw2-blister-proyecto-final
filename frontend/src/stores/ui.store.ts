@@ -1,3 +1,4 @@
+// src/stores/ui.store.ts
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -15,10 +16,13 @@ export interface ToastItem {
 interface UiState {
   toasts: ToastItem[];
   hasSeenOnboarding: boolean;
+  canReplayOnboarding: boolean;
   addToast: (toast: Omit<ToastItem, 'id' | 'durationMs'> & { durationMs?: number }) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
   setHasSeenOnboarding: (value: boolean) => void;
+  enableOnboardingReplay: () => void;
+  disableOnboardingReplay: () => void;
 }
 
 const createToastId = (): string =>
@@ -29,6 +33,7 @@ export const useUiStore = create<UiState>()(
     (set) => ({
       toasts: [],
       hasSeenOnboarding: false,
+      canReplayOnboarding: false,
       addToast: ({ message, variant, durationMs = TOAST_DURATION_MS }) => {
         const id = createToastId();
         set((state) => ({
@@ -42,12 +47,15 @@ export const useUiStore = create<UiState>()(
         })),
       clearToasts: () => set({ toasts: [] }),
       setHasSeenOnboarding: (value) => set({ hasSeenOnboarding: value }),
+      enableOnboardingReplay: () => set({ canReplayOnboarding: true }),
+      disableOnboardingReplay: () => set({ canReplayOnboarding: false }),
     }),
     {
       name: 'blister-ui',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         hasSeenOnboarding: state.hasSeenOnboarding,
+        canReplayOnboarding: state.canReplayOnboarding,
       }),
     },
   ),

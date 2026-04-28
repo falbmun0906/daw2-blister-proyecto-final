@@ -18,10 +18,6 @@
    - 4.2 [Propuesta de valor diferencial](#42-propuesta-de-valor-diferencial)
 5. [Expectativas de éxito](#5-expectativas-de-éxito)
 
-Aquí tienes el desarrollo del primer bloque del documento, redactado de forma profesional y ajustada a la normativa ortográfica del español.
-
----
-
 ## 1. Identificación del proyecto
 
 Este proyecto surge como el trabajo final del ciclo de Grado Superior de Desarrollo de Aplicaciones Web (DAW). Ha sido diseñado y desarrollado por **Francisco Alba Muñoz**, con el objetivo de integrar las competencias técnicas adquiridas durante la formación académica en una solución tecnológica con impacto real en la salud y el bienestar cotidiano.
@@ -40,8 +36,6 @@ Desde el punto de vista de la identidad de marca, Blíster busca transmitir:
 *   **Modernidad:** A través de la integración de protocolos de IA de vanguardia.
 
 El logotipo y la guía de estilos (que se detallarán en el apartado 04) utilizan tonos verde-azulados (*teal*), asociados tradicionalmente a la higiene, la salud y la calma, garantizando a su vez un alto contraste para cumplir con las necesidades de accesibilidad del proyecto.
-
-Desarrollamos el bloque 2, que es el que otorga la carga emocional y la justificación real al proyecto. Este apartado es fundamental para que el tribunal entienda que no has elegido la temática al azar, sino para resolver un problema de seguridad sanitaria.
 
 ## 2. Origen y motivación
 
@@ -70,8 +64,6 @@ El incumplimiento de los tratamientos es un problema de salud pública de primer
 Por otro lado, la **Fundación Española del Corazón** advierte que la falta de adherencia terapéutica es una de las principales causas de hospitalización evitable y de fracaso en el control de enfermedades cardiovasculares. 
 
 Blíster busca mitigar esta problemática proporcionando una herramienta que no solo recuerde la toma, sino que asegure que el medicamento esté disponible, vigente y correctamente supervisado por el entorno familiar, reduciendo así la carga cognitiva del paciente y el riesgo de errores médicos en el hogar.
-
-Este apartado es fundamental para que el tribunal identifique qué competencias del ciclo de DAW estás aplicando. He redactado los objetivos de forma que destaquen tanto la parte técnica (programación y despliegue) como la parte de diseño e innovación.
 
 ## 3. Objetivos del proyecto
 
@@ -125,8 +117,6 @@ Blíster no busca replicar la complejidad de una aplicación clínica, sino ofre
 1.  **Integración con la fuente oficial (AEMPS):** A diferencia de otras apps que utilizan bases de datos genéricas o internacionales, Blíster consume la API de la **Agencia Española de Medicamentos y Productos Sanitarios**. Esto garantiza que la información (nombres, principios activos y prospectos) sea la oficial vigente en España, aportando una capa de seguridad y rigor fundamental para el usuario.
 2.  **Interoperabilidad mediante MCP (Model Context Protocol):** Blíster es pionero en la implementación de este protocolo. Mientras que otras apps intentan retener al usuario en su interfaz, Blíster permite que sus datos sean accesibles (bajo estricta autorización) por los agentes de inteligencia artificial personales del usuario (Claude, ChatGPT, etc.). Esto permite consultas de lenguaje natural como *"¿Me queda Ibuprofeno?"* o *"Anota que me he tomado la pastilla del desayuno"*, integrando la salud en el flujo de trabajo digital moderno.
 3.  **Accesibilidad web universal (PWA):** Al ser una aplicación web progresiva, Blíster ofrece la potencia de una app nativa (notificaciones, instalación en móvil, uso offline) con la inmediatez de la web, funcionando en cualquier dispositivo con un navegador sin necesidad de pasar por intermediarios.
-
-Para concluir el primer documento de la memoria, este apartado define qué se considera un resultado exitoso para el proyecto, tanto desde la perspectiva de utilidad para el usuario como desde el crecimiento profesional y técnico del desarrollador.
 
 ## 5. Expectativas de éxito
 
