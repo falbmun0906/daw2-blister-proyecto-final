@@ -57,7 +57,7 @@
     font-weight: 500;
     color: var(--color-text);
     font-size: 3.5rem; // 56px
-    letter-spacing: -0.03em; // -1.68px aprox
+    letter-spacing: var(--tracking-xtight);
     line-height: 0.96;
     margin: 1.5rem 0 1.25rem; // 24px 0 20px
   }
