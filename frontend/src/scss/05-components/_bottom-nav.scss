@@ -55,6 +55,12 @@
       opacity: 1;
       font-weight: var(--font-weight-semibold);
     }
+
+    &.is-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   }
 
   &__icon {
