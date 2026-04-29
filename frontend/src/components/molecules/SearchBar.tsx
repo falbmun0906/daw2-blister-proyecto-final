@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { TbSearch, TbX } from 'react-icons/tb';
+import { TbSearch, TbX, TbMicrophone, TbMicrophoneOff } from 'react-icons/tb';
 
 interface SearchBarProps {
   value: string;
@@ -9,12 +9,39 @@ interface SearchBarProps {
   debounceMs?: number;
   autoFocus?: boolean;
   className?: string;
+  /** Activa el botón de dictado por voz (Web Speech API). */
+  enableVoice?: boolean;
+}
+
+// Tipos mínimos para Web Speech API (no están en lib.dom estándar de TS).
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: ((event: unknown) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
+function getSpeechRecognition(): SpeechRecognitionCtor | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionCtor;
+    webkitSpeechRecognition?: SpeechRecognitionCtor;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
 /**
  * Input de búsqueda controlado con debounce. El callback `onChange` se
  * invoca con el valor estabilizado (por defecto 300 ms) o inmediatamente
  * cuando el usuario pulsa el botón de limpieza.
+ *
+ * Si `enableVoice` está activo y el navegador soporta Web Speech API,
+ * muestra un botón de micrófono que dicta texto en el input.
  */
 export function SearchBar({
   value,
@@ -24,10 +51,13 @@ export function SearchBar({
   debounceMs = 300,
   autoFocus = false,
   className,
+  enableVoice = false,
 }: SearchBarProps) {
   const inputId = useId();
   const [internal, setInternal] = useState(value);
+  const [isListening, setIsListening] = useState(false);
   const timerRef = useRef<number | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
     setInternal(value);
@@ -46,6 +76,37 @@ export function SearchBar({
   const handleClear = () => {
     setInternal('');
     onChange('');
+  };
+
+  const Recognition = enableVoice ? getSpeechRecognition() : null;
+  const voiceSupported = !!Recognition;
+
+  const handleVoice = () => {
+    if (!Recognition) return;
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript ?? '';
+      if (transcript) {
+        setInternal(transcript);
+        onChange(transcript);
+      }
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    setIsListening(true);
+    try {
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
   };
 
   return (
@@ -71,6 +132,23 @@ export function SearchBar({
           aria-label="Limpiar búsqueda"
         >
           <TbX className="c-icon c-icon--sm" aria-hidden="true" />
+        </button>
+      ) : enableVoice && voiceSupported ? (
+        <button
+          type="button"
+          className={[
+            'c-search-bar__voice',
+            isListening && 'is-listening',
+          ].filter(Boolean).join(' ')}
+          onClick={handleVoice}
+          aria-label={isListening ? 'Detener dictado' : 'Buscar por voz'}
+          aria-pressed={isListening}
+        >
+          {isListening ? (
+            <TbMicrophoneOff className="c-icon c-icon--sm" aria-hidden="true" />
+          ) : (
+            <TbMicrophone className="c-icon c-icon--sm" aria-hidden="true" />
+          )}
         </button>
       ) : null}
     </div>

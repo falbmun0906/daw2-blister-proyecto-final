@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { TbAlertTriangle, TbFileText, TbChevronRight, TbPencil } from 'react-icons/tb';
 
 import { ROUTES } from '../../constants/routes';
 import type { Medicine } from '../../types/medicine.types';
 import { MedicineIcon } from '../molecules/MedicineIcon';
-import { StockBadge } from '../molecules/StockBadge';
 
 interface MedicineCardProps {
   medicine: Medicine;
@@ -24,35 +24,111 @@ function expiryClass(days: number): string {
   return '';
 }
 
+function formatExpiry(iso: string): string {
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(iso));
+}
+
+/**
+ * Tarjeta de medicamento con estructura visual:
+ *   - Header (fondo tinte primario, esquinas superiores redondeadas):
+ *     icono + nombre + lápiz editar + chevron a detalle.
+ *   - Body: cantidad, caducidad y banderas de contraindicación
+ *     (conducción, triángulo amarillo de farmacovigilancia).
+ *
+ * Toda la tarjeta es enlace al detalle salvo el botón de editar.
+ */
 export function MedicineCard({ medicine, blisterId }: MedicineCardProps) {
+  const navigate = useNavigate();
   const days = daysUntil(medicine.expDate);
   const displayName = medicine.alias?.trim() || medicine.nombre;
-  const expiryLabel =
-    days < 0 ? 'Caducado' : days <= 30 ? `Caduca en ${days} d` : '';
+  const expiryDate = formatExpiry(medicine.expDate);
+  const expiredOrWarning = days < 0 || days <= 30;
+
+  const handleEdit = (event: React.MouseEvent) => {
+    // Evita navegar al detalle al pulsar el lápiz (tarjeta-link).
+    event.preventDefault();
+    event.stopPropagation();
+    navigate(ROUTES.editMedicine(blisterId, medicine._id));
+  };
 
   return (
     <Link
       to={ROUTES.medicineDetail(blisterId, medicine._id)}
       className="c-medicine-card"
-      aria-label={`${displayName}, ${medicine.dosisOficial}`}
+      aria-label={`${displayName}, ${medicine.dosisOficial ?? ''}`}
     >
-      <span className="c-medicine-card__icon">
-        <MedicineIcon type={medicine.iconType} size="md" />
-      </span>
-      <span className="c-medicine-card__body">
+      <header className="c-medicine-card__header">
+        <span className="c-medicine-card__icon" aria-hidden="true">
+          <MedicineIcon type={medicine.iconType} size="sm" />
+        </span>
         <span className="c-medicine-card__name">{displayName}</span>
-        <span className="c-medicine-card__dose">{medicine.dosisOficial}</span>
-        {expiryLabel ? (
-          <span className={`c-medicine-card__expiry ${expiryClass(days)}`}>
-            {expiryLabel}
-          </span>
+        <button
+          type="button"
+          className="c-medicine-card__edit"
+          onClick={handleEdit}
+          aria-label={`Editar ${displayName}`}
+        >
+          <TbPencil className="c-icon c-icon--sm" aria-hidden="true" />
+        </button>
+        <span className="c-medicine-card__chevron" aria-hidden="true">
+          <TbChevronRight className="c-icon c-icon--sm" aria-hidden="true" />
+        </span>
+      </header>
+
+      <div className="c-medicine-card__body">
+        <dl className="c-medicine-card__facts">
+          <div className="c-medicine-card__fact">
+            <dt className="c-medicine-card__fact-label">Cantidad</dt>
+            <dd className="c-medicine-card__fact-value">
+              {medicine.stock} {medicine.stockUnit}
+            </dd>
+          </div>
+          <div className="c-medicine-card__fact">
+            <dt className="c-medicine-card__fact-label">Caducidad</dt>
+            <dd
+              className={`c-medicine-card__fact-value ${expiredOrWarning ? expiryClass(days) : ''}`}
+            >
+              {expiryDate}
+            </dd>
+          </div>
+          {medicine.dosisOficial ? (
+            <div className="c-medicine-card__fact">
+              <dt className="c-medicine-card__fact-label">Dosis</dt>
+              <dd className="c-medicine-card__fact-value">{medicine.dosisOficial}</dd>
+            </div>
+          ) : null}
+        </dl>
+
+        {(medicine.cimaStatus.hasAlerts || medicine.cimaStatus.psum) ? (
+          <ul
+            className="c-medicine-card__flags"
+            aria-label="Advertencias del medicamento"
+          >
+            {medicine.cimaStatus.hasAlerts ? (
+              <li
+                className="c-medicine-card__flag c-medicine-card__flag--warning"
+                title="Tiene alertas farmacológicas activas"
+              >
+                <TbAlertTriangle className="c-icon c-icon--sm" aria-hidden="true" />
+                <span className="u-sr-only">Alertas farmacológicas</span>
+              </li>
+            ) : null}
+            {medicine.cimaStatus.psum ? (
+              <li
+                className="c-medicine-card__flag"
+                title="Problemas de suministro"
+              >
+                <TbFileText className="c-icon c-icon--sm" aria-hidden="true" />
+                <span className="u-sr-only">Problemas de suministro</span>
+              </li>
+            ) : null}
+          </ul>
         ) : null}
-      </span>
-      <StockBadge
-        stock={medicine.stock}
-        threshold={medicine.threshold}
-        unit={medicine.stockUnit}
-      />
+      </div>
     </Link>
   );
 }

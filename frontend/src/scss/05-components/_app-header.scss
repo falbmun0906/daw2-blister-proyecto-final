@@ -25,10 +25,10 @@
   &__brand {
     @include touch-target;
     background: transparent;
-    border: 1.5px solid var(--color-primary-border);
+    border: 1.5px solid var(--color-primary-mid);
     border-radius: var(--radius-md);
     padding: var(--space-1) var(--space-2);
-    color: var(--color-primary);
+    color: var(--color-primary-mid);
     cursor: pointer;
     transition: background-color var(--transition-fast),
                 border-color     var(--transition-fast);
@@ -41,15 +41,17 @@
     width: 1.25rem;
     height: 1.25rem;
     display: block;
+    stroke-width: 1.5;
   }
 
   &__title {
     margin: 0;
     text-align: center;
     font-family: var(--font-display);
-    font-weight: var(--font-weight-bold);
-    font-size: var(--text-xl);
-    letter-spacing: var(--tracking-tight);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--text-2xl);
+    letter-spacing: var(--tracking-xtight);
+    line-height: 1;
     color: var(--color-text);
     @include truncate;
   }
@@ -65,10 +67,11 @@
     background: transparent;
     border: none;
     border-radius: var(--radius-full);
-    color: var(--color-primary);
+    color: var(--color-primary-mid);
     cursor: pointer;
     position: relative;
     padding: var(--space-1);
+    text-decoration: none;
     transition: background-color var(--transition-fast);
 
     &:hover { background-color: var(--color-primary-tint); }
@@ -76,9 +79,18 @@
   }
 
   &__action-icon {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.6rem;
+    height: 1.6rem;
     display: block;
+    stroke-width: 1.5;
+  }
+
+  &__action--avatar {
+    text-decoration: none;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+
+    &:hover { background-color: transparent; }
   }
 
   &__badge {

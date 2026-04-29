@@ -66,7 +66,7 @@
 
   // Título grande, centrado sobre el formulario, estilo landing.
   &__title {
-    margin: 0;
+    margin: 0 0 var(--space-6) 0;
     text-align: center;
     font-family: var(--font-display);
     font-size: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);

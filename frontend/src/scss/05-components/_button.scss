@@ -63,10 +63,9 @@
     color: var(--color-text-on-primary);
     border-color: transparent;
 
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-regular);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-wide);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--tracking-normal);
 
     &:hover  { background-color: var(--color-primary-hover); border-color: transparent; }
     &:active { background-color: var(--color-primary-active); border-color: transparent; }
@@ -153,4 +152,25 @@
 
 @keyframes btn-spin {
   to { transform: rotate(360deg); }
+}
+
+// ── Uppercase scoped a onboarding y pantallas de auth ─────────────────────
+//
+// Solo en estas pantallas el botón primario y los CTA destacados deben
+// renderizarse con texto en MAYÚSCULAS y tipografía algo más expresiva.
+// El resto de la app conserva la capitalización natural definida en frases.
+
+.c-onboarding,
+.c-landing-page,
+.c-login-page,
+.c-register-page,
+.c-forgot-password-page {
+  .c-btn--primary,
+  .c-btn--secondary,
+  .c-btn--primary-outline {
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+  }
 }

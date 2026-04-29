@@ -146,43 +146,58 @@
 
 // ─── TEMA OSCURO ─────────────────────────────────────────────────────────────
 //
-// Los verdes se invierten sobre fondo oscuro:
-// el verde medio (#11a498) actúa como primario interactivo
-// y el verde oscuro (#1e6660) pasa a ser superficie de marca.
+// El tema oscuro de Blíster pivota a una paleta de TERRACOTAS + blancos.
+// El verde queda como acento puntual (mantenemos --color-primary-mid en un
+// teal cálido y suave), pero los contenedores principales (header inferior,
+// CTAs, fondos tinted) se construyen sobre terracotas progresivamente más
+// claras para conseguir una identidad cálida sin perder contraste WCAG AA.
+//
+// Convenciones:
+//   --color-primary*       → terracota (rol que en claro tenía el verde)
+//   --color-accent*        → verde teal (rol secundario, opuesto al claro)
+//   --color-bg / surface   → terracota muy oscura, casi negra
+//   --color-surface-tinted → terracota un peldaño más clara
+//   Texto / iconos sobre estos fondos → blanco / off-white
+//
 // Los tokens de dominio no se redefinen: apuntan a los semánticos
 // que ya quedan actualizados en este bloque.
 
 [data-theme="dark"] {
 
-  --color-bg:                  #0f1a19;
-  --color-surface:             #162322;
-  --color-surface-tinted:      #1c2d2b;
-  --color-border:              rgba(103, 194, 187, 0.15);
-  --color-border-subtle:       rgba(103, 194, 187, 0.07);
+  // Superficies: terracotas muy oscuras
+  --color-bg:                  #261713;
+  --color-surface:             #321e18;
+  --color-surface-tinted:      #422820;
+  --color-border:              rgba(232, 137, 106, 0.18);
+  --color-border-subtle:       rgba(232, 137, 106, 0.08);
 
-  --color-brand-surface:       #0d7a70;
+  // Marca (onboarding/splash en oscuro): terracota saturada
+  --color-brand-surface:       #b85c3f;
   --color-brand-surface-text:  #ffffff;
 
-  --color-text:                #e4efee;
-  --color-text-muted:          #7da8a4;
-  --color-text-faint:          #3f6663;
-  --color-text-inverse:        #0f1a19;
+  // Texto: blancos cálidos
+  --color-text:                #f6ece7;
+  --color-text-muted:          #c9a89a;
+  --color-text-faint:          #8a6a5e;
+  --color-text-inverse:        #261713;
   --color-text-on-primary:     #ffffff;
 
-  --color-primary:             #11a498;
-  --color-primary-hover:       #67c2bb;
-  --color-primary-active:      #8fd4ce;
-  --color-primary-mid:         #67c2bb;
-  --color-primary-mid-hover:   #8fd4ce;
-  --color-primary-subtle:      #1e3f3d;
-  --color-primary-tint:        #162a28;
-  --color-primary-border:      rgba(103, 194, 187, 0.20);
+  // Primario: TERRACOTA (sustituye al verde del tema claro)
+  --color-primary:             #d97757;
+  --color-primary-hover:       #e08e6f;
+  --color-primary-active:      #c0613e;
+  --color-primary-mid:         #d97757;
+  --color-primary-mid-hover:   #e08e6f;
+  --color-primary-subtle:      #5a2f1f;
+  --color-primary-tint:        #422820;
+  --color-primary-border:      rgba(232, 137, 106, 0.25);
 
-  --color-accent:              #e8896a;
-  --color-accent-hover:        #f0a085;
-  --color-accent-active:       #d97757;
-  --color-accent-subtle:       #3d2215;
-  --color-accent-tint:         #2a160d;
+  // Acento: verde teal (rol secundario en oscuro)
+  --color-accent:              #67c2bb;
+  --color-accent-hover:        #8fd4ce;
+  --color-accent-active:       #4daea7;
+  --color-accent-subtle:       #1e3f3d;
+  --color-accent-tint:         #162a28;
 
   --color-error:               #e87070;
   --color-error-hover:         #f08585;
@@ -194,10 +209,11 @@
   --color-success-subtle:      #152a1e;
   --color-success-border:      rgba(76, 175, 122, 0.20);
 
-  --color-warning:             #e8896a;
-  --color-warning-hover:       #f0a085;
-  --color-warning-subtle:      #3d2215;
-  --color-warning-border:      rgba(232, 137, 106, 0.20);
+  // En oscuro, el "warning" reutiliza el primario terracota
+  --color-warning:             #d97757;
+  --color-warning-hover:       #e08e6f;
+  --color-warning-subtle:      #422820;
+  --color-warning-border:      rgba(217, 119, 87, 0.25);
 
   --color-info:                #7aa8d8;
   --color-info-hover:          #96bce4;

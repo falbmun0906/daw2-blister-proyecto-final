@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { FaBriefcaseMedical } from 'react-icons/fa6';
 
 import { ROUTES } from '../../constants/routes';
 import { Button } from '../../components/atoms/Button';
@@ -7,9 +8,11 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { SearchBar } from '../../components/molecules/SearchBar';
+import { BlisterPillSelector } from '../../components/organisms/BlisterPillSelector';
 import { MedicineCard } from '../../components/organisms/MedicineCard';
 import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import './InventoryPage.scss';
 
@@ -29,8 +32,11 @@ function filterMedicines(list: ReturnType<typeof useMedicines>['medicines'], que
 function InventoryPage() {
   usePageTitle('Botiquín');
   const navigate = useNavigate();
+  const blisters = useBlisterStore((s) => s.blisters);
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
+  const setActiveBlister = useBlisterStore((s) => s.setActiveBlister);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const { medicines, isLoading, error, refetch } = useMedicines();
   const [query, setQuery] = useState('');
 
@@ -44,23 +50,35 @@ function InventoryPage() {
   return (
     <section className="c-inventory-page" aria-labelledby="inventory-title">
       <header className="c-inventory-page__header">
+        <span className="c-inventory-page__icon" aria-hidden="true">
+          <FaBriefcaseMedical className="c-icon c-icon--md" aria-hidden="true" />
+        </span>
         <h1 id="inventory-title" className="c-inventory-page__title">Botiquín</h1>
-        {canMutate ? (
-          <Button
-            variant="primary"
-            onClick={() => navigate(`${ROUTES.blisterMedications(activeBlisterId)}/add`)}
-          >
-            Añadir
-          </Button>
-        ) : null}
+        <span className="c-inventory-page__spacer" aria-hidden="true" />
       </header>
 
       <SearchBar
         value={query}
         onChange={setQuery}
-        placeholder="Buscar por nombre, principio activo o nregist…"
+        placeholder="Buscar medicamento"
         ariaLabel="Buscar medicamentos del botiquín"
+        enableVoice
       />
+
+      {blisters.length > 0 ? (
+        <BlisterPillSelector
+          blisters={blisters}
+          activeBlisterId={activeBlisterId}
+          onSelect={(b) => {
+            const role = userId
+              ? (b.members.find((m) => m.userId === userId)?.role ?? null)
+              : null;
+            setActiveBlister(b._id, role);
+          }}
+        />
+      ) : null}
+
+      <h2 className="c-inventory-page__section-title">Medicamentos</h2>
 
       {error ? (
         <ErrorState message={error} onRetry={() => void refetch()} />
@@ -94,6 +112,16 @@ function InventoryPage() {
           ))}
         </ul>
       )}
+
+      {canMutate ? (
+        <Button
+          variant="primary"
+          fullWidth
+          onClick={() => navigate(`${ROUTES.blisterMedications(activeBlisterId)}/add`)}
+        >
+          Añadir medicamento
+        </Button>
+      ) : null}
     </section>
   );
 }

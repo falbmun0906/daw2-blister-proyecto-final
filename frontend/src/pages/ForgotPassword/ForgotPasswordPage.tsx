@@ -55,11 +55,10 @@ function ForgotPasswordPage() {
         >
           <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
-
-        <h1 className="c-forgot-password-page__title">He olvidado mi contraseña</h1>
-
         <span className="c-forgot-password-page__spacer" aria-hidden="true" />
       </header>
+
+      <h1 className="c-forgot-password-page__title">He olvidado mi contraseña</h1>
 
       {showNotAvailable ? (
         <div className="c-forgot-password-page__state">

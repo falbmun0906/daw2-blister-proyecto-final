@@ -96,16 +96,17 @@
     &:hover { background-color: rgb(255 255 255 / 0.12); }
   }
 
-  // Título grande, centrado sobre el formulario, en negro, estilo landing.
+  // Título grande, centrado sobre el formulario, en BLANCO sobre fondo verde,
+  // estilo landing.
   &__title {
-    margin: 0;
+    margin: var(--space-2) 0 var(--space-6) 0;
     text-align: center;
     font-family: var(--font-display);
     font-size: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);
     font-weight: var(--font-weight-medium);
     line-height: 1;
     letter-spacing: var(--tracking-xtight);
-    color: var(--color-text);
+    color: var(--color-text-on-primary);
   }
 
   &__spacer {
