@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Button } from '../../components/atoms/Button';
 import { FontSelector } from '../../components/molecules/FontSelector';
 import { TextSizeSelector } from '../../components/molecules/TextSizeSelector';
 import { ThemeSelector } from '../../components/molecules/ThemeSelector';
@@ -14,6 +13,12 @@ import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { UserSettings } from '../../types/auth.types';
 import './AccessibilityPage.scss';
+
+const DEFAULT_SETTINGS: Pick<UserSettings, 'theme' | 'font' | 'fontSize'> = {
+  theme: 'system',
+  font: 'standard',
+  fontSize: 'normal',
+};
 
 function AccessibilityPage() {
   usePageTitle('Accesibilidad');
@@ -38,38 +43,14 @@ function AccessibilityPage() {
 
   if (!user || !draft) return null;
 
-  const updateDraft = (patch: Partial<UserSettings>): void => {
-    setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
-  };
-
-  const hasChanges =
-    draft.theme !== user.settings.theme ||
-    draft.font !== user.settings.font ||
-    draft.fontSize !== user.settings.fontSize;
-
-  const handleCancel = (): void => {
-    applyUserSettings(user.settings);
-    navigate(ROUTES.profile);
-  };
-
-  const handleSave = async (): Promise<void> => {
-    if (!hasChanges) {
-      addToast({ message: 'No has cambiado ningún ajuste.', variant: 'info' });
-      return;
-    }
+  const persist = async (
+    next: Pick<UserSettings, 'theme' | 'font' | 'fontSize'>,
+  ): Promise<void> => {
     setIsSaving(true);
     try {
-      const updated = await updateProfile({
-        settings: {
-          theme: draft.theme,
-          font: draft.font,
-          fontSize: draft.fontSize,
-        },
-      });
+      const updated = await updateProfile({ settings: next });
       updateUser(updated);
       applyUserSettings(updated.settings);
-      addToast({ message: 'Preferencias guardadas.', variant: 'success' });
-      navigate(ROUTES.profile);
     } catch (err) {
       const message = isApiError(err)
         ? err.message
@@ -80,54 +61,53 @@ function AccessibilityPage() {
     }
   };
 
-  return (
-    <section className="c-accessibility-page" aria-labelledby="accessibility-title">
-      <header className="c-accessibility-page__header">
-        <h1 id="accessibility-title" className="c-accessibility-page__title">
-          Accesibilidad
-        </h1>
-        <p className="c-accessibility-page__description">
-          Los cambios se previsualizan al instante. Pulsa Guardar para conservarlos.
-        </p>
-      </header>
+  const handleChange = (patch: Partial<UserSettings>): void => {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    void persist({ theme: next.theme, font: next.font, fontSize: next.fontSize });
+  };
 
-      <fieldset className="c-accessibility-page__group">
-        <legend className="c-accessibility-page__legend">Tema</legend>
+  const handleReset = (): void => {
+    setDraft({ ...draft, ...DEFAULT_SETTINGS });
+    void persist(DEFAULT_SETTINGS);
+    addToast({ message: 'Ajustes restablecidos.', variant: 'info' });
+    navigate(ROUTES.profile);
+  };
+
+  return (
+    <section className="c-accessibility-page" aria-label="Ajustes de accesibilidad">
+      <h2 className="c-accessibility-page__section-title">Vista</h2>
+      <div className="c-accessibility-page__row">
+        <p className="c-accessibility-page__row-label">Modo de pantalla</p>
         <ThemeSelector
           currentTheme={draft.theme}
-          onChange={(theme) => updateDraft({ theme })}
+          onChange={(theme) => handleChange({ theme })}
         />
-      </fieldset>
+      </div>
 
-      <fieldset className="c-accessibility-page__group">
-        <legend className="c-accessibility-page__legend">Tipografía</legend>
-        <FontSelector
-          currentFont={draft.font}
-          onChange={(font) => updateDraft({ font })}
-        />
-      </fieldset>
-
-      <fieldset className="c-accessibility-page__group">
-        <legend className="c-accessibility-page__legend">Tamaño del texto</legend>
+      <h2 className="c-accessibility-page__section-title">Tipografía</h2>
+      <div className="c-accessibility-page__row">
+        <p className="c-accessibility-page__row-label">Tamaño del texto</p>
         <TextSizeSelector
           currentSize={draft.fontSize}
-          onChange={(fontSize) => updateDraft({ fontSize })}
+          onChange={(fontSize) => handleChange({ fontSize })}
         />
-      </fieldset>
-
-      <div className="c-accessibility-page__actions">
-        <Button type="button" variant="ghost" onClick={handleCancel}>
-          Cancelar
-        </Button>
-        <Button
-          type="button"
-          variant="primary"
-          loading={isSaving}
-          onClick={() => void handleSave()}
-        >
-          Guardar preferencias
-        </Button>
       </div>
+      <div className="c-accessibility-page__row">
+        <FontSelector
+          currentFont={draft.font}
+          onChange={(font) => handleChange({ font })}
+        />
+      </div>
+
+      <button
+        type="button"
+        className="c-accessibility-page__reset"
+        onClick={handleReset}
+        disabled={isSaving}
+      >
+        Restablecer ajustes básicos
+      </button>
     </section>
   );
 }

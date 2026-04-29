@@ -5,11 +5,13 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   hint?: string;
   icon?: ReactNode;
+  /** Botón opcional con tooltip de "más información" alineado con el label. */
+  tooltip?: ReactNode;
   wrapperClassName?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, error, hint, icon, id, className, wrapperClassName, 'aria-describedby': ariaDescribedBy, ...props },
+  { label, error, hint, icon, tooltip, id, className, wrapperClassName, 'aria-describedby': ariaDescribedBy, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -26,6 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       <span className="c-field__label">
         {icon ? <span className="c-field__label-icon">{icon}</span> : null}
         <span className="c-field__label-text">{label}</span>
+        {tooltip ? <span className="c-field__label-tooltip">{tooltip}</span> : null}
       </span>
       <input
         {...props}

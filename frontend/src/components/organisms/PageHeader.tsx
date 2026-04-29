@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { TbChevronLeft } from 'react-icons/tb';
+import { FaArrowLeft } from 'react-icons/fa6';
 
 import { usePageTitleStore } from '../../stores/page-title.store';
 
@@ -20,7 +20,7 @@ export function PageHeader() {
         onClick={() => navigate(-1)}
         aria-label="Volver atrás"
       >
-        <TbChevronLeft className="c-icon c-icon--xl" aria-hidden="true" />
+        <FaArrowLeft className="c-icon c-icon--lg" aria-hidden="true" />
       </button>
       <h1 className="c-page-header__title">{title}</h1>
       <span className="c-page-header__spacer" aria-hidden="true" />

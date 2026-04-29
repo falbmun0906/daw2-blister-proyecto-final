@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { FaArrowLeft } from 'react-icons/fa6';
 import {
-  TbChevronLeft,
   TbUserCircle,
   TbUser,
   TbMail,
@@ -18,6 +18,7 @@ import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { ErrorState } from '../../components/atoms/ErrorState';
+import { InfoTooltip } from '../../components/atoms/InfoTooltip';
 import { ROUTES } from '../../constants/routes';
 import { applyUserSettings } from '../../lib/applyUserSettings';
 import { register as registerService } from '../../services/auth.service';
@@ -108,10 +109,10 @@ function RegisterPage() {
           onClick={() => navigate(ROUTES.landing)}
           aria-label="Volver a la portada"
         >
-          <TbChevronLeft className="c-icon c-icon--md" aria-hidden="true" />
+          <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
 
-        <h1 className="c-register-page__title">Crear Cuenta</h1>
+        <h1 className="c-register-page__title">Crear cuenta</h1>
 
         <span className="c-register-page__spacer" aria-hidden="true" />
       </header>
@@ -120,46 +121,56 @@ function RegisterPage() {
 
       <form className="c-register-page__form" onSubmit={handleSubmit(onSubmit)}>
         <Input
-          label="Nombre completo *"
+          label="Nombre completo"
           placeholder="Tu nombre completo"
           type="text"
+          autoComplete="name"
           {...register('name')}
           error={errors.name?.message}
           icon={<TbUserCircle className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
-          label="Nombre de usuario *"
+          label="Nombre de usuario"
           placeholder="nombre_usuario"
           type="text"
+          autoComplete="username"
           {...register('username')}
           error={errors.username?.message}
           icon={<TbUser className="c-icon c-icon--md" aria-hidden="true" />}
+          tooltip={
+            <InfoTooltip content="Solo minúsculas, números y los caracteres . _ -. Entre 3 y 50 caracteres." />
+          }
         />
 
         <Input
-          label="Correo electrónico *"
+          label="Correo electrónico"
           placeholder="tu@correo.com"
           type="email"
+          autoComplete="email"
           {...register('email')}
           error={errors.email?.message}
           icon={<TbMail className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
-          label="Contraseña *"
+          label="Contraseña"
           placeholder="••••••••"
           type="password"
+          autoComplete="new-password"
           {...register('password')}
           error={errors.password?.message}
-          hint="Mínimo 8 caracteres: mayúscula, minúscula, número y símbolo"
           icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
+          tooltip={
+            <InfoTooltip content="Mínimo 8 caracteres. Debe incluir mayúscula, minúscula, número y símbolo." />
+          }
         />
 
         <Input
-          label="Confirmar contraseña *"
+          label="Confirmar contraseña"
           placeholder="••••••••"
           type="password"
+          autoComplete="new-password"
           {...register('confirmPassword')}
           error={errors.confirmPassword?.message}
           icon={<TbCheck className="c-icon c-icon--md" aria-hidden="true" />}
@@ -171,8 +182,10 @@ function RegisterPage() {
           type="text"
           {...register('inviteCode')}
           error={errors.inviteCode?.message}
-          hint="Comparte tu blíster con la familia"
           icon={<TbKey className="c-icon c-icon--md" aria-hidden="true" />}
+          tooltip={
+            <InfoTooltip content="Si alguien te ha compartido un blíster familiar, introduce aquí el código que ha generado." />
+          }
         />
 
         <div className="c-register-page__checkboxes">
@@ -183,7 +196,7 @@ function RegisterPage() {
               className="c-register-page__checkbox-input"
             />
             <span className="c-register-page__checkbox-text">
-              Acepto la <a href="#privacy" className="c-register-page__link">política de privacidad</a> *
+              Acepto la <a href="#privacy" className="c-register-page__link">política de privacidad</a>
             </span>
           </label>
 
@@ -193,7 +206,7 @@ function RegisterPage() {
               {...register('ageConfirmed')}
               className="c-register-page__checkbox-input"
             />
-            <span className="c-register-page__checkbox-text">Confirmo que tengo 18 años o más *</span>
+            <span className="c-register-page__checkbox-text">Confirmo que tengo 18 años o más</span>
           </label>
 
           {(errors.privacyConsent || errors.ageConfirmed) && (
@@ -204,7 +217,7 @@ function RegisterPage() {
         </div>
 
         <Button type="submit" variant="primary" fullWidth loading={isLoading} className="c-register-page__submit">
-          Crear Cuenta
+          Crear cuenta
         </Button>
       </form>
 

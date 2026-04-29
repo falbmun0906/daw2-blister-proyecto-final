@@ -9,11 +9,6 @@ img {
   border-radius: none;
 }
 
-svg {
-  // Los SVG de iconos heredan el color del texto del contexto
-  fill: currentColor;
-}
-
 // Las imágenes de prospecto y ficha técnica AEMPS (pantalla 09)
 // no deben tener border-radius
 img[data-type='aemps'] {

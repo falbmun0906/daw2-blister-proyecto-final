@@ -56,6 +56,12 @@
       text-decoration: none;
       margin-left: var(--space-1);
     }
+
+    &-tooltip {
+      display: inline-flex;
+      align-items: center;
+      margin-left: var(--space-1);
+    }
   }
 
   &__input,

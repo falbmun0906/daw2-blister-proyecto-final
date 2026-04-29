@@ -237,11 +237,16 @@ export const authRegister = async (input: RegisterInput): Promise<AuthResult> =>
   };
 };
 
-const findUserForLogin = async (identifier: string) =>
-  UserModel.findOne({
-    $or: [{ email: identifier }, { username: identifier }],
+const findUserForLogin = async (identifier: string) => {
+  // El email y el username se almacenan siempre en minúsculas, por lo que
+  // normalizamos el identificador para soportar accesos como "MiUsuario".
+  const normalized = identifier.trim().toLowerCase();
+
+  return UserModel.findOne({
+    $or: [{ email: normalized }, { username: normalized }],
     deletedAt: null,
   }).select('+password +refreshTokenHash +refreshTokenExpiresAt');
+};
 
 /**
  * Authenticates a user with email or username and rotates their refresh token.

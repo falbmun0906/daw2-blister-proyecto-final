@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { TbChevronLeft, TbUserCircle, TbLock } from 'react-icons/tb';
+import { FaArrowLeft } from 'react-icons/fa6';
+import { TbUserCircle, TbLock } from 'react-icons/tb';
 
 import { loginSchema } from '../../../../shared/schemas/auth.schema';
 import { AuthLayout } from '../../components/layout/AuthLayout';
@@ -85,43 +86,47 @@ function LoginPage() {
           onClick={() => navigate(ROUTES.landing)}
           aria-label="Volver a la portada"
         >
-          <TbChevronLeft className="c-icon c-icon--md" aria-hidden="true" />
+          <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
 
-        <h1 className="c-login-page__title">Iniciar Sesión</h1>
+        <h1 className="c-login-page__title">Iniciar sesión</h1>
 
         <span className="c-login-page__spacer" aria-hidden="true" />
       </header>
 
-      <form className="c-login-page__form" onSubmit={handleSubmit(onSubmit)}>
-        {globalError ? <ErrorState message={globalError} /> : null}
+      <div className="c-login-page__body">
+        <form className="c-login-page__form" onSubmit={handleSubmit(onSubmit)}>
+          {globalError ? <ErrorState message={globalError} /> : null}
 
-        <Input
-          label="Usuario o correo electrónico"
-          placeholder="Nombre de usuario o correo"
-          type="text"
-          {...register('identifier')}
-          error={errors.identifier?.message}
-          icon={<TbUserCircle className="c-icon c-icon--md" aria-hidden="true" />}
-        />
+          <Input
+            label="Usuario o correo electrónico"
+            placeholder="usuario o correo@dominio.com"
+            type="text"
+            autoComplete="username"
+            {...register('identifier')}
+            error={errors.identifier?.message}
+            icon={<TbUserCircle className="c-icon c-icon--md" aria-hidden="true" />}
+          />
 
-        <Input
-          label="Contraseña"
-          placeholder="••••••••"
-          type="password"
-          {...register('password')}
-          error={errors.password?.message}
-          icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
-        />
+          <Input
+            label="Contraseña"
+            placeholder="••••••••"
+            type="password"
+            autoComplete="current-password"
+            {...register('password')}
+            error={errors.password?.message}
+            icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
+          />
 
-        <Link to={ROUTES.forgotPassword} className="c-login-page__forgot-link">
-          He olvidado mi contraseña
-        </Link>
+          <Link to={ROUTES.forgotPassword} className="c-login-page__forgot-link">
+            He olvidado mi contraseña
+          </Link>
 
-        <Button type="submit" variant="primary" fullWidth loading={isLoading} className="c-login-page__submit">
-          Iniciar Sesión
-        </Button>
-      </form>
+          <Button type="submit" variant="primary" fullWidth loading={isLoading} className="c-login-page__submit">
+            Iniciar sesión
+          </Button>
+        </form>
+      </div>
 
       <p className="c-login-page__footer">
         ¿No tienes una cuenta? <Link to={ROUTES.register} className="c-login-page__register-link">Regístrate</Link>

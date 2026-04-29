@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { TbChevronLeft, TbMail } from 'react-icons/tb';
+import { FaArrowLeft } from 'react-icons/fa6';
+import { TbMail } from 'react-icons/tb';
 
 import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Button } from '../../components/atoms/Button';
@@ -52,7 +53,7 @@ function ForgotPasswordPage() {
           onClick={() => navigate(ROUTES.login)}
           aria-label="Volver al inicio de sesión"
         >
-          <TbChevronLeft className="c-icon c-icon--md" aria-hidden="true" />
+          <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
 
         <h1 className="c-forgot-password-page__title">He olvidado mi contraseña</h1>

@@ -1,8 +1,63 @@
+// Variante "marca" del registro: fondo verde, contenido en blanco.
+//
+// Sólo afecta a la pantalla de registro: el resto del flujo de autenticación
+// mantiene fondo claro.
+
 .c-register-page {
-  color: var(--color-text);
+  color: var(--color-text-on-primary);
+  background-color: var(--color-primary-mid);
 
   &__inner {
+    background-color: var(--color-primary-mid);
     gap: var(--space-5);
+  }
+
+  // Inputs blancos sobre fondo verde, labels e iconos en blanco.
+  .c-field__label,
+  .c-field__label-icon {
+    color: var(--color-text-on-primary);
+    font-weight: var(--font-weight-regular);
+  }
+
+  .c-field__input,
+  .c-field__select,
+  .c-field__textarea {
+    background-color: var(--color-surface);
+    border-color: transparent;
+    border-radius: var(--radius-full);
+    padding-inline: var(--space-5);
+    color: var(--color-text);
+
+    &::placeholder {
+      color: var(--color-text-faint);
+    }
+
+    &:focus-visible {
+      border-color: var(--color-text-on-primary);
+      box-shadow: 0 0 0 3px rgb(255 255 255 / 0.35);
+    }
+  }
+
+  .c-field__hint {
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  .c-info-tooltip__trigger {
+    color: rgb(255 255 255 / 0.85);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-text-on-primary);
+    }
+  }
+
+  // Botón principal sobre fondo verde: usamos verde más oscuro para contraste.
+  .c-btn--primary {
+    background-color: var(--color-primary);
+    color: var(--color-text-on-primary);
+
+    &:hover  { background-color: var(--color-primary-hover); }
+    &:active { background-color: var(--color-primary-active); }
   }
 
   &__header {
@@ -22,24 +77,22 @@
     border: 0;
     border-radius: var(--radius-full);
     background: transparent;
-    color: var(--color-primary);
+    color: var(--color-text-on-primary);
     cursor: pointer;
-  }
+    transition: background-color var(--transition-fast);
 
-  &__back-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    &:hover { background-color: rgb(255 255 255 / 0.12); }
   }
 
   &__title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-bold);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-regular);
     line-height: var(--leading-snug);
     letter-spacing: var(--tracking-tight);
     text-align: center;
-    color: var(--color-primary);
+    color: var(--color-text-on-primary);
   }
 
   &__spacer {
@@ -56,9 +109,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    background-color: var(--color-surface-tinted);
+    padding-top: var(--space-3);
   }
 
   &__checkbox-label {
@@ -78,32 +129,33 @@
   &__checkbox-text {
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
-    color: var(--color-text);
+    color: var(--color-text-on-primary);
   }
 
   &__link,
   &__login-link {
-    color: var(--color-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-text-on-primary);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
   }
 
   &__error-message {
     margin: 0;
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
-    background-color: var(--color-error-subtle);
-    color: var(--color-error);
+    background-color: rgb(255 255 255 / 0.18);
+    color: var(--color-text-on-primary);
     font-size: var(--text-xs);
   }
 
   &__submit {
-    margin-top: var(--space-1);
+    margin-top: var(--space-2);
   }
 
   &__footer {
     margin: 0;
     text-align: center;
     font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    color: rgb(255 255 255 / 0.9);
   }
 }

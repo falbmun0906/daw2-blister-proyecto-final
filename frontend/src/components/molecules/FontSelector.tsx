@@ -7,35 +7,43 @@ interface FontSelectorProps {
   onChange: (font: Font) => void;
 }
 
-const OPTIONS: ReadonlyArray<{ value: Font; label: string; description: string }> = [
-  { value: 'standard', label: 'Estándar', description: 'Tipografía Nunito' },
-  { value: 'dyslexic', label: 'OpenDyslexic', description: 'Lectura facilitada' },
-];
-
+/**
+ * Toggle binario para activar la tipografía de dislexia.
+ *
+ * El selector original ofrecía dos botones, pero la pantalla de
+ * accesibilidad muestra esta opción como un interruptor activado/desactivado
+ * con etiqueta y descripción.
+ */
 export function FontSelector({ currentFont, onChange }: FontSelectorProps) {
+  const isDyslexic = currentFont === 'dyslexic';
+
+  const handleToggle = (): void => {
+    onChange(isDyslexic ? 'standard' : 'dyslexic');
+  };
+
   return (
-    <div className="c-font-selector" role="radiogroup" aria-label="Tipografía">
-      {OPTIONS.map((option) => {
-        const isSelected = option.value === currentFont;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={isSelected}
-            className={[
-              'c-font-selector__option',
-              isSelected && 'c-font-selector__option--selected',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => onChange(option.value)}
-          >
-            <span className="c-font-selector__label">{option.label}</span>
-            <span className="c-font-selector__hint">{option.description}</span>
-          </button>
-        );
-      })}
+    <div className="c-font-selector">
+      <div className="c-font-selector__copy">
+        <p className="c-font-selector__title">Fuente para dislexia</p>
+        <p className="c-font-selector__description">
+          Cambia la tipografía a una diseñada para facilitar la lectura.
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isDyslexic}
+        aria-label="Activar tipografía para dislexia"
+        className={[
+          'c-font-selector__switch',
+          isDyslexic && 'c-font-selector__switch--on',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        onClick={handleToggle}
+      >
+        <span className="c-font-selector__switch-thumb" aria-hidden="true" />
+      </button>
     </div>
   );
 }

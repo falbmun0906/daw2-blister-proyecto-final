@@ -4,22 +4,58 @@
 // Tamaño con clases CSS, color heredado de currentColor.
 
 .c-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: currentColor;
-  line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: currentColor;
+    line-height: 1;
 
-  &--sm { font-size: var(--space-4); }
-  &--md { font-size: var(--space-5); }
-  &--lg { font-size: var(--space-6); }
-  &--xl { font-size: var(--space-8); }
+    &--sm {
+        font-size: var(--space-4);
+    }
 
-  &--success { color: var(--color-success, var(--color-primary-mid)); }
-  &--danger  { color: var(--color-error); }
-  &--warning { color: var(--color-warning); }
-  &--info    { color: var(--color-info, var(--color-primary-mid)); }
-  &--muted   { color: var(--color-text-muted); }
-  &--primary { color: var(--color-primary); }
+    &--md {
+        font-size: var(--space-5);
+    }
+
+    &--lg {
+        font-size: var(--space-6);
+    }
+
+    &--xl {
+        font-size: var(--space-8);
+    }
+
+    &--success {
+        color: var(--color-success, var(--color-primary-mid));
+    }
+
+    &--danger {
+        color: var(--color-error);
+    }
+
+    &--warning {
+        color: var(--color-warning);
+    }
+
+    &--info {
+        color: var(--color-info, var(--color-primary-mid));
+    }
+
+    &--muted {
+        color: var(--color-text-muted);
+    }
+
+    &--primary {
+        color: var(--color-primary);
+    }
+}
+
+.c-icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }

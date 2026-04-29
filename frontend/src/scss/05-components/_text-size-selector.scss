@@ -1,27 +1,25 @@
 .c-text-size-selector {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
 
   &__option {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: var(--space-touch-comfortable);
-    padding: var(--space-3);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    min-width: 2.75rem;
+    min-height: 2.5rem;
+    padding: var(--space-2) var(--space-3);
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
     color: var(--color-text);
     cursor: pointer;
-    text-align: center;
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 
     &--selected {
-      border-color: var(--color-primary);
       background-color: var(--color-primary-tint);
+      border-color: var(--color-primary-tint);
     }
 
     &--normal .c-text-size-selector__sample {
@@ -38,12 +36,24 @@
   }
 
   &__sample {
-    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-regular);
     line-height: 1;
   }
 
+  // El label es ya redundante con el ejemplo "Aa"; lo ocultamos visualmente
+  // pero se mantiene en el DOM para tecnologías de asistencia.
   &__label {
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    @extend %sr-only !optional;
+
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
