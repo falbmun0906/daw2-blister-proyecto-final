@@ -26,9 +26,13 @@ export async function login(input: LoginInput): Promise<AuthSession> {
 
 /**
  * Creates a new account and returns the initial authenticated session.
+ * El esquema ya transforma `inviteCode` vacío a `undefined`; si tras el parse
+ * sigue siendo `undefined`, lo eliminamos del payload para no enviar la clave.
  */
 export async function register(input: RegisterInput): Promise<AuthSession> {
-  const payload = registerSchema.parse(input);
+  const parsed = registerSchema.parse(input);
+  const { inviteCode, ...rest } = parsed;
+  const payload = inviteCode === undefined ? rest : { ...rest, inviteCode };
   const response = await apiClient.post('/auth/register', payload);
   return authSessionSchema.parse(normalizeApiResponse(response));
 }

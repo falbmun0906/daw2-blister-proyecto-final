@@ -42,12 +42,16 @@ const passwordSchema = z
   .regex(/\d/, 'Password must include a number.')
   .regex(/[^\w\s]/, 'Password must include a symbol.');
 
+// inviteCode es opcional: si llega vacío, se transforma a undefined y no se valida.
+// Si llega con contenido, se normaliza a mayúsculas y se valida el formato.
 const inviteCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
   .regex(/^[A-Z0-9]{6,8}$/, 'Invite code must contain 6 to 8 alphanumeric characters.')
-  .optional();
+  .optional()
+  .or(z.literal(''))
+  .transform((value) => (value === '' || value === undefined ? undefined : value));
 
 export const registerSchema = z
   .object({
