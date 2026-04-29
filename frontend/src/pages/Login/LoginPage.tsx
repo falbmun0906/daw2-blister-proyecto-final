@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { TbChevronLeft, TbUserCircle, TbLock } from 'react-icons/tb';
 
 import { loginSchema } from '../../../../shared/schemas/auth.schema';
 import { AuthLayout } from '../../components/layout/AuthLayout';
@@ -84,16 +85,7 @@ function LoginPage() {
           onClick={() => navigate(ROUTES.landing)}
           aria-label="Volver a la portada"
         >
-          <svg viewBox="0 0 24 24" className="c-login-page__back-icon" aria-hidden="true">
-            <path
-              d="M15 18l-6-6 6-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <TbChevronLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
 
         <h1 className="c-login-page__title">Iniciar Sesión</h1>
@@ -105,17 +97,12 @@ function LoginPage() {
         {globalError ? <ErrorState message={globalError} /> : null}
 
         <Input
-          label="Usuario"
+          label="Usuario o correo electrónico"
           placeholder="Nombre de usuario o correo"
           type="text"
           {...register('identifier')}
           error={errors.identifier?.message}
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" fill="currentColor" />
-              <path d="M12 14c-4 0-6 2-6 2v2h12v-2s-2-2-6-2z" fill="currentColor" />
-            </svg>
-          }
+          icon={<TbUserCircle className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
@@ -124,12 +111,7 @@ function LoginPage() {
           type="password"
           {...register('password')}
           error={errors.password?.message}
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="12" width="16" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-              <path d="M8 12v-3a4 4 0 018 0v3" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          }
+          icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Link to={ROUTES.forgotPassword} className="c-login-page__forgot-link">
