@@ -63,6 +63,13 @@
     display: block;
   }
 
+  &__icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   &__label {
     line-height: 1;
   }

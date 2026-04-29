@@ -1,13 +1,16 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactElement } from 'react';
 
+import { NotificationDot } from '../molecules/NotificationDot';
 import { ROUTES } from '../../constants/routes';
 import { useBlisterStore } from '../../stores/blister.store';
+import { useUnreadNotificationsCount } from '../../stores/notifications.store';
 
 interface NavItem {
   to: string;
   label: string;
   icon: ReactElement;
+  showDot?: boolean;
 }
 
 /** Iconos inline para no añadir dependencias. */
@@ -40,9 +43,17 @@ const CalendarIcon = (
   </svg>
 );
 
+const BellIcon = (
+  <svg className="c-bottom-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+  </svg>
+);
+
 /** Barra inferior de navegación primaria. */
 export function BottomNav() {
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
+  const unreadCount = useUnreadNotificationsCount();
 
   const items: NavItem[] = [
     { to: ROUTES.home, label: 'Inicio', icon: HomeIcon },
@@ -61,11 +72,17 @@ export function BottomNav() {
       label: 'Calendario',
       icon: CalendarIcon,
     },
+    {
+      to: ROUTES.notifications,
+      label: 'Avisos',
+      icon: BellIcon,
+      showDot: true,
+    },
   ];
 
   return (
     <nav className="c-bottom-nav" aria-label="Navegación principal">
-      {items.map(({ to, label, icon }) => (
+      {items.map(({ to, label, icon, showDot }) => (
         <NavLink
           key={label}
           to={to}
@@ -74,7 +91,10 @@ export function BottomNav() {
             ['c-bottom-nav__item', isActive && 'is-active'].filter(Boolean).join(' ')
           }
         >
-          {icon}
+          <span className="c-bottom-nav__icon-wrapper">
+            {icon}
+            {showDot ? <NotificationDot count={unreadCount} /> : null}
+          </span>
           <span className="c-bottom-nav__label">{label}</span>
         </NavLink>
       ))}
