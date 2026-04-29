@@ -1,0 +1,53 @@
+.c-notifications-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-screen-top) var(--space-screen-x) var(--space-bottom-nav-height);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  &__title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  &__mark-all {
+    min-height: var(--space-touch-min);
+    padding: var(--space-2) var(--space-3);
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-full);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__group-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    margin: 0;
+  }
+}
