@@ -1,0 +1,76 @@
+.c-add-medicine-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-screen-y) var(--space-screen-x);
+
+  &__header {
+    display: grid;
+    grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
+    align-items: center;
+    column-gap: var(--space-3);
+  }
+
+  &__back {
+    min-width: var(--space-touch-min);
+    min-height: var(--space-touch-min);
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-primary);
+    font-size: var(--text-xl);
+    cursor: pointer;
+  }
+
+  &__title {
+    margin: 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+  }
+
+  &__results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__result {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+
+    &:hover { border-color: var(--color-primary-mid); }
+
+    &-name { font-weight: var(--font-weight-semibold); }
+    &-meta { font-size: var(--text-sm); color: var(--color-text-muted); }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  &__selected {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-tint);
+
+    &-name { margin: 0; font-weight: var(--font-weight-semibold); color: var(--color-primary); }
+    &-meta { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+  }
+}
