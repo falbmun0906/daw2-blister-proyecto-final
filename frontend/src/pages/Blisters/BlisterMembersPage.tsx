@@ -7,6 +7,7 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { RoleBadge } from '../../components/molecules/RoleBadge';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import {
   listBlisterMembers,
   removeBlisterMember,
@@ -31,6 +32,7 @@ function MembersSkeleton() {
 
 /** Gestiona miembros de un blíster. Cambios de rol y expulsiones requieren OWNER. */
 export default function BlisterMembersPage() {
+  usePageTitle('Miembros');
   const navigate = useNavigate();
   const { blisterId } = useParams<{ blisterId: string }>();
   const userId = useAuthStore((s) => s.user?.id ?? null);

@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { Button } from '../../components/atoms/Button';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { createMcpToken } from '../../services/mcp.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import './McpTokenPage.scss';
 
 function McpTokenPage() {
+  usePageTitle('Token MCP');
   const navigate = useNavigate();
   const addToast = useUiStore((s) => s.addToast);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);

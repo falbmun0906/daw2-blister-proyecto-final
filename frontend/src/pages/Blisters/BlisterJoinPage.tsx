@@ -10,6 +10,7 @@ import {
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { joinBlister } from '../../services/blisters.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -18,6 +19,7 @@ import { isApiError } from '../../types/api.types';
 
 /** Formulario para unirse a un blíster con un código de invitación. */
 export default function BlisterJoinPage() {
+  usePageTitle('Unirse a un blíster');
   const navigate = useNavigate();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const upsertBlister = useBlisterStore((s) => s.upsertBlister);

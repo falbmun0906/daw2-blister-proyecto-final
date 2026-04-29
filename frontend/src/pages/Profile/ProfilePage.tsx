@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 
 import { Avatar } from '../../components/atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useAuthStore } from '../../stores/auth.store';
 import './ProfilePage.scss';
 
@@ -20,6 +21,7 @@ const PROFILE_LINKS: ProfileLinkItem[] = [
 ];
 
 function ProfilePage() {
+  usePageTitle('Perfil');
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
 

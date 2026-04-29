@@ -7,6 +7,7 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
 import { ROUTES } from '../../constants/routes';
 import { useAppointments } from '../../hooks/use.appointments';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -15,6 +16,7 @@ import type { Appointment } from '../../types/appointment.types';
 import './AppointmentsPage.scss';
 
 function AppointmentsPage() {
+  usePageTitle('Calendario');
   const navigate = useNavigate();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);

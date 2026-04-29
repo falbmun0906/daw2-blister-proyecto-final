@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -27,6 +28,7 @@ const editProfileFormSchema = z.object({
 type EditProfileFormValues = z.infer<typeof editProfileFormSchema>;
 
 function EditProfilePage() {
+  usePageTitle('Editar perfil');
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
   const addToast = useUiStore((s) => s.addToast);

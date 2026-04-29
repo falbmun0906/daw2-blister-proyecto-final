@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 
 import { Button } from '../../components/atoms/Button';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { revokeMcpToken } from '../../services/mcp.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import './McpTokenRevokePage.scss';
 
 function McpTokenRevokePage() {
+  usePageTitle('Revocar token');
   const navigate = useNavigate();
   const addToast = useUiStore((s) => s.addToast);
   const [isRevoking, setIsRevoking] = useState(false);

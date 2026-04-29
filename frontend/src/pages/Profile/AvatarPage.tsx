@@ -5,6 +5,7 @@ import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
 import { AvatarSelector } from '../../components/molecules/AvatarSelector';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -12,6 +13,7 @@ import { isApiError } from '../../types/api.types';
 import './AvatarPage.scss';
 
 function AvatarPage() {
+  usePageTitle('Avatar');
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
   const addToast = useUiStore((s) => s.addToast);

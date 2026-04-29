@@ -6,6 +6,7 @@ import { FontSelector } from '../../components/molecules/FontSelector';
 import { TextSizeSelector } from '../../components/molecules/TextSizeSelector';
 import { ThemeSelector } from '../../components/molecules/ThemeSelector';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { applyUserSettings } from '../../lib/applyUserSettings';
 import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
@@ -15,6 +16,7 @@ import type { UserSettings } from '../../types/auth.types';
 import './AccessibilityPage.scss';
 
 function AccessibilityPage() {
+  usePageTitle('Accesibilidad');
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
   const addToast = useUiStore((s) => s.addToast);

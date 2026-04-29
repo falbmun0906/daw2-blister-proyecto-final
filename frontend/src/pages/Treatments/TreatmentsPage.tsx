@@ -11,6 +11,7 @@ import { TreatmentRow } from '../../components/organisms/TreatmentRow';
 import { ROUTES } from '../../constants/routes';
 import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
 import { useMedicines } from '../../hooks/use.medicines';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -38,6 +39,7 @@ function applyFilter(list: Treatment[], mode: FilterMode): Treatment[] {
 }
 
 function TreatmentsPage() {
+  usePageTitle('Tratamientos');
   const navigate = useNavigate();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);

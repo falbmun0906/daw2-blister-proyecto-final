@@ -9,6 +9,7 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { SearchBar } from '../../components/molecules/SearchBar';
 import { MedicineCard } from '../../components/organisms/MedicineCard';
 import { useMedicines } from '../../hooks/use.medicines';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useBlisterStore } from '../../stores/blister.store';
 import './InventoryPage.scss';
 
@@ -26,6 +27,7 @@ function filterMedicines(list: ReturnType<typeof useMedicines>['medicines'], que
 }
 
 function InventoryPage() {
+  usePageTitle('Botiquín');
   const navigate = useNavigate();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);

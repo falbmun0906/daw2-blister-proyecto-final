@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { updateProfile } from '../../services/auth.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
@@ -37,6 +38,7 @@ const changePasswordSchema = z
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 function ChangePasswordPage() {
+  usePageTitle('Cambiar contraseña');
   const navigate = useNavigate();
   const addToast = useUiStore((s) => s.addToast);
 

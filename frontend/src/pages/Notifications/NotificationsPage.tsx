@@ -5,6 +5,7 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { NotificationItem } from '../../components/organisms/NotificationItem';
 import { useNotifications } from '../../hooks/use.notifications';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { NotificationView } from '../../types/notification.types';
@@ -39,6 +40,7 @@ function groupByDate(items: NotificationView[]): NotificationGroup[] {
 }
 
 function NotificationsPage() {
+  usePageTitle('Avisos');
   const { notifications, unreadCount, isLoading, error, refetch, markAsRead } =
     useNotifications();
   const addToast = useUiStore((s) => s.addToast);

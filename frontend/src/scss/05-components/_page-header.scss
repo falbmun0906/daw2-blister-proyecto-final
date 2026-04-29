@@ -1,0 +1,52 @@
+// components/_page-header.scss
+//
+// Header minimalista (no /home): botón volver + título + espacio simétrico.
+
+.c-page-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: grid;
+  grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-touch-min);
+    height: var(--space-touch-min);
+    padding: 0;
+    background-color: transparent;
+    border: 0;
+    border-radius: var(--radius-full);
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-tint);
+    }
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__spacer {
+    width: var(--space-touch-min);
+    height: var(--space-touch-min);
+  }
+}

@@ -7,6 +7,7 @@ import { AdherenceLogItem } from '../../components/organisms/AdherenceLogItem';
 import { ROUTES } from '../../constants/routes';
 import { useAdherence } from '../../hooks/use.adherence';
 import { useMedicines } from '../../hooks/use.medicines';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -15,6 +16,7 @@ import type { AdherenceLog } from '../../types/adherence.types';
 import './AdherencePage.scss';
 
 function AdherencePage() {
+  usePageTitle('Historial de adherencia');
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const currentUserId = useAuthStore((s) => s.user?.id ?? null);
   const addToast = useUiStore((s) => s.addToast);

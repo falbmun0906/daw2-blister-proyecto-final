@@ -13,6 +13,7 @@ import { SearchBar } from '../../components/molecules/SearchBar';
 import { ROUTES } from '../../constants/routes';
 import { stockUnits } from '../../../../shared/schemas/schema.constants';
 import { createMedicine } from '../../services/medicines.service';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { searchCima } from '../../services/external.service';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
@@ -31,6 +32,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function AddMedicinePage() {
+  usePageTitle('Añadir medicamento');
   const navigate = useNavigate();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);

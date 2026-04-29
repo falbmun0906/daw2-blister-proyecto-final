@@ -7,6 +7,7 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { MedicineIcon } from '../../components/molecules/MedicineIcon';
 import { StockBadge } from '../../components/molecules/StockBadge';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { getCimaDetail } from '../../services/external.service';
 import { getMedicine } from '../../services/medicines.service';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -27,6 +28,7 @@ function formatDate(iso: string): string {
 }
 
 function MedicineDetailPage() {
+  usePageTitle('Medicamento');
   const navigate = useNavigate();
   const { medicineId } = useParams<{ blisterId: string; medicineId: string }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);

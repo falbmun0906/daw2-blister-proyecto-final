@@ -13,6 +13,7 @@ import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { ROUTES } from '../../constants/routes';
 import { useMedicines } from '../../hooks/use.medicines';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -57,6 +58,7 @@ function buildPayload(values: FormValues): CreateTreatmentInput {
 }
 
 function TreatmentFormPage() {
+  usePageTitle('Tratamiento');
   const navigate = useNavigate();
   const { treatmentId } = useParams<{ treatmentId?: string }>();
   const isEditing = Boolean(treatmentId);

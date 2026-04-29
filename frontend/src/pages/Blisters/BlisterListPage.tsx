@@ -7,6 +7,7 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { RoleBadge } from '../../components/molecules/RoleBadge';
 import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import type { Blister, BlisterRole } from '../../types/blister.types';
@@ -28,6 +29,7 @@ function ListSkeleton() {
 
 /** Lista de blísters del usuario, con acceso a CRUD y selección de activo. */
 export default function BlisterListPage() {
+  usePageTitle('Mis blísteres');
   const navigate = useNavigate();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const { isLoading, error, refresh } = useBlisters();

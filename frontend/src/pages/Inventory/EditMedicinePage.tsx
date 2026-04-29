@@ -9,6 +9,7 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { getMedicine, removeMedicine, updateMedicine } from '../../services/medicines.service';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
@@ -32,6 +33,7 @@ function toDateInputValue(iso: string): string {
 }
 
 function EditMedicinePage() {
+  usePageTitle('Editar medicamento');
   const navigate = useNavigate();
   const { medicineId } = useParams<{ blisterId: string; medicineId: string }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
