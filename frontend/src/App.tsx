@@ -26,6 +26,14 @@ import AppointmentsPage from './pages/Appointments/AppointmentsPage'
 import AppointmentFormPage from './pages/Appointments/AppointmentFormPage'
 import AdherencePage from './pages/Adherence/AdherencePage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import NotificationsPage from './pages/Notifications/NotificationsPage'
+import ProfilePage from './pages/Profile/ProfilePage'
+import EditProfilePage from './pages/Profile/EditProfilePage'
+import ChangePasswordPage from './pages/Profile/ChangePasswordPage'
+import AvatarPage from './pages/Profile/AvatarPage'
+import AccessibilityPage from './pages/Accessibility/AccessibilityPage'
+import McpTokenPage from './pages/MCP/McpTokenPage'
+import McpTokenRevokePage from './pages/MCP/McpTokenRevokePage'
 
 function App() {
   return (
@@ -81,9 +89,15 @@ function App() {
             <Route path={ROUTES.blisterNotifications(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.medicineDetail(':blisterId', ':medicineId')} element={<MedicineDetailPage />} />
             <Route path={ROUTES.treatmentDetail(':blisterId', ':treatmentId')} element={<PlaceholderPage />} />
-            <Route path={ROUTES.profile} element={<PlaceholderPage />} />
+            <Route path={ROUTES.notifications} element={<NotificationsPage />} />
+            <Route path={ROUTES.profile} element={<ProfilePage />} />
+            <Route path={ROUTES.editProfile} element={<EditProfilePage />} />
+            <Route path={ROUTES.changePassword} element={<ChangePasswordPage />} />
+            <Route path={ROUTES.profileAvatar} element={<AvatarPage />} />
+            <Route path={ROUTES.accessibility} element={<AccessibilityPage />} />
+            <Route path={ROUTES.mcpToken} element={<McpTokenPage />} />
+            <Route path={ROUTES.mcpTokenRevoke} element={<McpTokenRevokePage />} />
             <Route path={ROUTES.settings} element={<PlaceholderPage />} />
-            <Route path={ROUTES.accessibility} element={<PlaceholderPage />} />
             <Route path={ROUTES.mcp} element={<PlaceholderPage />} />
           </Route>
         </Route>

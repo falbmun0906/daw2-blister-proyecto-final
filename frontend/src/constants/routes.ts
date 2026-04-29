@@ -30,9 +30,15 @@ export const ROUTES = {
     `/blisters/${blisterId}/medicines/${medicineId}`,
   treatmentDetail: (blisterId: string, treatmentId: string) =>
     `/blisters/${blisterId}/treatments/${treatmentId}`,
+  notifications: '/notifications',
   profile: '/profile',
+  editProfile: '/profile/edit',
+  changePassword: '/profile/password',
+  profileAvatar: '/profile/avatar',
+  accessibility: '/profile/accessibility',
+  mcpToken: '/profile/mcp',
+  mcpTokenRevoke: '/profile/mcp/revoke',
   settings: '/settings',
-  accessibility: '/accessibility',
   mcp: '/mcp',
   notFound: '*',
 } as const;
