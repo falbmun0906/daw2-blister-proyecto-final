@@ -1,0 +1,19 @@
+// components/_app-layout.scss
+//
+// Layout autenticado: header sticky + contenido scrollable + bottom nav fijo.
+
+.c-app-layout {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+
+  &__main {
+    flex: 1 1 auto;
+    padding-inline: var(--space-screen-x);
+    padding-top: var(--space-screen-top);
+    padding-bottom: calc(
+      var(--space-bottom-nav-height) + var(--space-safe-bottom) + var(--space-6)
+    );
+  }
+}

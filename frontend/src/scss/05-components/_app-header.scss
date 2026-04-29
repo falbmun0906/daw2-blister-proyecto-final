@@ -1,0 +1,94 @@
+// components/_app-header.scss
+//
+// Cabecera de pantallas autenticadas.
+// Estructura: [trigger blister] [título] [acciones (notif + perfil)]
+
+@use '../01-tools/mixins' as *;
+
+.c-app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+
+  min-height: var(--size-header-height);
+  padding: var(--space-3) var(--space-screen-x);
+  padding-top: calc(var(--space-3) + var(--space-safe-top));
+
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &__brand {
+    @include touch-target;
+    background: transparent;
+    border: 1.5px solid var(--color-primary-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-1) var(--space-2);
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: background-color var(--transition-fast),
+                border-color     var(--transition-fast);
+
+    &:hover { background-color: var(--color-primary-tint); }
+    &:focus-visible { @include focus-ring; }
+  }
+
+  &__brand-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+  }
+
+  &__title {
+    margin: 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--text-xl);
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-text);
+    @include truncate;
+  }
+
+  &__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  &__action {
+    @include touch-target;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--color-primary);
+    cursor: pointer;
+    position: relative;
+    padding: var(--space-1);
+    transition: background-color var(--transition-fast);
+
+    &:hover { background-color: var(--color-primary-tint); }
+    &:focus-visible { @include focus-ring; }
+  }
+
+  &__action-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: block;
+  }
+
+  &__badge {
+    position: absolute;
+    top: var(--space-1);
+    right: var(--space-1);
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-error);
+    border: 2px solid var(--color-surface);
+  }
+}
