@@ -10,6 +10,7 @@ import {
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { createBlister } from '../../services/blisters.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -18,6 +19,7 @@ import { isApiError } from '../../types/api.types';
 
 /** Formulario para crear un blíster. El creador queda como OWNER. */
 export default function BlisterCreatePage() {
+  usePageTitle('Crear blíster');
   const navigate = useNavigate();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const upsertBlister = useBlisterStore((s) => s.upsertBlister);
@@ -44,7 +46,7 @@ export default function BlisterCreatePage() {
         : null;
       setActiveBlister(blister._id, role);
       addToast({ message: 'Blíster creado correctamente.', variant: 'success' });
-      navigate(ROUTES.blisters);
+      navigate(ROUTES.home);
     } catch (error) {
       const message = isApiError(error)
         ? error.message
