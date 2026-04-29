@@ -81,13 +81,7 @@ function ChangePasswordPage() {
   };
 
   return (
-    <section className="c-change-password-page" aria-labelledby="change-password-title">
-      <header className="c-change-password-page__header">
-        <h1 id="change-password-title" className="c-change-password-page__title">
-          Cambiar contraseña
-        </h1>
-      </header>
-
+    <section className="c-change-password-page">
       <form
         className="c-change-password-page__form"
         onSubmit={handleSubmit(onSubmit)}
@@ -97,33 +91,40 @@ function ChangePasswordPage() {
           label="Contraseña actual"
           type="password"
           autoComplete="current-password"
+          placeholder="**********"
           error={errors.currentPassword?.message}
+          wrapperClassName="c-field--pill"
           {...register('currentPassword')}
         />
         <Input
           label="Nueva contraseña"
           type="password"
           autoComplete="new-password"
+          placeholder="**********"
           hint="Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo."
           error={errors.newPassword?.message}
+          wrapperClassName="c-field--pill"
           {...register('newPassword')}
         />
         <Input
-          label="Confirmar nueva contraseña"
+          label="Confirmar contraseña"
           type="password"
           autoComplete="new-password"
+          placeholder="**********"
           error={errors.confirmNewPassword?.message}
+          wrapperClassName="c-field--pill"
           {...register('confirmNewPassword')}
         />
 
-        <div className="c-change-password-page__actions">
-          <Button type="button" variant="ghost" onClick={() => navigate(ROUTES.profile)}>
-            Cancelar
-          </Button>
-          <Button type="submit" variant="primary" loading={isSubmitting}>
-            Guardar contraseña
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          variant="primary"
+          fullWidth
+          loading={isSubmitting}
+          className="c-change-password-page__submit"
+        >
+          Guardar cambios
+        </Button>
       </form>
     </section>
   );

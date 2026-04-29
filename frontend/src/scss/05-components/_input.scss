@@ -130,4 +130,25 @@
       border-color: var(--color-success);
     }
   }
+
+  // ── Variante pill ──────────────────────────────────────────────────────
+  //
+  // Inputs de bordes muy redondeados, fondo suave y label en color neutro.
+  // Usado en formularios de perfil y ajustes (pantallas 26, 27).
+
+  &--pill {
+    .c-field__label {
+      color: var(--color-text);
+      font-weight: var(--font-weight-regular);
+    }
+
+    .c-field__input,
+    .c-field__select,
+    .c-field__textarea {
+      border-radius: var(--radius-full);
+      background-color: var(--color-surface);
+      border-color: var(--color-border-subtle);
+      padding-inline: var(--space-5);
+    }
+  }
 }

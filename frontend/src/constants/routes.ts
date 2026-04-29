@@ -33,6 +33,7 @@ export const ROUTES = {
   notifications: '/notifications',
   profile: '/profile',
   editProfile: '/profile/edit',
+  personalInfo: '/profile/edit/info',
   changePassword: '/profile/password',
   profileAvatar: '/profile/avatar',
   accessibility: '/profile/accessibility',

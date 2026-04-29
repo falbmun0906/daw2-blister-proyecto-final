@@ -29,6 +29,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage'
 import NotificationsPage from './pages/Notifications/NotificationsPage'
 import ProfilePage from './pages/Profile/ProfilePage'
 import EditProfilePage from './pages/Profile/EditProfilePage'
+import PersonalInfoPage from './pages/Profile/PersonalInfoPage'
 import ChangePasswordPage from './pages/Profile/ChangePasswordPage'
 import AvatarPage from './pages/Profile/AvatarPage'
 import AccessibilityPage from './pages/Accessibility/AccessibilityPage'
@@ -92,6 +93,7 @@ function App() {
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
             <Route path={ROUTES.profile} element={<ProfilePage />} />
             <Route path={ROUTES.editProfile} element={<EditProfilePage />} />
+            <Route path={ROUTES.personalInfo} element={<PersonalInfoPage />} />
             <Route path={ROUTES.changePassword} element={<ChangePasswordPage />} />
             <Route path={ROUTES.profileAvatar} element={<AvatarPage />} />
             <Route path={ROUTES.accessibility} element={<AccessibilityPage />} />

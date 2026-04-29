@@ -1,6 +1,8 @@
 // components/_page-header.scss
 //
 // Header minimalista (no /home): botón volver + título + espacio simétrico.
+// Sin borde, sin fondo propio: se integra plano sobre el bg de la página.
+// Título en font-display (Overpass) regular, centrado.
 
 .c-page-header {
   position: sticky;
@@ -10,9 +12,8 @@
   grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  background-color: var(--color-bg);
 
   &__back {
     display: inline-flex;
@@ -36,8 +37,11 @@
 
   &__title {
     margin: 0;
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-bold);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
     color: var(--color-text);
     text-align: center;
     overflow: hidden;
