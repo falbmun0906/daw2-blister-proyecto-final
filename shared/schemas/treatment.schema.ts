@@ -78,3 +78,22 @@ export const updateTreatmentSchema = z
 export type CreateTreatmentInput = z.infer<typeof createTreatmentSchema>;
 export type UpdateTreatmentInput = z.infer<typeof updateTreatmentSchema>;
 export type TreatmentsListQuery = z.infer<typeof treatmentsListQuerySchema>;
+
+/** Schema de respuesta tal como lo emite el backend (`toTreatmentView`). */
+export const treatmentSchema = z.object({
+  id: objectIdSchema,
+  blisterId: objectIdSchema,
+  title: z.string(),
+  medicines: z.array(
+    z.object({
+      medicineId: objectIdSchema,
+      amount: z.number().int().positive(),
+      frequency: z.number().int().positive(),
+    }),
+  ),
+  startDate: z.string(),
+  endDate: z.string().nullable(),
+  active: z.boolean(),
+});
+
+export type Treatment = z.infer<typeof treatmentSchema>;

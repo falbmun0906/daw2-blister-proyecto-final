@@ -40,3 +40,18 @@ export const createAdherenceLogSchema = z
 
 export type CreateAdherenceLogInput = z.infer<typeof createAdherenceLogSchema>;
 export type AdherenceLogsListQuery = z.infer<typeof adherenceLogsListQuerySchema>;
+
+/** Schema de respuesta tal como lo emite el backend (`toAdherenceLogView`). */
+export const adherenceLogSchema = z.object({
+  id: objectIdSchema,
+  blisterId: objectIdSchema,
+  medicineId: objectIdSchema,
+  treatmentId: objectIdSchema,
+  userId: objectIdSchema,
+  amount: z.number().int().min(0),
+  timestamp: z.string(),
+  isForced: z.boolean(),
+  notes: z.string().nullable(),
+});
+
+export type AdherenceLog = z.infer<typeof adherenceLogSchema>;

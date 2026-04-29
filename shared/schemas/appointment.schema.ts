@@ -35,3 +35,14 @@ export const updateAppointmentSchema = appointmentBaseSchema
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
 export type AppointmentsListQuery = z.infer<typeof appointmentsListQuerySchema>;
+
+/** Schema de respuesta tal como lo emite el backend (`toAppointmentView`). */
+export const appointmentSchema = z.object({
+  id: objectIdSchema,
+  blisterId: objectIdSchema,
+  title: z.string(),
+  date: z.string(),
+  treatmentId: objectIdSchema.nullable(),
+});
+
+export type Appointment = z.infer<typeof appointmentSchema>;
