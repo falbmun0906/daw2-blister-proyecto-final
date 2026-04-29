@@ -1,7 +1,7 @@
 .c-auth-layout {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
     min-height: 100dvh;
     background-color: var(--color-bg);
     color: var(--color-text);
@@ -14,6 +14,22 @@
         margin-inline: auto;
         display: flex;
         flex-direction: column;
+        gap: var(--space-5);
+
+        padding-inline: var(--space-screen-x);
+        padding-top: calc(var(--space-6) + var(--space-safe-top));
+        padding-bottom: calc(var(--space-6) + var(--space-safe-bottom));
+
+        background-color: var(--color-surface);
+    }
+
+    // Variante "plain": sin card, ocupa todo el viewport (onboarding)
+    &__inner--plain {
+        background-color: transparent;
+        padding-inline: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        gap: 0;
     }
 
     @media (min-width: 64rem) {
@@ -22,6 +38,7 @@
 
         &__inner {
             width: 70.375rem;
+            max-width: 70.375rem;
             min-height: 38rem;
             max-height: 42rem;
             margin-inline: auto;
@@ -33,7 +50,7 @@
             border-inline: 0.1rem solid var(--color-accent);
             border-block: 0.1rem solid var(--color-accent);
 
-            padding: 0;
+            padding: var(--space-8);
             background-color: var(--color-bg); // <- card gris por defecto
         }
 
@@ -50,6 +67,7 @@
                 display: flex;
                 align-items: stretch;
                 justify-content: center;
+                padding: 0;
             }
         }
     }

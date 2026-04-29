@@ -19,7 +19,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const describedBy = [ariaDescribedBy, hintId, errorId].filter(Boolean).join(' ') || undefined;
 
   return (
-    <label className={['c-field', wrapperClassName].filter(Boolean).join(' ')} htmlFor={inputId}>
+    <label
+      className={['c-field', error && 'c-field--error', wrapperClassName].filter(Boolean).join(' ')}
+      htmlFor={inputId}
+    >
       <span className="c-field__label">
         {icon ? <span className="c-field__label-icon">{icon}</span> : null}
         <span className="c-field__label-text">{label}</span>
