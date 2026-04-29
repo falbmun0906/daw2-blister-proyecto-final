@@ -31,9 +31,11 @@
 }
 
 // Oculto para todos incluidos lectores de pantalla.
-// Usar solo para contenido genuinamente irrelevante.
+// Usar el atributo HTML `hidden` cuando el caso de uso lo permita; esta clase
+// existe como fallback equivalente para componentes que ya gestionan estilos.
+[hidden],
 .u-hidden {
-  display: none !important;
+  display: none;
 }
 
 // Visible solo para lectores de pantalla en modo alto contraste.
