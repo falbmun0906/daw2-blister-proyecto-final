@@ -1,6 +1,6 @@
 import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 
-import { VITE_API_URL } from '../constants/api.constants';
+import { API_TIMEOUT_MS, VITE_API_URL } from '../constants/api.constants';
 import { ROUTES } from '../constants/routes';
 import { useAuthStore } from '../stores/auth.store';
 import { authTokensSchema } from '../../../shared/schemas/auth.schema';
@@ -17,6 +17,7 @@ const rawClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: API_TIMEOUT_MS,
 });
 
 export const apiClient = axios.create({
@@ -24,6 +25,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: API_TIMEOUT_MS,
 });
 
 let refreshPromise: Promise<AuthTokens> | null = null;
