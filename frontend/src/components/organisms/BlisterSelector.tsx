@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { TbX, TbLayoutDashboard } from 'react-icons/tb';
 
 import { Button } from '../atoms/Button';
 import { ROUTES } from '../../constants/routes';
@@ -65,9 +66,7 @@ export function BlisterSelector({ onClose }: BlisterSelectorProps) {
             aria-label="Cerrar selector"
             onClick={onClose}
           >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m18 6-12 12M6 6l12 12" />
-            </svg>
+            <TbX className="c-icon c-icon--md" aria-hidden="true" />
           </button>
         </div>
 
@@ -89,10 +88,7 @@ export function BlisterSelector({ onClose }: BlisterSelectorProps) {
                     aria-current={isActive ? 'true' : undefined}
                   >
                     <span className="c-blister-selector__avatar" aria-hidden="true">
-                      <svg className="c-blister-selector__avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="m3 11 9-8 9 8" />
-                        <path d="M5 10v10h14V10" />
-                      </svg>
+                      <TbLayoutDashboard className="c-icon c-icon--md" aria-hidden="true" />
                     </span>
                     <span>
                       <span className="c-blister-selector__name">{blister.name}</span>

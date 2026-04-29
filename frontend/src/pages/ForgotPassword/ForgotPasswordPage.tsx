@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { TbChevronLeft, TbMail } from 'react-icons/tb';
 
 import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Button } from '../../components/atoms/Button';
@@ -51,16 +52,7 @@ function ForgotPasswordPage() {
           onClick={() => navigate(ROUTES.login)}
           aria-label="Volver al inicio de sesión"
         >
-          <svg viewBox="0 0 24 24" className="c-forgot-password-page__back-icon" aria-hidden="true">
-            <path
-              d="M15 18l-6-6 6-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <TbChevronLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
 
         <h1 className="c-forgot-password-page__title">He olvidado mi contraseña</h1>
@@ -91,12 +83,7 @@ function ForgotPasswordPage() {
               type="text"
               {...register('identifier')}
               error={errors.identifier?.message}
-              icon={
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <path d="M2 6l10 8 10-8" fill="none" stroke="currentColor" strokeWidth="2" />
-                </svg>
-              }
+              icon={<TbMail className="c-icon c-icon--md" aria-hidden="true" />}
             />
 
             <Button type="submit" variant="primary" fullWidth className="c-forgot-password-page__submit">

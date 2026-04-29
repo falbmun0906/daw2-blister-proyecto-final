@@ -1,5 +1,6 @@
 // components/_index.scss
 
+@forward 'icons';
 @forward 'button';
 @forward 'auth-layout';
 @forward 'input';
@@ -10,6 +11,7 @@
 @forward 'skeleton';
 @forward 'role-badge';
 @forward 'app-header';
+@forward 'page-header';
 @forward 'bottom-nav';
 @forward 'app-layout';
 @forward 'blister-selector';

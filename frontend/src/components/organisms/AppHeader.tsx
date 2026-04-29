@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { TbLayoutDashboard, TbBell, TbUserCircle } from 'react-icons/tb';
 
 import { Avatar } from '../atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
@@ -29,19 +30,7 @@ export function AppHeader() {
         aria-expanded={isSelectorOpen}
         onClick={() => setSelectorOpen(true)}
       >
-        <svg
-          className="c-app-header__brand-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
-        </svg>
+        <TbLayoutDashboard className="c-icon c-icon--lg" aria-hidden="true" />
       </button>
 
       <h1 className="c-app-header__title">{title}</h1>
@@ -56,19 +45,7 @@ export function AppHeader() {
               : 'Ver notificaciones'
           }
         >
-          <svg
-            className="c-app-header__action-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-          </svg>
+          <TbBell className="c-icon c-icon--lg" aria-hidden="true" />
           {unreadCount > 0 ? (
             <span className="c-app-header__badge" aria-hidden="true" />
           ) : null}
@@ -77,19 +54,7 @@ export function AppHeader() {
           {user ? (
             <Avatar name={user.name} avatarKey={user.settings.avatarKey} size="sm" />
           ) : (
-            <svg
-              className="c-app-header__action-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
+            <TbUserCircle className="c-icon c-icon--lg" aria-hidden="true" />
           )}
         </Link>
       </div>

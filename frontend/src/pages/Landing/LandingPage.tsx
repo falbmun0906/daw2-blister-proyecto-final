@@ -1,6 +1,7 @@
 // src/pages/Landing/LandingPage.tsx
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TbFileText, TbCode } from 'react-icons/tb';
 import heroImg from '/pwa-512x512.png';
 import appStoreImg from '/app-store.png';
 import playStoreImg from '/play-store.png';
@@ -75,31 +76,7 @@ function LandingPage() {
                 >
                     <article className="c-landing-page__panel c-landing-page__panel--docs">
                         <div className="c-landing-page__panel-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24">
-                                <path
-                                    d="M7 3.75h7l4.25 4.25V20.25H7z"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                                <path
-                                    d="M14 3.75v4.5h4.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                                <path
-                                    d="M9.5 12h5M9.5 15.5h5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
+                            <TbFileText className="c-icon c-icon--xl" aria-hidden="true" />
                         </div>
 
                         <h2 className="c-landing-page__panel-title">Documentación</h2>
@@ -133,16 +110,7 @@ function LandingPage() {
 
                     <article className="c-landing-page__panel">
                         <div className="c-landing-page__panel-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24">
-                                <path
-                                    d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
+                            <TbCode className="c-icon c-icon--xl" aria-hidden="true" />
                         </div>
 
                         <h2 className="c-landing-page__panel-title">Código fuente</h2>

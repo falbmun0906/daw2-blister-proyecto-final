@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { TbSearch, TbX } from 'react-icons/tb';
 
 interface SearchBarProps {
   value: string;
@@ -50,10 +51,7 @@ export function SearchBar({
   return (
     <div className={['c-search-bar', className].filter(Boolean).join(' ')}>
       <span className="c-search-bar__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width={18} height={18}>
-          <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
-          <path d="M21 21l-4.35-4.35" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
+        <TbSearch className="c-icon c-icon--sm" aria-hidden="true" />
       </span>
       <input
         id={inputId}
@@ -72,7 +70,7 @@ export function SearchBar({
           onClick={handleClear}
           aria-label="Limpiar búsqueda"
         >
-          ×
+          <TbX className="c-icon c-icon--sm" aria-hidden="true" />
         </button>
       ) : null}
     </div>
