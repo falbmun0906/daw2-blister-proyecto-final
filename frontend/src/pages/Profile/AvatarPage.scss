@@ -1,0 +1,25 @@
+.c-avatar-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-screen-top) var(--space-screen-x) var(--space-bottom-nav-height);
+
+  &__title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  &__preview {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-4);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+}
