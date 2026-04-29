@@ -16,6 +16,10 @@ import BlisterListPage from './pages/Blisters/BlisterListPage'
 import BlisterCreatePage from './pages/Blisters/BlisterCreatePage'
 import BlisterJoinPage from './pages/Blisters/BlisterJoinPage'
 import BlisterMembersPage from './pages/Blisters/BlisterMembersPage'
+import InventoryPage from './pages/Inventory/InventoryPage'
+import AddMedicinePage from './pages/Inventory/AddMedicinePage'
+import EditMedicinePage from './pages/Inventory/EditMedicinePage'
+import MedicineDetailPage from './pages/Medicine/MedicineDetailPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 
 function App() {
@@ -50,11 +54,16 @@ function App() {
             <Route path={ROUTES.joinBlister} element={<BlisterJoinPage />} />
             <Route path={ROUTES.blisterMembers(':blisterId')} element={<BlisterMembersPage />} />
             <Route path={ROUTES.blisterDetail(':blisterId')} element={<PlaceholderPage />} />
-            <Route path={ROUTES.blisterMedications(':blisterId')} element={<PlaceholderPage />} />
+            <Route path={ROUTES.blisterMedications(':blisterId')} element={<InventoryPage />} />
+            <Route path={ROUTES.addMedicine(':blisterId')} element={<AddMedicinePage />} />
+            <Route
+              path={ROUTES.editMedicine(':blisterId', ':medicineId')}
+              element={<EditMedicinePage />}
+            />
             <Route path={ROUTES.blisterTreatments(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.blisterAppointments(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.blisterNotifications(':blisterId')} element={<PlaceholderPage />} />
-            <Route path={ROUTES.medicineDetail(':blisterId', ':medicineId')} element={<PlaceholderPage />} />
+            <Route path={ROUTES.medicineDetail(':blisterId', ':medicineId')} element={<MedicineDetailPage />} />
             <Route path={ROUTES.treatmentDetail(':blisterId', ':treatmentId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.profile} element={<PlaceholderPage />} />
             <Route path={ROUTES.settings} element={<PlaceholderPage />} />
