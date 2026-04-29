@@ -20,6 +20,11 @@ import InventoryPage from './pages/Inventory/InventoryPage'
 import AddMedicinePage from './pages/Inventory/AddMedicinePage'
 import EditMedicinePage from './pages/Inventory/EditMedicinePage'
 import MedicineDetailPage from './pages/Medicine/MedicineDetailPage'
+import TreatmentsPage from './pages/Treatments/TreatmentsPage'
+import TreatmentFormPage from './pages/Treatments/TreatmentFormPage'
+import AppointmentsPage from './pages/Appointments/AppointmentsPage'
+import AppointmentFormPage from './pages/Appointments/AppointmentFormPage'
+import AdherencePage from './pages/Adherence/AdherencePage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 
 function App() {
@@ -60,8 +65,19 @@ function App() {
               path={ROUTES.editMedicine(':blisterId', ':medicineId')}
               element={<EditMedicinePage />}
             />
-            <Route path={ROUTES.blisterTreatments(':blisterId')} element={<PlaceholderPage />} />
-            <Route path={ROUTES.blisterAppointments(':blisterId')} element={<PlaceholderPage />} />
+            <Route path={ROUTES.blisterTreatments(':blisterId')} element={<TreatmentsPage />} />
+            <Route path={ROUTES.newTreatment(':blisterId')} element={<TreatmentFormPage />} />
+            <Route
+              path={ROUTES.editTreatment(':blisterId', ':treatmentId')}
+              element={<TreatmentFormPage />}
+            />
+            <Route path={ROUTES.blisterAppointments(':blisterId')} element={<AppointmentsPage />} />
+            <Route path={ROUTES.newAppointment(':blisterId')} element={<AppointmentFormPage />} />
+            <Route
+              path={ROUTES.editAppointment(':blisterId', ':appointmentId')}
+              element={<AppointmentFormPage />}
+            />
+            <Route path={ROUTES.blisterLogs(':blisterId')} element={<AdherencePage />} />
             <Route path={ROUTES.blisterNotifications(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.medicineDetail(':blisterId', ':medicineId')} element={<MedicineDetailPage />} />
             <Route path={ROUTES.treatmentDetail(':blisterId', ':treatmentId')} element={<PlaceholderPage />} />

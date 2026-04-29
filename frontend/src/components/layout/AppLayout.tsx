@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 
 import { AppHeader } from '../organisms/AppHeader';
 import { BottomNav } from '../organisms/BottomNav';
+import { Toaster } from '../organisms/Toaster';
 
 /**
  * Layout autenticado: cabecera sticky, contenido scrollable y bottom nav fijo.
@@ -15,6 +16,7 @@ export function AppLayout() {
         <Outlet />
       </main>
       <BottomNav />
+      <Toaster />
     </div>
   );
 }

@@ -17,7 +17,14 @@ export const ROUTES = {
   editMedicine: (blisterId: string, medicineId: string) =>
     `/blisters/${blisterId}/medicines/${medicineId}/edit`,
   blisterTreatments: (blisterId: string) => `/blisters/${blisterId}/treatments`,
+  newTreatment: (blisterId: string) => `/blisters/${blisterId}/treatments/new`,
+  editTreatment: (blisterId: string, treatmentId: string) =>
+    `/blisters/${blisterId}/treatments/${treatmentId}/edit`,
   blisterAppointments: (blisterId: string) => `/blisters/${blisterId}/appointments`,
+  newAppointment: (blisterId: string) => `/blisters/${blisterId}/appointments/new`,
+  editAppointment: (blisterId: string, appointmentId: string) =>
+    `/blisters/${blisterId}/appointments/${appointmentId}/edit`,
+  blisterLogs: (blisterId: string) => `/blisters/${blisterId}/logs`,
   blisterNotifications: (blisterId: string) => `/blisters/${blisterId}/notifications`,
   medicineDetail: (blisterId: string, medicineId: string) =>
     `/blisters/${blisterId}/medicines/${medicineId}`,
