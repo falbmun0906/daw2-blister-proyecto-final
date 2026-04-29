@@ -9,7 +9,6 @@ import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { ErrorState } from '../../components/atoms/ErrorState';
-import OnboardingPage from '../Onboarding/OnboardingPage';
 import { ROUTES } from '../../constants/routes';
 import { applyUserSettings } from '../../lib/applyUserSettings';
 import { login as loginService } from '../../services/auth.service';
@@ -33,8 +32,6 @@ const getErrorMessage = (code: string | undefined): string => {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const accessToken = useAuthStore((state) => state.accessToken);
-  const hasSeenOnboarding = useUiStore((state) => state.hasSeenOnboarding);
   const setSession = useAuthStore((state) => state.setSession);
   const addToast = useUiStore((state) => state.addToast);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,10 +48,6 @@ function LoginPage() {
       password: '',
     },
   });
-
-  if (!accessToken && !hasSeenOnboarding) {
-    return <OnboardingPage />;
-  }
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
