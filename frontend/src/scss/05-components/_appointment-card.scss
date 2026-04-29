@@ -1,0 +1,40 @@
+.c-appointment-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  &__title {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    margin: 0;
+  }
+
+  &__date {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+
+  &__treatment {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  &__edit-link { text-decoration: none; }
+}

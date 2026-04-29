@@ -1,0 +1,45 @@
+.c-toaster {
+  position: fixed;
+  inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 5rem) 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-screen-x, var(--space-4));
+  pointer-events: none;
+
+  &__item {
+    pointer-events: auto;
+    width: 100%;
+    max-width: 28rem;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: var(--color-text);
+    color: var(--color-surface);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+    font-size: var(--text-sm);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__item--success { background-color: var(--color-success, #2e7d32); }
+  &__item--error { background-color: var(--color-error, #c62828); }
+  &__item--warning { background-color: var(--color-warning, #ef6c00); color: var(--color-surface); }
+  &__item--info { background-color: var(--color-text); }
+
+  &__close {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 var(--space-2);
+  }
+}
