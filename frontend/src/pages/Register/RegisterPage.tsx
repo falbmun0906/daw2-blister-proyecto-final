@@ -3,6 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import {
+  TbChevronLeft,
+  TbUserCircle,
+  TbUser,
+  TbMail,
+  TbLock,
+  TbCheck,
+  TbKey,
+} from 'react-icons/tb';
 
 import { registerSchema } from '../../../../shared/schemas/auth.schema';
 import { AuthLayout } from '../../components/layout/AuthLayout';
@@ -99,16 +108,7 @@ function RegisterPage() {
           onClick={() => navigate(ROUTES.landing)}
           aria-label="Volver a la portada"
         >
-          <svg viewBox="0 0 24 24" className="c-register-page__back-icon" aria-hidden="true">
-            <path
-              d="M15 18l-6-6 6-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <TbChevronLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
 
         <h1 className="c-register-page__title">Crear Cuenta</h1>
@@ -125,12 +125,7 @@ function RegisterPage() {
           type="text"
           {...register('name')}
           error={errors.name?.message}
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" fill="currentColor" />
-              <path d="M12 14c-4 0-6 2-6 2v2h12v-2s-2-2-6-2z" fill="currentColor" />
-            </svg>
-          }
+          icon={<TbUserCircle className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
@@ -139,12 +134,7 @@ function RegisterPage() {
           type="text"
           {...register('username')}
           error={errors.username?.message}
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" strokeWidth="2" />
-              <circle cx="12" cy="7" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          }
+          icon={<TbUser className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
@@ -153,12 +143,7 @@ function RegisterPage() {
           type="email"
           {...register('email')}
           error={errors.email?.message}
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-              <path d="M2 6l10 8 10-8" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          }
+          icon={<TbMail className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
@@ -168,12 +153,7 @@ function RegisterPage() {
           {...register('password')}
           error={errors.password?.message}
           hint="Mínimo 8 caracteres: mayúscula, minúscula, número y símbolo"
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="12" width="16" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-              <path d="M8 12v-3a4 4 0 018 0v3" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          }
+          icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
@@ -182,11 +162,7 @@ function RegisterPage() {
           type="password"
           {...register('confirmPassword')}
           error={errors.confirmPassword?.message}
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          }
+          icon={<TbCheck className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <Input
@@ -195,18 +171,8 @@ function RegisterPage() {
           type="text"
           {...register('inviteCode')}
           error={errors.inviteCode?.message}
-          hint="Comparte tu botiquín con la familia"
-          icon={
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M2 12c0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 10-10 10S2 17.5 2 12z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-              <path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
-          }
+          hint="Comparte tu blíster con la familia"
+          icon={<TbKey className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
         <div className="c-register-page__checkboxes">

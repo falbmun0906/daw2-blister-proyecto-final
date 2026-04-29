@@ -45,7 +45,7 @@ const SLIDES: OnboardingSlide[] = [
     id: 2,
     title: 'Cuida de los tuyos',
     description:
-      'Gestiona el botiquín de toda la familia en un solo lugar: define quién puede registrar tomas y quién solo observar.',
+      'Gestiona el blíster de toda la familia en un solo lugar: define quién puede registrar tomas y quién solo observar.',
     ctaLabel: 'SIGUIENTE',
     image: '/onboarding-4.png',
     highlight: 'los tuyos',
@@ -53,7 +53,7 @@ const SLIDES: OnboardingSlide[] = [
   },
   {
     id: 3,
-    title: 'Habla con tu botiquín',
+    title: 'Habla con tu blíster',
     description:
       'Blíster es compatible con asistentes de IA. Pregunta "¿qué me toca tomar?" o registra una dosis usando solo tu voz.',
     ctaLabel: 'EMPEZAR AHORA',
