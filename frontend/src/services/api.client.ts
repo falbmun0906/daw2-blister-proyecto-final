@@ -135,6 +135,14 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Response interceptor: solo refresca tokens en `401`. Cualquier otro status
+ * se propaga tal cual al consumidor. En particular:
+ * - `403 BLISTER_ROLE_FORBIDDEN`: se entrega como `ApiError` para que la UI
+ *   muestre un mensaje de permisos (no se reintenta y no toca la sesi�n).
+ * - `409 BLISTER_OWNER_PROTECTION`: idem, lo gestiona la p�gina que lo dispar�.
+ * Las rutas de `/auth/*` se excluyen del refresh para evitar bucles.
+ */
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
