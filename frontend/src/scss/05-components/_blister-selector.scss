@@ -1,0 +1,139 @@
+// components/_blister-selector.scss
+//
+// Selector de blíster activo. Bottom sheet abierto desde el botón de marca
+// del AppHeader. Lista los blísters del usuario con badge de rol.
+
+@use '../01-tools/mixins' as *;
+
+.c-blister-selector {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  background-color: rgba(15, 56, 53, 0.4);
+
+  &__sheet {
+    width: 100%;
+    max-width: 32rem;
+    max-height: 80dvh;
+    overflow-y: auto;
+
+    background-color: var(--color-surface);
+    border-top-left-radius: var(--radius-xl);
+    border-top-right-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+
+    padding: var(--space-5) var(--space-screen-x);
+    padding-bottom: calc(var(--space-5) + var(--space-safe-bottom));
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--text-lg);
+    color: var(--color-text);
+  }
+
+  &__close {
+    @include touch-target;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    &:focus-visible { @include focus-ring; }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-stack);
+  }
+
+  &__item {
+    @include touch-target;
+    width: 100%;
+    text-align: start;
+    padding: var(--space-4);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--space-3);
+    align-items: center;
+
+    transition: border-color var(--transition-fast),
+                background-color var(--transition-fast);
+
+    &:hover { background-color: var(--color-surface-tinted); }
+    &:focus-visible { @include focus-ring; }
+
+    &.is-active {
+      border-color: var(--color-primary-mid);
+      background-color: var(--color-primary-tint);
+    }
+  }
+
+  &__avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary-tint);
+    color: var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__avatar-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &__name {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    @include truncate;
+  }
+
+  &__meta {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border-subtle);
+  }
+}
