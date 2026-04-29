@@ -1,0 +1,20 @@
+.c-avatar-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+
+  &__option {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-height: var(--space-touch-min);
+    border: 2px solid transparent;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+
+    &--selected {
+      border-color: var(--color-primary);
+      transform: scale(1.05);
+    }
+  }
+}

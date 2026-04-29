@@ -1,0 +1,33 @@
+.c-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-on-primary);
+  font-weight: var(--font-weight-semibold);
+  flex-shrink: 0;
+  user-select: none;
+
+  &--sm {
+    width: var(--size-avatar-sm);
+    height: var(--size-avatar-sm);
+    font-size: var(--text-xs);
+  }
+
+  &--md {
+    width: var(--size-avatar-md);
+    height: var(--size-avatar-md);
+    font-size: var(--text-sm);
+  }
+
+  &--lg {
+    width: 4rem;
+    height: 4rem;
+    font-size: var(--text-lg);
+  }
+
+  &__initials {
+    line-height: 1;
+    letter-spacing: var(--tracking-wide);
+  }
+}
