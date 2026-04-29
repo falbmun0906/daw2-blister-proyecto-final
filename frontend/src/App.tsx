@@ -1,48 +1,55 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ROUTES } from './constants/routes'
+import { AppLayout } from './components/layout/AppLayout'
 import { GuestRoute } from './router/GuestRoute'
+import { LoginRoute } from './router/LoginRoute'
+import { OnboardingRoute } from './router/OnboardingRoute'
 import { PrivateRoute } from './router/PrivateRoute'
 import LandingPage from './pages/Landing/LandingPage'
 import OnboardingPage from './pages/Onboarding/OnboardingPage'
 import LoginPage from './pages/Login/LoginPage'
 import RegisterPage from './pages/Register/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPassword/ForgotPasswordPage'
+import HomePage from './pages/Home/HomePage'
+import BlisterListPage from './pages/Blisters/BlisterListPage'
+import BlisterCreatePage from './pages/Blisters/BlisterCreatePage'
+import BlisterJoinPage from './pages/Blisters/BlisterJoinPage'
+import BlisterMembersPage from './pages/Blisters/BlisterMembersPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
-import { OnboardingRoute } from './router/OnboardingRoute'
-
-function AppLayout() {
-  return (
-    <Outlet />
-  )
-}
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppLayout />}>
-          <Route index element={<Navigate to={ROUTES.landing} replace />} />
-          <Route path="/" element={<Navigate to={ROUTES.landing} replace />} />
-          <Route path={ROUTES.landing} element={<LandingPage />} />
-          <Route path={ROUTES.access} element={<Navigate to={ROUTES.landing} replace />} />
+        <Route index element={<Navigate to={ROUTES.landing} replace />} />
+        <Route path={ROUTES.landing} element={<LandingPage />} />
+        <Route path={ROUTES.access} element={<Navigate to={ROUTES.landing} replace />} />
+
+        {/* Onboarding accesible solo la primera vez o si el usuario lo reactiva desde Ajustes */}
+        <Route element={<OnboardingRoute />}>
           <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
-          {/* Onboarding solo accesible si canReplayOnboarding === true */}
-          <Route element={<OnboardingRoute />}>
-            <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
-          </Route>
-          <Route element={<GuestRoute />}>
-            <Route path={ROUTES.login} element={<LoginPage />} />
-            <Route path={ROUTES.register} element={<RegisterPage />} />
-            <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
-          </Route>
-          <Route element={<PrivateRoute />}>
-            <Route path={ROUTES.home} element={<PlaceholderPage />} />
-            <Route path={ROUTES.blisters} element={<PlaceholderPage />} />
-            <Route path={ROUTES.createBlister} element={<PlaceholderPage />} />
-            <Route path={ROUTES.joinBlister} element={<PlaceholderPage />} />
+        </Route>
+
+        {/* /login redirige a /onboarding si el usuario nunca lo vio */}
+        <Route element={<LoginRoute />}>
+          <Route path={ROUTES.login} element={<LoginPage />} />
+        </Route>
+
+        <Route element={<GuestRoute />}>
+          <Route path={ROUTES.register} element={<RegisterPage />} />
+          <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+        </Route>
+
+        {/* Shell autenticado: AppHeader + BottomNav envuelven todas las rutas privadas */}
+        <Route element={<PrivateRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path={ROUTES.home} element={<HomePage />} />
+            <Route path={ROUTES.blisters} element={<BlisterListPage />} />
+            <Route path={ROUTES.createBlister} element={<BlisterCreatePage />} />
+            <Route path={ROUTES.joinBlister} element={<BlisterJoinPage />} />
+            <Route path={ROUTES.blisterMembers(':blisterId')} element={<BlisterMembersPage />} />
             <Route path={ROUTES.blisterDetail(':blisterId')} element={<PlaceholderPage />} />
-            <Route path={ROUTES.blisterMembers(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.blisterMedications(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.blisterTreatments(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.blisterAppointments(':blisterId')} element={<PlaceholderPage />} />
@@ -54,8 +61,9 @@ function App() {
             <Route path={ROUTES.accessibility} element={<PlaceholderPage />} />
             <Route path={ROUTES.mcp} element={<PlaceholderPage />} />
           </Route>
-          <Route path={ROUTES.notFound} element={<Navigate to={ROUTES.landing} replace />} />
         </Route>
+
+        <Route path={ROUTES.notFound} element={<Navigate to={ROUTES.landing} replace />} />
       </Routes>
     </BrowserRouter>
   )
