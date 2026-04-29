@@ -2,19 +2,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-screen-x) var(--space-bottom-nav-height);
+  padding-top: var(--space-2);
 
   &__sparkle {
     align-self: center;
-    margin-top: var(--space-2);
+    margin-top: var(--space-3);
     margin-bottom: var(--space-2);
     color: var(--color-primary-mid);
-    font-size: 2.5rem;
+    font-size: 6.5rem;
     line-height: 1;
 
     svg {
-      width: 2.5rem;
-      height: 2.5rem;
+      width: 6.5rem;
+      height: 6.5rem;
+      stroke-width: 1;
     }
   }
 

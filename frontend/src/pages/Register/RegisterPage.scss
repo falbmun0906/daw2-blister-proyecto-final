@@ -3,11 +3,18 @@
 // Sólo afecta a la pantalla de registro: el resto del flujo de autenticación
 // mantiene fondo claro.
 
+// Boost de especificidad: combinamos clases del AuthLayout con las del page
+// para garantizar que el fondo verde gana sobre el blanco que aplica el
+// layout de auth (.c-auth-layout__inner { background: var(--color-surface) }).
+.c-register-page.c-auth-layout {
+  background-color: var(--color-primary-mid);
+}
+
 .c-register-page {
   color: var(--color-text-on-primary);
   background-color: var(--color-primary-mid);
 
-  &__inner {
+  &__inner.c-auth-layout__inner {
     background-color: var(--color-primary-mid);
     gap: var(--space-5);
   }
@@ -17,6 +24,11 @@
   .c-field__label-icon {
     color: var(--color-text-on-primary);
     font-weight: var(--font-weight-regular);
+  }
+
+  // Labels más grandes (mismo criterio que en login).
+  .c-field__label {
+    font-size: var(--text-base);
   }
 
   .c-field__input,
@@ -51,13 +63,13 @@
     }
   }
 
-  // Botón principal sobre fondo verde: usamos verde más oscuro para contraste.
+  // Botón principal sobre fondo verde: blanco con letras verdes.
   .c-btn--primary {
-    background-color: var(--color-primary);
-    color: var(--color-text-on-primary);
+    background-color: var(--color-surface);
+    color: var(--color-primary-mid);
 
-    &:hover  { background-color: var(--color-primary-hover); }
-    &:active { background-color: var(--color-primary-active); }
+    &:hover  { background-color: rgb(255 255 255 / 0.92); }
+    &:active { background-color: rgb(255 255 255 / 0.85); }
   }
 
   &__header {
@@ -84,15 +96,16 @@
     &:hover { background-color: rgb(255 255 255 / 0.12); }
   }
 
+  // Título grande, centrado sobre el formulario, en negro, estilo landing.
   &__title {
     margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-regular);
-    line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-tight);
     text-align: center;
-    color: var(--color-text-on-primary);
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);
+    font-weight: var(--font-weight-medium);
+    line-height: 1;
+    letter-spacing: var(--tracking-xtight);
+    color: var(--color-text);
   }
 
   &__spacer {

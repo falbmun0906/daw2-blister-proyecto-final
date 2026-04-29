@@ -1,8 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactElement } from 'react';
+import { FaBriefcaseMedical } from 'react-icons/fa6';
 import {
   TbHome,
-  TbMedicineSyrup,
   TbPill,
   TbCalendar,
   TbBell,
@@ -35,7 +35,7 @@ export function BottomNav() {
     {
       to: activeBlisterId ? ROUTES.blisterMedications(activeBlisterId) : null,
       label: 'Botiquín',
-      icon: <TbMedicineSyrup className="c-icon c-icon--lg" aria-hidden="true" />,
+      icon: <FaBriefcaseMedical className="c-icon c-icon--lg" aria-hidden="true" />,
       requiresBlister: true,
     },
     {

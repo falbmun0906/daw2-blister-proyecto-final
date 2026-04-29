@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: var(--space-2) var(--space-screen-x) var(--space-bottom-nav-height);
+  padding-top: var(--space-2);
 
   &__section-title {
     margin: var(--space-3) 0 0;

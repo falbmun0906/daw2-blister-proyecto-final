@@ -7,6 +7,20 @@
     color: var(--color-primary-mid);
   }
 
+  // Labels más grandes y con peso regular.
+  .c-field__label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-regular);
+  }
+
+  // Inputs con bordes prácticamente redondos como los botones.
+  .c-field__input,
+  .c-field__select,
+  .c-field__textarea {
+    border-radius: var(--radius-full);
+    padding-inline: var(--space-5);
+  }
+
   &__inner {
     gap: var(--space-5);
   }
@@ -35,29 +49,35 @@
     &:hover { background-color: var(--color-primary-tint); }
   }
 
-  &__title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-regular);
-    line-height: var(--leading-snug);
-    letter-spacing: var(--tracking-tight);
-    text-align: center;
-    color: var(--color-text);
-  }
-
   &__spacer {
     min-width: var(--space-touch-min);
   }
 
   // Cuerpo: ocupa el espacio disponible y centra el formulario un poco
-  // por encima del centro real (margen inferior > superior).
+  // por encima del centro real.
   &__body {
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     padding-bottom: var(--space-8);
+    gap: var(--space-6);
+  }
+
+  // Título grande, centrado sobre el formulario, estilo landing.
+  &__title {
+    margin: 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);
+    font-weight: var(--font-weight-medium);
+    line-height: 1;
+    letter-spacing: var(--tracking-xtight);
+    color: var(--color-text);
+  }
+
+  &__title-accent {
+    color: var(--color-accent);
   }
 
   &__form {
@@ -68,7 +88,7 @@
 
   &__forgot-link {
     align-self: flex-end;
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     font-weight: var(--font-weight-regular);
     color: var(--color-primary-mid);
     text-decoration: none;

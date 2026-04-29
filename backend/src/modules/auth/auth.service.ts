@@ -238,12 +238,18 @@ export const authRegister = async (input: RegisterInput): Promise<AuthResult> =>
 };
 
 const findUserForLogin = async (identifier: string) => {
-  // El email y el username se almacenan siempre en minúsculas, por lo que
-  // normalizamos el identificador para soportar accesos como "MiUsuario".
-  const normalized = identifier.trim().toLowerCase();
+  // El email y el username se almacenan siempre en minúsculas (lowercase: true),
+  // pero usamos un regex case-insensitive y anclado para tolerar cuentas
+  // antiguas o creadas fuera del flujo estándar y soportar accesos como
+  // "MiUsuario" o "Correo@Dominio.com" sin reglas estrictas en el cliente.
+  const normalized = identifier.trim();
+  if (!normalized) return null;
+
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`^${escaped}$`, 'i');
 
   return UserModel.findOne({
-    $or: [{ email: normalized }, { username: normalized }],
+    $or: [{ email: pattern }, { username: pattern }],
     deletedAt: null,
   }).select('+password +refreshTokenHash +refreshTokenExpiresAt');
 };

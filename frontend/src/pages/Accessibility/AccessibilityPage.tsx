@@ -34,13 +34,6 @@ function AccessibilityPage() {
     if (draft) applyUserSettings(draft);
   }, [draft]);
 
-  // Restaurar las preferencias persistidas si el usuario abandona sin guardar.
-  useEffect(() => {
-    return () => {
-      if (user) applyUserSettings(user.settings);
-    };
-  }, [user]);
-
   if (!user || !draft) return null;
 
   const persist = async (

@@ -12,19 +12,19 @@
     line-height: 1;
 
     &--sm {
-        font-size: var(--space-4);
-    }
-
-    &--md {
         font-size: var(--space-5);
     }
 
-    &--lg {
+    &--md {
         font-size: var(--space-6);
     }
 
+    &--lg {
+        font-size: var(--space-7, 1.75rem);
+    }
+
     &--xl {
-        font-size: var(--space-8);
+        font-size: var(--space-9, 2.5rem);
     }
 
     &--success {
@@ -55,7 +55,7 @@
 .c-icon svg {
     fill: none;
     stroke: currentColor;
-    stroke-width: 2;
+    stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
 }

@@ -88,7 +88,7 @@ function RegisterPage() {
         variant: 'success',
       });
 
-      navigate(ROUTES.blisters, { replace: true });
+      navigate(ROUTES.home, { replace: true });
     } catch (error) {
       if (isApiError(error)) {
         setGlobalError(getErrorMessage(error.code));
@@ -111,11 +111,10 @@ function RegisterPage() {
         >
           <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
-
-        <h1 className="c-register-page__title">Crear cuenta</h1>
-
         <span className="c-register-page__spacer" aria-hidden="true" />
       </header>
+
+      <h1 className="c-register-page__title">Registrarme</h1>
 
       {globalError ? <ErrorState message={globalError} /> : null}
 

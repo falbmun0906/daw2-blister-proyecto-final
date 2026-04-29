@@ -65,7 +65,7 @@ function LoginPage() {
         variant: 'success',
       });
 
-      navigate(ROUTES.blisters, { replace: true });
+      navigate(ROUTES.home, { replace: true });
     } catch (error) {
       if (isApiError(error)) {
         setGlobalError(getErrorMessage(error.code));
@@ -88,13 +88,14 @@ function LoginPage() {
         >
           <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
-
-        <h1 className="c-login-page__title">Iniciar sesión</h1>
-
         <span className="c-login-page__spacer" aria-hidden="true" />
       </header>
 
       <div className="c-login-page__body">
+        <h1 className="c-login-page__title">
+          <span className="c-login-page__title-accent">Iniciar</span> sesión
+        </h1>
+
         <form className="c-login-page__form" onSubmit={handleSubmit(onSubmit)}>
           {globalError ? <ErrorState message={globalError} /> : null}
 
