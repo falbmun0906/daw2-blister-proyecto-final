@@ -10,6 +10,8 @@ import {
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
 import { BlisterModel } from '../../models/blister.model';
+import { MedicineModel } from '../../models/medicine.model';
+import { TreatmentModel } from '../../models/treatment.model';
 import { UserModel } from '../../models/user.model';
 import { AppError } from '../../utils/app-error';
 import {
@@ -25,11 +27,19 @@ interface BlisterMemberView {
   role: (typeof BLISTER_ROLES)[number];
 }
 
+interface BlisterMemberDetailView extends BlisterMemberView {
+  fullName: string;
+  username: string;
+  avatarKey: string | null;
+}
+
 interface BlisterView {
   _id: string;
   name: string;
   deletedAt: Date | null | undefined;
   members: BlisterMemberView[];
+  treatmentsCount?: number;
+  medicinesCount?: number;
   inviteCode?: {
     code: string;
     exp: Date;
@@ -177,7 +187,8 @@ const ensureOwnerProtection = (
 };
 
 /**
- * Lists all active blisters available to the authenticated user.
+ * Lists all active blisters available to the authenticated user, including
+ * counts of active treatments and medicines for the dashboard list view.
  */
 export const blistersList = async (userId: string): Promise<BlisterView[]> => {
   const blisters = await BlisterModel.find({
@@ -189,7 +200,20 @@ export const blistersList = async (userId: string): Promise<BlisterView[]> => {
     },
   });
 
-  return blisters.map((blister) => toBlisterView(blister));
+  return Promise.all(
+    blisters.map(async (blister) => {
+      const blisterId = blister._id;
+      const [treatmentsCount, medicinesCount] = await Promise.all([
+        TreatmentModel.countDocuments({ blisterId, active: true }),
+        MedicineModel.countDocuments({ blisterId }),
+      ]);
+      return {
+        ...toBlisterView(blister),
+        treatmentsCount,
+        medicinesCount,
+      };
+    }),
+  );
 };
 
 /**
@@ -299,18 +323,38 @@ export const blistersJoin = async (userId: string, input: JoinBlisterInput): Pro
 };
 
 /**
- * Lists blister members for any authenticated member of that blister.
+ * Lists blister members for any authenticated member of that blister, joining
+ * the user collection so the frontend can render names and avatars.
  */
 export const blistersListMembers = async (
   blisterId: string,
   userId: string,
-): Promise<BlisterMemberView[]> => {
+): Promise<BlisterMemberDetailView[]> => {
   const { blister } = await ensureMemberAccess(blisterId, userId);
 
-  return blister.members.map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => ({
-    userId: member.userId.toString(),
-    role: member.role,
-  }));
+  const memberIds = blister.members.map(
+    (member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => member.userId,
+  );
+  const users = await UserModel.find({ _id: { $in: memberIds } })
+    .select('name username settings.avatarKey')
+    .lean();
+  const userById = new Map(
+    users.map((user) => [user._id.toString(), user] as const),
+  );
+
+  return blister.members.map(
+    (member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => {
+      const id = member.userId.toString();
+      const user = userById.get(id);
+      return {
+        userId: id,
+        role: member.role,
+        fullName: user?.name ?? '',
+        username: user?.username ?? '',
+        avatarKey: (user?.settings?.avatarKey as string | undefined) ?? null,
+      };
+    },
+  );
 };
 
 /**

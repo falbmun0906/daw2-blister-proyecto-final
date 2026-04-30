@@ -19,6 +19,10 @@ export interface Blister {
   members: BlisterMember[];
   inviteCode?: InviteCode | null;
   deletedAt?: string | null;
+  /** Treatments con `active: true` para este blíster. */
+  treatmentsCount?: number;
+  /** Medicamentos registrados en el blíster. */
+  medicinesCount?: number;
 }
 
 /**
