@@ -41,6 +41,35 @@
     & svg { width: 1.2rem; height: 1.2rem; }
   }
 
+  &__icon-wrapper {
+    position: relative;
+    display: inline-flex;
+  }
+
+  &__avatar-edit {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 1.4rem;
+    height: 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid var(--color-surface);
+    background-color: var(--color-primary-mid);
+    color: var(--color-text-on-primary);
+    cursor: pointer;
+    padding: 0;
+
+    & svg { width: 0.7rem; height: 0.7rem; }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+  }
+
   &__heading {
     display: flex;
     flex-direction: column;
@@ -421,5 +450,41 @@
     margin: 0;
     text-align: center;
     color: var(--color-text-muted);
+  }
+}
+
+// ── Selector de icono de blíster ──────────────────────────────────────────
+.c-blister-avatar-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+
+  &__option {
+    aspect-ratio: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--color-border-subtle);
+    background-color: var(--color-primary-tint);
+    color: var(--color-primary-mid);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+
+    & svg { width: 1.5rem; height: 1.5rem; }
+
+    &:hover { border-color: var(--color-primary-mid); }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+
+    &.is-selected {
+      border-color: var(--color-primary-mid);
+      background-color: var(--color-primary-mid);
+      color: var(--color-text-on-primary);
+    }
+
+    &:disabled { opacity: 0.5; cursor: progress; }
   }
 }

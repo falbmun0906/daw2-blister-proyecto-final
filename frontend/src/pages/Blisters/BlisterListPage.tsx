@@ -6,7 +6,6 @@ import {
   TbCopy,
   TbEye,
   TbHeart,
-  TbHome,
   TbPencil,
   TbPlus,
   TbUser,
@@ -19,6 +18,12 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Modal } from '../../components/atoms/Modal';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import {
+  BLISTER_AVATAR_KEYS,
+  type BlisterAvatarKey,
+  getBlisterAvatarLabel,
+  getBlisterIcon,
+} from '../../constants/blister-avatars';
 import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -357,6 +362,49 @@ function NewBlisterModal({ open, onClose, onCreated }: NewBlisterModalProps) {
 
 // ── Card individual ────────────────────────────────────────────────────────
 
+interface BlisterAvatarModalProps {
+  open: boolean;
+  currentKey: BlisterAvatarKey | null;
+  onClose: () => void;
+  onSelect: (key: BlisterAvatarKey) => Promise<void>;
+}
+
+function BlisterAvatarModal({ open, currentKey, onClose, onSelect }: BlisterAvatarModalProps) {
+  const [busy, setBusy] = useState<BlisterAvatarKey | null>(null);
+  return (
+    <Modal open={open} onClose={onClose} title="Elige un icono" ariaLabel="Selección de icono">
+      <div className="c-blister-avatar-picker" role="radiogroup" aria-label="Elige un icono">
+        {BLISTER_AVATAR_KEYS.map((key) => {
+          const Icon = getBlisterIcon(key);
+          const isSelected = currentKey === key;
+          const isBusy = busy === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              aria-label={getBlisterAvatarLabel(key)}
+              className={`c-blister-avatar-picker__option${isSelected ? ' is-selected' : ''}`}
+              disabled={isBusy}
+              onClick={async () => {
+                setBusy(key);
+                try {
+                  await onSelect(key);
+                } finally {
+                  setBusy(null);
+                }
+              }}
+            >
+              <Icon aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
+    </Modal>
+  );
+}
+
 interface BlisterCardProps {
   blister: Blister;
   isOwner: boolean;
@@ -379,6 +427,9 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
   const [confirmRemove, setConfirmRemove] = useState<BlisterMemberDetail | null>(null);
   const [confirmDeleteBlister, setConfirmDeleteBlister] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+
+  const Icon = useMemo(() => getBlisterIcon(blister.avatarKey), [blister.avatarKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -484,8 +535,23 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
   return (
     <li className="c-blister-card">
       <button type="button" className="c-blister-card__open" onClick={handleSelect}>
-        <span className="c-blister-card__icon" aria-hidden="true">
-          <TbHome />
+        <span className="c-blister-card__icon-wrapper">
+          <span className="c-blister-card__icon" aria-hidden="true">
+            <Icon />
+          </span>
+          {editing ? (
+            <button
+              type="button"
+              className="c-blister-card__avatar-edit"
+              aria-label="Cambiar icono del blíster"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAvatarPicker(true);
+              }}
+            >
+              <TbPencil aria-hidden="true" />
+            </button>
+          ) : null}
         </span>
         <span className="c-blister-card__heading">
           <span className="c-blister-card__title">{blister.name}</span>
@@ -627,6 +693,24 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
         open={showAddMember}
         onClose={() => setShowAddMember(false)}
         onCreateInvite={handleCreateInvite}
+      />
+      <BlisterAvatarModal
+        open={showAvatarPicker}
+        currentKey={(blister.avatarKey as BlisterAvatarKey | null) ?? null}
+        onClose={() => setShowAvatarPicker(false)}
+        onSelect={async (key) => {
+          try {
+            await updateBlister(blister._id, { avatarKey: key });
+            addToast({ message: 'Icono actualizado.', variant: 'success' });
+            await onChanged();
+            setShowAvatarPicker(false);
+          } catch (err) {
+            addToast({
+              message: isApiError(err) ? err.message : 'No se ha podido actualizar el icono.',
+              variant: 'error',
+            });
+          }
+        }}
       />
     </li>
   );

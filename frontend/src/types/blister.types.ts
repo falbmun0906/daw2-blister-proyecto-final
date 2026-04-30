@@ -16,6 +16,7 @@ export interface InviteCode {
 export interface Blister {
   _id: string;
   name: string;
+  avatarKey?: string | null;
   members: BlisterMember[];
   inviteCode?: InviteCode | null;
   deletedAt?: string | null;
