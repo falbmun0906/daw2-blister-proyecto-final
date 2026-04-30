@@ -261,6 +261,10 @@ export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
   const user = await findUserForLogin(input.identifier);
 
   if (!user?.password) {
+    if (env.nodeEnv !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn('[auth] login failed: user not found', { identifier: input.identifier });
+    }
     throw new AppError({
       code: 'AUTH_INVALID_CREDENTIALS',
       message: 'Invalid credentials.',
@@ -271,6 +275,13 @@ export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
   const isPasswordValid = await bcrypt.compare(input.password, user.password);
 
   if (!isPasswordValid) {
+    if (env.nodeEnv !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn('[auth] login failed: bad password', {
+        identifier: input.identifier,
+        userId: user._id.toString(),
+      });
+    }
     throw new AppError({
       code: 'AUTH_INVALID_CREDENTIALS',
       message: 'Invalid credentials.',
