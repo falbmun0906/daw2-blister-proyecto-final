@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { Avatar } from '../atoms/Avatar';
 import type { Blister, BlisterRole } from '../../types/blister.types';
@@ -7,6 +7,7 @@ interface BlisterPillSelectorProps {
   blisters: Blister[];
   activeBlisterId: string | null;
   onSelect: (blister: Blister) => void;
+  onCreate?: () => void;
   variant?: 'default' | 'terracotta';
   /**
    * Devuelve el avatarKey almacenado en el usuario miembro del blíster, si está
@@ -34,17 +35,22 @@ export function BlisterPillSelector({
   blisters,
   activeBlisterId,
   onSelect,
+  onCreate,
   resolveAvatarKey,
   variant = 'default',
 }: BlisterPillSelectorProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+  const slots = useMemo(
+    () => Array.from({ length: 3 }, (_, index) => blisters[index] ?? null),
+    [blisters],
+  );
 
   // Posiciona el indicador deslizante sobre el item activo.
   useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
-    const activeIdx = blisters.findIndex((b) => b._id === activeBlisterId);
+    const activeIdx = slots.findIndex((b) => b?._id === activeBlisterId);
     if (activeIdx < 0) {
       setIndicator(null);
       return;
@@ -52,7 +58,7 @@ export function BlisterPillSelector({
     const node = list.children.item(activeIdx) as HTMLElement | null;
     if (!node) return;
     setIndicator({ left: node.offsetLeft, width: node.offsetWidth });
-  }, [activeBlisterId, blisters]);
+  }, [activeBlisterId, slots]);
 
   return (
     <div
@@ -72,12 +78,26 @@ export function BlisterPillSelector({
           />
         ) : null}
 
-        {blisters.map((blister) => {
+        {slots.map((blister, index) => {
+          if (!blister) {
+            return (
+              <li key={`placeholder-${index}`} className="c-blister-pill-selector__item c-blister-pill-selector__item--placeholder">
+                <button
+                  type="button"
+                  className="c-blister-pill-selector__placeholder"
+                  onClick={onCreate}
+                  disabled={!onCreate}
+                >
+                  <span className="c-blister-pill-selector__placeholder-icon" aria-hidden="true">+</span>
+                  <span>Nuevo blíster</span>
+                </button>
+              </li>
+            );
+          }
+
           const isActive = blister._id === activeBlisterId;
-          // Mostramos como máximo 2 avatares; el resto se agrupa en una
-          // píldora circular "+N" (mismo lenguaje visual que en BlisterListPage).
           const visibleMembers = blister.members.slice(0, 2);
-          const extra = blister.members.length - visibleMembers.length;
+          const hasExtra = blister.members.length >= 3;
 
           return (
             <li key={blister._id} className="c-blister-pill-selector__item">
@@ -105,8 +125,8 @@ export function BlisterPillSelector({
                       />
                     </span>
                   ))}
-                  {extra > 0 ? (
-                    <span className="c-blister-pill-selector__stack-extra">+{extra}</span>
+                  {hasExtra ? (
+                    <span className="c-blister-pill-selector__stack-extra">+</span>
                   ) : null}
                 </span>
                 <span className="c-blister-pill-selector__name">{blister.name}</span>

@@ -82,6 +82,7 @@ function InventoryPage() {
         <BlisterPillSelector
           blisters={blisters}
           activeBlisterId={blisterId}
+          onCreate={() => navigate(ROUTES.createBlister)}
           onSelect={(b) => {
             const role = userId
               ? (b.members.find((m) => m.userId === userId)?.role ?? null)

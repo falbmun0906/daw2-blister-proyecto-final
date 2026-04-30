@@ -316,6 +316,25 @@
 
   &__add {
     margin-top: var(--space-1);
+    min-height: 7rem;
+    border-width: 0.125rem;
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in srgb, var(--color-surface) 70%, transparent);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+
+    .c-dashed-btn__plus {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: var(--text-xl);
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-primary-mid);
+      background-color: var(--color-primary-tint);
+      color: var(--color-primary);
+    }
   }
 }
 
