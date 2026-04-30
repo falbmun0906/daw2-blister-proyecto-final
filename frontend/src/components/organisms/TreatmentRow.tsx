@@ -43,7 +43,7 @@ export function TreatmentRow({ treatment, medicines, blisterId, userRole, onDele
               {resolveMedicineName(medicines, entry.medicineId)}
             </span>
             <span className="c-treatment-row__med-dose">
-              {entry.amount} · cada {entry.frequency} h
+              {entry.amount} · cada {entry.frequencyHours} h
             </span>
             {treatment.active && onLogDose && editable ? (
               <Button

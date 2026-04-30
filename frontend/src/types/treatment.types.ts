@@ -9,5 +9,5 @@ export type { CreateTreatmentInput, Treatment, UpdateTreatmentInput };
 export interface TreatmentMedicineEntry {
   medicineId: string;
   amount: number;
-  frequency: number;
+  frequencyHours: number;
 }

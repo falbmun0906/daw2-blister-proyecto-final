@@ -25,7 +25,7 @@ interface FormValues {
   startDate: string;
   endDate: string;
   active: boolean;
-  medicines: { medicineId: string; amount: number; frequency: number }[];
+  medicines: { medicineId: string; amount: number; frequencyHours: number }[];
 }
 
 function toFormValues(treatment: ReturnType<typeof useTreatments>['treatments'][number] | null): FormValues {
@@ -35,7 +35,7 @@ function toFormValues(treatment: ReturnType<typeof useTreatments>['treatments'][
       startDate: new Date().toISOString().slice(0, 10),
       endDate: '',
       active: true,
-      medicines: [{ medicineId: '', amount: 1, frequency: 8 }],
+      medicines: [{ medicineId: '', amount: 1, frequencyHours: 8 }],
     };
   }
   return {
@@ -205,7 +205,7 @@ function TreatmentFormPage() {
                 type="number"
                 label="Frecuencia (h)"
                 min={1}
-                {...register(`medicines.${index}.frequency` as const, { valueAsNumber: true })}
+                {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
               />
               {fields.length > 1 ? (
                 <Button variant="ghost" type="button" onClick={() => remove(index)}>
@@ -217,7 +217,7 @@ function TreatmentFormPage() {
           <Button
             variant="primary-outline"
             type="button"
-            onClick={() => append({ medicineId: '', amount: 1, frequency: 8 })}
+            onClick={() => append({ medicineId: '', amount: 1, frequencyHours: 8 })}
           >
             Añadir medicamento
           </Button>
