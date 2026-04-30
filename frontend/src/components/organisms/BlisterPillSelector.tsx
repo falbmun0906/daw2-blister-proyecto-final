@@ -90,7 +90,7 @@ export function BlisterPillSelector({
                       style={{ zIndex: visibleMembers.length - idx }}
                     >
                       <Avatar
-                        name={member.userId}
+                        name=""
                         avatarKey={resolveAvatarKey?.(member.userId)}
                         size="sm"
                       />

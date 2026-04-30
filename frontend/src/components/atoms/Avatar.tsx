@@ -15,10 +15,11 @@ interface AvatarProps {
  * cae al estilo por defecto basado en el tono primario.
  */
 export function Avatar({ name, avatarKey, size = 'md', ariaLabel }: AvatarProps) {
-  const initials = getInitials(name);
+  const trimmed = name.trim();
+  const initials = trimmed ? getInitials(trimmed) : '';
   const background = getAvatarBackground(avatarKey);
   const className = ['c-avatar', `c-avatar--${size}`].join(' ');
-  const label = ariaLabel ?? `Avatar de ${name}`;
+  const label = ariaLabel ?? (trimmed ? `Avatar de ${trimmed}` : 'Avatar');
 
   return (
     <span
@@ -27,9 +28,11 @@ export function Avatar({ name, avatarKey, size = 'md', ariaLabel }: AvatarProps)
       aria-label={label}
       style={{ backgroundColor: background }}
     >
-      <span className="c-avatar__initials" aria-hidden="true">
-        {initials}
-      </span>
+      {initials ? (
+        <span className="c-avatar__initials" aria-hidden="true">
+          {initials}
+        </span>
+      ) : null}
     </span>
   );
 }

@@ -1,45 +1,159 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Sistema de toasts: pila inferior centrada con animaciones de entrada/salida
+// y barra de progreso. Variantes con borde lateral coloreado e icono.
+// ─────────────────────────────────────────────────────────────────────────────
+
 .c-toaster {
   position: fixed;
   inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 5rem) 0;
   z-index: 90;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-screen-x, var(--space-4));
   pointer-events: none;
+}
 
-  &__item {
-    pointer-events: auto;
-    width: 100%;
-    max-width: 28rem;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-md);
-    background-color: var(--color-text);
-    color: var(--color-surface);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
-    font-size: var(--text-sm);
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
+.c-toast {
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface, #fff);
+  color: var(--color-text);
+  box-shadow:
+    0 12px 24px -8px rgba(0, 0, 0, 0.18),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid var(--color-text-muted);
+  overflow: hidden;
+  // Animación de entrada por defecto (slide-up + fade).
+  animation: c-toast-enter 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  will-change: transform, opacity;
+
+  &.is-leaving {
+    animation: c-toast-exit 0.22s ease-in both;
   }
 
-  &__item--success { background-color: var(--color-success, #2e7d32); }
-  &__item--error { background-color: var(--color-error, #c62828); }
-  &__item--warning { background-color: var(--color-warning, #ef6c00); color: var(--color-surface); }
-  &__item--info { background-color: var(--color-text); }
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--color-text-muted);
+
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  &__message {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    color: var(--color-text);
+    word-break: break-word;
+  }
 
   &__close {
     appearance: none;
-    border: none;
+    border: 0;
     background: transparent;
-    color: inherit;
-    font: inherit;
+    color: var(--color-text-muted);
     cursor: pointer;
-    min-height: 44px;
-    min-width: 44px;
-    padding: 0 var(--space-2);
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+
+    svg { width: 1rem; height: 1rem; }
+
+    &:hover { background-color: var(--color-surface-tinted, rgba(0, 0, 0, 0.04)); color: var(--color-text); }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+  }
+
+  &__progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    width: 100%;
+    background-color: currentColor;
+    opacity: 0.35;
+    transform-origin: left center;
+    animation-name: c-toast-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
+  // ── Variantes ─────────────────────────────────────────────────────────────
+  &--success {
+    border-left-color: var(--color-success, #2e7d32);
+    & .c-toast__icon,
+    & .c-toast__progress { color: var(--color-success, #2e7d32); }
+  }
+  &--error {
+    border-left-color: var(--color-error, #c62828);
+    & .c-toast__icon,
+    & .c-toast__progress { color: var(--color-error, #c62828); }
+  }
+  &--warning {
+    border-left-color: var(--color-warning, #ef6c00);
+    & .c-toast__icon,
+    & .c-toast__progress { color: var(--color-warning, #ef6c00); }
+  }
+  &--info {
+    border-left-color: var(--color-primary-mid, #2f8c80);
+    & .c-toast__icon,
+    & .c-toast__progress { color: var(--color-primary-mid, #2f8c80); }
+  }
+}
+
+@keyframes c-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes c-toast-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.4rem) scale(0.98);
+  }
+}
+
+@keyframes c-toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c-toast,
+  .c-toast.is-leaving,
+  .c-toast__progress {
+    animation: none !important;
   }
 }
