@@ -6,6 +6,7 @@ describe('TreatmentModel', () => {
   it('requires at least one medicine in each treatment', () => {
     const treatment = new TreatmentModel({
       blisterId: new Types.ObjectId(),
+      patientUserId: new Types.ObjectId(),
       title: 'Tratamiento hipertension',
       medicines: [],
       startDate: new Date('2026-04-24T08:00:00.000Z'),
@@ -19,12 +20,13 @@ describe('TreatmentModel', () => {
   it('accepts valid medicine schedules', () => {
     const treatment = new TreatmentModel({
       blisterId: new Types.ObjectId(),
+      patientUserId: new Types.ObjectId(),
       title: 'Tratamiento hipertension',
       medicines: [
         {
           medicineId: new Types.ObjectId(),
           amount: 1,
-          frequency: 8,
+          frequencyHours: 8,
         },
       ],
       startDate: new Date('2026-04-24T08:00:00.000Z'),
@@ -38,12 +40,13 @@ describe('TreatmentModel', () => {
   it('rejects end dates earlier than the start date', () => {
     const treatment = new TreatmentModel({
       blisterId: new Types.ObjectId(),
+      patientUserId: new Types.ObjectId(),
       title: 'Tratamiento hipertension',
       medicines: [
         {
           medicineId: new Types.ObjectId(),
           amount: 1,
-          frequency: 8,
+          frequencyHours: 8,
         },
       ],
       startDate: new Date('2026-04-24T08:00:00.000Z'),

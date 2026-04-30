@@ -49,12 +49,13 @@ describe('appointments.service', () => {
     });
     const treatment = await TreatmentModel.create({
       blisterId: blister._id,
+      patientUserId: user._id,
       title: 'Base',
       medicines: [
         {
           medicineId: new Types.ObjectId(),
           amount: 1,
-          frequency: 8,
+          frequencyHours: 8,
         },
       ],
       startDate: new Date('2030-12-01T00:00:00.000Z'),
@@ -64,14 +65,16 @@ describe('appointments.service', () => {
   };
 
   it('lists appointments with pagination metadata', async () => {
-    const { blister } = await createBlisterWithTreatment();
+    const { user, blister } = await createBlisterWithTreatment();
 
     await appointmentsCreate(blister._id.toString(), 'OWNER', {
       title: 'Revision A',
+      patientUserId: user._id.toString(),
       date: new Date('2030-12-02T10:00:00.000Z'),
     });
     await appointmentsCreate(blister._id.toString(), 'OWNER', {
       title: 'Revision B',
+      patientUserId: user._id.toString(),
       date: new Date('2030-12-03T10:00:00.000Z'),
     });
 
@@ -87,10 +90,11 @@ describe('appointments.service', () => {
   });
 
   it('creates and updates appointments linked to treatments in the same blister', async () => {
-    const { blister, treatment } = await createBlisterWithTreatment('CAREGIVER');
+    const { user, blister, treatment } = await createBlisterWithTreatment('CAREGIVER');
 
     const created = await appointmentsCreate(blister._id.toString(), 'CAREGIVER', {
       title: 'Cardiologia',
+      patientUserId: user._id.toString(),
       date: new Date('2030-12-02T10:00:00.000Z'),
       treatmentId: treatment._id.toString(),
     });
@@ -109,12 +113,13 @@ describe('appointments.service', () => {
   });
 
   it('rejects linked treatments from other blisters', async () => {
-    const { blister } = await createBlisterWithTreatment();
+    const { user, blister } = await createBlisterWithTreatment();
     const { treatment } = await createBlisterWithTreatment();
 
     await expect(
       appointmentsCreate(blister._id.toString(), 'OWNER', {
         title: 'No valido',
+        patientUserId: user._id.toString(),
         date: new Date('2030-12-02T10:00:00.000Z'),
         treatmentId: treatment._id.toString(),
       }),
@@ -124,11 +129,12 @@ describe('appointments.service', () => {
   });
 
   it('blocks observer writes', async () => {
-    const { blister } = await createBlisterWithTreatment('OBSERVER');
+    const { user, blister } = await createBlisterWithTreatment('OBSERVER');
 
     await expect(
       appointmentsCreate(blister._id.toString(), 'OBSERVER', {
         title: 'No permitido',
+        patientUserId: user._id.toString(),
         date: new Date('2030-12-02T10:00:00.000Z'),
       }),
     ).rejects.toMatchObject({
@@ -137,9 +143,10 @@ describe('appointments.service', () => {
   });
 
   it('deletes appointments', async () => {
-    const { blister } = await createBlisterWithTreatment();
+    const { user, blister } = await createBlisterWithTreatment();
     const appointment = await appointmentsCreate(blister._id.toString(), 'OWNER', {
       title: 'Revision',
+      patientUserId: user._id.toString(),
       date: new Date('2030-12-02T10:00:00.000Z'),
     });
 

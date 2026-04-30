@@ -82,7 +82,8 @@ describe('treatments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Tratamiento A',
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequency: 8 }],
+        patientUserId: user._id.toString(),
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
     await request(app)
@@ -90,7 +91,8 @@ describe('treatments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Tratamiento B',
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequency: 12 }],
+        patientUserId: user._id.toString(),
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 12 }],
         startDate: '2030-11-03T00:00:00.000Z',
       });
 
@@ -133,7 +135,8 @@ describe('treatments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Dolor',
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequency: 8 }],
+        patientUserId: user._id.toString(),
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
 
@@ -166,7 +169,8 @@ describe('treatments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'No permitido',
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequency: 8 }],
+        patientUserId: user._id.toString(),
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
 
@@ -199,12 +203,14 @@ describe('treatments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Diabetes',
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequency: 8 }],
+        patientUserId: user._id.toString(),
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
 
     const appointment = await AppointmentModel.create({
       blisterId: blister._id,
+      patientUserId: user._id,
       title: 'Revision',
       date: new Date('2030-11-04T10:00:00.000Z'),
       treatmentId: createResponse.body.data.id,

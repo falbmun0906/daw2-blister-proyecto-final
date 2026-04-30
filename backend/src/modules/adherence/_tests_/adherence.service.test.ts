@@ -68,12 +68,13 @@ describe('adherence.service', () => {
     });
     const treatment = await TreatmentModel.create({
       blisterId: blister._id,
+      patientUserId: user._id,
       title: 'Tratamiento base',
       medicines: [
         {
           medicineId: medicine._id,
           amount: 2,
-          frequency: 8,
+          frequencyHours: 8,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),
@@ -153,12 +154,13 @@ describe('adherence.service', () => {
     });
     const treatment = await TreatmentModel.create({
       blisterId: blister._id,
+      patientUserId: owner._id,
       title: 'Tratamiento umbral',
       medicines: [
         {
           medicineId: medicine._id,
           amount: 2,
-          frequency: 8,
+          frequencyHours: 8,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),
@@ -243,12 +245,13 @@ describe('adherence.service', () => {
     });
     const treatment = await TreatmentModel.create({
       blisterId: blister._id,
+      patientUserId: owner._id,
       title: 'Tratamiento forzado',
       medicines: [
         {
           medicineId: medicine._id,
           amount: 2,
-          frequency: 8,
+          frequencyHours: 8,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),

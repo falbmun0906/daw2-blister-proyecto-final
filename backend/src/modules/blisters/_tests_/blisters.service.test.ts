@@ -158,7 +158,7 @@ describe('blisters.service', () => {
     });
 
     expect(memberBlisters).toHaveLength(1);
-    expect(memberBlisters[0].name).toBe('Mi botiquín');
+    expect(memberBlisters[0].name).toBe('Mi blíster');
     expect(memberBlisters[0].members[0].role).toBe('OWNER');
   });
 

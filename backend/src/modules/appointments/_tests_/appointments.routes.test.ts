@@ -70,6 +70,7 @@ describe('appointments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Revision A',
+        patientUserId: user._id.toString(),
         date: '2030-12-10T10:00:00.000Z',
       });
     await request(app)
@@ -77,6 +78,7 @@ describe('appointments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Revision B',
+        patientUserId: user._id.toString(),
         date: '2030-12-11T10:00:00.000Z',
       });
 
@@ -102,12 +104,13 @@ describe('appointments.routes', () => {
     });
     const treatment = await TreatmentModel.create({
       blisterId: blister._id,
+      patientUserId: user._id,
       title: 'Tratamiento base',
       medicines: [
         {
           medicineId: new Types.ObjectId(),
           amount: 1,
-          frequency: 8,
+          frequencyHours: 8,
         },
       ],
       startDate: new Date('2030-12-01T00:00:00.000Z'),
@@ -118,6 +121,7 @@ describe('appointments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Cardiologia',
+        patientUserId: user._id.toString(),
         date: '2030-12-10T10:00:00.000Z',
         treatmentId: treatment._id.toString(),
       });
@@ -138,6 +142,7 @@ describe('appointments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'No permitido',
+        patientUserId: user._id.toString(),
         date: '2030-12-10T10:00:00.000Z',
       });
 
@@ -157,6 +162,7 @@ describe('appointments.routes', () => {
       .set('Authorization', `Bearer ${createAccessToken(user._id.toString())}`)
       .send({
         title: 'Traumatologia',
+        patientUserId: user._id.toString(),
         date: '2030-12-10T10:00:00.000Z',
       });
 

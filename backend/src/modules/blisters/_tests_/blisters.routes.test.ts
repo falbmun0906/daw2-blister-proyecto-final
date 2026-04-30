@@ -163,7 +163,7 @@ describe('blisters.routes', () => {
 
     expect(response.status).toBe(200);
     expect(memberBlisters).toHaveLength(1);
-    expect(memberBlisters[0].name).toBe('Mi botiquín');
+    expect(memberBlisters[0].name).toBe('Mi blíster');
   });
 
   it('blocks removing the last owner from a blister', async () => {
