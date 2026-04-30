@@ -68,6 +68,7 @@ export interface ExternalSearchItem {
   labtitular: string | null;
   formaOficial: string | null;
   dosisOficial: string | null;
+  fotoUrl: string | null;
 }
 
 export interface ExternalMedicineInfo {
