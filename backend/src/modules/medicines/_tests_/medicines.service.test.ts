@@ -120,6 +120,11 @@ describe('medicines.service', () => {
       fotos: [],
       atcs: [],
       principiosActivos: [],
+      excipientes: [],
+      viasAdministracion: [],
+      cpresc: null,
+      receta: false,
+      fechaAutorizacion: null,
       conduc: false,
       triangulo: false,
       cimaStatus: {
@@ -166,6 +171,11 @@ describe('medicines.service', () => {
       fotos: [],
       atcs: [],
       principiosActivos: [],
+      excipientes: [],
+      viasAdministracion: [],
+      cpresc: null,
+      receta: false,
+      fechaAutorizacion: null,
       conduc: false,
       triangulo: false,
       cimaStatus: {

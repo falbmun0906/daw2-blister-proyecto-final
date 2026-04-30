@@ -47,6 +47,7 @@ describe('external.service', () => {
         labtitular: 'Lab',
         formaOficial: 'COMPRIMIDO',
         dosisOficial: '500 mg',
+        fotoUrl: null,
       },
     ]);
   });

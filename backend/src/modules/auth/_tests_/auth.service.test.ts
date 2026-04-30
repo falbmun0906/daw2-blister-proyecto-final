@@ -38,6 +38,7 @@ describe('auth.service', () => {
       confirmPassword: 'Password1!',
       privacyConsent: true,
       ageConfirmed: true,
+      inviteCode: undefined,
     });
 
     const storedUser = await UserModel.findOne({ email: 'ana@example.com' })
@@ -95,6 +96,7 @@ describe('auth.service', () => {
       confirmPassword: 'Password1!',
       privacyConsent: true,
       ageConfirmed: true,
+      inviteCode: undefined,
     });
 
     const refreshed = await authRefresh({
@@ -118,6 +120,7 @@ describe('auth.service', () => {
       confirmPassword: 'Password1!',
       privacyConsent: true,
       ageConfirmed: true,
+      inviteCode: undefined,
     });
 
     const mcpTokenResult = await authCreateMcpToken(registerResult.user.id, {});
@@ -137,6 +140,7 @@ describe('auth.service', () => {
       confirmPassword: 'Password1!',
       privacyConsent: true,
       ageConfirmed: true,
+      inviteCode: undefined,
     });
 
     const result = await authLogin({

@@ -22,6 +22,7 @@ import {
 
 interface MedicineView {
   id: string;
+  _id: string;
   blisterId: string;
   nregist: string;
   nombre: string;
@@ -55,6 +56,7 @@ const WRITER_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
 
 const toMedicineView = (medicine: Awaited<ReturnType<typeof MedicineModel.findOne>>): MedicineView => ({
   id: medicine!._id.toString(),
+  _id: medicine!._id.toString(),
   blisterId: medicine!.blisterId.toString(),
   nregist: medicine!.nregist,
   nombre: medicine!.nombre,
@@ -142,10 +144,23 @@ export const medicinesCreate = async (
 
   const officialMedicine = await externalGetMedicineInfo(input.nregist);
   const formaOficial = officialMedicine.formaOficial ?? officialMedicine.formaSimplificada ?? 'DESCONOCIDA';
+  const blisterObjectId = new Types.ObjectId(blisterId);
+  const existingMedicine = await MedicineModel.exists({
+    blisterId: blisterObjectId,
+    nregist: officialMedicine.nregist,
+  });
+
+  if (existingMedicine) {
+    throw new AppError({
+      code: 'MEDICINE_DUPLICATE',
+      message: 'This medicine already exists in the blister inventory.',
+      statusCode: HTTP_STATUS_CONFLICT,
+    });
+  }
 
   try {
     const medicine = await MedicineModel.create({
-      blisterId: new Types.ObjectId(blisterId),
+      blisterId: blisterObjectId,
       nregist: officialMedicine.nregist,
       nombre: officialMedicine.nombre,
       alias: input.alias,

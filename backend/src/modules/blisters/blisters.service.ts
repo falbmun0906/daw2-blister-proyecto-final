@@ -30,6 +30,9 @@ import {
 interface BlisterMemberView {
   userId: string;
   role: (typeof BLISTER_ROLES)[number];
+  fullName?: string;
+  username?: string;
+  avatarKey?: string | null;
 }
 
 interface BlisterMemberDetailView extends BlisterMemberView {
@@ -55,15 +58,37 @@ interface BlisterView {
 
 const INVITE_EXPIRATION_MS = 48 * 60 * 60 * 1000;
 
-const toBlisterView = (blister: Awaited<ReturnType<typeof BlisterModel.findOne>>): BlisterView => ({
+interface MemberUserView {
+  name: string;
+  username: string;
+  settings?: {
+    avatarKey?: string;
+  };
+}
+
+const toBlisterView = (
+  blister: Awaited<ReturnType<typeof BlisterModel.findOne>>,
+  userById?: Map<string, MemberUserView>,
+): BlisterView => ({
   _id: blister!._id.toString(),
   name: blister!.name,
   avatarKey: blister!.avatarKey ?? null,
   deletedAt: blister!.deletedAt,
-  members: blister!.members.map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => ({
-    userId: member.userId.toString(),
-    role: member.role,
-  })),
+  members: blister!.members.map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => {
+    const memberUserId = member.userId.toString();
+    const user = userById?.get(memberUserId);
+    return {
+      userId: memberUserId,
+      role: member.role,
+      ...(user
+        ? {
+            fullName: user.name,
+            username: user.username,
+            avatarKey: user.settings?.avatarKey ?? null,
+          }
+        : {}),
+    };
+  }),
   inviteCode: blister!.inviteCode
     ? {
         code: blister!.inviteCode.code,
@@ -221,6 +246,27 @@ export const blistersList = async (userId: string): Promise<BlisterView[]> => {
     },
   });
 
+  const memberIds = [
+    ...new Set(
+      blisters.flatMap((blister) =>
+        blister.members.map((member: { userId: Types.ObjectId }) => member.userId.toString()),
+      ),
+    ),
+  ];
+  const users = await UserModel.find({ _id: { $in: memberIds.map((id) => new Types.ObjectId(id)) } })
+    .select('name username settings.avatarKey')
+    .lean();
+  const userById = new Map(
+    users.map((user) => [
+      user._id.toString(),
+      {
+        name: user.name,
+        username: user.username,
+        settings: user.settings,
+      },
+    ] as const),
+  );
+
   return Promise.all(
     blisters.map(async (blister) => {
       const blisterId = blister._id;
@@ -229,7 +275,7 @@ export const blistersList = async (userId: string): Promise<BlisterView[]> => {
         MedicineModel.countDocuments({ blisterId }),
       ]);
       return {
-        ...toBlisterView(blister),
+        ...toBlisterView(blister, userById),
         treatmentsCount,
         medicinesCount,
       };
