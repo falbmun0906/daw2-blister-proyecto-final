@@ -15,9 +15,10 @@
     padding: var(--space-2);
     overflow-x: auto;
     scrollbar-width: none;
-    background-color: var(--color-surface);
+    // Header del selector: plano, sin fondo blanco ni sombra para integrarse
+    // con el fondo de la pantalla.
+    background-color: transparent;
     border-radius: var(--radius-full);
-    box-shadow: var(--shadow-sm);
 
     &::-webkit-scrollbar { display: none; }
   }
@@ -54,9 +55,11 @@
     white-space: nowrap;
 
     &:hover { color: var(--color-primary); }
+    // Estado activo: solo se distingue por color y por el indicador
+    // deslizante; sin negrita.
     &.is-active {
       color: var(--color-primary);
-      font-weight: var(--font-weight-semibold);
+      font-weight: var(--font-weight-regular);
     }
   }
 
@@ -71,16 +74,16 @@
   }
 
   &__stack-avatar {
-    border: 2px solid var(--color-surface);
+    border: 2px solid var(--color-bg);
     border-radius: var(--radius-full);
     display: inline-flex;
   }
 
   &__stack-extra {
-    margin-left: -0.25rem;
-    padding: 0 var(--space-2);
+    margin-left: -0.5rem;
+    width: var(--size-avatar-sm);
     height: var(--size-avatar-sm);
-    border-radius: var(--radius-full);
+    border-radius: 50%;
     background-color: var(--color-primary-subtle);
     color: var(--color-text-on-primary);
     font-size: var(--text-xs);
@@ -88,7 +91,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--color-surface);
+    border: 2px solid var(--color-bg);
   }
 
   &__name {

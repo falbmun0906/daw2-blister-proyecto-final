@@ -65,7 +65,9 @@ export function BlisterPillSelector({
 
         {blisters.map((blister) => {
           const isActive = blister._id === activeBlisterId;
-          const visibleMembers = blister.members.slice(0, 3);
+          // Mostramos como máximo 2 avatares; el resto se agrupa en una
+          // píldora circular "+N" (mismo lenguaje visual que en BlisterListPage).
+          const visibleMembers = blister.members.slice(0, 2);
           const extra = blister.members.length - visibleMembers.length;
 
           return (
