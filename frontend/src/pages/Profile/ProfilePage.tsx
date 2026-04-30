@@ -17,7 +17,6 @@ const PROFILE_LINKS: ProfileLinkItem[] = [
   { to: ROUTES.editProfile, label: 'Editar perfil' },
   { to: ROUTES.mcpToken, label: 'Vincular Asistente de IA (MCP)' },
   { to: ROUTES.accessibility, label: 'Accesibilidad' },
-  { to: ROUTES.notifications, label: 'Notificaciones' },
   { to: ROUTES.settings, label: 'Privacidad' },
 ];
 

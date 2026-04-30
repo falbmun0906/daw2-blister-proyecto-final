@@ -27,7 +27,6 @@ import AppointmentsPage from './pages/Appointments/AppointmentsPage'
 import AppointmentFormPage from './pages/Appointments/AppointmentFormPage'
 import AdherencePage from './pages/Adherence/AdherencePage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
-import NotificationsPage from './pages/Notifications/NotificationsPage'
 import ProfilePage from './pages/Profile/ProfilePage'
 import EditProfilePage from './pages/Profile/EditProfilePage'
 import PersonalInfoPage from './pages/Profile/PersonalInfoPage'
@@ -92,7 +91,6 @@ function App() {
             <Route path={ROUTES.medicineDetail(':blisterId', ':medicineId')} element={<MedicineDetailPage />} />
             <Route path={ROUTES.cimaMedicineDetail(':nregist')} element={<CimaMedicineDetailPage />} />
             <Route path={ROUTES.treatmentDetail(':blisterId', ':treatmentId')} element={<PlaceholderPage />} />
-            <Route path={ROUTES.notifications} element={<NotificationsPage />} />
             <Route path={ROUTES.profile} element={<ProfilePage />} />
             <Route path={ROUTES.editProfile} element={<EditProfilePage />} />
             <Route path={ROUTES.personalInfo} element={<PersonalInfoPage />} />
