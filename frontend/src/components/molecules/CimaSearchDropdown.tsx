@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TbPill } from 'react-icons/tb';
+import { TbPill, TbPlus } from 'react-icons/tb';
 
 import { ROUTES } from '../../constants/routes';
 import { searchCima } from '../../services/external.service';
@@ -28,12 +28,38 @@ function formatDose(item: ExternalSearchItem): string {
   return item.pactivos || '';
 }
 
+function CimaResultIcon({ fotoUrl }: { fotoUrl?: string | null }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(fotoUrl && !imageFailed);
+
+  return (
+    <span
+      className={[
+        'c-cima-search__item-icon',
+        !showImage && 'c-cima-search__item-icon--fallback',
+      ].filter(Boolean).join(' ')}
+      aria-hidden="true"
+    >
+      {showImage ? (
+        <img
+          src={fotoUrl ?? undefined}
+          alt=""
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <TbPill />
+      )}
+    </span>
+  );
+}
+
 /**
  * Buscador unificado contra la API CIMA con dropdown de resultados estilo
  * "mini-cards" (icono + nombre + dosis). Cuando el dropdown está abierto se
  * muestra un backdrop oscurecido detrás para dar foco a los resultados.
  *
- * - Click en el cuerpo de la card → navega a la ficha del medicamento.
+ * - Click en la card → ficha oficial CIMA.
  * - Click en el botón `+` → flujo de alta con `nregist` preseleccionado.
  */
 export function CimaSearchDropdown({
@@ -105,15 +131,18 @@ export function CimaSearchDropdown({
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
-  const handleSelect = (item: ExternalSearchItem) => {
+  const handleViewDetail = (item: ExternalSearchItem) => {
     setIsOpen(false);
-    if (canMutate) {
-      // Click directo en una mini-card → flujo de alta con `nregist` precargado.
-      navigate(`${ROUTES.addMedicine(blisterId)}?nregist=${encodeURIComponent(item.nregist)}`);
-    } else {
-      // Sin permisos de mutación, dirigimos a la ficha CIMA solo lectura.
-      navigate(ROUTES.cimaMedicineDetail(item.nregist));
-    }
+    navigate(ROUTES.cimaMedicineDetail(item.nregist), {
+      state: { parentRoute: ROUTES.blisterMedications(blisterId) },
+    });
+  };
+
+  const handleAdd = (item: ExternalSearchItem) => {
+    setIsOpen(false);
+    navigate(`${ROUTES.addMedicine(blisterId)}?nregist=${encodeURIComponent(item.nregist)}`, {
+      state: { parentRoute: ROUTES.blisterMedications(blisterId) },
+    });
   };
 
   const showDropdown = isOpen && query.trim().length >= 2;
@@ -161,26 +190,10 @@ export function CimaSearchDropdown({
                     <button
                       type="button"
                       className="c-cima-search__item-body"
-                      onClick={() => handleSelect(item)}
-                      aria-label={canMutate
-                        ? `Añadir ${item.nombre} al botiquín`
-                        : `Ver ficha de ${item.nombre}`}
+                      onClick={() => handleViewDetail(item)}
+                      aria-label={`Ver ficha de ${item.nombre}`}
                     >
-                      <span className="c-cima-search__item-icon" aria-hidden="true">
-                        {item.fotoUrl ? (
-                          <img
-                            src={item.fotoUrl}
-                            alt=""
-                            loading="lazy"
-                            onError={(e) => {
-                              // Si la imagen falla, ocultamos el <img> y caemos al icono.
-                              (e.currentTarget as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <TbPill />
-                        )}
-                      </span>
+                      <CimaResultIcon fotoUrl={item.fotoUrl} />
                       <span className="c-cima-search__item-text">
                         <span className="c-cima-search__item-name">{item.nombre}</span>
                         {dose ? (
@@ -188,6 +201,16 @@ export function CimaSearchDropdown({
                         ) : null}
                       </span>
                     </button>
+                    {canMutate ? (
+                      <button
+                        type="button"
+                        className="c-cima-search__add"
+                        onClick={() => handleAdd(item)}
+                        aria-label={`Añadir ${item.nombre} al botiquín`}
+                      >
+                        <TbPlus aria-hidden="true" />
+                      </button>
+                    ) : null}
                   </li>
                 );
               })}

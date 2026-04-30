@@ -15,15 +15,22 @@ import { ROUTES } from '../../constants/routes';
  */
 export function AppLayout() {
   const isHome = useMatch(ROUTES.home);
+  const isMedicineBranch = useMatch(ROUTES.blisterMedications(':blisterId'));
+  const isTreatmentsBranch = useMatch(ROUTES.blisterTreatments(':blisterId'));
+  const isAppointmentsBranch = useMatch(ROUTES.blisterAppointments(':blisterId'));
+  const showBottomNav = Boolean(isHome || isMedicineBranch || isTreatmentsBranch || isAppointmentsBranch);
   const header: React.ReactNode = isHome ? <AppHeader /> : <PageHeader />;
 
   return (
     <div className="c-app-layout">
       {header}
-      <main className="c-app-layout__main" id="contenido-principal">
+      <main
+        className={['c-app-layout__main', showBottomNav && 'c-app-layout__main--with-bottom-nav'].filter(Boolean).join(' ')}
+        id="contenido-principal"
+      >
         <Outlet />
       </main>
-      <BottomNav />
+      {showBottomNav ? <BottomNav /> : null}
       <Toaster />
       <NotificationsSheet />
     </div>

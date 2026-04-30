@@ -12,6 +12,7 @@ import {
 import { FaBriefcaseMedical } from 'react-icons/fa6';
 
 import { Avatar } from '../../components/atoms/Avatar';
+import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { ROUTES } from '../../constants/routes';
@@ -129,8 +130,6 @@ function CimaMedicineDetailPage() {
     };
   }, [nregist, blisters]);
 
-  if (!nregist) return <Navigate to={ROUTES.home} replace />;
-
   const fichaTecnica = info?.docs.find((d) => d.tipo === CIMA_DOC_TYPE_FICHA_TECNICA && d.url);
   const prospecto = info?.docs.find((d) => d.tipo === CIMA_DOC_TYPE_PROSPECTO && d.url);
   const fotos = info?.fotos.filter((f) => f.url) ?? [];
@@ -164,20 +163,10 @@ function CimaMedicineDetailPage() {
     [usage, userId],
   );
 
+  if (!nregist) return <Navigate to={ROUTES.home} replace />;
+
   return (
     <section className="c-cima-detail" aria-labelledby="cima-detail-title">
-      <header className="c-cima-detail__header">
-        <button
-          type="button"
-          className="c-cima-detail__back"
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-        >
-          ←
-        </button>
-        <span aria-hidden="true" />
-      </header>
-
       {isLoading ? (
         <div aria-busy="true" className="c-cima-detail__skeleton">
           <Skeleton height="3rem" />
@@ -419,19 +408,21 @@ function CimaMedicineDetailPage() {
           ) : null}
 
           {canMutate && activeBlisterId ? (
-            <div className="c-cima-detail__cta">
-              <button
+            <div className="c-cima-detail__cta c-add-medicine-page__sticky-cta">
+              <Button
                 type="button"
-                className="c-cima-detail__cta-btn"
+                variant="primary"
+                fullWidth
                 onClick={() =>
                   navigate(
                     `${ROUTES.addMedicine(activeBlisterId)}?nregist=${encodeURIComponent(info.nregist)}`,
+                    { state: { parentRoute: ROUTES.cimaMedicineDetail(info.nregist) } },
                   )
                 }
               >
                 <FaBriefcaseMedical aria-hidden="true" />
-                <span>Añadir a mi botiquín</span>
-              </button>
+                Añadir a botiquín
+              </Button>
             </div>
           ) : null}
         </>
