@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { TbCalendar, TbFileText, TbNumbers, TbTag, TbInfoCircle } from 'react-icons/tb';
+import { TbCalendar, TbFileText, TbInfoCircle, TbNumbers, TbTag } from 'react-icons/tb';
 
 import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
@@ -12,12 +12,11 @@ import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { Stepper } from '../../components/atoms/Stepper';
 import { FormSection } from '../../components/molecules/FormSection';
-import { SearchBar } from '../../components/molecules/SearchBar';
 import { ROUTES } from '../../constants/routes';
 import { stockUnits } from '../../../../shared/schemas/schema.constants';
 import { createMedicine } from '../../services/medicines.service';
-import { usePageBackOverride, usePageTitle } from '../../hooks/use.page-title';
 import { searchCima } from '../../services/external.service';
+import { usePageTitle } from '../../hooks/use.page-title';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -34,7 +33,13 @@ const formSchema = z.object({
 });
 type FormValues = z.infer<typeof formSchema>;
 
+/**
+ * Página de alta de medicamento. Espera siempre llegar con `?nregist=...` en
+ * la URL (precargado desde el buscador CIMA del Home/Botiquín). Si no hay
+ * `nregist`, mostramos un estado vacío que redirige al buscador.
+ */
 function AddMedicinePage() {
+  usePageTitle('Detalles del medicamento');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const presetNregist = searchParams.get('nregist');
@@ -43,34 +48,9 @@ function AddMedicinePage() {
   const upsertMedicine = useMedicinesStore((s) => s.upsertMedicine);
   const addToast = useUiStore((s) => s.addToast);
 
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<ExternalSearchItem[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ExternalSearchItem | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  // Header reactivo: el título y el botón volver cambian según el paso activo.
-  usePageTitle(selected ? 'Detalles del medicamento' : 'Añadir medicamento');
-  usePageBackOverride(selected ? () => setSelected(null) : null);
-
-  // Si se llega con ?nregist=..., precarga el medicamento sin pasar por buscador.
-  useEffect(() => {
-    if (!presetNregist || selected) return;
-    let cancelled = false;
-    searchCima(presetNregist)
-      .then((items) => {
-        if (cancelled) return;
-        const match = items.find((item) => item.nregist === presetNregist) ?? items[0] ?? null;
-        if (match) setSelected(match);
-      })
-      .catch(() => {
-        // Si falla, el usuario puede buscar manualmente.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [presetNregist, selected]);
 
   const {
     register,
@@ -86,28 +66,47 @@ function AddMedicinePage() {
 
   const stockUnit = watch('stockUnit');
 
+  // Carga el medicamento seleccionado a partir de `?nregist`. Como el endpoint
+  // de búsqueda devuelve todos los datos básicos que necesitamos, lo usamos
+  // pasando el propio nregist como query — el match es exacto.
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      setSearchError(null);
-      return;
-    }
+    if (!presetNregist) return;
     let cancelled = false;
-    setSearching(true);
-    setSearchError(null);
-    searchCima(query)
-      .then((items) => { if (!cancelled) setResults(items); })
+    setLoadError(null);
+    searchCima(presetNregist)
+      .then((items) => {
+        if (cancelled) return;
+        const match = items.find((item) => item.nregist === presetNregist) ?? items[0] ?? null;
+        if (match) setSelected(match);
+        else setLoadError('No se ha encontrado el medicamento en CIMA.');
+      })
       .catch((err) => {
         if (cancelled) return;
-        setSearchError(isApiError(err) ? err.message : 'No se ha podido buscar en CIMA.');
-      })
-      .finally(() => { if (!cancelled) setSearching(false); });
-    return () => { cancelled = true; };
-  }, [query]);
+        setLoadError(isApiError(err) ? err.message : 'No se ha podido cargar el medicamento.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [presetNregist]);
 
   if (!activeBlisterId) return <Navigate to={ROUTES.blisters} replace />;
   if (activeRole !== 'OWNER' && activeRole !== 'CAREGIVER') {
     return <Navigate to={ROUTES.blisterMedications(activeBlisterId)} replace />;
+  }
+
+  // Sin `nregist` no podemos saber qué medicamento añadir. Redirigimos al
+  // botiquín con un mensaje breve para que el usuario inicie la búsqueda.
+  if (!presetNregist) {
+    return (
+      <section className="c-add-medicine-page" aria-label="Añadir medicamento">
+        <EmptyState
+          title="Busca primero un medicamento"
+          description="Usa el buscador del Botiquín o del Home para localizar un medicamento en CIMA y añadirlo desde ahí."
+          ctaLabel="Ir al Botiquín"
+          onCtaClick={() => navigate(ROUTES.blisterMedications(activeBlisterId))}
+        />
+      </section>
+    );
   }
 
   const onSubmit = async (data: FormValues) => {
@@ -135,48 +134,16 @@ function AddMedicinePage() {
   };
 
   return (
-    <section className="c-add-medicine-page" aria-label={selected ? 'Detalles del medicamento' : 'Añadir medicamento'}>
-      {!selected ? (
-        <>
-          <SearchBar
-            value={query}
-            onChange={setQuery}
-            placeholder="Buscar en CIMA por nombre o principio activo…"
-            ariaLabel="Buscar en CIMA"
-            autoFocus
-          />
-          {searchError ? (
-            <ErrorState message={searchError} />
-          ) : searching ? (
-            <div className="c-add-medicine-page__results" aria-busy="true">
-              <Skeleton height="3rem" />
-              <Skeleton height="3rem" />
-              <Skeleton height="3rem" />
-            </div>
-          ) : !query.trim() ? (
-            <EmptyState
-              title="Busca un medicamento"
-              description="Escribe al menos 3 letras para buscar en la base oficial CIMA."
-            />
-          ) : results.length === 0 ? (
-            <EmptyState title="Sin resultados" description="Prueba con otro término." />
-          ) : (
-            <ul className="c-add-medicine-page__results">
-              {results.map((item) => (
-                <li key={item.nregist}>
-                  <button
-                    type="button"
-                    className="c-add-medicine-page__result"
-                    onClick={() => setSelected(item)}
-                  >
-                    <span className="c-add-medicine-page__result-name">{item.nombre}</span>
-                    <span className="c-add-medicine-page__result-meta">{item.pactivos}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
+    <section className="c-add-medicine-page" aria-label="Detalles del medicamento">
+      {loadError ? (
+        <ErrorState message={loadError} />
+      ) : !selected ? (
+        <div className="c-add-medicine-page__form" aria-busy="true">
+          <Skeleton height="3rem" />
+          <Skeleton height="6rem" />
+          <Skeleton height="6rem" />
+          <Skeleton height="6rem" />
+        </div>
       ) : (
         <form className="c-add-medicine-page__form" onSubmit={handleSubmit(onSubmit)}>
           <div className="c-add-medicine-page__selected">

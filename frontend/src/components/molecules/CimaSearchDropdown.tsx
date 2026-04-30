@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TbPill, TbPlus } from 'react-icons/tb';
+import { TbPill } from 'react-icons/tb';
 
 import { ROUTES } from '../../constants/routes';
 import { searchCima } from '../../services/external.service';
@@ -9,7 +9,7 @@ import type { ExternalSearchItem } from '../../types/medicine.types';
 import { SearchBar } from './SearchBar';
 
 interface CimaSearchDropdownProps {
-  /** Blíster donde se añadirá el medicamento al pulsar `+`. */
+  /** Blíster donde se añadirá el medicamento al pulsar la mini-card. */
   blisterId: string;
   /** Solo OWNER/CAREGIVER pueden añadir; OBSERVER ve el dropdown deshabilitado. */
   canMutate: boolean;
@@ -105,14 +105,15 @@ export function CimaSearchDropdown({
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
-  const handleAdd = (item: ExternalSearchItem) => {
+  const handleSelect = (item: ExternalSearchItem) => {
     setIsOpen(false);
-    navigate(`${ROUTES.addMedicine(blisterId)}?nregist=${encodeURIComponent(item.nregist)}`);
-  };
-
-  const handleOpen = (item: ExternalSearchItem) => {
-    setIsOpen(false);
-    navigate(ROUTES.cimaMedicineDetail(item.nregist));
+    if (canMutate) {
+      // Click directo en una mini-card → flujo de alta con `nregist` precargado.
+      navigate(`${ROUTES.addMedicine(blisterId)}?nregist=${encodeURIComponent(item.nregist)}`);
+    } else {
+      // Sin permisos de mutación, dirigimos a la ficha CIMA solo lectura.
+      navigate(ROUTES.cimaMedicineDetail(item.nregist));
+    }
   };
 
   const showDropdown = isOpen && query.trim().length >= 2;
@@ -146,7 +147,9 @@ export function CimaSearchDropdown({
           {error ? (
             <p className="c-cima-search__msg c-cima-search__msg--error">{error}</p>
           ) : isSearching ? (
-            <p className="c-cima-search__msg">Buscando…</p>
+            <div className="c-cima-search__loading" role="status" aria-label="Buscando">
+              <span className="c-cima-search__spinner" aria-hidden="true" />
+            </div>
           ) : results.length === 0 ? (
             <p className="c-cima-search__msg">Sin resultados.</p>
           ) : (
@@ -158,11 +161,25 @@ export function CimaSearchDropdown({
                     <button
                       type="button"
                       className="c-cima-search__item-body"
-                      onClick={() => handleOpen(item)}
-                      aria-label={`Ver ficha de ${item.nombre}`}
+                      onClick={() => handleSelect(item)}
+                      aria-label={canMutate
+                        ? `Añadir ${item.nombre} al botiquín`
+                        : `Ver ficha de ${item.nombre}`}
                     >
                       <span className="c-cima-search__item-icon" aria-hidden="true">
-                        <TbPill />
+                        {item.fotoUrl ? (
+                          <img
+                            src={item.fotoUrl}
+                            alt=""
+                            loading="lazy"
+                            onError={(e) => {
+                              // Si la imagen falla, ocultamos el <img> y caemos al icono.
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <TbPill />
+                        )}
                       </span>
                       <span className="c-cima-search__item-text">
                         <span className="c-cima-search__item-name">{item.nombre}</span>
@@ -171,16 +188,6 @@ export function CimaSearchDropdown({
                         ) : null}
                       </span>
                     </button>
-                    {canMutate ? (
-                      <button
-                        type="button"
-                        className="c-cima-search__add"
-                        onClick={() => handleAdd(item)}
-                        aria-label={`Añadir ${item.nombre} al botiquín`}
-                      >
-                        <TbPlus aria-hidden="true" />
-                      </button>
-                    ) : null}
                   </li>
                 );
               })}

@@ -100,19 +100,27 @@
 
   &__item-icon {
     flex-shrink: 0;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background-color: var(--color-primary-tint);
     color: var(--color-primary);
     border-radius: var(--radius-md);
+    overflow: hidden;
 
     & svg {
-      width: 1.4rem;
-      height: 1.4rem;
+      width: 1.25rem;
+      height: 1.25rem;
       stroke-width: 1.6;
+    }
+
+    & img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
   }
 
@@ -121,14 +129,15 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
   }
 
   &__item-name {
     margin: 0;
     font-weight: 500;
     color: var(--color-text);
-    font-size: var(--text-base);
+    font-size: var(--text-xs, 0.75rem);
+    line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -137,41 +146,35 @@
   &__item-meta {
     margin: 0;
     color: var(--color-text-muted);
-    font-size: var(--text-sm);
+    font-size: 0.6875rem;
+    line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  &__add {
-    flex-shrink: 0;
-    width: 2.25rem;
-    height: 2.25rem;
-    display: inline-flex;
+  &__loading {
+    display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--color-primary-mid);
-    color: var(--color-on-primary, #fff);
-    border: none;
+    padding: var(--space-4);
+  }
+
+  &__spinner {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid var(--color-border-subtle);
+    border-top-color: var(--color-primary-mid);
     border-radius: 50%;
-    cursor: pointer;
-    transition: filter var(--transition-fast);
-
-    & svg {
-      width: 1.25rem;
-      height: 1.25rem;
-      stroke-width: 2;
-    }
-
-    &:hover { filter: brightness(0.95); }
-    &:focus-visible {
-      outline: 2px solid var(--color-primary-mid);
-      outline-offset: 2px;
-    }
+    animation: c-cima-search-spin 0.7s linear infinite;
   }
 }
 
 @keyframes c-cima-search-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes c-cima-search-spin {
+  to { transform: rotate(360deg); }
 }

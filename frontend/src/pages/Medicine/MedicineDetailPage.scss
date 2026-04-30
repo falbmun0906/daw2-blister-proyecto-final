@@ -4,33 +4,6 @@
   gap: var(--space-5);
   padding: var(--space-screen-y) var(--space-screen-x);
 
-  &__header {
-    display: grid;
-    grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
-    align-items: center;
-    column-gap: var(--space-3);
-  }
-
-  &__back {
-    min-width: var(--space-touch-min);
-    min-height: var(--space-touch-min);
-    border: 0;
-    border-radius: var(--radius-full);
-    background: transparent;
-    color: var(--color-primary);
-    font-size: var(--text-xl);
-    cursor: pointer;
-  }
-
-  &__title {
-    margin: 0;
-    text-align: center;
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-primary);
-  }
-
   &__skeleton {
     display: flex;
     flex-direction: column;
@@ -101,6 +74,28 @@
 
   &__cima-warn { color: var(--color-warning); font-weight: var(--font-weight-medium); }
 
-  &__actions { display: flex; flex-direction: column; gap: var(--space-2); }
+  &__actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+
+    & > .c-btn,
+    & > a.c-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      // Asegura tres pastillas equitativas en una sola línea horizontal.
+      padding-inline: var(--space-2);
+      font-size: var(--text-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+      text-decoration: none;
+      white-space: nowrap;
+
+      svg { flex-shrink: 0; }
+    }
+  }
   &__edit-link { text-decoration: none; }
 }

@@ -6,34 +6,6 @@
   // Espacio inferior para que el contenido no quede oculto detrás del CTA sticky.
   padding-bottom: calc(var(--space-screen-y) + 5rem);
 
-  &__results {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  &__result {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    text-align: left;
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background-color: var(--color-surface);
-    color: var(--color-text);
-    cursor: pointer;
-
-    &:hover { border-color: var(--color-primary-mid); }
-
-    &-name { font-weight: var(--font-weight-semibold); }
-    &-meta { font-size: var(--text-sm); color: var(--color-text-muted); }
-  }
-
   &__form {
     display: flex;
     flex-direction: column;

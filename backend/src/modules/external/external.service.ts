@@ -87,6 +87,10 @@ const toSearchItem = (medicine: CimaApiItem): ExternalSearchItem | null => {
     return null;
   }
 
+  // CIMA returns multiple photos (materialas, embalaje, etc.). We pick the
+  // first one with a valid URL so the search UI can show a thumbnail.
+  const fotoUrl = medicine.fotos?.find((f) => f.url)?.url ?? null;
+
   return {
     nregist: medicine.nregistro,
     nombre: medicine.nombre,
@@ -94,6 +98,7 @@ const toSearchItem = (medicine: CimaApiItem): ExternalSearchItem | null => {
     labtitular: medicine.labtitular ?? null,
     formaOficial: medicine.formaFarmaceutica?.nombre ?? null,
     dosisOficial: medicine.dosis ?? null,
+    fotoUrl,
   };
 };
 

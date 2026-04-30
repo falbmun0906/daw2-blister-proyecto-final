@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { TbExternalLink, TbPencil, TbTrash } from 'react-icons/tb';
 
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
@@ -9,8 +10,10 @@ import { StockBadge } from '../../components/molecules/StockBadge';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { getCimaDetail } from '../../services/external.service';
-import { getMedicine } from '../../services/medicines.service';
+import { getMedicine, removeMedicine } from '../../services/medicines.service';
 import { useBlisterStore } from '../../stores/blister.store';
+import { useMedicinesStore } from '../../stores/medicines.store';
+import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { ExternalMedicineInfo, Medicine } from '../../types/medicine.types';
 import './MedicineDetailPage.scss';
@@ -33,6 +36,9 @@ function MedicineDetailPage() {
   const { medicineId } = useParams<{ blisterId: string; medicineId: string }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
+  const removeFromStore = useMedicinesStore((s) => s.removeMedicine);
+  const addToast = useUiStore((s) => s.addToast);
+  const [deleting, setDeleting] = useState(false);
 
   const [state, setState] = useState<DetailState>({
     medicine: null, cima: null, error: null, isLoading: true,
@@ -77,13 +83,26 @@ function MedicineDetailPage() {
   const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
   const { medicine, cima, error, isLoading } = state;
 
+  const handleDelete = async () => {
+    if (!medicine || !activeBlisterId) return;
+    if (!confirm('¿Eliminar este medicamento del botiquín?')) return;
+    setDeleting(true);
+    try {
+      await removeMedicine(activeBlisterId, medicine._id);
+      removeFromStore(medicine._id);
+      addToast({ message: 'Medicamento eliminado.', variant: 'success' });
+      navigate(ROUTES.blisterMedications(activeBlisterId));
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido eliminar.',
+        variant: 'error',
+      });
+      setDeleting(false);
+    }
+  };
+
   return (
     <section className="c-medicine-detail-page" aria-labelledby="medicine-detail-title">
-      <header className="c-medicine-detail-page__header">
-        <button type="button" className="c-medicine-detail-page__back" onClick={() => navigate(-1)} aria-label="Volver">←</button>
-        <h1 id="medicine-detail-title" className="c-medicine-detail-page__title">Detalle</h1>
-        <span aria-hidden="true" />
-      </header>
 
       {isLoading ? (
         <div aria-busy="true" className="c-medicine-detail-page__skeleton">
@@ -153,12 +172,27 @@ function MedicineDetailPage() {
 
           {canMutate ? (
             <div className="c-medicine-detail-page__actions">
+              <Button
+                type="button"
+                variant="primary-outline"
+                onClick={() => navigate(ROUTES.cimaMedicineDetail(medicine.nregist))}
+              >
+                <TbExternalLink aria-hidden="true" /> Prospecto
+              </Button>
               <Link
                 to={`${ROUTES.medicineDetail(activeBlisterId, medicine._id)}/edit`}
-                className="c-medicine-detail-page__edit-link"
+                className="c-btn c-btn--primary"
               >
-                <Button variant="primary" fullWidth>Editar</Button>
+                <TbPencil aria-hidden="true" /> Editar
               </Link>
+              <Button
+                type="button"
+                variant="danger"
+                loading={deleting}
+                onClick={() => void handleDelete()}
+              >
+                <TbTrash aria-hidden="true" /> Eliminar
+              </Button>
             </div>
           ) : null}
         </>

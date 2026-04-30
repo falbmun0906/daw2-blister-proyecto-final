@@ -31,6 +31,7 @@ function sanitizeSearchItem(raw: ExternalSearchItem): ExternalSearchItem {
     labtitular: sanitizeOptional(raw.labtitular),
     formaOficial: sanitizeOptional(raw.formaOficial),
     dosisOficial: sanitizeOptional(raw.dosisOficial),
+    fotoUrl: sanitizeOptional(raw.fotoUrl ?? null),
   };
 }
 

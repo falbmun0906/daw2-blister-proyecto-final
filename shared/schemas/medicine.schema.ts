@@ -93,6 +93,7 @@ export const externalSearchItemSchema = z.object({
   labtitular: z.string().nullable(),
   formaOficial: z.string().nullable(),
   dosisOficial: z.string().nullable(),
+  fotoUrl: z.string().nullable().optional(),
 });
 
 export const externalMedicineInfoSchema = z.object({
