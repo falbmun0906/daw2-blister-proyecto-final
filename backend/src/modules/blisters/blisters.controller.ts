@@ -13,6 +13,7 @@ import {
   blistersList,
   blistersListMembers,
   blistersRemoveMember,
+  blistersRestore,
   blistersUpdateMemberRole,
   blistersUpdate,
 } from './blisters.service';
@@ -81,6 +82,19 @@ export const blistersDeleteController = async (request: Request, response: Respo
   response.status(HTTP_STATUS_OK).json({
     success: true,
     data: null,
+  });
+};
+
+/**
+ * Restores a soft-deleted blister within the grace window.
+ */
+export const blistersRestoreController = async (request: Request, response: Response): Promise<void> => {
+  const authenticatedRequest = request as AuthenticatedRequest;
+  const result = await blistersRestore(request.params.id as string, authenticatedRequest.auth.userId);
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: result,
   });
 };
 

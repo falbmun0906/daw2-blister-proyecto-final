@@ -19,6 +19,7 @@ import {
   blistersListController,
   blistersListMembersController,
   blistersRemoveMemberController,
+  blistersRestoreController,
   blistersUpdateMemberRoleController,
   blistersUpdateController,
 } from './blisters.controller';
@@ -98,6 +99,31 @@ blistersRouter.post('/', validate({ body: createBlisterSchema }), blistersCreate
  */
 blistersRouter.patch('/:id', validate({ params: blisterParamsSchema, body: updateBlisterSchema }), blistersUpdateController);
 blistersRouter.delete('/:id', validate({ params: blisterParamsSchema }), blistersDeleteController);
+
+/**
+ * @openapi
+ * /blisters/{id}/restore:
+ *   post:
+ *     summary: Restore a soft-deleted blister within the grace window
+ *     tags:
+ *       - Blisters
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Blister restored.
+ *       400:
+ *         description: Blister is not in a deleted state.
+ *       403:
+ *         description: Owner role required.
+ *       409:
+ *         description: Grace period expired or user blister cap reached.
+ */
+blistersRouter.post(
+  '/:id/restore',
+  validate({ params: blisterParamsSchema }),
+  blistersRestoreController,
+);
 
 /**
  * @openapi

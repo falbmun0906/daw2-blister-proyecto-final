@@ -2,7 +2,12 @@ import { randomBytes } from 'node:crypto';
 
 import { Types } from 'mongoose';
 
-import { BLISTER_ROLES } from '../../constants/domain.constants';
+import {
+  BLISTER_RESTORE_WINDOW_MS,
+  BLISTER_ROLES,
+  DEFAULT_PERSONAL_BLISTER_NAME,
+  MAX_BLISTERS_PER_USER,
+} from '../../constants/domain.constants';
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_CONFLICT,
@@ -36,6 +41,7 @@ interface BlisterMemberDetailView extends BlisterMemberView {
 interface BlisterView {
   _id: string;
   name: string;
+  avatarKey: string | null;
   deletedAt: Date | null | undefined;
   members: BlisterMemberView[];
   treatmentsCount?: number;
@@ -47,12 +53,12 @@ interface BlisterView {
   } | null;
 }
 
-const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi botiquín';
 const INVITE_EXPIRATION_MS = 48 * 60 * 60 * 1000;
 
 const toBlisterView = (blister: Awaited<ReturnType<typeof BlisterModel.findOne>>): BlisterView => ({
   _id: blister!._id.toString(),
   name: blister!.name,
+  avatarKey: blister!.avatarKey ?? null,
   deletedAt: blister!.deletedAt,
   members: blister!.members.map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => ({
     userId: member.userId.toString(),
@@ -144,6 +150,21 @@ const countActiveBlistersForUser = async (userId: string, excludingBlisterId?: s
     ...(excludingBlisterId ? { _id: { $ne: new Types.ObjectId(excludingBlisterId) } } : {}),
   });
 
+/**
+ * Throws if the user already belongs to MAX_BLISTERS_PER_USER active blisters.
+ * Use this guard before creating a new blister or joining via invite.
+ */
+const ensureUserBelowBlisterCap = async (userId: string): Promise<void> => {
+  const active = await countActiveBlistersForUser(userId);
+  if (active >= MAX_BLISTERS_PER_USER) {
+    throw new AppError({
+      code: 'BLISTER_LIMIT_REACHED',
+      message: `A user cannot belong to more than ${MAX_BLISTERS_PER_USER} active blisters.`,
+      statusCode: HTTP_STATUS_CONFLICT,
+    });
+  }
+};
+
 const createSafetyBlisterIfNeeded = async (userId: string, excludingBlisterId: string): Promise<void> => {
   const activeBlisters = await countActiveBlistersForUser(userId, excludingBlisterId);
 
@@ -221,9 +242,11 @@ export const blistersList = async (userId: string): Promise<BlisterView[]> => {
  */
 export const blistersCreate = async (userId: string, input: CreateBlisterInput): Promise<BlisterView> => {
   await ensureUserExists(userId);
+  await ensureUserBelowBlisterCap(userId);
 
   const blister = await BlisterModel.create({
     name: input.name,
+    avatarKey: input.avatarKey ?? null,
     members: [
       {
         userId: new Types.ObjectId(userId),
@@ -236,7 +259,7 @@ export const blistersCreate = async (userId: string, input: CreateBlisterInput):
 };
 
 /**
- * Updates the blister name for an owner.
+ * Updates mutable blister fields (name, avatarKey) for an owner.
  */
 export const blistersUpdate = async (
   blisterId: string,
@@ -245,7 +268,12 @@ export const blistersUpdate = async (
 ): Promise<BlisterView> => {
   const blister = await ensureOwnerAccess(blisterId, userId);
 
-  blister.name = input.name;
+  if (input.name !== undefined) {
+    blister.name = input.name;
+  }
+  if (input.avatarKey !== undefined) {
+    blister.avatarKey = input.avatarKey;
+  }
   await blister.save();
 
   return toBlisterView(blister);
@@ -259,6 +287,54 @@ export const blistersDelete = async (blisterId: string, userId: string): Promise
 
   blister.deletedAt = new Date();
   await blister.save();
+};
+
+/**
+ * Restores a soft-deleted blister within the BLISTER_RESTORE_WINDOW_MS grace period.
+ * Only the original owner can restore. Re-applies the per-user blister cap.
+ */
+export const blistersRestore = async (blisterId: string, userId: string): Promise<BlisterView> => {
+  const blister = await BlisterModel.findById(new Types.ObjectId(blisterId));
+
+  if (!blister) {
+    throw new AppError({
+      code: 'BLISTER_NOT_FOUND',
+      message: 'Blister not found.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+
+  if (!blister.deletedAt) {
+    throw new AppError({
+      code: 'BLISTER_NOT_DELETED',
+      message: 'Blister is not in a deleted state.',
+      statusCode: HTTP_STATUS_BAD_REQUEST,
+    });
+  }
+
+  if (Date.now() - blister.deletedAt.getTime() > BLISTER_RESTORE_WINDOW_MS) {
+    throw new AppError({
+      code: 'BLISTER_RESTORE_WINDOW_EXPIRED',
+      message: 'The grace period to restore this blister has expired.',
+      statusCode: HTTP_STATUS_CONFLICT,
+    });
+  }
+
+  const membership = findMembership(blister, userId);
+  if (!membership || membership.role !== 'OWNER') {
+    throw new AppError({
+      code: 'BLISTER_OWNER_REQUIRED',
+      message: 'Owner role is required for this action.',
+      statusCode: HTTP_STATUS_FORBIDDEN,
+    });
+  }
+
+  await ensureUserBelowBlisterCap(userId);
+
+  blister.deletedAt = null;
+  await blister.save();
+
+  return toBlisterView(blister);
 };
 
 /**
@@ -311,6 +387,8 @@ export const blistersJoin = async (userId: string, input: JoinBlisterInput): Pro
       statusCode: HTTP_STATUS_CONFLICT,
     });
   }
+
+  await ensureUserBelowBlisterCap(userId);
 
   blister.members.push({
     userId: new Types.ObjectId(userId),

@@ -8,8 +8,10 @@ import { type StringValue } from 'ms';
 import { env } from '../../config/env';
 import {
   BLISTER_ROLES,
+  DEFAULT_PERSONAL_BLISTER_NAME,
   FONT_OPTIONS,
   FONT_SIZE_OPTIONS,
+  MAX_BLISTERS_PER_USER,
   THEME_OPTIONS,
 } from '../../constants/domain.constants';
 import {
@@ -53,8 +55,6 @@ type UserAuthDocument = UserDocument & {
   refreshTokenHash?: string | null;
   refreshTokenExpiresAt?: Date | null;
 };
-
-const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi botiquín';
 
 const hashValue = (value: string): string => createHash('sha256').update(value).digest('hex');
 
