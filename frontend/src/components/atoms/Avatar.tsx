@@ -1,4 +1,4 @@
-import { getAvatarBackground, getInitials } from '../../constants/avatars';
+import { getAvatarBackground, getAvatarImage, getInitials } from '../../constants/avatars';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 
@@ -17,8 +17,9 @@ interface AvatarProps {
 export function Avatar({ name, avatarKey, size = 'md', ariaLabel }: AvatarProps) {
   const trimmed = name.trim();
   const initials = trimmed ? getInitials(trimmed) : '';
+  const image = getAvatarImage(avatarKey);
   const background = getAvatarBackground(avatarKey);
-  const className = ['c-avatar', `c-avatar--${size}`].join(' ');
+  const className = ['c-avatar', `c-avatar--${size}`, image && 'c-avatar--image'].filter(Boolean).join(' ');
   const label = ariaLabel ?? (trimmed ? `Avatar de ${trimmed}` : 'Avatar');
 
   return (
@@ -28,7 +29,9 @@ export function Avatar({ name, avatarKey, size = 'md', ariaLabel }: AvatarProps)
       aria-label={label}
       style={{ backgroundColor: background }}
     >
-      {initials ? (
+      {image ? (
+        <img src={image} alt="" aria-hidden="true" />
+      ) : initials ? (
         <span className="c-avatar__initials" aria-hidden="true">
           {initials}
         </span>

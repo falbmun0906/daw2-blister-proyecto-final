@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
+import { Modal } from '../../components/atoms/Modal';
 import { AvatarSelector } from '../../components/molecules/AvatarSelector';
 import { ROUTES } from '../../constants/routes';
-import { usePageTitle } from '../../hooks/use.page-title';
+import { usePageBackOverride, usePageTitle } from '../../hooks/use.page-title';
 import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -20,6 +21,26 @@ function AvatarPage() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string | undefined>(user?.settings.avatarKey);
   const [isSaving, setIsSaving] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+
+  const hasUnsavedChanges = useMemo(
+    () => selected !== user?.settings.avatarKey,
+    [selected, user?.settings.avatarKey],
+  );
+
+  const leavePage = useCallback(() => {
+    navigate(ROUTES.personalInfo);
+  }, [navigate]);
+
+  const handleBack = useCallback(() => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedModal(true);
+      return;
+    }
+    leavePage();
+  }, [hasUnsavedChanges, leavePage]);
+
+  usePageBackOverride(handleBack);
 
   if (!user) return null;
 
@@ -33,7 +54,7 @@ function AvatarPage() {
       const updated = await updateProfile({ settings: { avatarKey: selected } });
       updateUser(updated);
       addToast({ message: 'Avatar actualizado.', variant: 'success' });
-      navigate(ROUTES.profile);
+      navigate(ROUTES.personalInfo);
     } catch (err) {
       const message = isApiError(err) ? err.message : 'No se ha podido guardar el avatar.';
       addToast({ message, variant: 'error' });
@@ -55,13 +76,34 @@ function AvatarPage() {
       <AvatarSelector currentAvatarKey={selected} onSelect={setSelected} />
 
       <div className="c-avatar-page__actions">
-        <Button type="button" variant="ghost" onClick={() => navigate(ROUTES.profile)}>
-          Cancelar
-        </Button>
-        <Button type="button" variant="primary" loading={isSaving} onClick={() => void handleSave()}>
+        <Button
+          type="button"
+          variant="primary"
+          fullWidth
+          loading={isSaving}
+          onClick={() => void handleSave()}
+        >
           Guardar avatar
         </Button>
       </div>
+
+      <Modal
+        open={showUnsavedModal}
+        title="Cambios sin guardar"
+        onClose={() => setShowUnsavedModal(false)}
+      >
+        <div className="c-avatar-page__unsaved">
+          <p>Has cambiado el avatar, pero todavía no lo has guardado.</p>
+          <div className="c-avatar-page__unsaved-actions">
+            <Button type="button" variant="primary-outline" onClick={() => setShowUnsavedModal(false)}>
+              Seguir editando
+            </Button>
+            <Button type="button" variant="danger" onClick={leavePage}>
+              Salir sin guardar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 }

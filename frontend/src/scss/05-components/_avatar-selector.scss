@@ -7,14 +7,31 @@
     width: 100%;
     aspect-ratio: 1 / 1;
     min-height: var(--space-touch-min);
-    border: 2px solid transparent;
+    padding: 0;
+    border: 2px solid var(--color-border-subtle);
     border-radius: var(--radius-full);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
     cursor: pointer;
-    transition: transform var(--transition-fast), border-color var(--transition-fast);
+    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
 
     &--selected {
       border-color: var(--color-primary);
       transform: scale(1.05);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary-mid) 18%, transparent), var(--shadow-sm);
     }
   }
 }

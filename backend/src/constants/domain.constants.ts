@@ -45,12 +45,15 @@ export const BLISTER_AVATAR_KEYS = [
  * Catalogo de avatares disponibles para Usuarios.
  */
 export const USER_AVATAR_KEYS = [
-  'avatar-01',
-  'avatar-02',
-  'avatar-03',
-  'avatar-04',
-  'avatar-05',
-  'avatar-06',
-  'avatar-07',
-  'avatar-08',
+  'avatar-1',
+  'avatar-2',
+  'avatar-3',
+  'avatar-4',
+  'avatar-5',
+  'avatar-6',
+  'avatar-7',
+  'avatar-8',
+  'avatar-9',
+  'avatar-10',
+  'avatar-11',
 ] as const;
