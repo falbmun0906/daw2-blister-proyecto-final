@@ -83,14 +83,14 @@ const toCimaEstado = (estado?: CimaApiState): 1 | 2 | 3 => {
 };
 
 const toSearchItem = (medicine: CimaApiItem): ExternalSearchItem | null => {
-  if (!medicine.nregistro || !medicine.nombre || !medicine.pactivos) {
+  if (!medicine.nregistro || !medicine.nombre) {
     return null;
   }
 
   return {
     nregist: medicine.nregistro,
     nombre: medicine.nombre,
-    pactivos: medicine.pactivos,
+    pactivos: medicine.pactivos ?? '',
     labtitular: medicine.labtitular ?? null,
     formaOficial: medicine.formaFarmaceutica?.nombre ?? null,
     dosisOficial: medicine.dosis ?? null,
@@ -107,6 +107,34 @@ const toMedicineInfo = (medicine: CimaApiItem): ExternalMedicineInfo => {
     materialesInf: medicine.materialesInf ?? false,
   };
 
+  const atcs = (medicine.atcs ?? [])
+    .filter((a) => a && (a.nombre || a.codigo))
+    .map((a) => ({
+      codigo: a.codigo?.toString().trim() || null,
+      nombre: (a.nombre ?? '').toString().trim(),
+    }));
+
+  const principiosActivos = (medicine.principiosActivos ?? [])
+    .filter((p) => p && p.nombre)
+    .map((p) => ({
+      nombre: (p.nombre ?? '').toString().trim(),
+      cantidad: p.cantidad != null ? p.cantidad.toString().trim() : null,
+      unidad: p.unidad ? p.unidad.toString().trim() : null,
+    }));
+
+  const excipientes = (medicine.excipientes ?? [])
+    .filter((e) => e && e.nombre)
+    .map((e) => ({ nombre: (e.nombre ?? '').toString().trim() }));
+
+  const viasSource = medicine.viasAdministracion ?? medicine.vtas ?? [];
+  const viasAdministracion = viasSource
+    .filter((v) => v && v.nombre)
+    .map((v) => ({ nombre: (v.nombre ?? '').toString().trim() }));
+
+  const fechaAutorizacion = medicine.fechaAutorizacion
+    ? new Date(medicine.fechaAutorizacion).toISOString()
+    : null;
+
   return {
     nregist: medicine.nregistro ?? '',
     nombre: medicine.nombre ?? '',
@@ -121,8 +149,13 @@ const toMedicineInfo = (medicine: CimaApiItem): ExternalMedicineInfo => {
     materialesInf: medicine.materialesInf ?? false,
     docs: medicine.docs ?? [],
     fotos: medicine.fotos ?? [],
-    atcs: medicine.atcs ?? [],
-    principiosActivos: medicine.principiosActivos ?? [],
+    atcs,
+    principiosActivos,
+    excipientes,
+    viasAdministracion,
+    cpresc: medicine.cpresc ? medicine.cpresc.toString().trim() : null,
+    receta: medicine.receta ?? false,
+    fechaAutorizacion,
     conduc: medicine.conduc ?? false,
     triangulo: medicine.triangulo ?? false,
     cimaStatus,

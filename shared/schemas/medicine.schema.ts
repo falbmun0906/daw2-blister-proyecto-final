@@ -120,8 +120,24 @@ export const externalMedicineInfoSchema = z.object({
       tipo: z.string().optional(),
     }),
   ),
-  atcs: z.array(z.unknown()),
-  principiosActivos: z.array(z.unknown()),
+  atcs: z.array(
+    z.object({
+      codigo: z.string().nullable(),
+      nombre: z.string(),
+    }),
+  ),
+  principiosActivos: z.array(
+    z.object({
+      nombre: z.string(),
+      cantidad: z.string().nullable(),
+      unidad: z.string().nullable(),
+    }),
+  ),
+  excipientes: z.array(z.object({ nombre: z.string() })),
+  viasAdministracion: z.array(z.object({ nombre: z.string() })),
+  cpresc: z.string().nullable(),
+  receta: z.boolean(),
+  fechaAutorizacion: z.string().nullable(),
   conduc: z.boolean(),
   triangulo: z.boolean(),
   cimaStatus: medicineCimaStatusSchema,

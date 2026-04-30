@@ -15,6 +15,14 @@ export interface CimaApiState {
   rev?: number | string | null;
 }
 
+export interface CimaNamedEntry {
+  codigo?: string;
+  nombre?: string;
+  cantidad?: number | string;
+  unidad?: string;
+  orden?: number;
+}
+
 export interface CimaApiItem {
   nregistro?: string;
   nombre?: string;
@@ -34,8 +42,14 @@ export interface CimaApiItem {
   docs?: CimaDocumentReference[];
   fotos?: CimaPhotoReference[];
   comerc?: boolean;
-  atcs?: unknown[];
-  principiosActivos?: unknown[];
+  atcs?: CimaNamedEntry[];
+  principiosActivos?: CimaNamedEntry[];
+  excipientes?: CimaNamedEntry[];
+  viasAdministracion?: CimaNamedEntry[];
+  vtas?: CimaNamedEntry[];
+  cpresc?: string;
+  receta?: boolean;
+  fechaAutorizacion?: number | null;
   conduc?: boolean;
   triangulo?: boolean;
 }
@@ -70,8 +84,13 @@ export interface ExternalMedicineInfo {
   materialesInf: boolean;
   docs: CimaDocumentReference[];
   fotos: CimaPhotoReference[];
-  atcs: unknown[];
-  principiosActivos: unknown[];
+  atcs: { codigo: string | null; nombre: string }[];
+  principiosActivos: { nombre: string; cantidad: string | null; unidad: string | null }[];
+  excipientes: { nombre: string }[];
+  viasAdministracion: { nombre: string }[];
+  cpresc: string | null;
+  receta: boolean;
+  fechaAutorizacion: string | null;
   conduc: boolean;
   triangulo: boolean;
   cimaStatus: {
