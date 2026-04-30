@@ -28,6 +28,7 @@ export const ROUTES = {
   blisterNotifications: (blisterId: string) => `/blisters/${blisterId}/notifications`,
   medicineDetail: (blisterId: string, medicineId: string) =>
     `/blisters/${blisterId}/medicines/${medicineId}`,
+  cimaMedicineDetail: (nregist: string) => `/medicines/cima/${nregist}`,
   treatmentDetail: (blisterId: string, treatmentId: string) =>
     `/blisters/${blisterId}/treatments/${treatmentId}`,
   notifications: '/notifications',

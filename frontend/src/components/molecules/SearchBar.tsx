@@ -11,6 +11,8 @@ interface SearchBarProps {
   className?: string;
   /** Activa el botón de dictado por voz (Web Speech API). */
   enableVoice?: boolean;
+  /** Ref opcional para enfocar el input desde el padre. */
+  inputRef?: React.MutableRefObject<HTMLInputElement | null>;
 }
 
 // Tipos mínimos para Web Speech API (no están en lib.dom estándar de TS).
@@ -52,6 +54,7 @@ export function SearchBar({
   autoFocus = false,
   className,
   enableVoice = false,
+  inputRef,
 }: SearchBarProps) {
   const inputId = useId();
   const [internal, setInternal] = useState(value);
@@ -116,6 +119,9 @@ export function SearchBar({
       </span>
       <input
         id={inputId}
+        ref={(node) => {
+          if (inputRef) inputRef.current = node;
+        }}
         className="c-search-bar__input"
         type="search"
         value={internal}
