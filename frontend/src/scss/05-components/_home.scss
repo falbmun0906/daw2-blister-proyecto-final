@@ -113,6 +113,9 @@
   }
 
   &__timeline {
+    --timeline-marker-size: 1.875rem;
+    --timeline-marker-radius: 0.9375rem;
+
     list-style: none;
     margin: 0;
     padding: 0;
@@ -123,8 +126,8 @@
 
   &__item {
     display: grid;
-    grid-template-columns: 3rem auto 1fr;
-    align-items: stretch;
+    grid-template-columns: 3rem var(--timeline-marker-size) 1fr;
+    align-items: flex-start;
     gap: var(--space-2);
     position: relative;
 
@@ -132,11 +135,11 @@
     &::before {
       content: '';
       position: absolute;
-      left: calc(3rem + 0.5rem - 1px);
-      top: 1.75rem;
+      left: calc(3rem + var(--space-2) + var(--timeline-marker-radius) - 1px);
+      top: calc(var(--space-1) + var(--timeline-marker-size));
       bottom: -1rem;
       width: 2px;
-      background-color: var(--color-primary-tint);
+      background-color: var(--color-primary-border);
     }
 
     &:last-child::before { display: none; }
@@ -147,15 +150,15 @@
     font-weight: var(--font-weight-medium);
     color: var(--color-text-muted);
     line-height: 1.5;
-    padding-top: var(--space-1);
+    padding-top: calc(var(--space-1) + 0.1875rem);
   }
 
   &__marker {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: var(--timeline-marker-size);
+    height: var(--timeline-marker-size);
     border-radius: var(--radius-full);
     background-color: var(--color-surface);
     border: 2px solid var(--color-primary-tint);
@@ -177,9 +180,15 @@
   }
 
   &__item--taken &__marker {
-    background-color: var(--color-primary-tint);
-    border-color: var(--color-primary-tint);
-    color: var(--color-primary-mid);
+    background-color: var(--color-dose-taken-bg);
+    border-color: var(--color-dose-taken);
+    color: var(--color-dose-taken);
+  }
+
+  &__item--taken &__time,
+  &__item--taken &__card-name,
+  &__item--taken &__card-detail {
+    color: var(--color-text-muted);
   }
 
   &__card {
@@ -190,6 +199,7 @@
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
+    min-height: 7.25rem;
   }
 
   &__card-header {
@@ -197,19 +207,20 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    background-color: var(--color-primary-tint);
+    padding: var(--space-3);
+    background-color: color-mix(in srgb, var(--color-primary-mid) 18%, var(--color-surface));
+    border-bottom: 1px solid var(--color-primary-border);
   }
 
   &__card-name {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text);
+    color: var(--color-primary-strong, var(--color-primary));
   }
 
   &__card-detail {
     margin: 0;
-    padding: var(--space-2) var(--space-3) 0;
+    padding: var(--space-3) var(--space-3) 0;
     font-size: var(--text-sm);
     color: var(--color-text-muted);
   }
@@ -248,15 +259,25 @@
 
   &__pill {
     align-self: flex-start;
-    margin: 0 var(--space-3) var(--space-3);
+    margin: var(--space-3) var(--space-3) var(--space-3);
     padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-full);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-semibold);
 
     &--taken {
-      background-color: var(--color-primary-mid);
-      color: var(--color-text-on-primary);
+      background-color: var(--color-dose-taken-bg);
+      color: var(--color-dose-taken);
     }
+  }
+
+  &__item--taken &__card {
+    background-color: var(--color-surface-tinted);
+    box-shadow: none;
+  }
+
+  &__item--taken &__card-header {
+    background-color: color-mix(in srgb, var(--color-dose-taken) 12%, var(--color-surface));
+    border-bottom-color: var(--color-success-border);
   }
 }

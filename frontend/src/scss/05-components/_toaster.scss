@@ -6,7 +6,7 @@
 .c-toaster {
   position: fixed;
   inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 5rem) 0;
-  z-index: 90;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
@@ -16,6 +16,9 @@
 }
 
 .c-toast {
+  --toast-accent: var(--color-primary-mid);
+  --toast-soft: var(--color-primary-tint);
+
   pointer-events: auto;
   position: relative;
   width: 100%;
@@ -24,18 +27,40 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface, #fff);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  border: 0.0625rem solid var(--color-border-subtle);
+  border-radius: var(--radius-xl, var(--radius-lg));
+  background: linear-gradient(115deg, var(--color-surface), var(--color-surface-tinted));
   color: var(--color-text);
   box-shadow:
-    0 12px 24px -8px rgba(0, 0, 0, 0.18),
-    0 2px 4px rgba(0, 0, 0, 0.06);
-  border-left: 4px solid var(--color-text-muted);
+    0 0.75rem 1.5rem -0.5rem color-mix(in srgb, var(--color-text) 18%, transparent),
+    0 0.125rem 0.25rem color-mix(in srgb, var(--color-text) 6%, transparent);
   overflow: hidden;
-  // Animación de entrada por defecto (slide-up + fade).
   animation: c-toast-enter 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   will-change: transform, opacity;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--space-2);
+    inset-inline-start: var(--space-2);
+    width: 0.4rem;
+    border-radius: var(--radius-full);
+    background-color: var(--toast-accent);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-12);
+    width: 2.25rem;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background-color: var(--toast-soft);
+    opacity: 0.75;
+    transform: rotate(-12deg);
+  }
 
   &.is-leaving {
     animation: c-toast-exit 0.22s ease-in both;
@@ -45,13 +70,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    color: var(--color-text-muted);
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-full);
+    background-color: var(--toast-soft);
+    color: var(--toast-accent);
 
     svg {
-      width: 1.5rem;
-      height: 1.5rem;
+      width: 1.25rem;
+      height: 1.25rem;
     }
   }
 
@@ -79,10 +106,10 @@
 
     svg { width: 1rem; height: 1rem; }
 
-    &:hover { background-color: var(--color-surface-tinted, rgba(0, 0, 0, 0.04)); color: var(--color-text); }
+    &:hover { background-color: var(--toast-soft); color: var(--color-text); }
     &:focus-visible {
-      outline: 2px solid var(--color-primary-mid);
-      outline-offset: 2px;
+      outline: 0.125rem solid var(--toast-accent);
+      outline-offset: 0.125rem;
     }
   }
 
@@ -90,7 +117,7 @@
     position: absolute;
     left: 0;
     bottom: 0;
-    height: 2px;
+    height: 0.1875rem;
     width: 100%;
     background-color: currentColor;
     opacity: 0.35;
@@ -100,26 +127,21 @@
     animation-fill-mode: forwards;
   }
 
-  // ── Variantes ─────────────────────────────────────────────────────────────
   &--success {
-    border-left-color: var(--color-success, #2e7d32);
-    & .c-toast__icon,
-    & .c-toast__progress { color: var(--color-success, #2e7d32); }
+    --toast-accent: var(--color-success);
+    --toast-soft: var(--color-success-subtle);
   }
   &--error {
-    border-left-color: var(--color-error, #c62828);
-    & .c-toast__icon,
-    & .c-toast__progress { color: var(--color-error, #c62828); }
+    --toast-accent: var(--color-error);
+    --toast-soft: var(--color-error-subtle);
   }
   &--warning {
-    border-left-color: var(--color-warning, #ef6c00);
-    & .c-toast__icon,
-    & .c-toast__progress { color: var(--color-warning, #ef6c00); }
+    --toast-accent: var(--color-warning);
+    --toast-soft: var(--color-warning-subtle);
   }
   &--info {
-    border-left-color: var(--color-primary-mid, #2f8c80);
-    & .c-toast__icon,
-    & .c-toast__progress { color: var(--color-primary-mid, #2f8c80); }
+    --toast-accent: var(--color-primary-mid);
+    --toast-soft: var(--color-primary-tint);
   }
 }
 
@@ -154,6 +176,6 @@
   .c-toast,
   .c-toast.is-leaving,
   .c-toast__progress {
-    animation: none !important;
+    animation: none;
   }
 }
