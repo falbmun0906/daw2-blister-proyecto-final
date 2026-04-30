@@ -20,6 +20,7 @@ import InventoryPage from './pages/Inventory/InventoryPage'
 import AddMedicinePage from './pages/Inventory/AddMedicinePage'
 import EditMedicinePage from './pages/Inventory/EditMedicinePage'
 import MedicineDetailPage from './pages/Medicine/MedicineDetailPage'
+import CimaMedicineDetailPage from './pages/Medicine/CimaMedicineDetailPage'
 import TreatmentsPage from './pages/Treatments/TreatmentsPage'
 import TreatmentFormPage from './pages/Treatments/TreatmentFormPage'
 import AppointmentsPage from './pages/Appointments/AppointmentsPage'
@@ -89,6 +90,7 @@ function App() {
             <Route path={ROUTES.blisterLogs(':blisterId')} element={<AdherencePage />} />
             <Route path={ROUTES.blisterNotifications(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.medicineDetail(':blisterId', ':medicineId')} element={<MedicineDetailPage />} />
+            <Route path={ROUTES.cimaMedicineDetail(':nregist')} element={<CimaMedicineDetailPage />} />
             <Route path={ROUTES.treatmentDetail(':blisterId', ':treatmentId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
             <Route path={ROUTES.profile} element={<ProfilePage />} />

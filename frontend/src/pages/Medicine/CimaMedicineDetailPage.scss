@@ -1,0 +1,320 @@
+// =============================================================================
+// CimaMedicineDetailPage — ficha oficial CIMA, estilo minimalista (sin cajas).
+// Inspiración: pantallas de Perfil. Header con sombra sutil que separa el
+// contenido, separadores finos entre secciones, imágenes sueltas alineadas.
+// =============================================================================
+
+.c-cima-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: 0 0 var(--space-6);
+
+  // ── Header sticky con sombra inferior que separa del contenido ─────────
+  &__header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--color-bg);
+    box-shadow: 0 2px 6px -4px rgba(0, 0, 0, 0.18);
+  }
+
+  &__back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-primary-mid);
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: var(--space-1) var(--space-2);
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+  }
+
+  // ── Título principal ───────────────────────────────────────────────────
+  &__title {
+    margin: 0;
+    padding: 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-snug);
+    color: var(--color-text);
+  }
+
+  // ── Chips horizontales (Ficha técnica · Prospecto · Compartir) ─────────
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0 var(--space-4);
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border: none;
+    border-radius: 9999px;
+    background-color: var(--color-primary-mid);
+    color: var(--color-on-primary, #fff);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+    white-space: nowrap;
+
+    & svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
+
+    &:hover { filter: brightness(0.95); }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+  }
+
+  // ── Secciones planas separadas por línea fina (sin cajas) ──────────────
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-top: 1px solid var(--color-border-subtle);
+  }
+
+  &__section-title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+
+    & svg {
+      width: 1.1rem;
+      height: 1.1rem;
+      color: var(--color-text-muted);
+    }
+  }
+
+  // ── Hechos (label + valor) en filas verticales, sin fondo ──────────────
+  &__facts {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__fact {
+    margin: 0;
+
+    & dt {
+      margin: 0;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text);
+    }
+
+    & dd {
+      margin: var(--space-1) 0 0 0;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+    }
+  }
+
+  &__rule {
+    margin: 0;
+    border: none;
+    border-top: 1px solid var(--color-border-subtle);
+  }
+
+  &__bullets {
+    list-style: disc;
+    margin: 0;
+    padding-left: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    & li { color: var(--color-text-muted); }
+    & strong { color: var(--color-text); font-weight: var(--font-weight-medium); }
+    & svg { vertical-align: -2px; }
+  }
+
+  &__alerts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__alert {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--color-warning, #b54708);
+    font-size: var(--text-sm);
+
+    & svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+  }
+
+  // ── Imágenes sueltas, sin contenedor visible, todas mismo tamaño ───────
+  &__photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  &__photo {
+    display: block;
+    width: 9rem;
+    height: 6rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: transparent;
+
+    & img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+  }
+
+  // ── Sección "Usado en": filas con icono + nombre + avatares ────────────
+  &__usage {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__usage-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__usage-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+
+    & svg { width: 1.1rem; height: 1.1rem; }
+  }
+
+  &__usage-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__usage-name {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+  }
+
+  &__usage-meta {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__usage-avatars {
+    display: inline-flex;
+    align-items: center;
+
+    // Solapa los avatares contiguos como en la maqueta.
+    & > * + * { margin-left: -0.5rem; }
+  }
+
+  &__usage-extra {
+    margin-left: -0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--color-bg-muted, #e9eef2);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+  }
+
+  // ── CTA inferior fija ──────────────────────────────────────────────────
+  &__cta {
+    padding: 0 var(--space-4);
+    margin-top: var(--space-2);
+  }
+
+  &__cta-btn {
+    width: 100%;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 3rem;
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-mid);
+    color: var(--color-on-primary, #fff);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+
+    & svg {
+      width: 1.1rem;
+      height: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    & > span { line-height: 1; }
+
+    &:hover { filter: brightness(0.95); }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+  }
+
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+  }
+}
