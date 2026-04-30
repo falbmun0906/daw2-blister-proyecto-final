@@ -3,7 +3,7 @@
 // con sombra moderna y sin bordes sólidos.
 // =============================================================================
 
-@use '../01-tools/mixins' as *;
+@use '../../scss/01-tools/mixins' as *;
 
 .c-blister-card {
   list-style: none;
