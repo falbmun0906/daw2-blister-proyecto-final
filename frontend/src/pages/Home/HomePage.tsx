@@ -6,15 +6,15 @@ import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
+import { Modal } from '../../components/atoms/Modal';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
+import { UndoToast } from '../../components/molecules/UndoToast';
 import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
 import { useBlisters } from '../../hooks/use.blisters';
 import { useMedicines } from '../../hooks/use.medicines';
-import { useTreatments } from '../../hooks/use.treatments';
 import { ROUTES } from '../../constants/routes';
 import { getUpcomingDoses, type UpcomingDose } from '../../services/me.service';
-import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
@@ -28,6 +28,14 @@ interface HomeTimelineItem {
   avatarName: string;
   dose?: UpcomingDose;
 }
+
+interface ActiveUndo {
+  logId: string;
+  createdAt: number;
+  message: string;
+}
+
+const EARLY_DOSE_GRACE_MS = 5 * 60 * 1000;
 
 const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   hour: '2-digit',
@@ -56,18 +64,18 @@ function formatTodayLabel(): string {
 export default function HomePage() {
   const navigate = useNavigate();
   const { isLoading, error, refresh } = useBlisters();
-  const user = useAuthStore((s) => s.user);
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
   const blisters = useBlisterStore((s) => s.blisters);
   const addToast = useUiStore((s) => s.addToast);
   const { medicines, refetch: refetchMedicines } = useMedicines(activeBlisterId);
-  const { logs, logDose } = useAdherence(activeBlisterId);
-  const { treatments } = useTreatments(activeBlisterId);
+  const { logDose, undoLog } = useAdherence(activeBlisterId);
   const [upcomingDoses, setUpcomingDoses] = useState<UpcomingDose[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [upcomingError, setUpcomingError] = useState<string | null>(null);
   const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
+  const [earlyDose, setEarlyDose] = useState<UpcomingDose | null>(null);
+  const [activeUndos, setActiveUndos] = useState<ActiveUndo[]>([]);
   const [dismissedLowStockAlertKey, setDismissedLowStockAlertKey] = useState<string | null>(null);
 
   const todayLabel = useMemo(() => formatTodayLabel(), []);
@@ -80,37 +88,19 @@ export default function HomePage() {
     : null;
   const showLowStockAlert = Boolean(lowStockMedicine && lowStockAlertKey !== dismissedLowStockAlertKey);
 
-  const latestLog = useMemo(() => logs[0] ?? null, [logs]);
   const timelineItems = useMemo<HomeTimelineItem[]>(() => {
-    const items: HomeTimelineItem[] = [];
-
-    if (latestLog) {
-      const medicine = medicines.find((item) => item._id === latestLog.medicineId);
-      const treatment = treatments.find((item) => item.id === latestLog.treatmentId);
-      items.push({
-        key: `taken-${latestLog.id}`,
-        status: 'taken',
-        date: new Date(latestLog.timestamp),
-        medicineName: medicine ? medicine.alias?.trim() || medicine.nombre : 'Medicamento',
-        detail: `${latestLog.amount} unidad(es)${treatment ? ` · ${treatment.title}` : ''}`,
-        avatarName: user?.name ?? 'Toma registrada',
-      });
-    }
-
-    for (const dose of upcomingDoses) {
-      items.push({
+    const items = upcomingDoses.map<HomeTimelineItem>((dose, index) => ({
         key: `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`,
-        status: items.some((item) => item.status === 'next') ? 'pending' : 'next',
+        status: index === 0 ? 'next' : 'pending',
         date: new Date(dose.doseAt),
         medicineName: dose.medicineName,
         detail: `${dose.amount} unidad(es) · ${dose.treatmentTitle}`,
         avatarName: dose.patientName || dose.blisterName,
         dose,
-      });
-    }
+      }));
 
     return items.slice(0, 4);
-  }, [latestLog, medicines, treatments, upcomingDoses, user?.name]);
+  }, [upcomingDoses]);
 
   const refreshUpcoming = useCallback(async () => {
     if (!activeBlisterId) {
@@ -136,13 +126,30 @@ export default function HomePage() {
     void refreshUpcoming();
   }, [refreshUpcoming]);
 
-  const handleLogDose = async (dose: UpcomingDose): Promise<void> => {
+  const dismissUndoToast = useCallback((logId: string) => {
+    setActiveUndos((prev) => prev.filter((undo) => undo.logId !== logId));
+  }, []);
+
+  const performLogDose = async (dose: UpcomingDose): Promise<void> => {
     const key = `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`;
     setLoggingDoseKey(key);
     try {
-      await logDose({ treatmentId: dose.treatmentId, medicineId: dose.medicineId });
+      const log = await logDose({
+        treatmentId: dose.treatmentId,
+        medicineId: dose.medicineId,
+        amount: dose.amount,
+        timestamp: new Date(dose.doseAt),
+      });
+      setUpcomingDoses((prev) => prev.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key));
       await Promise.all([refetchMedicines(), refreshUpcoming()]);
-      addToast({ message: `Toma registrada: ${dose.medicineName}.`, variant: 'success' });
+      setActiveUndos((prev) => [
+        ...prev,
+        {
+          logId: log.id,
+          createdAt: Date.now(),
+          message: `Toma registrada: ${dose.medicineName}.`,
+        },
+      ]);
     } catch (err) {
       const message = isStockInsufficientError(err)
         ? 'No hay stock suficiente para registrar esta toma desde Home.'
@@ -150,6 +157,29 @@ export default function HomePage() {
       addToast({ message, variant: 'error' });
     } finally {
       setLoggingDoseKey(null);
+    }
+  };
+
+  const handleLogDose = async (dose: UpcomingDose): Promise<void> => {
+    const doseTime = new Date(dose.doseAt).getTime();
+    if (doseTime - Date.now() > EARLY_DOSE_GRACE_MS) {
+      setEarlyDose(dose);
+      return;
+    }
+    await performLogDose(dose);
+  };
+
+  const handleUndo = async (logId: string): Promise<void> => {
+    dismissUndoToast(logId);
+    try {
+      await undoLog(logId);
+      await Promise.all([refetchMedicines(), refreshUpcoming()]);
+      addToast({ message: 'Toma deshecha.', variant: 'success' });
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido deshacer la toma.',
+        variant: 'error',
+      });
     }
   };
 
@@ -170,9 +200,6 @@ export default function HomePage() {
       </EmptyState>
     );
   }
-
-  // Greeting reservado para una próxima iteración (saludo personalizado al usuario).
-  void user;
 
   return (
     <section className="c-home" aria-label="Resumen del blíster activo">
@@ -286,6 +313,48 @@ export default function HomePage() {
           </ol>
         )}
       </section>
+
+      <Modal
+        open={earlyDose !== null}
+        title="Aún no es la hora"
+        onClose={() => setEarlyDose(null)}
+      >
+        <p className="c-home__modal-text">
+          Esta toma está programada para las {earlyDose ? timeFormatter.format(new Date(earlyDose.doseAt)) : ''}.
+        </p>
+        <div className="c-home__modal-actions">
+          <Button type="button" variant="primary-outline" onClick={() => setEarlyDose(null)}>
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => {
+              if (!earlyDose) return;
+              const dose = earlyDose;
+              setEarlyDose(null);
+              void performLogDose(dose);
+            }}
+          >
+            Marcar como tomada
+          </Button>
+        </div>
+      </Modal>
+
+      {activeUndos.length > 0 ? (
+        <div className="c-home__undo-stack" aria-live="polite">
+          {activeUndos.map((undo) => (
+            <UndoToast
+              key={undo.logId}
+              logId={undo.logId}
+              message={undo.message}
+              createdAt={undo.createdAt}
+              onUndo={(id) => void handleUndo(id)}
+              onExpire={dismissUndoToast}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

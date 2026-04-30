@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { EmptyState } from '../atoms/EmptyState';
 import { ErrorState } from '../atoms/ErrorState';
 import { Skeleton } from '../atoms/Skeleton';
 import { NotificationItem } from './NotificationItem';
 import { useNotifications } from '../../hooks/use.notifications';
+import { getNotificationTargetRoute } from '../../lib/notification-routing';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { NotificationView } from '../../types/notification.types';
@@ -43,18 +45,26 @@ const CLOSE_THRESHOLD_PX = 120;
  * al dedo, similar al patrón de iOS.
  */
 export function NotificationsSheet() {
+  const navigate = useNavigate();
   const open = useUiStore((s) => s.notificationsSheetOpen);
   const close = useUiStore((s) => s.closeNotificationsSheet);
   const addToast = useUiStore((s) => s.addToast);
-  const { notifications, unreadCount, isLoading, error, refetch, markAsRead } =
+  const { notifications, unreadCount, isLoading, error, refetch, markAsRead, dismiss } =
     useNotifications();
 
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const startY = useRef<number | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
 
   const groups = useMemo(() => groupByDate(notifications), [notifications]);
+
+  useEffect(() => {
+    setPortalTarget(
+      document.querySelector<HTMLElement>('.c-desktop-device-shell__screen') ?? document.body,
+    );
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
@@ -119,6 +129,24 @@ export function NotificationsSheet() {
     });
   };
 
+  const handleOpenNotification = (notification: NotificationView): void => {
+    const route = getNotificationTargetRoute(notification);
+    if (!route) return;
+    close();
+    navigate(route);
+  };
+
+  const handleDismiss = (id: string): void => {
+    void dismiss(id).catch((err) => {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido eliminar la notificación.',
+        variant: 'error',
+      });
+    });
+  };
+
+  if (!open || !portalTarget) return null;
+
   return createPortal(
     <div
       className={`c-notifications-sheet${open ? ' is-open' : ''}`}
@@ -177,19 +205,23 @@ export function NotificationsSheet() {
             groups.map((group) => (
               <section key={group.key} aria-label={group.label}>
                 <h3 className="c-notifications-sheet__group-title">{group.label}</h3>
-                {group.items.map((notification) => (
-                  <NotificationItem
-                    key={notification.id}
-                    notification={notification}
-                    onMarkAsRead={handleMarkAsRead}
-                  />
-                ))}
+                <div className="c-notifications-sheet__group-list">
+                  {group.items.map((notification) => (
+                    <NotificationItem
+                      key={notification.id}
+                      notification={notification}
+                      onMarkAsRead={handleMarkAsRead}
+                      onOpen={handleOpenNotification}
+                      onDismiss={handleDismiss}
+                    />
+                  ))}
+                </div>
               </section>
             ))
           )}
         </div>
       </div>
     </div>,
-    document.body,
+    portalTarget,
   );
 }

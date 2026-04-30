@@ -58,10 +58,10 @@ export function ForceDoseDialog({ isOpen, onConfirm, onCancel }: ForceDoseDialog
           maxLength={500}
         />
         <div className="c-force-dose-dialog__actions">
-          <Button variant="ghost" onClick={onCancel}>
+          <Button variant="ghost" className="c-btn--card" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button variant="danger" onClick={handleConfirm}>
+          <Button variant="danger" className="c-btn--card" onClick={handleConfirm}>
             Registrar igualmente
           </Button>
         </div>

@@ -87,6 +87,12 @@
     gap: var(--space-3);
   }
 
+  &__group-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
   &__group-title {
     margin: var(--space-3) 0 var(--space-2);
     font-size: var(--text-sm);
@@ -99,5 +105,13 @@
 
     .c-notifications-sheet__backdrop { opacity: 1; }
     .c-notifications-sheet__panel { transform: translateY(0); }
+  }
+}
+
+.c-desktop-device-shell__screen .c-notifications-sheet {
+  position: absolute;
+
+  &__panel {
+    max-height: 90%;
   }
 }

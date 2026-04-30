@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
+  deleteNotification,
   listNotifications,
   markNotificationAsRead,
 } from '../services/notifications.service';
@@ -24,6 +25,7 @@ interface UseNotificationsResult {
   error: string | null;
   refetch: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
+  dismiss: (id: string) => Promise<void>;
 }
 
 /**
@@ -37,6 +39,7 @@ export function useNotifications(
   const notifications = useNotificationsStore((s) => s.notifications);
   const setNotifications = useNotificationsStore((s) => s.setNotifications);
   const markRead = useNotificationsStore((s) => s.markRead);
+  const removeNotification = useNotificationsStore((s) => s.remove);
   const [meta, setMeta] = useState<NotificationsListMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +83,24 @@ export function useNotifications(
     [markRead, setNotifications],
   );
 
+  const dismiss = useCallback(
+    async (id: string) => {
+      const previous = useNotificationsStore.getState().notifications;
+      removeNotification(id);
+      try {
+        await deleteNotification(id);
+      } catch (err) {
+        setNotifications(previous);
+        const message = isApiError(err)
+          ? err.message
+          : 'No se ha podido eliminar la notificación.';
+        setError(message);
+        throw err;
+      }
+    },
+    [removeNotification, setNotifications],
+  );
+
   const unreadCount = notifications.reduce(
     (acc, n) => (n.isRead ? acc : acc + 1),
     0,
@@ -93,5 +114,6 @@ export function useNotifications(
     error,
     refetch,
     markAsRead,
+    dismiss,
   };
 }

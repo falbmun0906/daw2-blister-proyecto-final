@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
@@ -6,6 +7,7 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { NotificationItem } from '../../components/organisms/NotificationItem';
 import { useNotifications } from '../../hooks/use.notifications';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { getNotificationTargetRoute } from '../../lib/notification-routing';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { NotificationView } from '../../types/notification.types';
@@ -41,7 +43,8 @@ function groupByDate(items: NotificationView[]): NotificationGroup[] {
 
 function NotificationsPage() {
   usePageTitle('Avisos');
-  const { notifications, unreadCount, isLoading, error, refetch, markAsRead } =
+  const navigate = useNavigate();
+  const { notifications, unreadCount, isLoading, error, refetch, markAsRead, dismiss } =
     useNotifications();
   const addToast = useUiStore((s) => s.addToast);
 
@@ -66,6 +69,20 @@ function NotificationsPage() {
       const message = isApiError(err)
         ? err.message
         : 'No se ha podido marcar como leída.';
+      addToast({ message, variant: 'error' });
+    });
+  };
+
+  const handleOpenNotification = (notification: NotificationView): void => {
+    const route = getNotificationTargetRoute(notification);
+    if (route) navigate(route);
+  };
+
+  const handleDismiss = (id: string): void => {
+    void dismiss(id).catch((err) => {
+      const message = isApiError(err)
+        ? err.message
+        : 'No se ha podido eliminar la notificación.';
       addToast({ message, variant: 'error' });
     });
   };
@@ -111,6 +128,8 @@ function NotificationsPage() {
                   key={notification.id}
                   notification={notification}
                   onMarkAsRead={handleMarkAsRead}
+                  onOpen={handleOpenNotification}
+                  onDismiss={handleDismiss}
                 />
               ))}
             </section>

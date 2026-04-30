@@ -35,3 +35,8 @@ export async function markNotificationAsRead(
   const response = await apiClient.patch(`/notifications/${notificationId}/read`);
   return notificationViewSchema.parse(normalizeApiResponse(response));
 }
+
+/** DELETE /notifications/:id. Elimina una notificación del buzón. */
+export async function deleteNotification(notificationId: string): Promise<void> {
+  await apiClient.delete(`/notifications/${notificationId}`);
+}

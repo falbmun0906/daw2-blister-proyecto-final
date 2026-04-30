@@ -1,18 +1,29 @@
 import DOMPurify from 'dompurify';
+import {
+  TbAlertTriangle,
+  TbBell,
+  TbCalendarTime,
+  TbChevronRight,
+  TbPackage,
+  TbPill,
+  TbX,
+} from 'react-icons/tb';
 
 import type { NotificationView } from '../../types/notification.types';
 
 interface NotificationItemProps {
   notification: NotificationView;
   onMarkAsRead: (id: string) => void;
+  onOpen?: (notification: NotificationView) => void;
+  onDismiss?: (id: string) => void;
 }
 
-const TYPE_ICONS: Record<NotificationView['type'], string> = {
-  stock_low: '📦',
-  expiration_warning: '⏳',
-  adherence_forced: '💊',
-  cima_change: '⚠️',
-  system: '🔔',
+const TYPE_ICONS: Record<NotificationView['type'], typeof TbBell> = {
+  stock_low: TbPackage,
+  expiration_warning: TbCalendarTime,
+  adherence_forced: TbPill,
+  cima_change: TbAlertTriangle,
+  system: TbBell,
 };
 
 const RELATIVE_TIME_FORMATTER = new Intl.RelativeTimeFormat('es-ES', {
@@ -48,10 +59,12 @@ function formatRelativeTime(iso: string): string {
 export function NotificationItem({
   notification,
   onMarkAsRead,
+  onOpen,
+  onDismiss,
 }: NotificationItemProps) {
   const safeTitle = DOMPurify.sanitize(notification.title);
   const safeMessage = DOMPurify.sanitize(notification.message);
-  const icon = TYPE_ICONS[notification.type];
+  const Icon = TYPE_ICONS[notification.type];
   const relativeTime = formatRelativeTime(notification.createdAt);
   const className = [
     'c-notification-item',
@@ -63,6 +76,7 @@ export function NotificationItem({
 
   const handleClick = () => {
     if (!notification.isRead) onMarkAsRead(notification.id);
+    onOpen?.(notification);
   };
 
   return (
@@ -78,7 +92,7 @@ export function NotificationItem({
         }
       >
         <span className="c-notification-item__icon" aria-hidden="true">
-          {icon}
+          <Icon />
         </span>
         <span className="c-notification-item__body">
           <span className="c-notification-item__title">{safeTitle}</span>
@@ -90,13 +104,18 @@ export function NotificationItem({
             {relativeTime}
           </time>
         </span>
-        {!notification.isRead ? (
-          <span
-            className="c-notification-item__indicator"
-            aria-hidden="true"
-          />
-        ) : null}
+        <TbChevronRight className="c-notification-item__chevron" aria-hidden="true" />
       </button>
+      {onDismiss ? (
+        <button
+          type="button"
+          className="c-notification-item__dismiss"
+          aria-label={`Eliminar notificación: ${notification.title}`}
+          onClick={() => onDismiss(notification.id)}
+        >
+          <TbX aria-hidden="true" />
+        </button>
+      ) : null}
     </article>
   );
 }
