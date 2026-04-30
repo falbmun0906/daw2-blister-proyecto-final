@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TbAlertTriangle, TbCheck } from 'react-icons/tb';
 
@@ -7,7 +7,7 @@ import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { SearchBar } from '../../components/molecules/SearchBar';
+import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
 import { useBlisters } from '../../hooks/use.blisters';
 import { ROUTES } from '../../constants/routes';
 import { useAuthStore } from '../../stores/auth.store';
@@ -76,8 +76,8 @@ export default function HomePage() {
   const { isLoading, error, refresh } = useBlisters();
   const user = useAuthStore((s) => s.user);
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
+  const activeRole = useBlisterStore((s) => s.activeRole);
   const blisters = useBlisterStore((s) => s.blisters);
-  const [query, setQuery] = useState('');
 
   const todayLabel = useMemo(formatTodayLabel, []);
 
@@ -104,12 +104,9 @@ export default function HomePage() {
 
   return (
     <section className="c-home" aria-label="Resumen del blíster activo">
-      <SearchBar
-        value={query}
-        onChange={setQuery}
-        placeholder="Buscar medicamento"
-        ariaLabel="Buscar medicamento en tu botiquín"
-        enableVoice
+      <CimaSearchDropdown
+        blisterId={activeBlisterId}
+        canMutate={activeRole === 'OWNER' || activeRole === 'CAREGIVER'}
       />
 
       <article className="c-home-alert" role="alert">

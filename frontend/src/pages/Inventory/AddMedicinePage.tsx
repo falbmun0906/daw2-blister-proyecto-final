@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,6 +34,8 @@ type FormValues = z.infer<typeof formSchema>;
 function AddMedicinePage() {
   usePageTitle('Añadir medicamento');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const presetNregist = searchParams.get('nregist');
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
   const upsertMedicine = useMedicinesStore((s) => s.upsertMedicine);
@@ -45,6 +47,24 @@ function AddMedicinePage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ExternalSearchItem | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Si se llega con ?nregist=..., precarga el medicamento sin pasar por buscador.
+  useEffect(() => {
+    if (!presetNregist || selected) return;
+    let cancelled = false;
+    searchCima(presetNregist)
+      .then((items) => {
+        if (cancelled) return;
+        const match = items.find((item) => item.nregist === presetNregist) ?? items[0] ?? null;
+        if (match) setSelected(match);
+      })
+      .catch(() => {
+        // Si falla, el usuario puede buscar manualmente.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [presetNregist, selected]);
 
   const {
     register,

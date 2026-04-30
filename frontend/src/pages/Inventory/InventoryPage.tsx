@@ -1,13 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useMemo, useRef } from 'react';
+import { Navigate } from 'react-router-dom';
 import { FaBriefcaseMedical } from 'react-icons/fa6';
 
 import { ROUTES } from '../../constants/routes';
-import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { SearchBar } from '../../components/molecules/SearchBar';
+import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
 import { BlisterPillSelector } from '../../components/organisms/BlisterPillSelector';
 import { MedicineCard } from '../../components/organisms/MedicineCard';
 import { useMedicines } from '../../hooks/use.medicines';
@@ -31,16 +30,15 @@ function filterMedicines(list: ReturnType<typeof useMedicines>['medicines'], que
 
 function InventoryPage() {
   usePageTitle('Botiquín');
-  const navigate = useNavigate();
   const blisters = useBlisterStore((s) => s.blisters);
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
   const setActiveBlister = useBlisterStore((s) => s.setActiveBlister);
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const { medicines, isLoading, error, refetch } = useMedicines();
-  const [query, setQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const visible = useMemo(() => filterMedicines(medicines, query), [medicines, query]);
+  const visible = useMemo(() => filterMedicines(medicines, ''), [medicines]);
   const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
 
   if (!activeBlisterId) {
@@ -57,12 +55,11 @@ function InventoryPage() {
         <span className="c-inventory-page__spacer" aria-hidden="true" />
       </header>
 
-      <SearchBar
-        value={query}
-        onChange={setQuery}
-        placeholder="Buscar medicamento"
-        ariaLabel="Buscar medicamentos del botiquín"
-        enableVoice
+      <CimaSearchDropdown
+        blisterId={activeBlisterId}
+        canMutate={canMutate}
+        searchInputRef={searchInputRef}
+        ariaLabel="Buscar medicamento en CIMA"
       />
 
       {blisters.length > 0 ? (
@@ -78,8 +75,6 @@ function InventoryPage() {
         />
       ) : null}
 
-      <h2 className="c-inventory-page__section-title">Medicamentos</h2>
-
       {error ? (
         <ErrorState message={error} onRetry={() => void refetch()} />
       ) : isLoading ? (
@@ -90,18 +85,14 @@ function InventoryPage() {
         </div>
       ) : visible.length === 0 ? (
         <EmptyState
-          title={query ? 'Sin resultados' : 'Tu botiquín está vacío'}
+          title="Tu botiquín está vacío"
           description={
-            query
-              ? 'Prueba con otro término de búsqueda.'
-              : 'Añade tu primer medicamento desde la base oficial CIMA.'
+            canMutate
+              ? 'Busca un medicamento en CIMA y pulsa + para añadirlo.'
+              : 'Pide al administrador del blíster que añada medicamentos.'
           }
-          ctaLabel={canMutate && !query ? 'Añadir medicamento' : undefined}
-          onCtaClick={
-            canMutate && !query
-              ? () => navigate(`${ROUTES.blisterMedications(activeBlisterId)}/add`)
-              : undefined
-          }
+          ctaLabel={canMutate ? 'Buscar en CIMA' : undefined}
+          onCtaClick={canMutate ? () => searchInputRef.current?.focus() : undefined}
         />
       ) : (
         <ul className="c-inventory-page__list">
@@ -112,16 +103,6 @@ function InventoryPage() {
           ))}
         </ul>
       )}
-
-      {canMutate ? (
-        <Button
-          variant="primary"
-          fullWidth
-          onClick={() => navigate(`${ROUTES.blisterMedications(activeBlisterId)}/add`)}
-        >
-          Añadir medicamento
-        </Button>
-      ) : null}
     </section>
   );
 }

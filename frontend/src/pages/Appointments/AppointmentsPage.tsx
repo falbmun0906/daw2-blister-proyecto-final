@@ -46,9 +46,8 @@ function AppointmentsPage() {
   };
 
   return (
-    <section className="c-appointments-page" aria-labelledby="appointments-title">
+    <section className="c-appointments-page" aria-label="Listado de citas">
       <header className="c-appointments-page__header">
-        <h1 id="appointments-title" className="c-appointments-page__title">Calendario</h1>
         {canMutate ? (
           <Button variant="primary" onClick={() => navigate(ROUTES.newAppointment(activeBlisterId))}>
             Nueva cita

@@ -71,12 +71,9 @@ function NotificationsPage() {
   };
 
   return (
-    <section className="c-notifications-page" aria-labelledby="notifications-title">
-      <header className="c-notifications-page__header">
-        <h1 id="notifications-title" className="c-notifications-page__title">
-          Notificaciones
-        </h1>
-        {unreadCount > 0 ? (
+    <section className="c-notifications-page" aria-label="Listado de notificaciones">
+      {unreadCount > 0 ? (
+        <header className="c-notifications-page__header">
           <button
             type="button"
             className="c-notifications-page__mark-all"
@@ -84,8 +81,8 @@ function NotificationsPage() {
           >
             Marcar todas como leídas
           </button>
-        ) : null}
-      </header>
+        </header>
+      ) : null}
 
       {isLoading ? (
         <div className="c-notifications-page__list" aria-busy="true">

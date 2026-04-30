@@ -137,9 +137,8 @@ function TreatmentsPage() {
   };
 
   return (
-    <section className="c-treatments-page" aria-labelledby="treatments-title">
+    <section className="c-treatments-page" aria-label="Listado de tratamientos">
       <header className="c-treatments-page__header">
-        <h1 id="treatments-title" className="c-treatments-page__title">Tratamientos</h1>
         {canMutate ? (
           <Button variant="primary" onClick={() => navigate(ROUTES.newTreatment(activeBlisterId))}>
             Añadir
