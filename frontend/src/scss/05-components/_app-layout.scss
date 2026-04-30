@@ -12,8 +12,12 @@
     flex: 1 1 auto;
     padding-inline: var(--space-screen-x);
     padding-top: var(--space-screen-top);
-    padding-bottom: calc(
-      var(--space-bottom-nav-height) + var(--space-safe-bottom) + var(--space-6)
-    );
+    padding-bottom: var(--space-6);
+
+    &--with-bottom-nav {
+      padding-bottom: calc(
+        var(--space-bottom-nav-height) + var(--space-safe-bottom) + var(--space-6)
+      );
+    }
   }
 }

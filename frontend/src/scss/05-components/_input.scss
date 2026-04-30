@@ -97,6 +97,15 @@
       cursor: not-allowed;
       background-color: var(--color-surface-tinted);
     }
+
+    &[type='date'] {
+      padding-right: calc(var(--space-input-x) + 1.75rem);
+    }
+
+    &[type='date']::-webkit-calendar-picker-indicator {
+      margin-left: auto;
+      cursor: pointer;
+    }
   }
 
   &__hint {

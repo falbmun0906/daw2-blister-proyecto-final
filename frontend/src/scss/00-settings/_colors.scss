@@ -66,6 +66,8 @@
   --color-primary-mid-hover:   #0d8a7f;
   --color-primary-subtle:      #67c2bb;
   --color-primary-tint:        #edf4f3;
+  --color-primary-soft:        #d8eeeb;
+  --color-primary-strong:      #174f4a;
   --color-primary-border:      #cddbda;
 
 
@@ -146,17 +148,15 @@
 
 // ─── TEMA OSCURO ─────────────────────────────────────────────────────────────
 //
-// El tema oscuro de Blíster pivota a una paleta de TERRACOTAS + blancos.
-// El verde queda como acento puntual (mantenemos --color-primary-mid en un
-// teal cálido y suave), pero los contenedores principales (header inferior,
-// CTAs, fondos tinted) se construyen sobre terracotas progresivamente más
-// claras para conseguir una identidad cálida sin perder contraste WCAG AA.
+// El tema oscuro de Blíster pivota a verdes de marca + grises neutros.
+// El terracota se conserva como acento secundario para detalles, avisos y
+// pantallas de entrada donde ya forma parte del lenguaje visual.
 //
 // Convenciones:
-//   --color-primary*       → terracota (rol que en claro tenía el verde)
-//   --color-accent*        → verde teal (rol secundario, opuesto al claro)
-//   --color-bg / surface   → terracota muy oscura, casi negra
-//   --color-surface-tinted → terracota un peldaño más clara
+//   --color-primary*       → verde teal (marca e interacción principal)
+//   --color-accent*        → terracota (detalles y señales secundarias)
+//   --color-bg / surface   → grises oscuros neutros
+//   --color-surface-tinted → gris verdoso oscuro
 //   Texto / iconos sobre estos fondos → blanco / off-white
 //
 // Los tokens de dominio no se redefinen: apuntan a los semánticos
@@ -164,15 +164,15 @@
 
 [data-theme="dark"] {
 
-  // Superficies: grises oscuros neutros con un punto cálido
-  --color-bg:                  #1a1a1c;
-  --color-surface:             #232326;
-  --color-surface-tinted:      #2c2c30;
-  --color-border:              rgba(217, 119, 87, 0.32);
-  --color-border-subtle:       rgba(217, 119, 87, 0.16);
+  // Superficies: grises oscuros neutros con un punto verde
+  --color-bg:                  #171a1a;
+  --color-surface:             #202425;
+  --color-surface-tinted:      #283031;
+  --color-border:              rgba(103, 194, 187, 0.30);
+  --color-border-subtle:       rgba(103, 194, 187, 0.14);
 
-  // Marca (onboarding/splash en oscuro): terracota saturada
-  --color-brand-surface:       #b85c3f;
+  // Marca (onboarding/splash en oscuro): mantiene el verde Blíster
+  --color-brand-surface:       #0d8a7f;
   --color-brand-surface-text:  #ffffff;
 
   // Texto: blancos cálidos
@@ -182,22 +182,24 @@
   --color-text-inverse:        #1a1a1c;
   --color-text-on-primary:     #ffffff;
 
-  // Primario: TERRACOTA (sustituye al verde del tema claro)
-  --color-primary:             #d97757;
-  --color-primary-hover:       #e08e6f;
-  --color-primary-active:      #c0613e;
-  --color-primary-mid:         #d97757;
-  --color-primary-mid-hover:   #e08e6f;
-  --color-primary-subtle:      #3a2820;
-  --color-primary-tint:        #2e2420;
-  --color-primary-border:      rgba(217, 119, 87, 0.32);
+  // Primario: verde Blíster
+  --color-primary:             #8fd4ce;
+  --color-primary-hover:       #a8e0dc;
+  --color-primary-active:      #67c2bb;
+  --color-primary-mid:         #11a498;
+  --color-primary-mid-hover:   #2eb8ad;
+  --color-primary-subtle:      #1e3f3d;
+  --color-primary-tint:        #162f2d;
+  --color-primary-soft:        #203f3d;
+  --color-primary-strong:      #a8e0dc;
+  --color-primary-border:      rgba(103, 194, 187, 0.30);
 
-  // Acento: verde teal (rol secundario en oscuro)
-  --color-accent:              #67c2bb;
-  --color-accent-hover:        #8fd4ce;
-  --color-accent-active:       #4daea7;
-  --color-accent-subtle:       #1e3f3d;
-  --color-accent-tint:         #162a28;
+  // Acento: terracota conservado para detalles y pantallas de entrada
+  --color-accent:              #d97757;
+  --color-accent-hover:        #e08e6f;
+  --color-accent-active:       #f0a88a;
+  --color-accent-subtle:       #3a2820;
+  --color-accent-tint:         #2e2420;
 
   --color-error:               #e87070;
   --color-error-hover:         #f08585;
@@ -209,7 +211,7 @@
   --color-success-subtle:      #152a1e;
   --color-success-border:      rgba(76, 175, 122, 0.20);
 
-  // En oscuro, el "warning" reutiliza el primario terracota
+  // En oscuro, el warning conserva el terracota como señal de atención
   --color-warning:             #d97757;
   --color-warning-hover:       #e08e6f;
   --color-warning-subtle:      #3a2820;

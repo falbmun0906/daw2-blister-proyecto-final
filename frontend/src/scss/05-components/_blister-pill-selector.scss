@@ -74,7 +74,7 @@
   }
 
   &__stack-avatar {
-    border: 2px solid var(--color-bg);
+    border: 0.125rem solid var(--color-bg);
     border-radius: var(--radius-full);
     display: inline-flex;
   }
@@ -91,11 +91,33 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--color-bg);
+    border: 0.125rem solid var(--color-bg);
   }
 
   &__name {
     font-size: var(--text-xs);
     line-height: 1;
+  }
+
+  &--terracotta {
+    .c-blister-pill-selector__indicator {
+      background-color: transparent;
+    }
+
+    .c-blister-pill-selector__pill {
+      background-color: var(--color-accent-tint);
+      color: var(--color-accent-active);
+      padding-inline: var(--space-4);
+    }
+
+    .c-blister-pill-selector__pill.is-active {
+      background-color: var(--color-accent);
+      color: var(--color-text-on-primary);
+    }
+
+    .c-blister-pill-selector__stack-avatar,
+    .c-blister-pill-selector__stack-extra {
+      border-color: var(--color-accent-tint);
+    }
   }
 }
