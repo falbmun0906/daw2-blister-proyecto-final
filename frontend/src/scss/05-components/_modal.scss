@@ -73,6 +73,15 @@
   }
 }
 
+.c-desktop-device-shell__screen .c-modal {
+  position: absolute;
+  padding: var(--space-3);
+
+  &__panel {
+    max-height: calc(100% - 2 * var(--space-3));
+  }
+}
+
 @keyframes c-modal-fade {
   from { opacity: 0; }
   to { opacity: 1; }

@@ -8,7 +8,7 @@
 .c-bottom-nav {
   position: fixed;
   inset-inline: 0;
-  bottom: 0;
+  bottom: -1px;
   z-index: var(--z-sticky);
 
   display: flex;
@@ -19,7 +19,7 @@
   color: var(--color-text-on-primary);
   box-shadow: var(--shadow-md);
 
-  padding-bottom: var(--space-safe-bottom);
+  padding-bottom: calc(var(--space-safe-bottom) + 1px);
   border-top-left-radius: var(--radius-xl);
   border-top-right-radius: var(--radius-xl);
 
@@ -44,7 +44,7 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    opacity: 0.78;
+    opacity: 0.86;
     transition: opacity var(--transition-fast),
                 background-color var(--transition-fast);
 
@@ -74,6 +74,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
+    svg {
+      stroke-width: 1.65;
+    }
   }
 
   &__label {

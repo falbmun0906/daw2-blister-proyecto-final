@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ROUTES } from './constants/routes'
 import { AppLayout } from './components/layout/AppLayout'
+import { DesktopDeviceShell } from './components/layout/DesktopDeviceShell'
 import { GuestRoute } from './router/GuestRoute'
 import { LoginRoute } from './router/LoginRoute'
 import { OnboardingRoute } from './router/OnboardingRoute'
@@ -23,6 +24,7 @@ import MedicineDetailPage from './pages/Medicine/MedicineDetailPage'
 import CimaMedicineDetailPage from './pages/Medicine/CimaMedicineDetailPage'
 import TreatmentsPage from './pages/Treatments/TreatmentsPage'
 import TreatmentFormPage from './pages/Treatments/TreatmentFormPage'
+import TreatmentDetailPage from './pages/Treatments/TreatmentDetailPage'
 import AppointmentsPage from './pages/Appointments/CalendarPage'
 import AppointmentFormPage from './pages/Appointments/AppointmentFormPage'
 import AdherencePage from './pages/Adherence/AdherencePage'
@@ -39,10 +41,11 @@ import McpTokenRevokePage from './pages/MCP/McpTokenRevokePage'
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route index element={<Navigate to={ROUTES.landing} replace />} />
-        <Route path={ROUTES.landing} element={<LandingPage />} />
-        <Route path={ROUTES.access} element={<Navigate to={ROUTES.landing} replace />} />
+      <DesktopDeviceShell>
+        <Routes>
+          <Route index element={<Navigate to={ROUTES.landing} replace />} />
+          <Route path={ROUTES.landing} element={<LandingPage />} />
+          <Route path={ROUTES.access} element={<Navigate to={ROUTES.landing} replace />} />
 
         {/* Onboarding accesible solo la primera vez o si el usuario lo reactiva desde Ajustes */}
         <Route element={<OnboardingRoute />}>
@@ -90,7 +93,7 @@ function App() {
             <Route path={ROUTES.blisterNotifications(':blisterId')} element={<PlaceholderPage />} />
             <Route path={ROUTES.medicineDetail(':blisterId', ':medicineId')} element={<MedicineDetailPage />} />
             <Route path={ROUTES.cimaMedicineDetail(':nregist')} element={<CimaMedicineDetailPage />} />
-            <Route path={ROUTES.treatmentDetail(':blisterId', ':treatmentId')} element={<PlaceholderPage />} />
+            <Route path={ROUTES.treatmentDetail(':blisterId', ':treatmentId')} element={<TreatmentDetailPage />} />
             <Route path={ROUTES.profile} element={<ProfilePage />} />
             <Route path={ROUTES.editProfile} element={<EditProfilePage />} />
             <Route path={ROUTES.personalInfo} element={<PersonalInfoPage />} />
@@ -104,8 +107,9 @@ function App() {
           </Route>
         </Route>
 
-        <Route path={ROUTES.notFound} element={<Navigate to={ROUTES.landing} replace />} />
-      </Routes>
+          <Route path={ROUTES.notFound} element={<Navigate to={ROUTES.landing} replace />} />
+        </Routes>
+      </DesktopDeviceShell>
     </BrowserRouter>
   )
 }

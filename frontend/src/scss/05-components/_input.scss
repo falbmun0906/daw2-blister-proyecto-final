@@ -99,11 +99,21 @@
     }
 
     &[type='date'] {
-      padding-right: calc(var(--space-input-x) + 1.75rem);
+      padding-right: calc(var(--space-input-x) + 2rem);
+      text-align: left;
     }
 
-    &[type='date']::-webkit-calendar-picker-indicator {
-      margin-left: auto;
+    &[type='datetime-local'] {
+      padding-right: calc(var(--space-input-x) + 2rem);
+      text-align: left;
+    }
+
+    &[type='date']::-webkit-calendar-picker-indicator,
+    &[type='datetime-local']::-webkit-calendar-picker-indicator {
+      width: 1.25rem;
+      height: 1.25rem;
+      margin: 0 0 0 auto;
+      padding: 0;
       cursor: pointer;
     }
   }

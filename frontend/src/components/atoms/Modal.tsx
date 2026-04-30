@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { TbX } from 'react-icons/tb';
 
@@ -29,6 +29,14 @@ export function Modal({
   children,
   ariaLabel,
 }: ModalProps) {
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(
+      document.querySelector<HTMLElement>('.c-desktop-device-shell__screen') ?? document.body,
+    );
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const handleKey = (event: KeyboardEvent) => {
@@ -43,7 +51,7 @@ export function Modal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !portalTarget) return null;
 
   return createPortal(
     <div
@@ -82,6 +90,6 @@ export function Modal({
         <div className="c-modal__body">{children}</div>
       </div>
     </div>,
-    document.body,
+    portalTarget,
   );
 }
