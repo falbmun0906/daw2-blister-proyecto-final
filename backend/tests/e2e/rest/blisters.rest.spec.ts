@@ -60,7 +60,7 @@ describe('REST blisters e2e', () => {
       });
 
     expect(createResponse.status).toBe(201);
-    const blisterId = createResponse.body.data.id as string;
+    const blisterId = createResponse.body.data._id as string;
 
     const inviteResponse = await request(app)
       .post(`/api/v1/blisters/${blisterId}/invite`)

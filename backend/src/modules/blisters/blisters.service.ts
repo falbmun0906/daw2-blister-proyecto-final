@@ -26,7 +26,7 @@ interface BlisterMemberView {
 }
 
 interface BlisterView {
-  id: string;
+  _id: string;
   name: string;
   deletedAt: Date | null | undefined;
   members: BlisterMemberView[];
@@ -41,7 +41,7 @@ const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi botiquín';
 const INVITE_EXPIRATION_MS = 48 * 60 * 60 * 1000;
 
 const toBlisterView = (blister: Awaited<ReturnType<typeof BlisterModel.findOne>>): BlisterView => ({
-  id: blister!._id.toString(),
+  _id: blister!._id.toString(),
   name: blister!.name,
   deletedAt: blister!.deletedAt,
   members: blister!.members.map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => ({
