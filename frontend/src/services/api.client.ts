@@ -3,6 +3,7 @@ import axios, { type AxiosError, type AxiosResponse, type InternalAxiosRequestCo
 import { API_TIMEOUT_MS, VITE_API_URL } from '../constants/api.constants';
 import { ROUTES } from '../constants/routes';
 import { useAuthStore } from '../stores/auth.store';
+import { resetAppStores } from '../stores/reset-stores';
 import { authTokensSchema } from '../../../shared/schemas/auth.schema';
 import type { ApiErrorResponse, ApiResponse } from '../types/api.types';
 import { ApiError } from '../types/api.types';
@@ -80,6 +81,7 @@ const redirectToLogin = (): void => {
 
 const clearSessionAndRedirect = (): void => {
   useAuthStore.getState().clearSession();
+  resetAppStores();
   redirectToLogin();
 };
 

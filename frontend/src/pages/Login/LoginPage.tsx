@@ -15,6 +15,7 @@ import { ROUTES } from '../../constants/routes';
 import { applyUserSettings } from '../../lib/applyUserSettings';
 import { login as loginService } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
+import { resetAppStores } from '../../stores/reset-stores';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import './LoginPage.scss';
@@ -57,6 +58,11 @@ function LoginPage() {
 
     try {
       const session = await loginService(data);
+      // Limpiar datos en memoria/localStorage de un posible usuario anterior.
+      const previousUserId = useAuthStore.getState().user?.id ?? null;
+      if (previousUserId !== session.user.id) {
+        resetAppStores();
+      }
       applyUserSettings(session.user.settings);
       setSession(session);
 

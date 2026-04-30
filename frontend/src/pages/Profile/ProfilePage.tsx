@@ -5,6 +5,7 @@ import { Avatar } from '../../components/atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useAuthStore } from '../../stores/auth.store';
+import { resetAppStores } from '../../stores/reset-stores';
 import './ProfilePage.scss';
 
 interface ProfileLinkItem {
@@ -24,6 +25,10 @@ function ProfilePage() {
   usePageTitle('');
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
+  const handleLogout = (): void => {
+    resetAppStores();
+    clearSession();
+  };
 
   if (!user) return null;
 
@@ -50,7 +55,7 @@ function ProfilePage() {
       <button
         type="button"
         className="c-profile-page__logout"
-        onClick={clearSession}
+        onClick={handleLogout}
       >
         Cerrar sesión
       </button>

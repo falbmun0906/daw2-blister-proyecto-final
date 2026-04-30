@@ -16,9 +16,16 @@
   gap: var(--space-3);
 
   // ── Cabecera (icono · título · stack avatares · marca de edición) ──────
+  &__row {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
   &__open {
     display: grid;
-    grid-template-columns: 2.5rem 1fr auto auto;
+    grid-template-columns: 1fr auto auto;
     align-items: center;
     gap: var(--space-3);
     padding: 0;
@@ -26,6 +33,7 @@
     background: transparent;
     text-align: left;
     cursor: pointer;
+    min-width: 0;
   }
 
   &__icon {

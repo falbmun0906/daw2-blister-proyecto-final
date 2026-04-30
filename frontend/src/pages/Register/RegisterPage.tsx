@@ -23,6 +23,7 @@ import { ROUTES } from '../../constants/routes';
 import { applyUserSettings } from '../../lib/applyUserSettings';
 import { register as registerService } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
+import { resetAppStores } from '../../stores/reset-stores';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import './RegisterPage.scss';
@@ -80,6 +81,8 @@ function RegisterPage() {
 
     try {
       const session = await registerService(data as RegisterFormData);
+      // El registro implica una nueva cuenta: descarta cualquier dato cacheado.
+      resetAppStores();
       applyUserSettings(session.user.settings);
       setSession(session);
 

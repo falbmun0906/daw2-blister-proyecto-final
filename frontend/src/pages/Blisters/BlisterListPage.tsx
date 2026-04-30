@@ -534,7 +534,7 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
 
   return (
     <li className="c-blister-card">
-      <button type="button" className="c-blister-card__open" onClick={handleSelect}>
+      <div className="c-blister-card__row">
         <span className="c-blister-card__icon-wrapper">
           <span className="c-blister-card__icon" aria-hidden="true">
             <Icon />
@@ -544,28 +544,27 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
               type="button"
               className="c-blister-card__avatar-edit"
               aria-label="Cambiar icono del blíster"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAvatarPicker(true);
-              }}
+              onClick={() => setShowAvatarPicker(true)}
             >
               <TbPencil aria-hidden="true" />
             </button>
           ) : null}
         </span>
-        <span className="c-blister-card__heading">
-          <span className="c-blister-card__title">{blister.name}</span>
-          <span className="c-blister-card__owner">
-            <TbUser aria-hidden="true" /> Propietario: {ownerLabel}
+        <button type="button" className="c-blister-card__open" onClick={handleSelect}>
+          <span className="c-blister-card__heading">
+            <span className="c-blister-card__title">{blister.name}</span>
+            <span className="c-blister-card__owner">
+              <TbUser aria-hidden="true" /> Propietario: {ownerLabel}
+            </span>
           </span>
-        </span>
-        {!expanded ? <MemberStack members={stack} /> : null}
-        {editing ? (
-          <span className="c-blister-card__edit-mark" aria-hidden="true">
-            <TbPencil />
-          </span>
-        ) : null}
-      </button>
+          {!expanded ? <MemberStack members={stack} /> : null}
+          {editing ? (
+            <span className="c-blister-card__edit-mark" aria-hidden="true">
+              <TbPencil />
+            </span>
+          ) : null}
+        </button>
+      </div>
 
       <div className="c-blister-card__meta">
         <p>
