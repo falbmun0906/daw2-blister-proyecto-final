@@ -14,7 +14,7 @@ const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number
       required: true,
       min: 1,
     },
-    frequency: {
+    frequencyHours: {
       type: Number,
       required: true,
       min: 1,
@@ -29,6 +29,12 @@ const treatmentSchema = new Schema<TreatmentDocument>({
   blisterId: {
     type: Schema.Types.ObjectId,
     ref: 'Blister',
+    required: true,
+    index: true,
+  },
+  patientUserId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
     index: true,
   },

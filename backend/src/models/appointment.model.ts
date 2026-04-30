@@ -9,6 +9,12 @@ const appointmentSchema = new Schema<AppointmentDocument>({
     required: true,
     index: true,
   },
+  patientUserId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  },
   title: {
     type: String,
     required: true,

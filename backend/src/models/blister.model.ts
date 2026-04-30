@@ -56,6 +56,13 @@ const blisterSchema = new Schema<BlisterDocument>({
     minlength: 2,
     maxlength: 120,
   },
+  avatarKey: {
+    type: String,
+    trim: true,
+    minlength: 1,
+    maxlength: 100,
+    default: null,
+  },
   members: {
     type: [blisterMemberSchema],
     required: true,

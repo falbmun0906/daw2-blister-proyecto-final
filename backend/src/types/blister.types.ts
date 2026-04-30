@@ -22,6 +22,7 @@ export interface BlisterAccessLocals {
 export interface BlisterDocument {
   _id: Types.ObjectId;
   name: string;
+  avatarKey?: string | null;
   members: BlisterMember[];
   inviteCode?: InviteCode | null;
   deletedAt?: Date | null;
