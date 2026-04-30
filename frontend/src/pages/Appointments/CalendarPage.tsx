@@ -50,14 +50,15 @@ const timeFormatter = new Intl.DateTimeFormat('es-ES', {
 interface MonthCalendarProps {
   cursor: Date;
   selected: Date;
-  markedDays: Set<string>;
+  doseDays: Set<string>;
+  appointmentDays: Set<string>;
   onSelect: (date: Date) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
 }
 
 /** Cuadrícula mensual con casillas marcadas para días con citas. */
-function MonthCalendar({ cursor, selected, markedDays, onSelect, onPrevMonth, onNextMonth }: MonthCalendarProps) {
+function MonthCalendar({ cursor, selected, doseDays, appointmentDays, onSelect, onPrevMonth, onNextMonth }: MonthCalendarProps) {
   const today = new Date();
   const firstOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   // Lunes como primer día (0 = Lu .. 6 = Do).
@@ -110,7 +111,9 @@ function MonthCalendar({ cursor, selected, markedDays, onSelect, onPrevMonth, on
           const key = dayKey(date);
           const isToday = isSameDay(date, today);
           const isSelected = isSameDay(date, selected);
-          const isMarked = markedDays.has(key);
+          const hasDose = doseDays.has(key);
+          const hasAppointment = appointmentDays.has(key);
+          const isMarked = hasDose || hasAppointment;
           const className = [
             'c-month-calendar__cell',
             outside && 'is-outside',
@@ -131,10 +134,19 @@ function MonthCalendar({ cursor, selected, markedDays, onSelect, onPrevMonth, on
               onClick={() => onSelect(date)}
             >
               <span>{date.getDate()}</span>
-              {isMarked ? <span className="c-month-calendar__dot" aria-hidden="true" /> : null}
+              {isMarked ? (
+                <span className="c-month-calendar__markers" aria-hidden="true">
+                  {hasDose ? <span className="c-month-calendar__dot c-month-calendar__dot--dose" /> : null}
+                  {hasAppointment ? <span className="c-month-calendar__dot c-month-calendar__dot--appointment" /> : null}
+                </span>
+              ) : null}
             </button>
           );
         })}
+      </div>
+      <div className="c-month-calendar__legend" aria-label="Leyenda del calendario">
+        <span><i className="c-month-calendar__dot c-month-calendar__dot--dose" aria-hidden="true" /> Toma</span>
+        <span><i className="c-month-calendar__dot c-month-calendar__dot--appointment" aria-hidden="true" /> Cita médica</span>
       </div>
     </div>
   );
@@ -187,12 +199,17 @@ function CalendarPage() {
       .finally(() => setCalendarLoading(false));
   }, [blisterId, cursor]);
 
-  const markedDays = useMemo(() => {
+  const appointmentDays = useMemo(() => {
     const set = new Set<string>();
     for (const a of appointments) set.add(dayKey(new Date(a.date)));
+    return set;
+  }, [appointments]);
+
+  const doseDays = useMemo(() => {
+    const set = new Set<string>();
     for (const dose of calendarDoses) set.add(dayKey(new Date(dose.doseAt)));
     return set;
-  }, [appointments, calendarDoses]);
+  }, [calendarDoses]);
 
   const dayAppointments = useMemo(() => {
     return appointments
@@ -261,7 +278,8 @@ function CalendarPage() {
           <MonthCalendar
             cursor={cursor}
             selected={selected}
-            markedDays={markedDays}
+            doseDays={doseDays}
+            appointmentDays={appointmentDays}
             onSelect={(date) => {
               setSelected(date);
               setCursor(date);

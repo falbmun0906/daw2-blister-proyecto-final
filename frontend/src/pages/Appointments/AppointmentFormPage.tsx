@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
-import { TbCalendarEvent, TbClock, TbStethoscope, TbUserHeart } from 'react-icons/tb';
+import { TbCalendarEvent, TbClock, TbMapPin, TbStethoscope, TbUserHeart } from 'react-icons/tb';
 
 import {
   createAppointmentSchema,
@@ -27,6 +27,7 @@ import './AppointmentFormPage.scss';
 interface FormValues {
   patientUserId: string;
   title: string;
+  location: string;
   date: string;
   treatmentId: string;
 }
@@ -35,6 +36,7 @@ function buildPayload(values: FormValues): CreateAppointmentInput {
   return createAppointmentSchema.parse({
     patientUserId: values.patientUserId,
     title: values.title,
+    location: values.location || undefined,
     date: values.date,
     treatmentId: values.treatmentId ? values.treatmentId : undefined,
   });
@@ -79,7 +81,7 @@ function AppointmentFormPage() {
   );
 
   const form = useForm<FormValues>({
-    defaultValues: { patientUserId: defaultPatientUserId, title: '', date: '', treatmentId: '' },
+    defaultValues: { patientUserId: defaultPatientUserId, title: '', location: '', date: '', treatmentId: '' },
   });
   const { register, handleSubmit, reset, setError, watch, formState } = form;
   const selectedPatientUserId = watch('patientUserId');
@@ -93,6 +95,7 @@ function AppointmentFormPage() {
       reset({
         patientUserId: target.patientUserId,
         title: target.title,
+        location: target.location ?? '',
         date: target.date.slice(0, 16),
         treatmentId: target.treatmentId ?? '',
       });
@@ -101,7 +104,7 @@ function AppointmentFormPage() {
 
   useEffect(() => {
     if (!isEditing && defaultPatientUserId) {
-      reset({ patientUserId: defaultPatientUserId, title: '', date: '', treatmentId: '' });
+      reset({ patientUserId: defaultPatientUserId, title: '', location: '', date: '', treatmentId: '' });
     }
   }, [defaultPatientUserId, isEditing, reset]);
 
@@ -195,6 +198,16 @@ function AppointmentFormPage() {
             placeholder="Ej. Revisión médico de cabecera"
             error={formState.errors.title?.message}
             {...register('title')}
+          />
+        </FormSection>
+
+        <FormSection label="Lugar" icon={<TbMapPin />}>
+          <Input
+            label="Centro o consulta"
+            maxLength={200}
+            placeholder="Ej. Centro de salud, planta 2"
+            error={formState.errors.location?.message}
+            {...register('location')}
           />
         </FormSection>
 

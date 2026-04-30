@@ -54,10 +54,13 @@ export function AppointmentCard({
       ) : null}
       {editable ? (
         <footer className="c-appointment-card__actions">
-          <Link to={ROUTES.editAppointment(blisterId, appointment.id)} className="c-appointment-card__edit-link">
-            <Button variant="primary-outline">Editar</Button>
+          <Link
+            to={ROUTES.editAppointment(blisterId, appointment.id)}
+            className="c-btn c-btn--primary-outline c-btn--card c-appointment-card__edit-link"
+          >
+            <span>Editar</span>
           </Link>
-          <Button variant="danger" onClick={() => onDelete(appointment)}>
+          <Button variant="danger" className="c-btn--card" onClick={() => onDelete(appointment)}>
             Eliminar
           </Button>
         </footer>
