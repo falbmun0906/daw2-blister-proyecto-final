@@ -20,3 +20,37 @@ export const ADHERENCE_LOG_UNDO_WINDOW_MS = 10 * 60 * 1000;
 export const NOTIFICATION_DEDUPLICATION_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const CIMA_SYNC_META_KEY = 'cimaSync' as const;
 export const DEFAULT_CIMA_SYNC_LOOKBACK_DAYS = 30;
+
+export const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi blíster';
+export const MAX_BLISTERS_PER_USER = 3;
+export const BLISTER_RESTORE_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
+
+/**
+ * Catalogo de avatares disponibles para Blísteres. Separado del de usuarios
+ * para que el frontend pueda mapear ilustraciones distintas (botiquines vs.
+ * personas) sin acoplar ambos sets.
+ */
+export const BLISTER_AVATAR_KEYS = [
+  'briefcase',
+  'home',
+  'family',
+  'heart',
+  'pill',
+  'cross',
+  'leaf',
+  'sun',
+] as const;
+
+/**
+ * Catalogo de avatares disponibles para Usuarios.
+ */
+export const USER_AVATAR_KEYS = [
+  'avatar-01',
+  'avatar-02',
+  'avatar-03',
+  'avatar-04',
+  'avatar-05',
+  'avatar-06',
+  'avatar-07',
+  'avatar-08',
+] as const;
