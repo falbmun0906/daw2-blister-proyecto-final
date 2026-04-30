@@ -1,0 +1,421 @@
+// =============================================================================
+// BlisterCard — tarjeta abatible de la lista "Mis blísters". Plana, blanca,
+// con sombra moderna y sin bordes sólidos.
+// =============================================================================
+
+@use '../01-tools/mixins' as *;
+
+.c-blister-card {
+  list-style: none;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px -8px rgba(15, 23, 42, 0.18);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  // ── Cabecera (icono · título · stack avatares · marca de edición) ──────
+  &__open {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--color-primary-soft, var(--color-primary-tint));
+    color: var(--color-primary-strong, var(--color-primary-mid));
+
+    & svg { width: 1.2rem; height: 1.2rem; }
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    @include truncate;
+  }
+
+  &__owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+
+    & svg { width: 0.85rem; height: 0.85rem; }
+  }
+
+  &__stack {
+    display: inline-flex;
+    align-items: center;
+
+    & > * + * { margin-left: -0.5rem; }
+  }
+
+  &__stack-extra {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    margin-left: -0.5rem;
+    background-color: var(--color-bg-muted, #e5e7eb);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__edit-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-primary-mid);
+
+    & svg { width: 1.1rem; height: 1.1rem; }
+  }
+
+  // ── Contadores ─────────────────────────────────────────────────────────
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+
+    & p {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+    }
+
+    & svg {
+      width: 1rem;
+      height: 1rem;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+  }
+
+  // ── Detalles desplegables (lista de miembros) ──────────────────────────
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__details-title {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__members {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__member {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__member-name {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+  }
+
+  &__member-role {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  // ── Pie (acciones · toggle) ────────────────────────────────────────────
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__edit-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  &__toggle {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: transparent;
+    color: var(--color-primary-mid);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+
+    & svg { width: 1.4rem; height: 1.4rem; }
+
+    &:hover { background-color: var(--color-primary-tint); }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+  }
+}
+
+// ── Botón hueco con borde discontinuo (Añadir blíster, Añadir miembro) ────
+.c-dashed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px dashed var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+
+  &:hover { background-color: var(--color-primary-tint); }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-mid);
+    outline-offset: 2px;
+  }
+
+  &__plus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--color-bg-muted, #e5e7eb);
+    color: var(--color-text-muted);
+
+    & svg { width: 1rem; height: 1rem; }
+  }
+}
+
+// ── Botón con sólo icono (lápiz junto a cada miembro) ─────────────────────
+.c-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  color: var(--color-primary-mid);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+
+  & svg { width: 1.1rem; height: 1.1rem; }
+
+  &:hover { background-color: var(--color-primary-tint); }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-mid);
+    outline-offset: 2px;
+  }
+}
+
+// ── Lista de blísteres + botón añadir ─────────────────────────────────────
+.c-blister-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  &__cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__add {
+    margin-top: var(--space-1);
+  }
+}
+
+// ── Modales locales ───────────────────────────────────────────────────────
+.c-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1.5px solid var(--color-primary-mid);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-primary-mid);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  width: 100%;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+
+  & svg { width: 1rem; height: 1rem; }
+
+  &.is-active {
+    background-color: var(--color-primary-mid);
+    color: var(--color-on-primary, #fff);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-mid);
+    outline-offset: 2px;
+  }
+}
+
+.c-pill-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border: 1.5px solid var(--color-primary-mid);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+
+  &::placeholder { color: var(--color-text-muted); }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-mid);
+    outline-offset: 2px;
+  }
+}
+
+.c-member-role-modal {
+  &__header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__name {
+    margin: 0;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+  }
+
+  &__current-role {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__rule {
+    border: 0;
+    border-top: 1px solid var(--color-border-subtle);
+    margin: 0;
+  }
+
+  &__legend {
+    margin: 0;
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__roles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+}
+
+.c-confirm-modal {
+  &__message {
+    margin: 0;
+    text-align: center;
+    color: var(--color-text);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: center;
+  }
+}
+
+.c-add-member-modal {
+  &__legend {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  &__help {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+}
+
+.c-new-blister-modal {
+  &__label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  &__or {
+    margin: 0;
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+}
