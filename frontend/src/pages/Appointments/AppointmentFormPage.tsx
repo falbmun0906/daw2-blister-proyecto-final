@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
-import { TbCalendarEvent, TbClock, TbStethoscope } from 'react-icons/tb';
+import { TbCalendarEvent, TbClock, TbStethoscope, TbUserHeart } from 'react-icons/tb';
 
 import {
   createAppointmentSchema,
@@ -15,14 +15,17 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { useAppointments } from '../../hooks/use.appointments';
+import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import './AppointmentFormPage.scss';
 
 interface FormValues {
+  patientUserId: string;
   title: string;
   date: string;
   treatmentId: string;
@@ -30,6 +33,7 @@ interface FormValues {
 
 function buildPayload(values: FormValues): CreateAppointmentInput {
   return createAppointmentSchema.parse({
+    patientUserId: values.patientUserId,
     title: values.title,
     date: values.date,
     treatmentId: values.treatmentId ? values.treatmentId : undefined,
@@ -38,31 +42,56 @@ function buildPayload(values: FormValues): CreateAppointmentInput {
 
 function AppointmentFormPage() {
   const navigate = useNavigate();
-  const { appointmentId } = useParams<{ appointmentId?: string }>();
+  const { blisterId: routeBlisterId, appointmentId } = useParams<{ blisterId: string; appointmentId?: string }>();
   const isEditing = Boolean(appointmentId);
   usePageTitle(isEditing ? 'Editar cita' : 'Nueva cita');
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
-  const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
+  const blisters = useBlisterStore((s) => s.blisters);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const blisterId = routeBlisterId ?? activeBlisterId;
+  const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const addToast = useUiStore((s) => s.addToast);
 
   const { appointments, isLoading, error, refetch, createAppointment, updateAppointment } =
-    useAppointments();
-  const { treatments } = useTreatments();
+    useAppointments(blisterId);
+  const { treatments } = useTreatments(blisterId);
 
   const target = useMemo(
     () => (appointmentId ? appointments.find((a) => a.id === appointmentId) ?? null : null),
     [appointments, appointmentId],
   );
+  const activeBlister = useMemo(
+    () => blisters.find((blister) => blister._id === blisterId) ?? null,
+    [blisterId, blisters],
+  );
+  const role = useMemo(
+    () => activeBlister?.members.find((member) => member.userId === userId)?.role
+      ?? (blisterId === activeBlisterId ? activeRole : null),
+    [activeBlister, activeBlisterId, activeRole, blisterId, userId],
+  );
+  const canMutate = role === 'OWNER' || role === 'CAREGIVER';
+  const defaultPatientUserId = useMemo(
+    () => activeBlister?.members.find((member) => member.userId === userId)?.userId
+      ?? activeBlister?.members[0]?.userId
+      ?? '',
+    [activeBlister, userId],
+  );
 
   const form = useForm<FormValues>({
-    defaultValues: { title: '', date: '', treatmentId: '' },
+    defaultValues: { patientUserId: defaultPatientUserId, title: '', date: '', treatmentId: '' },
   });
-  const { register, handleSubmit, reset, setError, formState } = form;
+  const { register, handleSubmit, reset, setError, watch, formState } = form;
+  const selectedPatientUserId = watch('patientUserId');
+  const linkedTreatments = useMemo(
+    () => treatments.filter((treatment) => !selectedPatientUserId || treatment.patientUserId === selectedPatientUserId),
+    [selectedPatientUserId, treatments],
+  );
 
   useEffect(() => {
     if (target) {
       reset({
+        patientUserId: target.patientUserId,
         title: target.title,
         date: target.date.slice(0, 16),
         treatmentId: target.treatmentId ?? '',
@@ -70,11 +99,25 @@ function AppointmentFormPage() {
     }
   }, [target, reset]);
 
-  if (!activeBlisterId) {
+  useEffect(() => {
+    if (!isEditing && defaultPatientUserId) {
+      reset({ patientUserId: defaultPatientUserId, title: '', date: '', treatmentId: '' });
+    }
+  }, [defaultPatientUserId, isEditing, reset]);
+
+  if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;
   }
+  if (!blistersLoaded && blisters.length === 0) {
+    return (
+      <section className="c-appointment-form-page" aria-busy="true">
+        <Skeleton height="2rem" />
+        <Skeleton height="3rem" />
+      </section>
+    );
+  }
   if (!canMutate) {
-    return <Navigate to={ROUTES.blisterAppointments(activeBlisterId)} replace />;
+    return <Navigate to={ROUTES.blisterAppointments(blisterId)} replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -99,7 +142,7 @@ function AppointmentFormPage() {
         await createAppointment(payload);
         addToast({ message: 'Cita creada.', variant: 'success' });
       }
-      navigate(ROUTES.blisterAppointments(activeBlisterId));
+      navigate(ROUTES.blisterAppointments(blisterId));
     } catch (err) {
       const message = isApiError(err) ? err.message : 'No se ha podido guardar la cita.';
       addToast({ message, variant: 'error' });
@@ -126,6 +169,25 @@ function AppointmentFormPage() {
   return (
     <section className="c-appointment-form-page" aria-label={isEditing ? 'Editar cita' : 'Nueva cita'}>
       <form className="c-appointment-form-page__form" onSubmit={onSubmit} noValidate>
+        <FormSection label="Paciente" icon={<TbUserHeart />}>
+          <label className="c-field">
+            <span className="c-field__label">
+              <span className="c-field__label-text">Miembro del blíster</span>
+            </span>
+            <select className="c-field__select" {...register('patientUserId')}>
+              <option value="">Selecciona…</option>
+              {activeBlister?.members.map((member) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.fullName?.trim() || member.username?.trim() || 'Miembro del blíster'}
+                </option>
+              ))}
+            </select>
+            {formState.errors.patientUserId?.message ? (
+              <span className="c-field__error">{formState.errors.patientUserId.message}</span>
+            ) : null}
+          </label>
+        </FormSection>
+
         <FormSection label="Título de la cita" icon={<TbCalendarEvent />}>
           <Input
             label="Título"
@@ -156,7 +218,7 @@ function AppointmentFormPage() {
             </span>
             <select className="c-field__select" {...register('treatmentId')}>
               <option value="">Sin vincular</option>
-              {treatments.map((t) => (
+              {linkedTreatments.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.title}
                 </option>

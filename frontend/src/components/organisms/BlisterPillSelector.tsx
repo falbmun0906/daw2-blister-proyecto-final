@@ -7,6 +7,7 @@ interface BlisterPillSelectorProps {
   blisters: Blister[];
   activeBlisterId: string | null;
   onSelect: (blister: Blister) => void;
+  variant?: 'default' | 'terracotta';
   /**
    * Devuelve el avatarKey almacenado en el usuario miembro del blíster, si está
    * disponible. La página llamadora suele tener ese mapeo.
@@ -34,6 +35,7 @@ export function BlisterPillSelector({
   activeBlisterId,
   onSelect,
   resolveAvatarKey,
+  variant = 'default',
 }: BlisterPillSelectorProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
@@ -53,7 +55,14 @@ export function BlisterPillSelector({
   }, [activeBlisterId, blisters]);
 
   return (
-    <div className="c-blister-pill-selector" role="tablist" aria-label="Cambiar de blíster">
+    <div
+      className={[
+        'c-blister-pill-selector',
+        variant === 'terracotta' && 'c-blister-pill-selector--terracotta',
+      ].filter(Boolean).join(' ')}
+      role="tablist"
+      aria-label="Cambiar de blíster"
+    >
       <ul className="c-blister-pill-selector__list" ref={listRef}>
         {indicator ? (
           <span
@@ -90,8 +99,8 @@ export function BlisterPillSelector({
                       style={{ zIndex: visibleMembers.length - idx }}
                     >
                       <Avatar
-                        name=""
-                        avatarKey={resolveAvatarKey?.(member.userId)}
+                        name={member.fullName?.trim() ?? ''}
+                        avatarKey={member.avatarKey ?? resolveAvatarKey?.(member.userId)}
                         size="sm"
                       />
                     </span>

@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
@@ -17,13 +17,15 @@ import './AdherencePage.scss';
 
 function AdherencePage() {
   usePageTitle('Historial de tomas');
+  const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
+  const blisterId = routeBlisterId ?? activeBlisterId;
   const currentUserId = useAuthStore((s) => s.user?.id ?? null);
   const addToast = useUiStore((s) => s.addToast);
-  const { logs, isLoading, error, refetch, undoLog } = useAdherence();
-  const { medicines } = useMedicines();
+  const { logs, isLoading, error, refetch, undoLog } = useAdherence(blisterId);
+  const { medicines } = useMedicines(blisterId);
 
-  if (!activeBlisterId) {
+  if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;
   }
 

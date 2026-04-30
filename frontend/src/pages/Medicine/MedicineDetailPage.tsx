@@ -11,6 +11,7 @@ import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { getCimaDetail } from '../../services/external.service';
 import { getMedicine, removeMedicine } from '../../services/medicines.service';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -33,25 +34,32 @@ function formatDate(iso: string): string {
 function MedicineDetailPage() {
   usePageTitle('Medicamento');
   const navigate = useNavigate();
-  const { medicineId } = useParams<{ blisterId: string; medicineId: string }>();
+  const { blisterId: routeBlisterId, medicineId } = useParams<{ blisterId: string; medicineId: string }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
+  const blisters = useBlisterStore((s) => s.blisters);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const removeFromStore = useMedicinesStore((s) => s.removeMedicine);
   const addToast = useUiStore((s) => s.addToast);
   const [deleting, setDeleting] = useState(false);
+  const blisterId = routeBlisterId ?? activeBlisterId;
+  const routeRole = blisters
+    .find((blister) => blister._id === blisterId)
+    ?.members.find((member) => member.userId === userId)
+    ?.role ?? null;
 
   const [state, setState] = useState<DetailState>({
     medicine: null, cima: null, error: null, isLoading: true,
   });
 
   useEffect(() => {
-    if (!activeBlisterId || !medicineId) return;
+    if (!blisterId || !medicineId) return;
     let cancelled = false;
 
     (async () => {
       setState((s) => ({ ...s, isLoading: true, error: null }));
       try {
-        const med = await getMedicine(activeBlisterId, medicineId);
+        const med = await getMedicine(blisterId, medicineId);
         if (!med) {
           if (!cancelled) setState({ medicine: null, cima: null, error: 'Medicamento no encontrado.', isLoading: false });
           return;
@@ -75,23 +83,24 @@ function MedicineDetailPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [activeBlisterId, medicineId]);
+  }, [blisterId, medicineId]);
 
-  if (!activeBlisterId) return <Navigate to={ROUTES.blisters} replace />;
-  if (!medicineId) return <Navigate to={ROUTES.blisterMedications(activeBlisterId)} replace />;
+  if (!blisterId) return <Navigate to={ROUTES.blisters} replace />;
+  if (!medicineId) return <Navigate to={ROUTES.blisterMedications(blisterId)} replace />;
 
-  const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
+  const role = routeRole ?? activeRole;
+  const canMutate = role === 'OWNER' || role === 'CAREGIVER';
   const { medicine, cima, error, isLoading } = state;
 
   const handleDelete = async () => {
-    if (!medicine || !activeBlisterId) return;
+    if (!medicine || !blisterId) return;
     if (!confirm('¿Eliminar este medicamento del botiquín?')) return;
     setDeleting(true);
     try {
-      await removeMedicine(activeBlisterId, medicine._id);
+      await removeMedicine(blisterId, medicine._id);
       removeFromStore(medicine._id);
       addToast({ message: 'Medicamento eliminado.', variant: 'success' });
-      navigate(ROUTES.blisterMedications(activeBlisterId));
+      navigate(ROUTES.blisterMedications(blisterId));
     } catch (err) {
       addToast({
         message: isApiError(err) ? err.message : 'No se ha podido eliminar.',
@@ -180,7 +189,7 @@ function MedicineDetailPage() {
                 <TbExternalLink aria-hidden="true" /> Prospecto
               </Button>
               <Link
-                to={`${ROUTES.medicineDetail(activeBlisterId, medicine._id)}/edit`}
+                to={`${ROUTES.medicineDetail(blisterId, medicine._id)}/edit`}
                 className="c-btn c-btn--primary"
               >
                 <TbPencil aria-hidden="true" /> Editar

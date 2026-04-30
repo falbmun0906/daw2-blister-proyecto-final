@@ -9,6 +9,7 @@ import { isApiError } from '../types/api.types';
 interface UseBlistersResult {
   blisters: Blister[];
   isLoading: boolean;
+  hasLoaded: boolean;
   error: string | null;
   refresh: () => Promise<void>;
 }
@@ -25,7 +26,7 @@ function resolveRole(blister: Blister, userId: string | null): BlisterRole | nul
  * - Si no hay activo y existen blisters, selecciona el primero.
  * - Reconcilia el rol activo cuando el server devuelve otro distinto.
  */
-export function useBlisters(): UseBlistersResult {
+export function useBlisters(preferredBlisterId?: string | null): UseBlistersResult {
   const userId = useAuthStore((state) => state.user?.id ?? null);
   const blisters = useBlisterStore((state) => state.blisters);
   const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
@@ -34,6 +35,7 @@ export function useBlisters(): UseBlistersResult {
   const clearActiveBlister = useBlisterStore((state) => state.clearActiveBlister);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -48,18 +50,22 @@ export function useBlisters(): UseBlistersResult {
         return;
       }
 
+      const preferred = preferredBlisterId
+        ? list.find((b) => b._id === preferredBlisterId)
+        : undefined;
       const stillExists = activeBlisterId
         ? list.find((b) => b._id === activeBlisterId)
         : undefined;
-      const target = stillExists ?? list[0];
+      const target = preferred ?? stillExists ?? list[0];
       const role = resolveRole(target, userId);
       setActiveBlister(target._id, role);
     } catch (err) {
       setError(isApiError(err) ? err.message : 'No se han podido cargar tus blísters.');
     } finally {
+      setHasLoaded(true);
       setIsLoading(false);
     }
-  }, [activeBlisterId, clearActiveBlister, setActiveBlister, setBlisters, userId]);
+  }, [activeBlisterId, clearActiveBlister, preferredBlisterId, setActiveBlister, setBlisters, userId]);
 
   useEffect(() => {
     void refresh();
@@ -67,5 +73,5 @@ export function useBlisters(): UseBlistersResult {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { blisters, isLoading, error, refresh };
+  return { blisters, isLoading, hasLoaded, error, refresh };
 }

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   TbCalendar,
   TbChevronLeft,
@@ -15,13 +15,15 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
 import { ROUTES } from '../../constants/routes';
 import { useAppointments } from '../../hooks/use.appointments';
+import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
+import { getCalendar, type UpcomingDose } from '../../services/me.service';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Appointment } from '../../types/appointment.types';
-import type { Treatment } from '../../types/treatment.types';
 import './CalendarPage.scss';
 
 type CalendarView = 'pillbox' | 'appointments';
@@ -138,58 +140,59 @@ function MonthCalendar({ cursor, selected, markedDays, onSelect, onPrevMonth, on
   );
 }
 
-interface DoseSlot {
-  treatmentId: string;
-  treatmentTitle: string;
-  hour: number;
-  minute: number;
-  amount: number;
-}
-
-/** Genera slots horarios placeholder para la vista pastillero. */
-function buildDoseSlots(treatments: Treatment[]): DoseSlot[] {
-  const slots: DoseSlot[] = [];
-  for (const t of treatments) {
-    if (t.active === false) continue;
-    for (const m of t.medicines) {
-      const freq = Math.max(1, m.frequencyHours || 24);
-      const dosesPerDay = Math.max(1, Math.floor(24 / freq));
-      for (let i = 0; i < dosesPerDay; i += 1) {
-        const hour = (8 + i * freq) % 24;
-        slots.push({
-          treatmentId: t.id,
-          treatmentTitle: t.title,
-          hour,
-          minute: 0,
-          amount: m.amount,
-        });
-      }
-    }
-  }
-  return slots.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
-}
-
 function CalendarPage() {
   usePageTitle('Calendario');
   const navigate = useNavigate();
+  const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
+  const blisters = useBlisterStore((s) => s.blisters);
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const blisterId = routeBlisterId ?? activeBlisterId;
+  const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const addToast = useUiStore((s) => s.addToast);
-  const { appointments, isLoading, error, refetch, removeAppointment } = useAppointments();
-  const { treatments } = useTreatments();
+  const { appointments, isLoading, error, refetch, removeAppointment } = useAppointments(blisterId);
+  const { treatments } = useTreatments(blisterId);
 
   const [view, setView] = useState<CalendarView>('appointments');
   const [cursor, setCursor] = useState(() => new Date());
   const [selected, setSelected] = useState(() => new Date());
   const [confirmDelete, setConfirmDelete] = useState<Appointment | null>(null);
+  const [calendarDoses, setCalendarDoses] = useState<UpcomingDose[]>([]);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [calendarLoading, setCalendarLoading] = useState(false);
 
-  const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
+  const currentBlister = useMemo(
+    () => blisters.find((blister) => blister._id === blisterId) ?? null,
+    [blisterId, blisters],
+  );
+  const routeRole = useMemo(
+    () => currentBlister?.members.find((member) => member.userId === userId)?.role ?? null,
+    [currentBlister, userId],
+  );
+  const role = routeRole ?? (blisterId === activeBlisterId ? activeRole : null);
+  const canMutate = role === 'OWNER' || role === 'CAREGIVER';
+
+  useEffect(() => {
+    if (!blisterId) return;
+    const from = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const to = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    setCalendarLoading(true);
+    setCalendarError(null);
+    getCalendar({ from, to, blisterId, kinds: ['doses'] })
+      .then((payload) => setCalendarDoses(payload.doses))
+      .catch((err: unknown) => {
+        setCalendarError(isApiError(err) ? err.message : 'No se ha podido cargar el pastillero.');
+      })
+      .finally(() => setCalendarLoading(false));
+  }, [blisterId, cursor]);
 
   const markedDays = useMemo(() => {
     const set = new Set<string>();
     for (const a of appointments) set.add(dayKey(new Date(a.date)));
+    for (const dose of calendarDoses) set.add(dayKey(new Date(dose.doseAt)));
     return set;
-  }, [appointments]);
+  }, [appointments, calendarDoses]);
 
   const dayAppointments = useMemo(() => {
     return appointments
@@ -197,10 +200,23 @@ function CalendarPage() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [appointments, selected]);
 
-  const doseSlots = useMemo(() => buildDoseSlots(treatments), [treatments]);
+  const dayDoses = useMemo(() => {
+    return calendarDoses
+      .filter((dose) => isSameDay(new Date(dose.doseAt), selected))
+      .sort((a, b) => new Date(a.doseAt).getTime() - new Date(b.doseAt).getTime());
+  }, [calendarDoses, selected]);
 
-  if (!activeBlisterId) {
+  if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;
+  }
+
+  if (!blistersLoaded && blisters.length === 0) {
+    return (
+      <section className="c-calendar-page" aria-busy="true">
+        <Skeleton height="3rem" />
+        <Skeleton height="18rem" />
+      </section>
+    );
   }
 
   const handleDelete = async (appointment: Appointment): Promise<void> => {
@@ -276,8 +292,8 @@ function CalendarPage() {
                     <AppointmentCard
                       appointment={appointment}
                       treatments={treatments}
-                      blisterId={activeBlisterId}
-                      userRole={activeRole}
+                      blisterId={blisterId}
+                      userRole={role}
                       onDelete={(a) => setConfirmDelete(a)}
                     />
                   </li>
@@ -291,7 +307,7 @@ function CalendarPage() {
               type="button"
               className="c-calendar-page__fab"
               aria-label="Nueva cita"
-              onClick={() => navigate(ROUTES.newAppointment(activeBlisterId))}
+              onClick={() => navigate(ROUTES.newAppointment(blisterId))}
             >
               <TbPlus aria-hidden="true" />
             </button>
@@ -299,25 +315,28 @@ function CalendarPage() {
         </>
       ) : (
         <div className="c-calendar-page__pillbox">
-          <h3 className="c-calendar-page__day-title">{longDateFormatter.format(new Date())}</h3>
-          {doseSlots.length === 0 ? (
+          <h3 className="c-calendar-page__day-title">{longDateFormatter.format(selected)}</h3>
+          {calendarError ? (
+            <ErrorState message={calendarError} onRetry={() => setCursor(new Date(cursor))} />
+          ) : calendarLoading ? (
+            <Skeleton height="5rem" />
+          ) : dayDoses.length === 0 ? (
             <EmptyState
               title="Sin tomas programadas"
-              description="Añade tratamientos activos para ver aquí su agenda diaria."
+              description="Selecciona otro día o añade tratamientos activos para ver aquí su agenda."
             />
           ) : (
             <ul className="c-calendar-page__doses">
-              {doseSlots.map((slot, idx) => {
-                const time = new Date();
-                time.setHours(slot.hour, slot.minute, 0, 0);
+              {dayDoses.map((dose) => {
+                const time = new Date(dose.doseAt);
                 return (
-                  <li key={`${slot.treatmentId}-${idx}`} className="c-dose-row">
+                  <li key={`${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`} className="c-dose-row">
                     <time className="c-dose-row__time" dateTime={time.toISOString()}>
                       {timeFormatter.format(time)}
                     </time>
                     <div className="c-dose-row__body">
-                      <p className="c-dose-row__title">{slot.treatmentTitle}</p>
-                      <p className="c-dose-row__meta">{slot.amount} unidad(es)</p>
+                      <p className="c-dose-row__title">{dose.medicineName}</p>
+                      <p className="c-dose-row__meta">{dose.amount} unidad(es) · {dose.treatmentTitle}</p>
                     </div>
                   </li>
                 );

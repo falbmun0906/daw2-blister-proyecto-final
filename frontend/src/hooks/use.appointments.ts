@@ -26,8 +26,9 @@ interface UseAppointmentsResult {
 }
 
 /** Carga y muta las citas del blíster activo. */
-export function useAppointments(): UseAppointmentsResult {
+export function useAppointments(blisterIdOverride?: string | null): UseAppointmentsResult {
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
+  const blisterId = blisterIdOverride ?? activeBlisterId;
   const appointments = useAppointmentsStore((s) => s.appointments);
   const setAppointments = useAppointmentsStore((s) => s.setAppointments);
   const upsert = useAppointmentsStore((s) => s.upsertAppointment);
@@ -38,21 +39,21 @@ export function useAppointments(): UseAppointmentsResult {
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
-    if (!activeBlisterId) {
+    if (!blisterId) {
       clear();
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      const list = await listAppointments(activeBlisterId);
+      const list = await listAppointments(blisterId);
       setAppointments(list);
     } catch (err) {
       setError(isApiError(err) ? err.message : 'No se han podido cargar las citas.');
     } finally {
       setIsLoading(false);
     }
-  }, [activeBlisterId, clear, setAppointments]);
+  }, [blisterId, clear, setAppointments]);
 
   useEffect(() => {
     void refetch();
@@ -60,35 +61,35 @@ export function useAppointments(): UseAppointmentsResult {
 
   const createAppointment = useCallback(
     async (input: CreateAppointmentInput) => {
-      if (!activeBlisterId) {
+      if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
-      const created = await createAppointmentRequest(activeBlisterId, input);
+      const created = await createAppointmentRequest(blisterId, input);
       upsert(created);
       return created;
     },
-    [activeBlisterId, upsert],
+    [blisterId, upsert],
   );
 
   const updateAppointment = useCallback(
     async (id: string, input: UpdateAppointmentInput) => {
-      if (!activeBlisterId) {
+      if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
-      const updated = await updateAppointmentRequest(activeBlisterId, id, input);
+      const updated = await updateAppointmentRequest(blisterId, id, input);
       upsert(updated);
       return updated;
     },
-    [activeBlisterId, upsert],
+    [blisterId, upsert],
   );
 
   const removeAppointment = useCallback(
     async (id: string) => {
-      if (!activeBlisterId) return;
-      await removeAppointmentRequest(activeBlisterId, id);
+      if (!blisterId) return;
+      await removeAppointmentRequest(blisterId, id);
       remove(id);
     },
-    [activeBlisterId, remove],
+    [blisterId, remove],
   );
 
   return {

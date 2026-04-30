@@ -1,19 +1,21 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
-import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { ForceDoseDialog } from '../../components/molecules/ForceDoseDialog';
 import { UndoToast } from '../../components/molecules/UndoToast';
+import { BlisterPillSelector } from '../../components/organisms/BlisterPillSelector';
 import { TreatmentRow } from '../../components/organisms/TreatmentRow';
 import { ROUTES } from '../../constants/routes';
 import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
+import { useBlisters } from '../../hooks/use.blisters';
 import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
 import { useBlisterStore } from '../../stores/blister.store';
+import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Treatment } from '../../types/treatment.types';
@@ -41,18 +43,33 @@ function applyFilter(list: Treatment[], mode: FilterMode): Treatment[] {
 function TreatmentsPage() {
   usePageTitle('Tratamientos');
   const navigate = useNavigate();
+  const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
+  const blisters = useBlisterStore((s) => s.blisters);
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
+  const setActiveBlister = useBlisterStore((s) => s.setActiveBlister);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const addToast = useUiStore((s) => s.addToast);
-  const { treatments, isLoading, error, refetch, removeTreatment } = useTreatments();
-  const { medicines, refetch: refetchMedicines } = useMedicines();
-  const { logDose, undoLog } = useAdherence();
+  const blisterId = routeBlisterId ?? activeBlisterId;
+  const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
+  const { treatments, isLoading, error, refetch, removeTreatment } = useTreatments(blisterId);
+  const { medicines, refetch: refetchMedicines } = useMedicines(blisterId);
+  const { logDose, undoLog } = useAdherence(blisterId);
   const [filter, setFilter] = useState<FilterMode>('active');
   const [pendingDose, setPendingDose] = useState<PendingDose | null>(null);
   const [activeUndos, setActiveUndos] = useState<ActiveUndo[]>([]);
 
   const visible = useMemo(() => applyFilter(treatments, filter), [treatments, filter]);
-  const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
+  const currentBlister = useMemo(
+    () => blisters.find((blister) => blister._id === blisterId) ?? null,
+    [blisterId, blisters],
+  );
+  const routeRole = useMemo(
+    () => currentBlister?.members.find((member) => member.userId === userId)?.role ?? null,
+    [currentBlister, userId],
+  );
+  const role = routeRole ?? (blisterId === activeBlisterId ? activeRole : null);
+  const canMutate = role === 'OWNER' || role === 'CAREGIVER';
 
   const resolveMedicineName = useCallback(
     (medicineId: string): string => {
@@ -80,8 +97,18 @@ function TreatmentsPage() {
     setActiveUndos((prev) => prev.filter((u) => u.logId !== logId));
   }, []);
 
-  if (!activeBlisterId) {
+  if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;
+  }
+
+  if (!blistersLoaded && blisters.length === 0) {
+    return (
+      <div className="c-treatments-page__list" aria-busy="true">
+        <Skeleton height="6rem" />
+        <Skeleton height="6rem" />
+        <Skeleton height="6rem" />
+      </div>
+    );
   }
 
   const handleDelete = async (treatment: Treatment): Promise<void> => {
@@ -138,13 +165,20 @@ function TreatmentsPage() {
 
   return (
     <section className="c-treatments-page" aria-label="Listado de tratamientos">
-      <header className="c-treatments-page__header">
-        {canMutate ? (
-          <Button variant="primary" onClick={() => navigate(ROUTES.newTreatment(activeBlisterId))}>
-            Añadir
-          </Button>
-        ) : null}
-      </header>
+      {blisters.length > 0 ? (
+        <BlisterPillSelector
+          blisters={blisters}
+          activeBlisterId={blisterId}
+          variant="terracotta"
+          onSelect={(blister) => {
+            const role = userId
+              ? (blister.members.find((member) => member.userId === userId)?.role ?? null)
+              : null;
+            setActiveBlister(blister._id, role);
+            navigate(ROUTES.blisterTreatments(blister._id));
+          }}
+        />
+      ) : null}
 
       <div className="c-treatments-page__filters" role="tablist" aria-label="Filtro de tratamientos">
         {(['active', 'archived', 'all'] as const).map((mode) => (
@@ -170,20 +204,26 @@ function TreatmentsPage() {
           <Skeleton height="6rem" />
         </div>
       ) : visible.length === 0 ? (
-        <EmptyState
-          title={filter === 'archived' ? 'Sin tratamientos archivados' : 'Aún no tienes tratamientos'}
-          description={
-            canMutate
-              ? 'Crea uno para vincular medicamentos con dosis y frecuencia.'
-              : 'Pide al administrador del blíster que cree tratamientos.'
-          }
-          ctaLabel={canMutate && filter !== 'archived' ? 'Crear tratamiento' : undefined}
-          onCtaClick={
-            canMutate && filter !== 'archived'
-              ? () => navigate(ROUTES.newTreatment(activeBlisterId))
-              : undefined
-          }
-        />
+        <div className="c-treatments-page__list">
+          <EmptyState
+            title={filter === 'archived' ? 'Sin tratamientos archivados' : 'Aún no tienes tratamientos'}
+            description={
+              canMutate
+                ? 'Crea uno para vincular medicamentos con dosis y frecuencia.'
+                : 'Pide al administrador del blíster que cree tratamientos.'
+            }
+          />
+          {canMutate ? (
+            <button
+              type="button"
+              className="c-treatments-page__new-card"
+              onClick={() => navigate(ROUTES.newTreatment(blisterId))}
+            >
+              <span className="c-treatments-page__new-icon" aria-hidden="true">+</span>
+              <span>Nuevo tratamiento</span>
+            </button>
+          ) : null}
+        </div>
       ) : (
         <ul className="c-treatments-page__list">
           {visible.map((treatment) => (
@@ -191,13 +231,25 @@ function TreatmentsPage() {
               <TreatmentRow
                 treatment={treatment}
                 medicines={medicines}
-                blisterId={activeBlisterId}
-                userRole={activeRole}
+                blisterId={blisterId}
+                userRole={role}
                 onDelete={handleDelete}
                 onLogDose={canMutate ? handleLogDose : undefined}
               />
             </li>
           ))}
+          {canMutate ? (
+            <li className="c-treatments-page__item">
+              <button
+                type="button"
+                className="c-treatments-page__new-card"
+                onClick={() => navigate(ROUTES.newTreatment(blisterId))}
+              >
+                <span className="c-treatments-page__new-icon" aria-hidden="true">+</span>
+                <span>Nuevo tratamiento</span>
+              </button>
+            </li>
+          ) : null}
         </ul>
       )}
 

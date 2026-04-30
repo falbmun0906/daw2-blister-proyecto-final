@@ -14,6 +14,7 @@ import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { getMedicine, removeMedicine, updateMedicine } from '../../services/medicines.service';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -38,9 +39,11 @@ function toDateInputValue(iso: string): string {
 function EditMedicinePage() {
   usePageTitle('Editar medicamento');
   const navigate = useNavigate();
-  const { medicineId } = useParams<{ blisterId: string; medicineId: string }>();
+  const { blisterId: routeBlisterId, medicineId } = useParams<{ blisterId: string; medicineId: string }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
+  const blisters = useBlisterStore((s) => s.blisters);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const upsertMedicine = useMedicinesStore((s) => s.upsertMedicine);
   const removeFromStore = useMedicinesStore((s) => s.removeMedicine);
   const addToast = useUiStore((s) => s.addToast);
@@ -49,6 +52,11 @@ function EditMedicinePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const blisterId = routeBlisterId ?? activeBlisterId;
+  const routeRole = blisters
+    .find((blister) => blister._id === blisterId)
+    ?.members.find((member) => member.userId === userId)
+    ?.role ?? null;
 
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -56,10 +64,10 @@ function EditMedicinePage() {
   });
 
   useEffect(() => {
-    if (!activeBlisterId || !medicineId) return;
+    if (!blisterId || !medicineId) return;
     let cancelled = false;
     setLoadError(null);
-    getMedicine(activeBlisterId, medicineId)
+    getMedicine(blisterId, medicineId)
       .then((m) => {
         if (cancelled) return;
         if (!m) {
@@ -79,18 +87,19 @@ function EditMedicinePage() {
         setLoadError(isApiError(err) ? err.message : 'No se ha podido cargar el medicamento.');
       });
     return () => { cancelled = true; };
-  }, [activeBlisterId, medicineId, reset]);
+  }, [blisterId, medicineId, reset]);
 
-  if (!activeBlisterId) return <Navigate to={ROUTES.blisters} replace />;
-  if (activeRole !== 'OWNER' && activeRole !== 'CAREGIVER') {
-    return <Navigate to={ROUTES.blisterMedications(activeBlisterId)} replace />;
+  if (!blisterId) return <Navigate to={ROUTES.blisters} replace />;
+  const role = routeRole ?? activeRole;
+  if (role !== 'OWNER' && role !== 'CAREGIVER') {
+    return <Navigate to={ROUTES.blisterMedications(blisterId)} replace />;
   }
-  if (!medicineId) return <Navigate to={ROUTES.blisterMedications(activeBlisterId)} replace />;
+  if (!medicineId) return <Navigate to={ROUTES.blisterMedications(blisterId)} replace />;
 
   const onSubmit = async (data: FormValues) => {
     setSubmitError(null);
     try {
-      const updated = await updateMedicine(activeBlisterId, medicineId, {
+      const updated = await updateMedicine(blisterId, medicineId, {
         alias: data.alias || undefined,
         stock: data.stock,
         threshold: data.threshold,
@@ -98,7 +107,7 @@ function EditMedicinePage() {
       });
       upsertMedicine(updated);
       addToast({ message: 'Medicamento actualizado.', variant: 'success' });
-      navigate(ROUTES.medicineDetail(activeBlisterId, medicineId));
+      navigate(ROUTES.medicineDetail(blisterId, medicineId));
     } catch (err) {
       setSubmitError(isApiError(err) ? err.message : 'No se ha podido actualizar.');
     }
@@ -108,10 +117,10 @@ function EditMedicinePage() {
     if (!confirm('¿Eliminar este medicamento del botiquín?')) return;
     setDeleting(true);
     try {
-      await removeMedicine(activeBlisterId, medicineId);
+      await removeMedicine(blisterId, medicineId);
       removeFromStore(medicineId);
       addToast({ message: 'Medicamento eliminado.', variant: 'success' });
-      navigate(ROUTES.blisterMedications(activeBlisterId));
+      navigate(ROUTES.blisterMedications(blisterId));
     } catch (err) {
       setSubmitError(isApiError(err) ? err.message : 'No se ha podido eliminar.');
       setDeleting(false);
@@ -189,11 +198,9 @@ function EditMedicinePage() {
             />
           </FormSection>
 
-          <div className="c-add-medicine-page__sticky-cta">
-            <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>
-              Guardar cambios
-            </Button>
-          </div>
+          <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>
+            Guardar cambios
+          </Button>
           <Button type="button" variant="danger" fullWidth onClick={handleDelete} loading={deleting}>
             Eliminar del botiquín
           </Button>

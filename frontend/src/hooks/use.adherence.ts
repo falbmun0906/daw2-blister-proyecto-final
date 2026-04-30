@@ -38,8 +38,9 @@ export function isStockInsufficientError(value: unknown): value is ApiError {
 }
 
 /** Carga y muta los logs de adherencia del blíster activo. */
-export function useAdherence(): UseAdherenceResult {
+export function useAdherence(blisterIdOverride?: string | null): UseAdherenceResult {
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
+  const blisterId = blisterIdOverride ?? activeBlisterId;
   const logs = useAdherenceStore((s) => s.logs);
   const setLogs = useAdherenceStore((s) => s.setLogs);
   const addLog = useAdherenceStore((s) => s.addLog);
@@ -50,21 +51,21 @@ export function useAdherence(): UseAdherenceResult {
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
-    if (!activeBlisterId) {
+    if (!blisterId) {
       clear();
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      const list = await listAdherenceLogs(activeBlisterId);
+      const list = await listAdherenceLogs(blisterId);
       setLogs(list);
     } catch (err) {
       setError(isApiError(err) ? err.message : 'No se ha podido cargar el historial.');
     } finally {
       setIsLoading(false);
     }
-  }, [activeBlisterId, clear, setLogs]);
+  }, [blisterId, clear, setLogs]);
 
   useEffect(() => {
     void refetch();
@@ -72,23 +73,23 @@ export function useAdherence(): UseAdherenceResult {
 
   const logDose = useCallback(
     async (input: CreateAdherenceLogInput) => {
-      if (!activeBlisterId) {
+      if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
-      const created = await logDoseRequest(activeBlisterId, input);
+      const created = await logDoseRequest(blisterId, input);
       addLog(created);
       return created;
     },
-    [activeBlisterId, addLog],
+    [blisterId, addLog],
   );
 
   const undoLog = useCallback(
     async (logId: string) => {
-      if (!activeBlisterId) return;
-      await undoLogRequest(activeBlisterId, logId);
+      if (!blisterId) return;
+      await undoLogRequest(blisterId, logId);
       removeLog(logId);
     },
-    [activeBlisterId, removeLog],
+    [blisterId, removeLog],
   );
 
   return { logs, isLoading, error, refetch, logDose, undoLog };

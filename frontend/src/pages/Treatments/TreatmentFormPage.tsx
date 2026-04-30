@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
-import { TbCalendar, TbPill, TbStethoscope, TbToggleRight } from 'react-icons/tb';
+import { TbCalendar, TbPill, TbStethoscope, TbToggleRight, TbUserHeart } from 'react-icons/tb';
 
 import {
   createTreatmentSchema,
@@ -14,15 +14,18 @@ import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
+import { useBlisters } from '../../hooks/use.blisters';
 import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import './TreatmentFormPage.scss';
 
 interface FormValues {
+  patientUserId: string;
   title: string;
   startDate: string;
   endDate: string;
@@ -30,9 +33,13 @@ interface FormValues {
   medicines: { medicineId: string; amount: number; frequencyHours: number }[];
 }
 
-function toFormValues(treatment: ReturnType<typeof useTreatments>['treatments'][number] | null): FormValues {
+function toFormValues(
+  treatment: ReturnType<typeof useTreatments>['treatments'][number] | null,
+  fallbackPatientUserId = '',
+): FormValues {
   if (!treatment) {
     return {
+      patientUserId: fallbackPatientUserId,
       title: '',
       startDate: new Date().toISOString().slice(0, 10),
       endDate: '',
@@ -41,6 +48,7 @@ function toFormValues(treatment: ReturnType<typeof useTreatments>['treatments'][
     };
   }
   return {
+    patientUserId: treatment.patientUserId,
     title: treatment.title,
     startDate: treatment.startDate.slice(0, 10),
     endDate: treatment.endDate ? treatment.endDate.slice(0, 10) : '',
@@ -51,6 +59,7 @@ function toFormValues(treatment: ReturnType<typeof useTreatments>['treatments'][
 
 function buildPayload(values: FormValues): CreateTreatmentInput {
   return createTreatmentSchema.parse({
+    patientUserId: values.patientUserId,
     title: values.title,
     startDate: values.startDate,
     endDate: values.endDate ? values.endDate : undefined,
@@ -62,36 +71,68 @@ function buildPayload(values: FormValues): CreateTreatmentInput {
 function TreatmentFormPage() {
   usePageTitle('Tratamiento');
   const navigate = useNavigate();
-  const { treatmentId } = useParams<{ treatmentId?: string }>();
+  const { blisterId: routeBlisterId, treatmentId } = useParams<{ blisterId: string; treatmentId?: string }>();
   const isEditing = Boolean(treatmentId);
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
-  const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
+  const blisters = useBlisterStore((s) => s.blisters);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const blisterId = routeBlisterId ?? activeBlisterId;
+  const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const addToast = useUiStore((s) => s.addToast);
 
-  const { treatments, isLoading, error, refetch, createTreatment, updateTreatment } = useTreatments();
-  const { medicines, isLoading: medsLoading } = useMedicines();
+  const { treatments, isLoading, error, refetch, createTreatment, updateTreatment } = useTreatments(blisterId);
+  const { medicines, isLoading: medsLoading } = useMedicines(blisterId);
 
   const target = useMemo(
     () => (treatmentId ? treatments.find((t) => t.id === treatmentId) ?? null : null),
     [treatments, treatmentId],
   );
+  const activeBlister = useMemo(
+    () => blisters.find((blister) => blister._id === blisterId) ?? null,
+    [blisterId, blisters],
+  );
+  const role = useMemo(
+    () => activeBlister?.members.find((member) => member.userId === userId)?.role
+      ?? (blisterId === activeBlisterId ? activeRole : null),
+    [activeBlister, activeBlisterId, activeRole, blisterId, userId],
+  );
+  const canMutate = role === 'OWNER' || role === 'CAREGIVER';
+  const defaultPatientUserId = useMemo(
+    () => activeBlister?.members.find((member) => member.userId === userId)?.userId
+      ?? activeBlister?.members[0]?.userId
+      ?? '',
+    [activeBlister, userId],
+  );
 
   const form = useForm<FormValues>({
-    defaultValues: toFormValues(null),
+    defaultValues: toFormValues(null, defaultPatientUserId),
   });
   const { register, handleSubmit, control, reset, setError, formState } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'medicines' });
 
   useEffect(() => {
-    if (target) reset(toFormValues(target));
-  }, [target, reset]);
+    if (target) reset(toFormValues(target, defaultPatientUserId));
+  }, [defaultPatientUserId, target, reset]);
 
-  if (!activeBlisterId) {
+  useEffect(() => {
+    if (!isEditing && defaultPatientUserId) reset(toFormValues(null, defaultPatientUserId));
+  }, [defaultPatientUserId, isEditing, reset]);
+
+  if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;
   }
+  if (!blistersLoaded && blisters.length === 0) {
+    return (
+      <section className="c-treatment-form-page" aria-busy="true">
+        <Skeleton height="2rem" />
+        <Skeleton height="3rem" />
+        <Skeleton height="3rem" />
+      </section>
+    );
+  }
   if (!canMutate) {
-    return <Navigate to={ROUTES.blisterTreatments(activeBlisterId)} replace />;
+    return <Navigate to={ROUTES.blisterTreatments(blisterId)} replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -116,7 +157,7 @@ function TreatmentFormPage() {
         await createTreatment(payload);
         addToast({ message: 'Tratamiento creado.', variant: 'success' });
       }
-      navigate(ROUTES.blisterTreatments(activeBlisterId));
+      navigate(ROUTES.blisterTreatments(blisterId));
     } catch (err) {
       const message = isApiError(err) ? err.message : 'No se ha podido guardar el tratamiento.';
       addToast({ message, variant: 'error' });
@@ -144,6 +185,25 @@ function TreatmentFormPage() {
   return (
     <section className="c-treatment-form-page" aria-labelledby="treatment-form-title">
       <form className="c-treatment-form-page__form" onSubmit={onSubmit} noValidate>
+        <FormSection label="Paciente" icon={<TbUserHeart />}>
+          <label className="c-field">
+            <span className="c-field__label">
+              <span className="c-field__label-text">Miembro del blíster</span>
+            </span>
+            <select className="c-field__select" {...register('patientUserId')}>
+              <option value="">Selecciona…</option>
+              {activeBlister?.members.map((member) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.fullName?.trim() || member.username?.trim() || 'Miembro del blíster'}
+                </option>
+              ))}
+            </select>
+            {formState.errors.patientUserId?.message ? (
+              <span className="c-field__error">{formState.errors.patientUserId.message}</span>
+            ) : null}
+          </label>
+        </FormSection>
+
         <FormSection label="Título del tratamiento" icon={<TbStethoscope />}>
           <Input
             label="Título"

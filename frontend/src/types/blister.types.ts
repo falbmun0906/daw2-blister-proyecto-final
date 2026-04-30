@@ -5,6 +5,9 @@ export type BlisterRole = (typeof blisterRoles)[number];
 export interface BlisterMember {
   userId: string;
   role: BlisterRole;
+  fullName?: string;
+  username?: string;
+  avatarKey?: string | null;
 }
 
 export interface InviteCode {

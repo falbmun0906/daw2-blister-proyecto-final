@@ -26,8 +26,9 @@ interface UseTreatmentsResult {
 }
 
 /** Carga y muta los tratamientos del blíster activo. */
-export function useTreatments(): UseTreatmentsResult {
+export function useTreatments(blisterIdOverride?: string | null): UseTreatmentsResult {
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
+  const blisterId = blisterIdOverride ?? activeBlisterId;
   const treatments = useTreatmentsStore((s) => s.treatments);
   const setTreatments = useTreatmentsStore((s) => s.setTreatments);
   const upsert = useTreatmentsStore((s) => s.upsertTreatment);
@@ -38,14 +39,14 @@ export function useTreatments(): UseTreatmentsResult {
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
-    if (!activeBlisterId) {
+    if (!blisterId) {
       clear();
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      const list = await listTreatments(activeBlisterId);
+      const list = await listTreatments(blisterId);
       setTreatments(list);
     } catch (err) {
       setError(
@@ -54,7 +55,7 @@ export function useTreatments(): UseTreatmentsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [activeBlisterId, clear, setTreatments]);
+  }, [blisterId, clear, setTreatments]);
 
   useEffect(() => {
     void refetch();
@@ -62,35 +63,35 @@ export function useTreatments(): UseTreatmentsResult {
 
   const createTreatment = useCallback(
     async (input: CreateTreatmentInput) => {
-      if (!activeBlisterId) {
+      if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
-      const created = await createTreatmentRequest(activeBlisterId, input);
+      const created = await createTreatmentRequest(blisterId, input);
       upsert(created);
       return created;
     },
-    [activeBlisterId, upsert],
+    [blisterId, upsert],
   );
 
   const updateTreatment = useCallback(
     async (id: string, input: UpdateTreatmentInput) => {
-      if (!activeBlisterId) {
+      if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
-      const updated = await updateTreatmentRequest(activeBlisterId, id, input);
+      const updated = await updateTreatmentRequest(blisterId, id, input);
       upsert(updated);
       return updated;
     },
-    [activeBlisterId, upsert],
+    [blisterId, upsert],
   );
 
   const removeTreatment = useCallback(
     async (id: string) => {
-      if (!activeBlisterId) return;
-      await removeTreatmentRequest(activeBlisterId, id);
+      if (!blisterId) return;
+      await removeTreatmentRequest(blisterId, id);
       remove(id);
     },
-    [activeBlisterId, remove],
+    [blisterId, remove],
   );
 
   return {

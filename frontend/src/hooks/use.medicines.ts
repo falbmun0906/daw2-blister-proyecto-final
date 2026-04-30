@@ -17,8 +17,9 @@ interface UseMedicinesResult {
  * Carga el botiquín del blíster activo. Mantiene `useMedicinesStore`
  * sincronizado y expone helpers para refrescar tras mutaciones.
  */
-export function useMedicines(): UseMedicinesResult {
+export function useMedicines(blisterIdOverride?: string | null): UseMedicinesResult {
   const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
+  const blisterId = blisterIdOverride ?? activeBlisterId;
   const medicines = useMedicinesStore((state) => state.medicines);
   const setMedicines = useMedicinesStore((state) => state.setMedicines);
   const clear = useMedicinesStore((state) => state.clear);
@@ -27,21 +28,21 @@ export function useMedicines(): UseMedicinesResult {
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
-    if (!activeBlisterId) {
+    if (!blisterId) {
       clear();
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
-      const list = await listMedicines(activeBlisterId);
+      const list = await listMedicines(blisterId);
       setMedicines(list);
     } catch (err) {
       setError(isApiError(err) ? err.message : 'No se ha podido cargar el botiquín.');
     } finally {
       setIsLoading(false);
     }
-  }, [activeBlisterId, clear, setMedicines]);
+  }, [blisterId, clear, setMedicines]);
 
   useEffect(() => {
     void refetch();

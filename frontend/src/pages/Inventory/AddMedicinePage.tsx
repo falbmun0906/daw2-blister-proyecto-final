@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,8 +15,9 @@ import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { stockUnits } from '../../../../shared/schemas/schema.constants';
 import { createMedicine } from '../../services/medicines.service';
-import { searchCima } from '../../services/external.service';
+import { getCimaDetail } from '../../services/external.service';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -41,12 +42,20 @@ type FormValues = z.infer<typeof formSchema>;
 function AddMedicinePage() {
   usePageTitle('Detalles del medicamento');
   const navigate = useNavigate();
+  const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
   const [searchParams] = useSearchParams();
   const presetNregist = searchParams.get('nregist');
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
+  const blisters = useBlisterStore((s) => s.blisters);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const upsertMedicine = useMedicinesStore((s) => s.upsertMedicine);
   const addToast = useUiStore((s) => s.addToast);
+  const blisterId = routeBlisterId ?? activeBlisterId;
+  const routeRole = blisters
+    .find((blister) => blister._id === blisterId)
+    ?.members.find((member) => member.userId === userId)
+    ?.role ?? null;
 
   const [selected, setSelected] = useState<ExternalSearchItem | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -66,19 +75,22 @@ function AddMedicinePage() {
 
   const stockUnit = watch('stockUnit');
 
-  // Carga el medicamento seleccionado a partir de `?nregist`. Como el endpoint
-  // de búsqueda devuelve todos los datos básicos que necesitamos, lo usamos
-  // pasando el propio nregist como query — el match es exacto.
   useEffect(() => {
     if (!presetNregist) return;
     let cancelled = false;
     setLoadError(null);
-    searchCima(presetNregist)
-      .then((items) => {
+    getCimaDetail(presetNregist)
+      .then((info) => {
         if (cancelled) return;
-        const match = items.find((item) => item.nregist === presetNregist) ?? items[0] ?? null;
-        if (match) setSelected(match);
-        else setLoadError('No se ha encontrado el medicamento en CIMA.');
+        setSelected({
+          nregist: info.nregist,
+          nombre: info.nombre,
+          pactivos: info.pactivos,
+          labtitular: info.labtitular,
+          formaOficial: info.formaOficial,
+          dosisOficial: info.dosisOficial,
+          fotoUrl: info.fotos.find((foto) => foto.url)?.url ?? null,
+        });
       })
       .catch((err) => {
         if (cancelled) return;
@@ -89,9 +101,10 @@ function AddMedicinePage() {
     };
   }, [presetNregist]);
 
-  if (!activeBlisterId) return <Navigate to={ROUTES.blisters} replace />;
-  if (activeRole !== 'OWNER' && activeRole !== 'CAREGIVER') {
-    return <Navigate to={ROUTES.blisterMedications(activeBlisterId)} replace />;
+  if (!blisterId) return <Navigate to={ROUTES.blisters} replace />;
+  const role = routeRole ?? activeRole;
+  if (role !== 'OWNER' && role !== 'CAREGIVER') {
+    return <Navigate to={ROUTES.blisterMedications(blisterId)} replace />;
   }
 
   // Sin `nregist` no podemos saber qué medicamento añadir. Redirigimos al
@@ -103,7 +116,7 @@ function AddMedicinePage() {
           title="Busca primero un medicamento"
           description="Usa el buscador del Botiquín o del Home para localizar un medicamento en CIMA y añadirlo desde ahí."
           ctaLabel="Ir al Botiquín"
-          onCtaClick={() => navigate(ROUTES.blisterMedications(activeBlisterId))}
+          onCtaClick={() => navigate(ROUTES.blisterMedications(blisterId))}
         />
       </section>
     );
@@ -113,7 +126,7 @@ function AddMedicinePage() {
     if (!selected) return;
     setSubmitError(null);
     try {
-      const created = await createMedicine(activeBlisterId, {
+      const created = await createMedicine(blisterId, {
         nregist: selected.nregist,
         alias: data.alias || undefined,
         stock: data.stock,
@@ -123,7 +136,7 @@ function AddMedicinePage() {
       });
       upsertMedicine(created);
       addToast({ message: 'Medicamento añadido al botiquín.', variant: 'success' });
-      navigate(ROUTES.blisterMedications(activeBlisterId));
+      navigate(ROUTES.blisterMedications(blisterId));
     } catch (err) {
       if (isApiError(err) && err.status === 409) {
         setSubmitError('Este medicamento ya existe en el botiquín.');
@@ -236,7 +249,7 @@ function AddMedicinePage() {
             hint="Podrás vincularlo desde la sección de tratamientos."
             icon={<TbFileText />}
           >
-            <p className="c-form-section__hint" style={{ margin: 0 }}>
+            <p className="c-add-medicine-page__placeholder">
               Por ahora, este medicamento se añadirá sin tratamiento asociado.
             </p>
           </FormSection>
