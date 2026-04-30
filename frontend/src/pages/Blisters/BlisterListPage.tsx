@@ -498,7 +498,7 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
             <TbUser aria-hidden="true" /> Propietario: {ownerLabel}
           </span>
         </span>
-        <MemberStack members={stack} />
+        {!expanded ? <MemberStack members={stack} /> : null}
         {editing ? (
           <span className="c-blister-card__edit-mark" aria-hidden="true">
             <TbPencil />
@@ -575,18 +575,18 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
       <footer className="c-blister-card__footer">
         {expanded && editing ? (
           <div className="c-blister-card__edit-actions">
-            <Button type="button" variant="primary" onClick={() => void handleSaveEdit()}>
+            <Button type="button" variant="primary" className="c-btn--sm" onClick={() => void handleSaveEdit()}>
               Guardar
             </Button>
-            <Button type="button" variant="primary-outline" onClick={handleDiscard}>
+            <Button type="button" variant="primary-outline" className="c-btn--sm" onClick={handleDiscard}>
               Descartar
             </Button>
-            <Button type="button" variant="danger" onClick={() => void handleDeleteBlister()}>
+            <Button type="button" variant="danger" className="c-btn--sm" onClick={() => void handleDeleteBlister()}>
               Eliminar
             </Button>
           </div>
         ) : expanded && isOwner ? (
-          <Button type="button" variant="primary-outline" onClick={() => setEditing(true)}>
+          <Button type="button" variant="primary-outline" className="c-btn--sm" onClick={() => setEditing(true)}>
             Editar
           </Button>
         ) : (
