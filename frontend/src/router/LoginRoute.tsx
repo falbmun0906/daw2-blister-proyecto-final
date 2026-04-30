@@ -18,7 +18,7 @@ export function LoginRoute() {
   const hasSeenOnboarding = useUiStore((state) => state.hasSeenOnboarding);
 
   if (accessToken) {
-    return <Navigate to={ROUTES.blisters} replace />;
+    return <Navigate to={ROUTES.home} replace />;
   }
 
   if (!hasSeenOnboarding) {
