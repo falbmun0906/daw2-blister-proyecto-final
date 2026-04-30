@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
+import { TbCalendar, TbPill, TbStethoscope, TbToggleRight } from 'react-icons/tb';
 
 import {
   createTreatmentSchema,
@@ -11,6 +12,7 @@ import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -141,50 +143,46 @@ function TreatmentFormPage() {
 
   return (
     <section className="c-treatment-form-page" aria-labelledby="treatment-form-title">
-      <header className="c-treatment-form-page__header">
-        <button
-          type="button"
-          className="c-treatment-form-page__back"
-          aria-label="Volver"
-          onClick={() => navigate(-1)}
-        >
-          ←
-        </button>
-        <h1 id="treatment-form-title" className="c-treatment-form-page__title">
-          {isEditing ? 'Editar tratamiento' : 'Nuevo tratamiento'}
-        </h1>
-        <span aria-hidden="true" />
-      </header>
-
       <form className="c-treatment-form-page__form" onSubmit={onSubmit} noValidate>
-        <Input
-          label="Título"
-          maxLength={200}
-          error={formState.errors.title?.message}
-          {...register('title')}
-        />
-        <Input
-          type="date"
-          label="Inicio"
-          error={formState.errors.startDate?.message}
-          {...register('startDate')}
-        />
-        <Input
-          type="date"
-          label="Fin (opcional)"
-          error={formState.errors.endDate?.message}
-          {...register('endDate')}
-        />
+        <FormSection label="Título del tratamiento" icon={<TbStethoscope />}>
+          <Input
+            label="Título"
+            maxLength={200}
+            placeholder="Ej. Antibiótico amoxicilina"
+            error={formState.errors.title?.message}
+            {...register('title')}
+          />
+        </FormSection>
 
-        <fieldset className="c-treatment-form-page__meds">
-          <legend>Medicamentos</legend>
+        <FormSection label="Duración" icon={<TbCalendar />}>
+          <Input
+            type="date"
+            label="Inicio"
+            error={formState.errors.startDate?.message}
+            {...register('startDate')}
+          />
+          <Input
+            type="date"
+            label="Fin (opcional)"
+            error={formState.errors.endDate?.message}
+            {...register('endDate')}
+          />
+        </FormSection>
+
+        <FormSection
+          label="Medicamentos"
+          hint="Configura cantidad y frecuencia de cada toma."
+          icon={<TbPill />}
+        >
           {medsLoading ? <Skeleton height="2rem" /> : null}
           {fields.map((field, index) => (
             <div key={field.id} className="c-treatment-form-page__med-row">
-              <label className="c-treatment-form-page__med-label">
-                <span>Medicamento</span>
+              <label className="c-field">
+                <span className="c-field__label">
+                  <span className="c-field__label-text">Medicamento</span>
+                </span>
                 <select
-                  className="c-treatment-form-page__select"
+                  className="c-field__select"
                   {...register(`medicines.${index}.medicineId` as const)}
                 >
                   <option value="">Selecciona…</option>
@@ -221,12 +219,14 @@ function TreatmentFormPage() {
           >
             Añadir medicamento
           </Button>
-        </fieldset>
+        </FormSection>
 
-        <label className="c-treatment-form-page__active">
-          <input type="checkbox" {...register('active')} />
-          <span>Activo</span>
-        </label>
+        <FormSection label="Estado" icon={<TbToggleRight />}>
+          <label className="c-treatment-form-page__active">
+            <input type="checkbox" {...register('active')} />
+            <span>Tratamiento activo</span>
+          </label>
+        </FormSection>
 
         <Button variant="primary" fullWidth type="submit" loading={formState.isSubmitting}>
           {isEditing ? 'Guardar cambios' : 'Crear tratamiento'}

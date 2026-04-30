@@ -2,9 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { TbLock, TbShieldLock } from 'react-icons/tb';
 
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
+import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { updateProfile } from '../../services/auth.service';
@@ -87,34 +89,42 @@ function ChangePasswordPage() {
         onSubmit={handleSubmit(onSubmit)}
         noValidate
       >
-        <Input
-          label="Contraseña actual"
-          type="password"
-          autoComplete="current-password"
-          placeholder="**********"
-          error={errors.currentPassword?.message}
-          wrapperClassName="c-field--pill"
-          {...register('currentPassword')}
-        />
-        <Input
+        <FormSection label="Verificación" icon={<TbLock />}>
+          <Input
+            label="Contraseña actual"
+            type="password"
+            autoComplete="current-password"
+            placeholder="**********"
+            error={errors.currentPassword?.message}
+            wrapperClassName="c-field--pill"
+            {...register('currentPassword')}
+          />
+        </FormSection>
+
+        <FormSection
           label="Nueva contraseña"
-          type="password"
-          autoComplete="new-password"
-          placeholder="**********"
           hint="Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo."
-          error={errors.newPassword?.message}
-          wrapperClassName="c-field--pill"
-          {...register('newPassword')}
-        />
-        <Input
-          label="Confirmar contraseña"
-          type="password"
-          autoComplete="new-password"
-          placeholder="**********"
-          error={errors.confirmNewPassword?.message}
-          wrapperClassName="c-field--pill"
-          {...register('confirmNewPassword')}
-        />
+          icon={<TbShieldLock />}
+        >
+          <Input
+            label="Nueva contraseña"
+            type="password"
+            autoComplete="new-password"
+            placeholder="**********"
+            error={errors.newPassword?.message}
+            wrapperClassName="c-field--pill"
+            {...register('newPassword')}
+          />
+          <Input
+            label="Confirmar contraseña"
+            type="password"
+            autoComplete="new-password"
+            placeholder="**********"
+            error={errors.confirmNewPassword?.message}
+            wrapperClassName="c-field--pill"
+            {...register('confirmNewPassword')}
+          />
+        </FormSection>
 
         <Button
           type="submit"
