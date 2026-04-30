@@ -6,9 +6,10 @@ import {
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
 import { AppointmentModel } from '../../models/appointment.model';
+import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { TreatmentModel } from '../../models/treatment.model';
-import { type BlisterRole } from '../../types/blister.types';
+import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
 import { type TreatmentMedicineEntry } from '../../types/treatment.types';
 import { AppError } from '../../utils/app-error';
 import {
@@ -20,12 +21,13 @@ import {
 interface TreatmentMedicineView {
   medicineId: string;
   amount: number;
-  frequency: number;
+  frequencyHours: number;
 }
 
 interface TreatmentView {
   id: string;
   blisterId: string;
+  patientUserId: string;
   title: string;
   medicines: TreatmentMedicineView[];
   startDate: Date;
@@ -48,11 +50,12 @@ const WRITER_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
 const toTreatmentView = (treatment: Awaited<ReturnType<typeof TreatmentModel.findOne>>): TreatmentView => ({
   id: treatment!._id.toString(),
   blisterId: treatment!.blisterId.toString(),
+  patientUserId: treatment!.patientUserId.toString(),
   title: treatment!.title,
   medicines: treatment!.medicines.map((entry: TreatmentMedicineEntry) => ({
     medicineId: entry.medicineId.toString(),
     amount: entry.amount,
-    frequency: entry.frequency,
+    frequencyHours: entry.frequencyHours,
   })),
   startDate: treatment!.startDate,
   endDate: treatment!.endDate ?? null,
@@ -118,6 +121,32 @@ const ensureValidDateRange = (startDate: Date, endDate?: Date | null): void => {
 };
 
 /**
+ * Validates that the patient is currently a member of the blister, so the
+ * treatment is always tied to a real person inside the workspace.
+ */
+const ensurePatientIsBlisterMember = async (
+  blisterId: string,
+  patientUserId: string,
+): Promise<void> => {
+  const blister = await BlisterModel.findOne({
+    _id: new Types.ObjectId(blisterId),
+    deletedAt: null,
+  }).lean();
+
+  const isMember = blister?.members?.some(
+    (member: BlisterMember) => member.userId.toString() === patientUserId,
+  );
+
+  if (!isMember) {
+    throw new AppError({
+      code: 'TREATMENT_PATIENT_NOT_MEMBER',
+      message: 'The selected patient is not a member of this blister.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+};
+
+/**
  * Lists treatments for a blister with standard collection pagination metadata.
  */
 export const treatmentsList = async (
@@ -157,15 +186,17 @@ export const treatmentsCreate = async (
 ): Promise<TreatmentView> => {
   ensureWriterRole(blisterRole);
   ensureValidDateRange(input.startDate, input.endDate ?? null);
+  await ensurePatientIsBlisterMember(blisterId, input.patientUserId);
   await ensureMedicinesBelongToBlister(blisterId, input.medicines);
 
   const treatment = await TreatmentModel.create({
     blisterId: new Types.ObjectId(blisterId),
+    patientUserId: new Types.ObjectId(input.patientUserId),
     title: input.title,
     medicines: input.medicines.map((entry) => ({
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
-      frequency: entry.frequency,
+      frequencyHours: entry.frequencyHours,
     })),
     startDate: input.startDate,
     endDate: input.endDate ?? null,
@@ -188,12 +219,17 @@ export const treatmentsUpdate = async (
 
   const treatment = await getTreatmentDocument(blisterId, treatmentId);
 
+  if (input.patientUserId !== undefined) {
+    await ensurePatientIsBlisterMember(blisterId, input.patientUserId);
+    treatment.patientUserId = new Types.ObjectId(input.patientUserId);
+  }
+
   if (input.medicines) {
     await ensureMedicinesBelongToBlister(blisterId, input.medicines);
     treatment.medicines = input.medicines.map((entry) => ({
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
-      frequency: entry.frequency,
+      frequencyHours: entry.frequencyHours,
     }));
   }
 
