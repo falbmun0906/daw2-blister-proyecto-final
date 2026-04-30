@@ -1,33 +1,27 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TbBell, TbUserCircle, TbWritingSign } from 'react-icons/tb';
 
 import { Avatar } from '../atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
 import { useAuthStore } from '../../stores/auth.store';
-import { useBlisterStore } from '../../stores/blister.store';
 import { useUnreadNotificationsCount } from '../../stores/notifications.store';
-import { BlisterSelector } from '../organisms/BlisterSelector';
 
-/** Cabecera del Home autenticado: marca + acciones (notificaciones / perfil). */
+/**
+ * Cabecera del Home autenticado: marca + acciones (notificaciones / perfil).
+ *
+ * La marca es decorativa (no abre el selector de blísters). La gestión de
+ * blísters vive en Perfil → Mis blísters según la arquitectura de información
+ * del proyecto (docs §3.1).
+ */
 export function AppHeader() {
-  const blisters = useBlisterStore((state) => state.blisters);
   const user = useAuthStore((state) => state.user);
   const unreadCount = useUnreadNotificationsCount();
-  const [isSelectorOpen, setSelectorOpen] = useState(false);
 
   return (
     <header className="c-app-header" role="banner">
-      <button
-        type="button"
-        className="c-app-header__brand"
-        aria-label={blisters.length > 1 ? 'Cambiar de blíster' : 'Mis blísters'}
-        aria-haspopup="dialog"
-        aria-expanded={isSelectorOpen}
-        onClick={() => setSelectorOpen(true)}
-      >
+      <span className="c-app-header__brand" aria-hidden="true">
         <TbWritingSign className="c-app-header__brand-icon" aria-hidden="true" />
-      </button>
+      </span>
 
       <h1 className="c-app-header__title">Blíster</h1>
 
@@ -54,8 +48,6 @@ export function AppHeader() {
           )}
         </Link>
       </div>
-
-      {isSelectorOpen ? <BlisterSelector onClose={() => setSelectorOpen(false)} /> : null}
     </header>
   );
 }

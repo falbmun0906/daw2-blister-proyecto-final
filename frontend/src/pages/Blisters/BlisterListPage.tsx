@@ -34,6 +34,7 @@ export default function BlisterListPage() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const { isLoading, error, refresh } = useBlisters();
   const blisters = useBlisterStore((s) => s.blisters);
+  const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const setActiveBlister = useBlisterStore((s) => s.setActiveBlister);
 
   if (isLoading) return <ListSkeleton />;
@@ -60,31 +61,36 @@ export default function BlisterListPage() {
         <h2 className="c-home__greeting" id="blisters-title">
           Mis blísters
         </h2>
-        <p className="c-home__subtitle">Selecciona uno o gestiona sus miembros.</p>
+        <p className="c-home__subtitle">
+          Selecciona un blíster para abrirlo en Inicio o gestiona sus miembros.
+        </p>
       </header>
 
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-stack)' }}>
         {blisters.map((blister) => {
           const role = resolveRole(blister, userId);
+          const isActive = blister._id === activeBlisterId;
           return (
-            <li key={blister._id} className="c-blister-card">
+            <li key={blister._id} className={`c-blister-card ${isActive ? 'is-active' : ''}`}>
               <header className="c-blister-card__header">
                 <h3 className="c-blister-card__title">{blister.name}</h3>
                 {role ? <RoleBadge role={role} /> : null}
               </header>
               <p className="c-blister-card__meta">
                 {blister.members.length} miembro{blister.members.length === 1 ? '' : 's'}
+                {isActive ? ' · Seleccionado' : ''}
               </p>
               <div className="c-blister-card__actions">
                 <Button
                   type="button"
-                  variant="primary-outline"
+                  variant={isActive ? 'ghost' : 'primary-outline'}
                   onClick={() => {
                     setActiveBlister(blister._id, role);
                     navigate(ROUTES.home);
                   }}
+                  disabled={isActive}
                 >
-                  Activar
+                  {isActive ? 'Seleccionado' : 'Abrir en Inicio'}
                 </Button>
                 <Button
                   type="button"

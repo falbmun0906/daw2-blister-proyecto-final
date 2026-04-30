@@ -24,17 +24,14 @@
 
   &__brand {
     @include touch-target;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
     border: 1.5px solid var(--color-primary-mid);
     border-radius: var(--radius-md);
     padding: var(--space-1) var(--space-2);
     color: var(--color-primary-mid);
-    cursor: pointer;
-    transition: background-color var(--transition-fast),
-                border-color     var(--transition-fast);
-
-    &:hover { background-color: var(--color-primary-tint); }
-    &:focus-visible { @include focus-ring; }
   }
 
   &__brand-icon {
