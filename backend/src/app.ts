@@ -14,6 +14,7 @@ import { appointmentsRouter } from './modules/appointments/appointments.routes';
 import { authRouter } from './modules/auth/auth.routes';
 import { blistersRouter } from './modules/blisters/blisters.routes';
 import { externalRouter } from './modules/external/external.routes';
+import { meRouter } from './modules/me/me.routes';
 import { medicinesRouter } from './modules/medicines/medicines.routes';
 import { notificationsRouter } from './modules/notifications/notifications.routes';
 import { treatmentsRouter } from './modules/treatments/treatments.routes';
@@ -65,6 +66,7 @@ export const createApp = ({ clientOrigin, nodeEnv }: AppConfig): Express => {
   app.use(`${API_PREFIX}/blisters/:blisterId/external`, externalRouter);
   app.use(`${API_PREFIX}/external`, externalRouter);
   app.use(`${API_PREFIX}/notifications`, notificationsRouter);
+  app.use(`${API_PREFIX}/me`, meRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);
