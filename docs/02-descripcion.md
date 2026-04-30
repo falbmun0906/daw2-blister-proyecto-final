@@ -33,7 +33,7 @@ La aplicación permite la convivencia de múltiples espacios de trabajo o 'blís
 
 ## 2. Usuarios y sistema de permisos (RBAC)
 
-Blíster utiliza un modelo de **multitenencia lógica**. Esto significa que la aplicación diferencia entre el "Usuario" (la identidad que hace login) y su "Rol" (el permiso que tiene dentro de un botiquín o espacio de trabajo específico). Un usuario es Propietario en su propio botiquín y, simultáneamente, es Observador en el de sus familiares.
+Blíster utiliza un modelo de **multitenencia lógica**. Esto significa que la aplicación diferencia entre el "Usuario" (la identidad que hace login) y su "Rol" (el permiso que tiene dentro de un blíster o espacio de trabajo específico). Un usuario es Propietario en su propio blíster y, simultáneamente, es Observador en el de sus familiares.
 
 ### 2.1 Definición de roles
 
@@ -111,19 +111,23 @@ La navegación se divide en tres niveles de interacción claramente diferenciado
 
 El "Blíster" constituye la entidad mínima de organización en la base de datos. Se define como un **contenedor compartido** con las siguientes propiedades:
 
-*   **Propiedad de los datos:** Los Medicamentos, Tratamientos y Citas Médicas están vinculados a un `Blíster_ID`. Si un usuario abandona un Blíster, los datos **no se borran**, ya que pertenecen al espacio de trabajo común donde permanecen el resto de miembros.
+*   **Propiedad de los datos:** Los Medicamentos, Tratamientos y Citas Médicas están vinculados a un `Blister_ID`. Si un usuario abandona un Blíster, los datos **no se borran**, ya que pertenecen al espacio de trabajo común donde permanecen el resto de miembros.
 *   **Independencia de inventario:** Un mismo fármaco (ej. Naproxeno) existe en diferentes Blísters con existencias y fechas de caducidad independientes entre sí.
-*   **Multitenencia lógica:** Un único usuario posee su propio "Blíster Personal" (como Propietario) y pertenece simultáneamente a otros espacios (ej. "Botiquín de la Abuela") con roles de Cuidador u Observador.
+*   **Multitenencia lógica:** Un único usuario posee su propio "Blíster Personal" (como Propietario) y pertenece simultáneamente a otros espacios (ej. "Blíster de la Abuela") con roles de Cuidador u Observador.
+*   **Identidad visual:** Cada blíster cuenta con un campo `avatarKey` que el Propietario elige de un catálogo cerrado (`briefcase`, `home`, `family`, `heart`, `pill`, `cross`, `leaf`, `sun`). El frontend lo utiliza como icono representativo en listas, header y vistas multi-blíster.
+*   **Paciente vinculado:** Los Tratamientos y las Citas almacenan `patientUserId`, que debe corresponder a un miembro vigente del blíster. Esto permite distinguir las pautas de cada paciente cuando un mismo blíster cubre a varias personas.
+*   **Capacidad máxima:** Un mismo usuario puede pertenecer a un máximo de **3 blísteres simultáneamente** (constante `MAX_BLISTERS_PER_USER`). Esta cota se valida al crear, unirse o restaurar un blíster, devolviendo el código `BLISTER_LIMIT_REACHED` cuando se supera.
 
 ### 3.3 Flujo de visualización y filtrado
 
 Para gestionar la complejidad multi-inquilino, la interfaz aplica las siguientes reglas de visualización:
 
-1.  **Vista unificada (Home):** En la pantalla de Inicio, el usuario visualiza de forma agregada las próximas dosis de **todos** sus Blísters activos. Esto garantiza que no se pase por alto ninguna toma, independientemente del botiquín al que pertenezca el medicamento.
-2.  **Filtrado por contexto:** En las secciones de Botiquín, Tratamientos y Calendario, un selector superior permite:
+1.  **Vista unificada (Home):** En la pantalla de Inicio, el usuario visualiza de forma agregada las próximas dosis de **todos** sus Blísters activos. Esto garantiza que no se pase por alto ninguna toma, independientemente del blíster al que pertenezca el medicamento. El backend resuelve esta vista mediante el endpoint `GET /api/v1/me/upcoming-doses`, que recorre los blísters del usuario, expande las pautas activas y devuelve un listado plano ordenado por fecha.
+2.  **Filtrado por contexto:** En las secciones de Blíster, Tratamientos y Calendario, un selector superior permite:
     *   **Mostrar todo (por defecto):** Proporciona una visión global de toda la responsabilidad sanitaria del usuario.
     *   **Filtrar por Blíster específico:** Permite centrarse exclusivamente en la gestión de un inventario o paciente concreto.
-3.  **Persistencia del filtro:** La aplicación recuerda el último Blíster seleccionado durante la sesión para facilitar una navegación fluida y coherente entre las diferentes secciones.
+3.  **Calendario unificado:** El endpoint `GET /api/v1/me/calendar?from=&to=&blisterId?&kinds?` agrega citas y tomas previstas en un único payload, permitiendo al frontend renderizar el calendario sin necesidad de llamadas por blíster.
+4.  **Persistencia del filtro:** La aplicación recuerda el último Blíster seleccionado durante la sesión para facilitar una navegación fluida y coherente entre las diferentes secciones.
 
 ## 4. Especificación de bloques funcionales
 
@@ -135,7 +139,7 @@ Para gestionar la complejidad multi-inquilino, la interfaz aplica las siguientes
 *   **03 - Registro de usuario:** 
     *   **Campos:** Recopila nombre completo, nombre de usuario, email y contraseña con doble validación.
     *   **Lógica de invitación:** Incluye el campo opcional "¿Tienes un código de invitación?". Si el usuario introduce un código válido, el servidor lo vincula tras el registro al Blíster correspondiente con el rol de **Cuidador** (Caregiver).
-    *   **Botiquín inicial:** Para registros sin código, el sistema genera automáticamente un Blíster denominado "Mi botiquín" donde el usuario figura como **Owner**.
+    *   **Botiquín inicial:** Para registros sin código, el sistema genera automáticamente un Blíster denominado "Mi blíster" donde el usuario figura como **Owner**.
 *   **04 - Recuperar contraseña:** Gestiona el envío de correos electrónicos de recuperación y ofrece feedback visual mediante un mensaje de confirmación tras el envío exitoso.
 
 ### 4.2 Bloque 2: Gestión de salud (Uso diario)
@@ -156,6 +160,7 @@ Para gestionar la complejidad multi-inquilino, la interfaz aplica las siguientes
 *   **08 - 08.1 (Tratamientos):**
     *   Listado de tratamientos activos con una barra de progreso visual que indica el avance temporal (Día X de Y).
     *   El detalle incluye la descripción del tratamiento, medicamentos vinculados y las citas médicas asociadas.
+    *   Cada tratamiento se asocia a un único paciente del blíster (`patientUserId`) y la frecuencia de cada fármaco se expresa de forma explícita en horas mediante el campo `frequencyHours` de la pauta.
 *   **09 - Ficha técnica AEMPS:** Pantalla de consulta en tiempo real de la API CIMA. Muestra la fotografía oficial del envase y la pastilla, principios activos, excipientes, dosis y el enlace directo al **PDF del prospecto oficial**.
 
 ### 4.3 Bloque 3: Gestión administrativa (Multitenencia)
@@ -215,8 +220,8 @@ El acceso se realiza mediante un **token Bearer** único generado en el perfil d
 
 Para proteger la integridad de los datos de salud ante errores accidentales, el sistema aplica una política de borrado en dos fases:
 
-*   **Periodo de gracia:** Al eliminar un Blíster, este se marca como `deleted: true`. Los datos dejan de ser visibles en la interfaz, pero permanecen bloqueados en la base de datos.
-*   **Recuperación:** La información se conserva durante **15 días naturales**, permitiendo al Propietario solicitar la restauración del espacio si fuera necesario.
+*   **Periodo de gracia:** Al eliminar un Blíster, este se marca como `deletedAt` con la fecha de borrado. Los datos dejan de ser visibles en la interfaz, pero permanecen bloqueados en la base de datos.
+*   **Recuperación:** La información se conserva durante **15 días naturales** (constante `BLISTER_RESTORE_WINDOW_MS`). Durante ese periodo, el Propietario puede invocar `POST /api/v1/blisters/:id/restore` para reactivar el blíster, siempre que siga por debajo de la cota `MAX_BLISTERS_PER_USER`.
 *   **Purga definitiva:** Tras el periodo de gracia, un proceso automático del servidor elimina físicamente el Blíster y todos sus registros asociados para cumplir con el derecho al olvido.
 
 ## 6. Interacción y experiencia de usuario (UI/UX)
