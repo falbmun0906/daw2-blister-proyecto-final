@@ -131,7 +131,7 @@ export function NotificationsSheet() {
       <div
         ref={sheetRef}
         className={`c-notifications-sheet__panel${isDragging ? ' is-dragging' : ''}`}
-        style={{ transform: `translateY(${dragOffset}px)` }}
+        style={isDragging || dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
         role="dialog"
         aria-modal="true"
         aria-label="Notificaciones"

@@ -170,18 +170,16 @@ function MemberRoleModal({ open, member, onClose, onChangeRole, onDelete }: Memb
 
 interface ConfirmRemoveModalProps {
   open: boolean;
-  fullName: string;
+  message: string;
   onClose: () => void;
   onConfirm: () => Promise<void>;
 }
 
-function ConfirmRemoveModal({ open, fullName, onClose, onConfirm }: ConfirmRemoveModalProps) {
+function ConfirmRemoveModal({ open, message, onClose, onConfirm }: ConfirmRemoveModalProps) {
   const [busy, setBusy] = useState(false);
   return (
     <Modal open={open} onClose={onClose} hideHeader ariaLabel="Confirmar eliminación">
-      <p className="c-confirm-modal__message">
-        ¿Seguro que quieres eliminar a {fullName} y todos sus tratamientos activos?
-      </p>
+      <p className="c-confirm-modal__message">{message}</p>
       <div className="c-confirm-modal__actions">
         <Button type="button" variant="primary-outline" onClick={onClose} disabled={busy}>
           Conservar
@@ -379,10 +377,10 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
 
   const [activeMember, setActiveMember] = useState<BlisterMemberDetail | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<BlisterMemberDetail | null>(null);
+  const [confirmDeleteBlister, setConfirmDeleteBlister] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
 
   useEffect(() => {
-    if (!expanded) return;
     let cancelled = false;
     setLoadingMembers(true);
     listBlisterMembers(blister._id)
@@ -403,7 +401,7 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
     return () => {
       cancelled = true;
     };
-  }, [expanded, blister._id, addToast]);
+  }, [blister._id, addToast]);
 
   const owner = members.find((m) => m.role === 'OWNER');
   const ownerLabel = owner ? (owner.userId === userId ? 'Tú' : owner.fullName) : '—';
@@ -436,9 +434,6 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
   };
 
   const handleDeleteBlister = async () => {
-    if (!window.confirm(`¿Eliminar el blíster "${blister.name}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
     try {
       await softDeleteBlister(blister._id);
       addToast({ message: 'Blíster eliminado.', variant: 'success' });
@@ -581,7 +576,7 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
             <Button type="button" variant="primary-outline" className="c-btn--sm" onClick={handleDiscard}>
               Descartar
             </Button>
-            <Button type="button" variant="danger" className="c-btn--sm" onClick={() => void handleDeleteBlister()}>
+            <Button type="button" variant="danger" className="c-btn--sm" onClick={() => setConfirmDeleteBlister(true)}>
               Eliminar
             </Button>
           </div>
@@ -618,9 +613,15 @@ function BlisterCard({ blister, isOwner, onChanged }: BlisterCardProps) {
       />
       <ConfirmRemoveModal
         open={confirmRemove !== null}
-        fullName={confirmRemove?.fullName ?? ''}
+        message={`¿Seguro que quieres eliminar a ${confirmRemove?.fullName ?? ''} y todos sus tratamientos activos?`}
         onClose={() => setConfirmRemove(null)}
         onConfirm={() => handleRemoveMember(confirmRemove!.userId)}
+      />
+      <ConfirmRemoveModal
+        open={confirmDeleteBlister}
+        message={`¿Seguro que quieres eliminar el blíster '${blister.name}'? Esta acción borrará todos los medicamentos y tratamientos activos y no es reversible.`}
+        onClose={() => setConfirmDeleteBlister(false)}
+        onConfirm={handleDeleteBlister}
       />
       <AddMemberModal
         open={showAddMember}
