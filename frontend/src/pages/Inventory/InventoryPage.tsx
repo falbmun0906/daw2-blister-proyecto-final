@@ -1,6 +1,5 @@
 import { useMemo, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { FaBriefcaseMedical } from 'react-icons/fa6';
 
 import { ROUTES } from '../../constants/routes';
 import { EmptyState } from '../../components/atoms/EmptyState';
@@ -46,15 +45,7 @@ function InventoryPage() {
   }
 
   return (
-    <section className="c-inventory-page" aria-labelledby="inventory-title">
-      <header className="c-inventory-page__header">
-        <span className="c-inventory-page__icon" aria-hidden="true">
-          <FaBriefcaseMedical className="c-icon c-icon--md" aria-hidden="true" />
-        </span>
-        <h1 id="inventory-title" className="c-inventory-page__title">Botiquín</h1>
-        <span className="c-inventory-page__spacer" aria-hidden="true" />
-      </header>
-
+    <section className="c-inventory-page" aria-label="Botiquín">
       <CimaSearchDropdown
         blisterId={activeBlisterId}
         canMutate={canMutate}

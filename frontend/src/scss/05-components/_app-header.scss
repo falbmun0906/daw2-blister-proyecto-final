@@ -11,7 +11,10 @@
   z-index: var(--z-sticky);
 
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  // Mismas anchuras a izquierda y derecha → la columna central queda
+  // centrada respecto al ancho del dispositivo independientemente del
+  // tamaño de los iconos de marca/acciones.
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: var(--space-3);
 
@@ -24,6 +27,7 @@
 
   &__brand {
     @include touch-target;
+    justify-self: start;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -46,14 +50,14 @@
     text-align: center;
     font-family: var(--font-display);
     font-weight: var(--font-weight-medium);
-    font-size: var(--text-2xl);
+    font-size: clamp(1.25rem, 5.5vw, 1.75rem);
     letter-spacing: var(--tracking-xtight);
     line-height: 1;
     color: var(--color-text);
-    @include truncate;
   }
 
   &__actions {
+    justify-self: end;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);

@@ -13,7 +13,7 @@ import { SearchBar } from '../../components/molecules/SearchBar';
 import { ROUTES } from '../../constants/routes';
 import { stockUnits } from '../../../../shared/schemas/schema.constants';
 import { createMedicine } from '../../services/medicines.service';
-import { usePageTitle } from '../../hooks/use.page-title';
+import { usePageBackOverride, usePageTitle } from '../../hooks/use.page-title';
 import { searchCima } from '../../services/external.service';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
@@ -32,7 +32,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function AddMedicinePage() {
-  usePageTitle('Añadir medicamento');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const presetNregist = searchParams.get('nregist');
@@ -47,6 +46,10 @@ function AddMedicinePage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ExternalSearchItem | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Header reactivo: el título y el botón volver cambian según el paso activo.
+  usePageTitle(selected ? 'Detalles del medicamento' : 'Añadir medicamento');
+  usePageBackOverride(selected ? () => setSelected(null) : null);
 
   // Si se llega con ?nregist=..., precarga el medicamento sin pasar por buscador.
   useEffect(() => {
@@ -124,22 +127,7 @@ function AddMedicinePage() {
   };
 
   return (
-    <section className="c-add-medicine-page" aria-labelledby="add-medicine-title">
-      <header className="c-add-medicine-page__header">
-        <button
-          type="button"
-          className="c-add-medicine-page__back"
-          onClick={() => (selected ? setSelected(null) : navigate(-1))}
-          aria-label="Volver"
-        >
-          ←
-        </button>
-        <h1 id="add-medicine-title" className="c-add-medicine-page__title">
-          {selected ? 'Detalles del medicamento' : 'Añadir medicamento'}
-        </h1>
-        <span aria-hidden="true" />
-      </header>
-
+    <section className="c-add-medicine-page" aria-label={selected ? 'Detalles del medicamento' : 'Añadir medicamento'}>
       {!selected ? (
         <>
           <SearchBar

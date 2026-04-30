@@ -57,15 +57,10 @@ export default function BlisterJoinPage() {
   });
 
   return (
-    <section aria-labelledby="join-blister-title">
-      <header className="c-home" style={{ marginBottom: 'var(--space-4)' }}>
-        <h2 className="c-home__greeting" id="join-blister-title">
-          Unirme a un blíster
-        </h2>
-        <p className="c-home__subtitle">
-          Introduce el código que te ha facilitado el propietario.
-        </p>
-      </header>
+    <section aria-label="Unirse a un blíster">
+      <p className="c-home__subtitle" style={{ marginBottom: 'var(--space-4)' }}>
+        Introduce el código que te ha facilitado el propietario.
+      </p>
 
       <form onSubmit={onSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <Input

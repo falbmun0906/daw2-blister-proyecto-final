@@ -38,7 +38,9 @@
   &__title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: var(--text-xl);
+    // Clamp tipográfico: si cabe se muestra grande; si no, se reduce
+    // gradualmente sin truncar.
+    font-size: clamp(1.05rem, 4.8vw, 1.5rem);
     font-weight: var(--font-weight-regular);
     line-height: var(--leading-snug);
     letter-spacing: var(--tracking-tight);
@@ -46,7 +48,8 @@
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   &__spacer {

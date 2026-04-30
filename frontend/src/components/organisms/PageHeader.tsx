@@ -11,13 +11,19 @@ import { usePageTitleStore } from '../../stores/page-title.store';
 export function PageHeader() {
   const navigate = useNavigate();
   const title = usePageTitleStore((s) => s.title);
+  const backHandler = usePageTitleStore((s) => s.backHandler);
+
+  const handleBack = (): void => {
+    if (backHandler) backHandler();
+    else navigate(-1);
+  };
 
   return (
     <header className="c-page-header" role="banner">
       <button
         type="button"
         className="c-page-header__back"
-        onClick={() => navigate(-1)}
+        onClick={handleBack}
         aria-label="Volver atrás"
       >
         <FaArrowLeft className="c-icon c-icon--lg" aria-hidden="true" />

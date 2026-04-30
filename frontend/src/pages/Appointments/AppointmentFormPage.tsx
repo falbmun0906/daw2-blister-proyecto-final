@@ -35,10 +35,10 @@ function buildPayload(values: FormValues): CreateAppointmentInput {
 }
 
 function AppointmentFormPage() {
-  usePageTitle('Cita');
   const navigate = useNavigate();
   const { appointmentId } = useParams<{ appointmentId?: string }>();
   const isEditing = Boolean(appointmentId);
+  usePageTitle(isEditing ? 'Editar cita' : 'Nueva cita');
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
   const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
@@ -122,22 +122,7 @@ function AppointmentFormPage() {
   }
 
   return (
-    <section className="c-appointment-form-page" aria-labelledby="appointment-form-title">
-      <header className="c-appointment-form-page__header">
-        <button
-          type="button"
-          className="c-appointment-form-page__back"
-          aria-label="Volver"
-          onClick={() => navigate(-1)}
-        >
-          ←
-        </button>
-        <h1 id="appointment-form-title" className="c-appointment-form-page__title">
-          {isEditing ? 'Editar cita' : 'Nueva cita'}
-        </h1>
-        <span aria-hidden="true" />
-      </header>
-
+    <section className="c-appointment-form-page" aria-label={isEditing ? 'Editar cita' : 'Nueva cita'}>
       <form className="c-appointment-form-page__form" onSubmit={onSubmit} noValidate>
         <Input
           label="Título"

@@ -16,3 +16,17 @@ export function usePageTitle(title: string): void {
     return () => clear();
   }, [title, setTitle, clear]);
 }
+
+/**
+ * Sobrescribe el comportamiento del botón "volver" en el header global.
+ * Útil cuando una página tiene un flujo interno (ej. pasos) y "volver"
+ * debe deshacer el paso en lugar de salir de la ruta.
+ */
+export function usePageBackOverride(handler: (() => void) | null): void {
+  const setBackHandler = usePageTitleStore((s) => s.setBackHandler);
+
+  useEffect(() => {
+    setBackHandler(handler);
+    return () => setBackHandler(null);
+  }, [handler, setBackHandler]);
+}

@@ -116,13 +116,7 @@ function EditMedicinePage() {
   };
 
   return (
-    <section className="c-add-medicine-page" aria-labelledby="edit-medicine-title">
-      <header className="c-add-medicine-page__header">
-        <button type="button" className="c-add-medicine-page__back" onClick={() => navigate(-1)} aria-label="Volver">←</button>
-        <h1 id="edit-medicine-title" className="c-add-medicine-page__title">Editar medicamento</h1>
-        <span aria-hidden="true" />
-      </header>
-
+    <section className="c-add-medicine-page" aria-label="Editar medicamento">
       {loadError ? (
         <ErrorState message={loadError} />
       ) : !medicine ? (

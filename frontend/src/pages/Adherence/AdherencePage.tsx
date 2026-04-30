@@ -16,7 +16,7 @@ import type { AdherenceLog } from '../../types/adherence.types';
 import './AdherencePage.scss';
 
 function AdherencePage() {
-  usePageTitle('Historial de adherencia');
+  usePageTitle('Historial de tomas');
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const currentUserId = useAuthStore((s) => s.user?.id ?? null);
   const addToast = useUiStore((s) => s.addToast);
@@ -38,11 +38,7 @@ function AdherencePage() {
   };
 
   return (
-    <section className="c-adherence-page" aria-labelledby="adherence-title">
-      <header className="c-adherence-page__header">
-        <h1 id="adherence-title" className="c-adherence-page__title">Historial de tomas</h1>
-      </header>
-
+    <section className="c-adherence-page" aria-label="Historial de tomas">
       {error ? (
         <ErrorState message={error} onRetry={() => void refetch()} />
       ) : isLoading ? (

@@ -57,15 +57,10 @@ export default function BlisterCreatePage() {
   });
 
   return (
-    <section aria-labelledby="create-blister-title">
-      <header className="c-home" style={{ marginBottom: 'var(--space-4)' }}>
-        <h2 className="c-home__greeting" id="create-blister-title">
-          Crear blíster
-        </h2>
-        <p className="c-home__subtitle">
-          Te asignaremos automáticamente como propietario.
-        </p>
-      </header>
+    <section aria-label="Crear blíster">
+      <p className="c-home__subtitle" style={{ marginBottom: 'var(--space-4)' }}>
+        Te asignaremos automáticamente como propietario.
+      </p>
 
       <form onSubmit={onSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <Input

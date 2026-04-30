@@ -122,17 +122,12 @@ export default function BlisterMembersPage() {
   }
 
   return (
-    <section aria-labelledby="members-title">
-      <header className="c-home" style={{ marginBottom: 'var(--space-4)' }}>
-        <h2 className="c-home__greeting" id="members-title">
-          Miembros de {blister?.name ?? 'este blíster'}
-        </h2>
-        <p className="c-home__subtitle">
-          {isOwner
-            ? 'Como propietario, puedes cambiar roles o expulsar miembros.'
-            : 'Solo el propietario puede modificar roles o eliminar miembros.'}
-        </p>
-      </header>
+    <section aria-label={blister?.name ? `Miembros de ${blister.name}` : 'Miembros'}>
+      <p className="c-home__subtitle" style={{ marginBottom: 'var(--space-4)' }}>
+        {isOwner
+          ? 'Como propietario, puedes cambiar roles o expulsar miembros.'
+          : 'Solo el propietario puede modificar roles o eliminar miembros.'}
+      </p>
 
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-stack)' }}>
         {members.map((member) => {
