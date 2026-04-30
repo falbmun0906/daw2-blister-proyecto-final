@@ -1,12 +1,14 @@
 import { Types } from 'mongoose';
 
 import {
+  HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
 import { AppointmentModel } from '../../models/appointment.model';
+import { BlisterModel } from '../../models/blister.model';
 import { TreatmentModel } from '../../models/treatment.model';
-import { type BlisterRole } from '../../types/blister.types';
+import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
 import { AppError } from '../../utils/app-error';
 import {
   type AppointmentsListQuery,
@@ -17,6 +19,7 @@ import {
 interface AppointmentView {
   id: string;
   blisterId: string;
+  patientUserId: string;
   title: string;
   date: Date;
   treatmentId: string | null;
@@ -37,6 +40,7 @@ const WRITER_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
 const toAppointmentView = (appointment: Awaited<ReturnType<typeof AppointmentModel.findOne>>): AppointmentView => ({
   id: appointment!._id.toString(),
   blisterId: appointment!.blisterId.toString(),
+  patientUserId: appointment!.patientUserId.toString(),
   title: appointment!.title,
   date: appointment!.date,
   treatmentId: appointment!.treatmentId?.toString() ?? null,
@@ -72,6 +76,7 @@ const getAppointmentDocument = async (blisterId: string, appointmentId: string) 
 const ensureTreatmentBelongsToBlister = async (
   blisterId: string,
   treatmentId?: string,
+  patientUserId?: string,
 ): Promise<void> => {
   if (!treatmentId) {
     return;
@@ -86,6 +91,39 @@ const ensureTreatmentBelongsToBlister = async (
     throw new AppError({
       code: 'APPOINTMENT_TREATMENT_NOT_FOUND',
       message: 'The linked treatment does not belong to this blister.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+
+  if (patientUserId && treatment.patientUserId.toString() !== patientUserId) {
+    throw new AppError({
+      code: 'APPOINTMENT_TREATMENT_PATIENT_MISMATCH',
+      message: 'The linked treatment belongs to a different patient.',
+      statusCode: HTTP_STATUS_BAD_REQUEST,
+    });
+  }
+};
+
+/**
+ * Validates the patient is currently a member of the blister.
+ */
+const ensurePatientIsBlisterMember = async (
+  blisterId: string,
+  patientUserId: string,
+): Promise<void> => {
+  const blister = await BlisterModel.findOne({
+    _id: new Types.ObjectId(blisterId),
+    deletedAt: null,
+  }).lean();
+
+  const isMember = blister?.members?.some(
+    (member: BlisterMember) => member.userId.toString() === patientUserId,
+  );
+
+  if (!isMember) {
+    throw new AppError({
+      code: 'APPOINTMENT_PATIENT_NOT_MEMBER',
+      message: 'The selected patient is not a member of this blister.',
       statusCode: HTTP_STATUS_NOT_FOUND,
     });
   }
@@ -130,10 +168,12 @@ export const appointmentsCreate = async (
   input: CreateAppointmentInput,
 ): Promise<AppointmentView> => {
   ensureWriterRole(blisterRole);
-  await ensureTreatmentBelongsToBlister(blisterId, input.treatmentId);
+  await ensurePatientIsBlisterMember(blisterId, input.patientUserId);
+  await ensureTreatmentBelongsToBlister(blisterId, input.treatmentId, input.patientUserId);
 
   const appointment = await AppointmentModel.create({
     blisterId: new Types.ObjectId(blisterId),
+    patientUserId: new Types.ObjectId(input.patientUserId),
     title: input.title,
     date: input.date,
     treatmentId: input.treatmentId ? new Types.ObjectId(input.treatmentId) : null,
@@ -152,9 +192,18 @@ export const appointmentsUpdate = async (
   input: UpdateAppointmentInput,
 ): Promise<AppointmentView> => {
   ensureWriterRole(blisterRole);
-  await ensureTreatmentBelongsToBlister(blisterId, input.treatmentId);
 
   const appointment = await getAppointmentDocument(blisterId, appointmentId);
+
+  const nextPatientId =
+    input.patientUserId ?? appointment.patientUserId.toString();
+
+  if (input.patientUserId !== undefined) {
+    await ensurePatientIsBlisterMember(blisterId, input.patientUserId);
+    appointment.patientUserId = new Types.ObjectId(input.patientUserId);
+  }
+
+  await ensureTreatmentBelongsToBlister(blisterId, input.treatmentId, nextPatientId);
 
   if (input.title !== undefined) {
     appointment.title = input.title;
