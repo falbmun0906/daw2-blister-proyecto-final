@@ -17,12 +17,15 @@ interface UiState {
   toasts: ToastItem[];
   hasSeenOnboarding: boolean;
   canReplayOnboarding: boolean;
+  notificationsSheetOpen: boolean;
   addToast: (toast: Omit<ToastItem, 'id' | 'durationMs'> & { durationMs?: number }) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
   setHasSeenOnboarding: (value: boolean) => void;
   enableOnboardingReplay: () => void;
   disableOnboardingReplay: () => void;
+  openNotificationsSheet: () => void;
+  closeNotificationsSheet: () => void;
 }
 
 const createToastId = (): string =>
@@ -34,6 +37,7 @@ export const useUiStore = create<UiState>()(
       toasts: [],
       hasSeenOnboarding: false,
       canReplayOnboarding: false,
+      notificationsSheetOpen: false,
       addToast: ({ message, variant, durationMs = TOAST_DURATION_MS }) => {
         const id = createToastId();
         set((state) => ({
@@ -49,6 +53,8 @@ export const useUiStore = create<UiState>()(
       setHasSeenOnboarding: (value) => set({ hasSeenOnboarding: value }),
       enableOnboardingReplay: () => set({ canReplayOnboarding: true }),
       disableOnboardingReplay: () => set({ canReplayOnboarding: false }),
+      openNotificationsSheet: () => set({ notificationsSheetOpen: true }),
+      closeNotificationsSheet: () => set({ notificationsSheetOpen: false }),
     }),
     {
       name: 'blister-ui',

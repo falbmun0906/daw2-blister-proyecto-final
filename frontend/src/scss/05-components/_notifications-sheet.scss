@@ -1,0 +1,103 @@
+// =============================================================================
+// NotificationsSheet — bottom sheet con drag-to-close.
+// =============================================================================
+
+.c-notifications-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  pointer-events: none;
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.4);
+    opacity: 0;
+    transition: opacity var(--transition-base) ease;
+  }
+
+  &__panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 90vh;
+    background-color: var(--color-surface);
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+    box-shadow: 0 -8px 24px -8px rgba(15, 23, 42, 0.25);
+    transform: translateY(100%);
+    transition: transform var(--transition-base) cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+
+    &.is-dragging {
+      transition: none;
+    }
+  }
+
+  &__handle-area {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-2) 0 var(--space-1);
+    cursor: grab;
+    touch-action: none;
+
+    &:active { cursor: grabbing; }
+  }
+
+  &__handle {
+    display: block;
+    width: 3rem;
+    height: 0.3rem;
+    border-radius: 9999px;
+    background-color: var(--color-border-subtle);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4) var(--space-3);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+  }
+
+  &__mark-all {
+    background: none;
+    border: none;
+    color: var(--color-primary-mid);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  &__body {
+    overflow-y: auto;
+    padding: 0 var(--space-4) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__group-title {
+    margin: var(--space-3) 0 var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+
+  &.is-open {
+    pointer-events: auto;
+
+    .c-notifications-sheet__backdrop { opacity: 1; }
+    .c-notifications-sheet__panel { transform: translateY(0); }
+  }
+}
