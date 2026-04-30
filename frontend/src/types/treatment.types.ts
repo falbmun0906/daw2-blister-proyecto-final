@@ -10,4 +10,5 @@ export interface TreatmentMedicineEntry {
   medicineId: string;
   amount: number;
   frequencyHours: number;
+  note?: string | null;
 }

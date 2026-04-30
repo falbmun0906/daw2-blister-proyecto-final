@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { TbBuildingHospital, TbPill, TbUser } from 'react-icons/tb';
 
+import { Avatar } from '../atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
 import type { BlisterRole } from '../../types/blister.types';
 import type { Medicine } from '../../types/medicine.types';
@@ -11,9 +12,11 @@ interface TreatmentRowProps {
   treatment: Treatment;
   medicines: Medicine[];
   blisterId: string;
+  blisterName: string;
+  patientName: string;
+  patientAvatarKey?: string | null;
   userRole: BlisterRole | null;
   onDelete: (treatment: Treatment) => void;
-  onLogDose?: (treatmentId: string, medicineId: string) => void;
 }
 
 const canMutate = (role: BlisterRole | null): boolean =>
@@ -53,10 +56,22 @@ function getProgress(treatment: Treatment): { percent: number; label: string; ra
   return { percent, label: `Día ${currentDay} de ${totalDays}`, range };
 }
 
-/** Fila de tratamiento con título, medicamentos vinculados y acciones por rol. */
-export function TreatmentRow({ treatment, medicines, blisterId, userRole, onDelete, onLogDose }: TreatmentRowProps) {
+/** Card resumen de tratamiento con progreso y acciones principales. */
+export function TreatmentRow({
+  treatment,
+  medicines,
+  blisterId,
+  blisterName,
+  patientName,
+  patientAvatarKey,
+  userRole,
+  onDelete,
+}: TreatmentRowProps) {
   const editable = canMutate(userRole);
   const progress = getProgress(treatment);
+  const firstMedicine = treatment.medicines[0]
+    ? resolveMedicineName(medicines, treatment.medicines[0].medicineId)
+    : null;
 
   return (
     <article className="c-treatment-row" aria-label={treatment.title}>
@@ -67,15 +82,13 @@ export function TreatmentRow({ treatment, medicines, blisterId, userRole, onDele
         <div className="c-treatment-row__heading">
           <h3 className="c-treatment-row__title">{treatment.title}</h3>
           <p className="c-treatment-row__meta">
-            <TbUser aria-hidden="true" /> Paciente asignado
+            <TbUser aria-hidden="true" /> {patientName || 'Paciente'}
           </p>
           <p className="c-treatment-row__meta">
-            <TbPill aria-hidden="true" /> {treatment.medicines.length} medicamento{treatment.medicines.length === 1 ? '' : 's'}
+            <TbPill aria-hidden="true" /> {firstMedicine ?? `${treatment.medicines.length} medicamento${treatment.medicines.length === 1 ? '' : 's'}`} · {blisterName}
           </p>
         </div>
-        <span className={`c-treatment-row__status c-treatment-row__status--${treatment.active ? 'active' : 'archived'}`}>
-          {treatment.active ? 'Activo' : 'Archivado'}
-        </span>
+        <Avatar name={patientName || treatment.title} avatarKey={patientAvatarKey ?? undefined} size="md" />
       </header>
 
       <div className="c-treatment-row__progress" aria-label={`Progreso del tratamiento: ${progress.label}`}>
@@ -86,36 +99,24 @@ export function TreatmentRow({ treatment, medicines, blisterId, userRole, onDele
         <span>{progress.label}</span>
       </p>
 
-      <ul className="c-treatment-row__meds">
-        {treatment.medicines.map((entry) => (
-          <li key={entry.medicineId} className="c-treatment-row__med">
-            <span className="c-treatment-row__med-name">
-              {resolveMedicineName(medicines, entry.medicineId)}
-            </span>
-            <span className="c-treatment-row__med-dose">
-              {entry.amount} · cada {entry.frequencyHours} h
-            </span>
-            {treatment.active && onLogDose && editable ? (
-              <Button
-                variant="primary-outline"
-                onClick={() => onLogDose(treatment.id, entry.medicineId)}
-              >
-                Registrar toma
-              </Button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-      {editable ? (
-        <footer className="c-treatment-row__actions">
-          <Link to={ROUTES.editTreatment(blisterId, treatment.id)} className="c-treatment-row__edit-link">
-            <Button variant="primary-outline">Editar</Button>
-          </Link>
-          <Button variant="danger" onClick={() => onDelete(treatment)}>
-            Eliminar
-          </Button>
-        </footer>
-      ) : null}
+      <footer className="c-treatment-row__actions">
+        <Link
+          to={ROUTES.treatmentDetail(blisterId, treatment.id)}
+          className="c-btn c-btn--primary c-btn--card c-btn--full c-treatment-row__primary-link"
+        >
+          <span>Ver tratamiento</span>
+        </Link>
+        {editable ? (
+          <>
+            <Link to={ROUTES.editTreatment(blisterId, treatment.id)} className="c-btn c-btn--primary-outline c-btn--card c-treatment-row__edit-link">
+              <span>Editar</span>
+            </Link>
+            <Button variant="danger" className="c-btn--card" onClick={() => onDelete(treatment)}>
+              Eliminar
+            </Button>
+          </>
+        ) : null}
+      </footer>
     </article>
   );
 }

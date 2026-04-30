@@ -27,10 +27,11 @@ import './TreatmentFormPage.scss';
 interface FormValues {
   patientUserId: string;
   title: string;
+  description: string;
   startDate: string;
   endDate: string;
   active: boolean;
-  medicines: { medicineId: string; amount: number; frequencyHours: number }[];
+  medicines: { medicineId: string; amount: number; frequencyHours: number; note: string }[];
 }
 
 function toFormValues(
@@ -41,19 +42,26 @@ function toFormValues(
     return {
       patientUserId: fallbackPatientUserId,
       title: '',
+      description: '',
       startDate: new Date().toISOString().slice(0, 10),
       endDate: '',
       active: true,
-      medicines: [{ medicineId: '', amount: 1, frequencyHours: 8 }],
+      medicines: [{ medicineId: '', amount: 1, frequencyHours: 8, note: '' }],
     };
   }
   return {
     patientUserId: treatment.patientUserId,
     title: treatment.title,
+    description: treatment.description ?? '',
     startDate: treatment.startDate.slice(0, 10),
     endDate: treatment.endDate ? treatment.endDate.slice(0, 10) : '',
     active: treatment.active,
-    medicines: treatment.medicines,
+    medicines: treatment.medicines.map((entry) => ({
+      medicineId: entry.medicineId,
+      amount: entry.amount,
+      frequencyHours: entry.frequencyHours,
+      note: entry.note ?? '',
+    })),
   };
 }
 
@@ -61,10 +69,14 @@ function buildPayload(values: FormValues): CreateTreatmentInput {
   return createTreatmentSchema.parse({
     patientUserId: values.patientUserId,
     title: values.title,
+    description: values.description || undefined,
     startDate: values.startDate,
     endDate: values.endDate ? values.endDate : undefined,
     active: values.active,
-    medicines: values.medicines,
+    medicines: values.medicines.map((entry) => ({
+      ...entry,
+      note: entry.note || undefined,
+    })),
   });
 }
 
@@ -212,6 +224,18 @@ function TreatmentFormPage() {
             error={formState.errors.title?.message}
             {...register('title')}
           />
+          <label className="c-field">
+            <span className="c-field__label">
+              <span className="c-field__label-text">Descripción</span>
+            </span>
+            <textarea
+              className="c-field__textarea"
+              maxLength={600}
+              rows={4}
+              placeholder="Motivo, indicaciones o contexto clínico"
+              {...register('description')}
+            />
+          </label>
         </FormSection>
 
         <FormSection label="Duración" icon={<TbCalendar />}>
@@ -265,6 +289,18 @@ function TreatmentFormPage() {
                 min={1}
                 {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
               />
+              <label className="c-field c-treatment-form-page__med-note">
+                <span className="c-field__label">
+                  <span className="c-field__label-text">Nota</span>
+                </span>
+                <textarea
+                  className="c-field__textarea"
+                  maxLength={300}
+                  rows={3}
+                  placeholder="Ej. Tomar con comida"
+                  {...register(`medicines.${index}.note` as const)}
+                />
+              </label>
               {fields.length > 1 ? (
                 <Button variant="ghost" type="button" onClick={() => remove(index)}>
                   Quitar
@@ -275,7 +311,7 @@ function TreatmentFormPage() {
           <Button
             variant="primary-outline"
             type="button"
-            onClick={() => append({ medicineId: '', amount: 1, frequencyHours: 8 })}
+            onClick={() => append({ medicineId: '', amount: 1, frequencyHours: 8, note: '' })}
           >
             Añadir medicamento
           </Button>
@@ -284,7 +320,11 @@ function TreatmentFormPage() {
         <FormSection label="Estado" icon={<TbToggleRight />}>
           <label className="c-treatment-form-page__active">
             <input type="checkbox" {...register('active')} />
-            <span>Tratamiento activo</span>
+            <span className="c-treatment-form-page__active-control" aria-hidden="true" />
+            <span className="c-treatment-form-page__active-copy">
+              <span>Tratamiento activo</span>
+              <small>Las próximas tomas se mostrarán en Inicio y Calendario.</small>
+            </span>
           </label>
         </FormSection>
 
