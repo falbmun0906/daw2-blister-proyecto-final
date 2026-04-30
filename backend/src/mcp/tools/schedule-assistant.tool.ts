@@ -1,24 +1,8 @@
 import { treatmentsList } from '../../modules/treatments/treatments.service';
 import { medicinesList } from '../../modules/medicines/medicines.service';
+import { computeNextDose } from '../../utils/dose-schedule';
 import { type McpScheduleAssistantTool } from '../types';
 import { assertMcpBlisterAccess } from '../context';
-
-const toNextDose = (
-  startDate: Date,
-  frequencyHours: number,
-  lowerBound: Date,
-): Date => {
-  const frequencyMs = frequencyHours * 60 * 60 * 1000;
-  const startMs = startDate.getTime();
-  const lowerMs = lowerBound.getTime();
-
-  if (startMs >= lowerMs) {
-    return startDate;
-  }
-
-  const steps = Math.ceil((lowerMs - startMs) / frequencyMs);
-  return new Date(startMs + steps * frequencyMs);
-};
 
 export const scheduleAssistantTool: McpScheduleAssistantTool = {
   name: 'schedule_assistant',
@@ -48,9 +32,9 @@ export const scheduleAssistantTool: McpScheduleAssistantTool = {
           .filter((treatment) => treatment.active)
           .flatMap((treatment) =>
             treatment.medicines
-              .filter((entry) => entry.frequency > 0)
+              .filter((entry) => entry.frequencyHours > 0)
               .map((entry) => {
-                const nextDoseAt = toNextDose(treatment.startDate, entry.frequency, from);
+                const nextDoseAt = computeNextDose(treatment.startDate, entry.frequencyHours, from);
 
                 if (nextDoseAt < from || nextDoseAt > to) {
                   return null;
