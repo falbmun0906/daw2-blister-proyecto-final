@@ -22,10 +22,11 @@ export const treatmentsListQuerySchema = collectionPaginationQuerySchema;
 export const treatmentMedicineSchema = z.object({
   medicineId: objectIdSchema,
   amount: positiveIntegerSchema('Amount'),
-  frequency: positiveIntegerSchema('Frequency'),
+  frequencyHours: positiveIntegerSchema('Frequency in hours'),
 });
 
 const treatmentFields = {
+  patientUserId: objectIdSchema,
   title: nonEmptyTrimmedString('Treatment title', 200),
   medicines: z
     .array(treatmentMedicineSchema)
@@ -51,6 +52,7 @@ export const createTreatmentSchema = treatmentBaseSchema;
 
 export const updateTreatmentSchema = z
   .object({
+    patientUserId: treatmentFields.patientUserId.optional(),
     title: treatmentFields.title.optional(),
     medicines: treatmentFields.medicines.optional(),
     startDate: treatmentFields.startDate.optional(),
@@ -83,12 +85,13 @@ export type TreatmentsListQuery = z.infer<typeof treatmentsListQuerySchema>;
 export const treatmentSchema = z.object({
   id: objectIdSchema,
   blisterId: objectIdSchema,
+  patientUserId: objectIdSchema,
   title: z.string(),
   medicines: z.array(
     z.object({
       medicineId: objectIdSchema,
       amount: z.number().int().positive(),
-      frequency: z.number().int().positive(),
+      frequencyHours: z.number().int().positive(),
     }),
   ),
   startDate: z.string(),

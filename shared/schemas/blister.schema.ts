@@ -4,7 +4,7 @@ import {
   nonEmptyTrimmedString,
   objectIdSchema,
 } from './common.schema';
-import { blisterRoles } from './schema.constants';
+import { blisterAvatarKeys, blisterRoles } from './schema.constants';
 
 export const blisterIdParamsSchema = z.object({
   blisterId: objectIdSchema,
@@ -23,13 +23,21 @@ export const updateMemberRoleSchema = z.object({
   role: z.enum(blisterRoles),
 });
 
+export const blisterAvatarKeySchema = z.enum(blisterAvatarKeys);
+
 export const createBlisterSchema = z.object({
   name: nonEmptyTrimmedString('Blister name', 120),
+  avatarKey: blisterAvatarKeySchema.optional(),
 });
 
-export const updateBlisterSchema = z.object({
-  name: nonEmptyTrimmedString('Blister name', 120),
-});
+export const updateBlisterSchema = z
+  .object({
+    name: nonEmptyTrimmedString('Blister name', 120).optional(),
+    avatarKey: blisterAvatarKeySchema.nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'At least one blister field must be provided.',
+  });
 
 export const createInviteSchema = z.object({
   role: z.enum(blisterRoles),

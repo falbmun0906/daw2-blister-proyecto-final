@@ -19,6 +19,7 @@ export const appointmentIdParamsSchema = z.object({
 export const appointmentsListQuerySchema = collectionPaginationQuerySchema;
 
 const appointmentBaseSchema = z.object({
+  patientUserId: objectIdSchema,
   title: nonEmptyTrimmedString('Appointment title', 200),
   date: futureDateSchema('date'),
   treatmentId: objectIdSchema.optional(),
@@ -40,6 +41,7 @@ export type AppointmentsListQuery = z.infer<typeof appointmentsListQuerySchema>;
 export const appointmentSchema = z.object({
   id: objectIdSchema,
   blisterId: objectIdSchema,
+  patientUserId: objectIdSchema,
   title: z.string(),
   date: z.string(),
   treatmentId: objectIdSchema.nullable(),
