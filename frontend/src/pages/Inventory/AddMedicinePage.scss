@@ -3,33 +3,8 @@
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-screen-y) var(--space-screen-x);
-
-  &__header {
-    display: grid;
-    grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
-    align-items: center;
-    column-gap: var(--space-3);
-  }
-
-  &__back {
-    min-width: var(--space-touch-min);
-    min-height: var(--space-touch-min);
-    border: 0;
-    border-radius: var(--radius-full);
-    background: transparent;
-    color: var(--color-primary);
-    font-size: var(--text-xl);
-    cursor: pointer;
-  }
-
-  &__title {
-    margin: 0;
-    text-align: center;
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-primary);
-  }
+  // Espacio inferior para que el contenido no quede oculto detrás del CTA sticky.
+  padding-bottom: calc(var(--space-screen-y) + 5rem);
 
   &__results {
     list-style: none;
@@ -73,4 +48,24 @@
     &-name { margin: 0; font-weight: var(--font-weight-semibold); color: var(--color-primary); }
     &-meta { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }
   }
+
+  // Selector de unidad inline (chips) usado dentro de la sección "Cantidad".
+  &__unit-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  // CTA sticky en el borde inferior de la pantalla para confirmar el alta.
+  &__sticky-cta {
+    position: sticky;
+    bottom: var(--space-3);
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 -8px 16px -8px rgba(0, 0, 0, 0.12);
+    z-index: 5;
+  }
 }
+

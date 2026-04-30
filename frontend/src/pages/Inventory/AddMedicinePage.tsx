@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { TbCalendar, TbFileText, TbNumbers, TbTag, TbInfoCircle } from 'react-icons/tb';
 
 import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { Stepper } from '../../components/atoms/Stepper';
+import { FormSection } from '../../components/molecules/FormSection';
 import { SearchBar } from '../../components/molecules/SearchBar';
 import { ROUTES } from '../../constants/routes';
 import { stockUnits } from '../../../../shared/schemas/schema.constants';
@@ -72,11 +75,16 @@ function AddMedicinePage() {
   const {
     register,
     handleSubmit,
+    control,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { alias: '', stock: 0, stockUnit: 'pastillas', threshold: 5, expDate: '' },
   });
+
+  const stockUnit = watch('stockUnit');
 
   useEffect(() => {
     if (!query.trim()) {
@@ -176,42 +184,116 @@ function AddMedicinePage() {
             <p className="c-add-medicine-page__selected-meta">{selected.pactivos}</p>
           </div>
           {submitError ? <ErrorState message={submitError} /> : null}
-          <Input label="Alias (opcional)" type="text" {...register('alias')} error={errors.alias?.message} />
-          <Input
-            label="Stock inicial *"
-            type="number"
-            min={0}
-            {...register('stock')}
-            error={errors.stock?.message}
-          />
-          <label className="c-field">
-            <span className="c-field__label">
-              <span className="c-field__label-text">Unidad *</span>
-            </span>
-            <select className="c-field__select" {...register('stockUnit')}>
-              {stockUnits.map((u) => <option key={u} value={u}>{u}</option>)}
-            </select>
-            {errors.stockUnit ? (
-              <span className="c-field__error" role="status">{errors.stockUnit.message}</span>
-            ) : null}
-          </label>
-          <Input
-            label="Umbral de aviso *"
-            type="number"
-            min={0}
-            hint="Recibirás un aviso cuando el stock baje de este valor."
-            {...register('threshold')}
-            error={errors.threshold?.message}
-          />
-          <Input
-            label="Fecha de caducidad *"
-            type="date"
-            {...register('expDate')}
-            error={errors.expDate?.message}
-          />
-          <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>
-            Añadir al botiquín
-          </Button>
+
+          <FormSection
+            label="Añadir alias al medicamento"
+            hint="Un nombre corto que solo verás tú (opcional)."
+            icon={<TbTag />}
+          >
+            <Input
+              label="Alias"
+              type="text"
+              placeholder="Ej. La pastilla de la tensión"
+              {...register('alias')}
+              error={errors.alias?.message}
+            />
+          </FormSection>
+
+          <FormSection label="Fecha de caducidad" icon={<TbCalendar />}>
+            <Input
+              label="Fecha"
+              type="date"
+              {...register('expDate')}
+              error={errors.expDate?.message}
+            />
+          </FormSection>
+
+          <FormSection
+            label="Cantidad disponible"
+            hint="Te avisaremos cuando baje del umbral."
+            icon={<TbNumbers />}
+          >
+            <Controller
+              control={control}
+              name="stock"
+              render={({ field, fieldState }) => (
+                <Stepper
+                  label="Stock inicial"
+                  value={Number(field.value) || 0}
+                  onChange={field.onChange}
+                  min={0}
+                  max={9999}
+                  unit={stockUnit}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
+
+            <div className="c-add-medicine-page__unit-row" role="radiogroup" aria-label="Unidad de stock">
+              {stockUnits.map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  role="radio"
+                  aria-checked={stockUnit === u}
+                  className={[
+                    'c-pill-toggle',
+                    stockUnit === u && 'c-pill-toggle--active',
+                  ].filter(Boolean).join(' ')}
+                  onClick={() => setValue('stockUnit', u, { shouldDirty: true })}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+
+            <Controller
+              control={control}
+              name="threshold"
+              render={({ field, fieldState }) => (
+                <Stepper
+                  label="Umbral de aviso"
+                  value={Number(field.value) || 0}
+                  onChange={field.onChange}
+                  min={0}
+                  max={9999}
+                  unit={stockUnit}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
+          </FormSection>
+
+          <FormSection
+            label="Tratamiento al que pertenece"
+            hint="Podrás vincularlo desde la sección de tratamientos."
+            icon={<TbFileText />}
+          >
+            <p className="c-form-section__hint" style={{ margin: 0 }}>
+              Por ahora, este medicamento se añadirá sin tratamiento asociado.
+            </p>
+          </FormSection>
+
+          <FormSection
+            label="Contraindicaciones"
+            hint="Consulta el prospecto oficial para ver advertencias e interacciones."
+            icon={<TbInfoCircle />}
+          >
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              onClick={() => navigate(ROUTES.cimaMedicineDetail(selected.nregist))}
+            >
+              Ver prospecto en CIMA
+            </Button>
+          </FormSection>
+
+          <div className="c-add-medicine-page__sticky-cta">
+            <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>
+              Confirmar y añadir
+            </Button>
+          </div>
         </form>
       )}
     </section>
