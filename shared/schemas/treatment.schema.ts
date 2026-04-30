@@ -5,6 +5,7 @@ import {
   dateSchema,
   nonEmptyTrimmedString,
   objectIdSchema,
+  optionalTrimmedString,
   positiveIntegerSchema,
 } from './common.schema';
 
@@ -23,11 +24,13 @@ export const treatmentMedicineSchema = z.object({
   medicineId: objectIdSchema,
   amount: positiveIntegerSchema('Amount'),
   frequencyHours: positiveIntegerSchema('Frequency in hours'),
+  note: optionalTrimmedString(300),
 });
 
 const treatmentFields = {
   patientUserId: objectIdSchema,
   title: nonEmptyTrimmedString('Treatment title', 200),
+  description: optionalTrimmedString(600),
   medicines: z
     .array(treatmentMedicineSchema)
     .min(1, 'A treatment must include at least one medicine.'),
@@ -54,6 +57,7 @@ export const updateTreatmentSchema = z
   .object({
     patientUserId: treatmentFields.patientUserId.optional(),
     title: treatmentFields.title.optional(),
+    description: treatmentFields.description,
     medicines: treatmentFields.medicines.optional(),
     startDate: treatmentFields.startDate.optional(),
     endDate: treatmentFields.endDate,
@@ -87,11 +91,13 @@ export const treatmentSchema = z.object({
   blisterId: objectIdSchema,
   patientUserId: objectIdSchema,
   title: z.string(),
+  description: z.string().nullable(),
   medicines: z.array(
     z.object({
       medicineId: objectIdSchema,
       amount: z.number().int().positive(),
       frequencyHours: z.number().int().positive(),
+      note: z.string().nullable(),
     }),
   ),
   startDate: z.string(),

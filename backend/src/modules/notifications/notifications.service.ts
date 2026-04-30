@@ -243,6 +243,27 @@ export const notificationsMarkAsRead = async (
 };
 
 /**
+ * Deletes a single notification if it belongs to the authenticated user.
+ */
+export const notificationsDelete = async (
+  notificationId: string,
+  userId: string,
+): Promise<void> => {
+  const result = await NotificationModel.deleteOne({
+    _id: new Types.ObjectId(notificationId),
+    userId: new Types.ObjectId(userId),
+  });
+
+  if (result.deletedCount === 0) {
+    throw new AppError({
+      code: 'NOTIFICATION_NOT_FOUND',
+      message: 'Notification not found.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+};
+
+/**
  * Creates low-stock notifications for OWNER and CAREGIVER members when a medicine reaches its threshold.
  */
 export const notifyStockLow = async (

@@ -5,6 +5,7 @@ export interface AppointmentDocument {
   blisterId: Types.ObjectId;
   patientUserId: Types.ObjectId;
   title: string;
+  location?: string | null;
   date: Date;
   treatmentId?: Types.ObjectId | null;
 }

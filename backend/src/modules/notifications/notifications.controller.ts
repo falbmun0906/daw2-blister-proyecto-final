@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { HTTP_STATUS_OK } from '../../constants/http.constants';
+import { HTTP_STATUS_NO_CONTENT, HTTP_STATUS_OK } from '../../constants/http.constants';
 import { type AuthenticatedRequest } from '../../types/auth.types';
 import {
   notificationIdParamsSchema,
@@ -8,6 +8,7 @@ import {
   type NotificationsListQuery,
 } from '../../../../shared/schemas';
 import {
+  notificationsDelete,
   notificationsList,
   notificationsMarkAsRead,
 } from './notifications.service';
@@ -45,4 +46,18 @@ export const notificationsMarkAsReadController = async (
     success: true,
     data: result,
   });
+};
+
+/**
+ * Deletes a notification for the authenticated user.
+ */
+export const notificationsDeleteController = async (
+  request: Request,
+  response: Response,
+): Promise<void> => {
+  const authenticatedRequest = request as AuthenticatedRequest;
+  const params = notificationIdParamsSchema.parse(request.params);
+  await notificationsDelete(params.id, authenticatedRequest.auth.userId);
+
+  response.status(HTTP_STATUS_NO_CONTENT).send();
 };

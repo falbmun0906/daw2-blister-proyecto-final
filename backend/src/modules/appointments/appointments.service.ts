@@ -21,6 +21,7 @@ interface AppointmentView {
   blisterId: string;
   patientUserId: string;
   title: string;
+  location: string | null;
   date: Date;
   treatmentId: string | null;
 }
@@ -42,6 +43,7 @@ const toAppointmentView = (appointment: Awaited<ReturnType<typeof AppointmentMod
   blisterId: appointment!.blisterId.toString(),
   patientUserId: appointment!.patientUserId.toString(),
   title: appointment!.title,
+  location: appointment!.location ?? null,
   date: appointment!.date,
   treatmentId: appointment!.treatmentId?.toString() ?? null,
 });
@@ -175,6 +177,7 @@ export const appointmentsCreate = async (
     blisterId: new Types.ObjectId(blisterId),
     patientUserId: new Types.ObjectId(input.patientUserId),
     title: input.title,
+    location: input.location ?? null,
     date: input.date,
     treatmentId: input.treatmentId ? new Types.ObjectId(input.treatmentId) : null,
   });
@@ -207,6 +210,10 @@ export const appointmentsUpdate = async (
 
   if (input.title !== undefined) {
     appointment.title = input.title;
+  }
+
+  if (input.location !== undefined) {
+    appointment.location = input.location ?? null;
   }
 
   if (input.date !== undefined) {

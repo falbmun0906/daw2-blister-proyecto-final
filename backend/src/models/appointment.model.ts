@@ -21,6 +21,12 @@ const appointmentSchema = new Schema<AppointmentDocument>({
     trim: true,
     maxlength: 200,
   },
+  location: {
+    type: String,
+    trim: true,
+    maxlength: 200,
+    default: null,
+  },
   date: {
     type: Date,
     required: true,

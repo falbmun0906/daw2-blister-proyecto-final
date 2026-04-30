@@ -22,6 +22,7 @@ interface TreatmentMedicineView {
   medicineId: string;
   amount: number;
   frequencyHours: number;
+  note: string | null;
 }
 
 interface TreatmentView {
@@ -29,6 +30,7 @@ interface TreatmentView {
   blisterId: string;
   patientUserId: string;
   title: string;
+  description: string | null;
   medicines: TreatmentMedicineView[];
   startDate: Date;
   endDate: Date | null;
@@ -52,10 +54,12 @@ const toTreatmentView = (treatment: Awaited<ReturnType<typeof TreatmentModel.fin
   blisterId: treatment!.blisterId.toString(),
   patientUserId: treatment!.patientUserId.toString(),
   title: treatment!.title,
+  description: treatment!.description ?? null,
   medicines: treatment!.medicines.map((entry: TreatmentMedicineEntry) => ({
     medicineId: entry.medicineId.toString(),
     amount: entry.amount,
     frequencyHours: entry.frequencyHours,
+    note: entry.note ?? null,
   })),
   startDate: treatment!.startDate,
   endDate: treatment!.endDate ?? null,
@@ -193,10 +197,12 @@ export const treatmentsCreate = async (
     blisterId: new Types.ObjectId(blisterId),
     patientUserId: new Types.ObjectId(input.patientUserId),
     title: input.title,
+    description: input.description ?? null,
     medicines: input.medicines.map((entry) => ({
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
       frequencyHours: entry.frequencyHours,
+      note: entry.note ?? null,
     })),
     startDate: input.startDate,
     endDate: input.endDate ?? null,
@@ -230,6 +236,7 @@ export const treatmentsUpdate = async (
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
       frequencyHours: entry.frequencyHours,
+      note: entry.note ?? null,
     }));
   }
 
@@ -239,6 +246,10 @@ export const treatmentsUpdate = async (
 
   if (input.title !== undefined) {
     treatment.title = input.title;
+  }
+
+  if (input.description !== undefined) {
+    treatment.description = input.description ?? null;
   }
 
   if (input.startDate !== undefined) {

@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import { AppointmentModel } from '../../models/appointment.model';
+import { AdherenceLogModel } from '../../models/adherenceLog.model';
 import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { TreatmentModel } from '../../models/treatment.model';
@@ -116,6 +117,14 @@ export const meUpcomingDoses = async (
     TreatmentModel.find({ blisterId: { $in: blisterIds }, active: true }).lean(),
     MedicineModel.find({ blisterId: { $in: blisterIds } }).lean(),
   ]);
+  const treatmentIds = treatments.map((treatment) => treatment._id as Types.ObjectId);
+  const adherenceLogs = treatmentIds.length > 0
+    ? await AdherenceLogModel.find({
+        blisterId: { $in: blisterIds },
+        treatmentId: { $in: treatmentIds },
+        timestamp: { $gte: query.from, $lte: query.to },
+      }).lean()
+    : [];
 
   const blisterById = new Map(blisters.map((blister) => [blister.id.toString(), blister]));
   const medicineById = new Map(
@@ -126,6 +135,13 @@ export const meUpcomingDoses = async (
   );
   const patientNames = await buildPatientNameMap(
     treatments.map((treatment) => treatment.patientUserId as Types.ObjectId),
+  );
+  const takenDoseKeys = new Set(
+    adherenceLogs.map((log) => [
+      (log.treatmentId as Types.ObjectId).toString(),
+      (log.medicineId as Types.ObjectId).toString(),
+      (log.timestamp as Date).getTime().toString(),
+    ].join(':')),
   );
 
   const items: UpcomingDoseItem[] = [];
@@ -146,6 +162,13 @@ export const meUpcomingDoses = async (
       );
 
       for (const doseAt of occurrences) {
+        const doseKey = [
+          (treatment._id as Types.ObjectId).toString(),
+          (entry.medicineId as Types.ObjectId).toString(),
+          doseAt.getTime().toString(),
+        ].join(':');
+        if (takenDoseKeys.has(doseKey)) continue;
+
         items.push({
           doseAt,
           blisterId: blister.id.toString(),

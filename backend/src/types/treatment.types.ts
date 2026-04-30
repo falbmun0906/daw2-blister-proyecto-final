@@ -4,6 +4,7 @@ export interface TreatmentMedicineEntry {
   medicineId: Types.ObjectId;
   amount: number;
   frequencyHours: number;
+  note?: string | null;
 }
 
 export interface TreatmentDocument {
@@ -11,6 +12,7 @@ export interface TreatmentDocument {
   blisterId: Types.ObjectId;
   patientUserId: Types.ObjectId;
   title: string;
+  description?: string | null;
   medicines: TreatmentMedicineEntry[];
   startDate: Date;
   endDate?: Date | null;

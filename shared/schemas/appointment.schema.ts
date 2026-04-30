@@ -5,6 +5,7 @@ import {
   futureDateSchema,
   nonEmptyTrimmedString,
   objectIdSchema,
+  optionalTrimmedString,
 } from './common.schema';
 
 export const blisterAppointmentParamsSchema = z.object({
@@ -21,6 +22,7 @@ export const appointmentsListQuerySchema = collectionPaginationQuerySchema;
 const appointmentBaseSchema = z.object({
   patientUserId: objectIdSchema,
   title: nonEmptyTrimmedString('Appointment title', 200),
+  location: optionalTrimmedString(200),
   date: futureDateSchema('date'),
   treatmentId: objectIdSchema.optional(),
 });
@@ -43,6 +45,7 @@ export const appointmentSchema = z.object({
   blisterId: objectIdSchema,
   patientUserId: objectIdSchema,
   title: z.string(),
+  location: z.string().nullable(),
   date: z.string(),
   treatmentId: objectIdSchema.nullable(),
 });

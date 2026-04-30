@@ -7,6 +7,7 @@ import {
 import { authenticate } from '../../middleware/authenticate';
 import { validate } from '../../middleware/validate';
 import {
+  notificationsDeleteController,
   notificationsListController,
   notificationsMarkAsReadController,
 } from './notifications.controller';
@@ -95,4 +96,9 @@ notificationsRouter.patch(
   '/:id/read',
   validate({ params: notificationIdParamsSchema }),
   notificationsMarkAsReadController,
+);
+notificationsRouter.delete(
+  '/:id',
+  validate({ params: notificationIdParamsSchema }),
+  notificationsDeleteController,
 );

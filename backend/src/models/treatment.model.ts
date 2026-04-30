@@ -19,6 +19,12 @@ const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number
       required: true,
       min: 1,
     },
+    note: {
+      type: String,
+      trim: true,
+      maxlength: 300,
+      default: null,
+    },
   },
   {
     _id: false,
@@ -43,6 +49,12 @@ const treatmentSchema = new Schema<TreatmentDocument>({
     required: true,
     trim: true,
     maxlength: 200,
+  },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 600,
+    default: null,
   },
   medicines: {
     type: [treatmentMedicineSchema],
