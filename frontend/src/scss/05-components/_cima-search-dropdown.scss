@@ -21,6 +21,10 @@
 
   &__field {
     position: relative;
+    z-index: var(--z-base);
+  }
+
+  &.is-open &__field {
     z-index: var(--z-modal);
   }
 

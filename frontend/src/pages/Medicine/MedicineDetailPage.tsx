@@ -91,6 +91,7 @@ function MedicineDetailPage() {
   const role = routeRole ?? activeRole;
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';
   const { medicine, cima, error, isLoading } = state;
+  const medicineImage = cima?.fotos.find((foto) => foto.url)?.url ?? null;
 
   const handleDelete = async () => {
     if (!medicine || !blisterId) return;
@@ -125,7 +126,11 @@ function MedicineDetailPage() {
         <>
           <div className="c-medicine-detail-page__hero">
             <span className="c-medicine-detail-page__icon">
-              <MedicineIcon type={medicine.iconType} size="lg" />
+              {medicineImage ? (
+                <img src={medicineImage} alt={medicine.alias?.trim() || medicine.nombre} loading="lazy" />
+              ) : (
+                <MedicineIcon type={medicine.iconType} size="lg" />
+              )}
             </span>
             <div className="c-medicine-detail-page__hero-body">
               <h2 className="c-medicine-detail-page__name">{medicine.alias?.trim() || medicine.nombre}</h2>
@@ -184,19 +189,21 @@ function MedicineDetailPage() {
               <Button
                 type="button"
                 variant="primary-outline"
+                className="c-btn--card"
                 onClick={() => navigate(ROUTES.cimaMedicineDetail(medicine.nregist))}
               >
                 <TbExternalLink aria-hidden="true" /> Prospecto
               </Button>
               <Link
                 to={`${ROUTES.medicineDetail(blisterId, medicine._id)}/edit`}
-                className="c-btn c-btn--primary"
+                className="c-btn c-btn--primary c-btn--card"
               >
                 <TbPencil aria-hidden="true" /> Editar
               </Link>
               <Button
                 type="button"
                 variant="danger"
+                className="c-btn--card"
                 loading={deleting}
                 onClick={() => void handleDelete()}
               >
