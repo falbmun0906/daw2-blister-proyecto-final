@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
+import { TbCalendarEvent, TbClock, TbStethoscope } from 'react-icons/tb';
 
 import {
   createAppointmentSchema,
@@ -11,6 +12,7 @@ import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { useAppointments } from '../../hooks/use.appointments';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -124,29 +126,44 @@ function AppointmentFormPage() {
   return (
     <section className="c-appointment-form-page" aria-label={isEditing ? 'Editar cita' : 'Nueva cita'}>
       <form className="c-appointment-form-page__form" onSubmit={onSubmit} noValidate>
-        <Input
-          label="Título"
-          maxLength={200}
-          error={formState.errors.title?.message}
-          {...register('title')}
-        />
-        <Input
-          type="datetime-local"
-          label="Fecha y hora"
-          error={formState.errors.date?.message}
-          {...register('date')}
-        />
-        <label className="c-appointment-form-page__select-label">
-          <span>Tratamiento vinculado (opcional)</span>
-          <select className="c-appointment-form-page__select" {...register('treatmentId')}>
-            <option value="">Sin vincular</option>
-            {treatments.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.title}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FormSection label="Título de la cita" icon={<TbCalendarEvent />}>
+          <Input
+            label="Título"
+            maxLength={200}
+            placeholder="Ej. Revisión médico de cabecera"
+            error={formState.errors.title?.message}
+            {...register('title')}
+          />
+        </FormSection>
+
+        <FormSection label="Fecha y hora" icon={<TbClock />}>
+          <Input
+            type="datetime-local"
+            label="Cuándo"
+            error={formState.errors.date?.message}
+            {...register('date')}
+          />
+        </FormSection>
+
+        <FormSection
+          label="Tratamiento vinculado"
+          hint="Opcional: asocia la cita a un tratamiento existente."
+          icon={<TbStethoscope />}
+        >
+          <label className="c-field">
+            <span className="c-field__label">
+              <span className="c-field__label-text">Tratamiento</span>
+            </span>
+            <select className="c-field__select" {...register('treatmentId')}>
+              <option value="">Sin vincular</option>
+              {treatments.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </FormSection>
 
         <Button variant="primary" fullWidth type="submit" loading={formState.isSubmitting}>
           {isEditing ? 'Guardar cambios' : 'Crear cita'}

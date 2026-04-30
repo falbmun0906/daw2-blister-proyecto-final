@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { TbCalendar, TbNumbers, TbTag } from 'react-icons/tb';
 
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { Stepper } from '../../components/atoms/Stepper';
+import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { getMedicine, removeMedicine, updateMedicine } from '../../services/medicines.service';
@@ -47,7 +50,7 @@ function EditMedicinePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { alias: '', stock: 0, threshold: 0, expDate: '' },
   });
@@ -132,11 +135,65 @@ function EditMedicinePage() {
             <p className="c-add-medicine-page__selected-meta">{medicine.pactivos}</p>
           </div>
           {submitError ? <ErrorState message={submitError} /> : null}
-          <Input label="Alias (opcional)" type="text" {...register('alias')} error={errors.alias?.message} />
-          <Input label="Stock *" type="number" min={0} {...register('stock')} error={errors.stock?.message} />
-          <Input label="Umbral de aviso *" type="number" min={0} {...register('threshold')} error={errors.threshold?.message} />
-          <Input label="Fecha de caducidad *" type="date" {...register('expDate')} error={errors.expDate?.message} />
-          <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>Guardar cambios</Button>
+
+          <FormSection
+            label="Alias del medicamento"
+            hint="Un nombre corto que solo verás tú (opcional)."
+            icon={<TbTag />}
+          >
+            <Input
+              label="Alias"
+              type="text"
+              {...register('alias')}
+              error={errors.alias?.message}
+            />
+          </FormSection>
+
+          <FormSection label="Fecha de caducidad" icon={<TbCalendar />}>
+            <Input
+              label="Fecha"
+              type="date"
+              {...register('expDate')}
+              error={errors.expDate?.message}
+            />
+          </FormSection>
+
+          <FormSection
+            label="Cantidad disponible"
+            hint="Te avisaremos cuando baje del umbral."
+            icon={<TbNumbers />}
+          >
+            <Controller
+              control={control}
+              name="stock"
+              render={({ field, fieldState }) => (
+                <Stepper
+                  label="Stock"
+                  value={Number(field.value) || 0}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="threshold"
+              render={({ field, fieldState }) => (
+                <Stepper
+                  label="Umbral de aviso"
+                  value={Number(field.value) || 0}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                />
+              )}
+            />
+          </FormSection>
+
+          <div className="c-add-medicine-page__sticky-cta">
+            <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>
+              Guardar cambios
+            </Button>
+          </div>
           <Button type="button" variant="danger" fullWidth onClick={handleDelete} loading={deleting}>
             Eliminar del botiquín
           </Button>
