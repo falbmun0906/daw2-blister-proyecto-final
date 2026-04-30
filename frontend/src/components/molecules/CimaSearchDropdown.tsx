@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TbPlus } from 'react-icons/tb';
+import { TbPill, TbPlus } from 'react-icons/tb';
 
 import { ROUTES } from '../../constants/routes';
 import { searchCima } from '../../services/external.service';
@@ -20,10 +20,21 @@ interface CimaSearchDropdownProps {
   ariaLabel?: string;
 }
 
+/** Devuelve la dosis o forma farmacéutica más representativa para mostrar
+ *  como subtítulo en la mini-card de un resultado CIMA. */
+function formatDose(item: ExternalSearchItem): string {
+  const parts = [item.dosisOficial, item.formaOficial].filter(Boolean) as string[];
+  if (parts.length > 0) return parts.join(' · ');
+  return item.pactivos || '';
+}
+
 /**
- * Buscador unificado contra la API CIMA con dropdown de resultados.
- * Cada resultado incluye un botón `+` que navega a la página de alta de
- * medicamento con el `nregist` preseleccionado.
+ * Buscador unificado contra la API CIMA con dropdown de resultados estilo
+ * "mini-cards" (icono + nombre + dosis). Cuando el dropdown está abierto se
+ * muestra un backdrop oscurecido detrás para dar foco a los resultados.
+ *
+ * - Click en el cuerpo de la card → navega a la ficha del medicamento.
+ * - Click en el botón `+` → flujo de alta con `nregist` preseleccionado.
  */
 export function CimaSearchDropdown({
   blisterId,
@@ -71,7 +82,7 @@ export function CimaSearchDropdown({
     };
   }, [query]);
 
-  // Cierra el dropdown al hacer click fuera.
+  // Cierra el dropdown al hacer click fuera del componente.
   useEffect(() => {
     if (!isOpen) return;
     const handler = (event: MouseEvent) => {
@@ -82,6 +93,16 @@ export function CimaSearchDropdown({
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, [isOpen]);
+
+  // Cierra el dropdown con Escape para mejorar accesibilidad.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
   const handleAdd = (item: ExternalSearchItem) => {
@@ -99,16 +120,27 @@ export function CimaSearchDropdown({
   return (
     <div
       ref={containerRef}
-      className={['c-cima-search', className].filter(Boolean).join(' ')}
+      className={['c-cima-search', showDropdown && 'is-open', className].filter(Boolean).join(' ')}
     >
-      <SearchBar
-        value={query}
-        onChange={setQuery}
-        placeholder={placeholder}
-        ariaLabel={ariaLabel}
-        enableVoice
-        inputRef={searchInputRef}
-      />
+      {showDropdown ? (
+        <div
+          className="c-cima-search__backdrop"
+          aria-hidden="true"
+          onClick={() => setIsOpen(false)}
+        />
+      ) : null}
+
+      <div className="c-cima-search__field">
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          placeholder={placeholder}
+          ariaLabel={ariaLabel}
+          enableVoice
+          inputRef={searchInputRef}
+        />
+      </div>
+
       {showDropdown ? (
         <div className="c-cima-search__dropdown" role="listbox" aria-label="Resultados CIMA">
           {error ? (
@@ -119,30 +151,39 @@ export function CimaSearchDropdown({
             <p className="c-cima-search__msg">Sin resultados.</p>
           ) : (
             <ul className="c-cima-search__list">
-              {results.slice(0, 8).map((item) => (
-                <li key={item.nregist} className="c-cima-search__item">
-                  <button
-                    type="button"
-                    className="c-cima-search__item-body"
-                    onClick={() => handleOpen(item)}
-                  >
-                    <p className="c-cima-search__item-name">{item.nombre}</p>
-                    {item.pactivos ? (
-                      <p className="c-cima-search__item-meta">{item.pactivos}</p>
-                    ) : null}
-                  </button>
-                  {canMutate ? (
+              {results.slice(0, 8).map((item) => {
+                const dose = formatDose(item);
+                return (
+                  <li key={item.nregist} className="c-cima-search__item">
                     <button
                       type="button"
-                      className="c-cima-search__add"
-                      onClick={() => handleAdd(item)}
-                      aria-label={`Añadir ${item.nombre} al botiquín`}
+                      className="c-cima-search__item-body"
+                      onClick={() => handleOpen(item)}
+                      aria-label={`Ver ficha de ${item.nombre}`}
                     >
-                      <TbPlus aria-hidden="true" />
+                      <span className="c-cima-search__item-icon" aria-hidden="true">
+                        <TbPill />
+                      </span>
+                      <span className="c-cima-search__item-text">
+                        <span className="c-cima-search__item-name">{item.nombre}</span>
+                        {dose ? (
+                          <span className="c-cima-search__item-meta">{dose}</span>
+                        ) : null}
+                      </span>
                     </button>
-                  ) : null}
-                </li>
-              ))}
+                    {canMutate ? (
+                      <button
+                        type="button"
+                        className="c-cima-search__add"
+                        onClick={() => handleAdd(item)}
+                        aria-label={`Añadir ${item.nombre} al botiquín`}
+                      >
+                        <TbPlus aria-hidden="true" />
+                      </button>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

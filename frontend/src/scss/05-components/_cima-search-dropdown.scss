@@ -1,23 +1,44 @@
 // =============================================================================
-// CimaSearchDropdown — buscador de medicamentos en CIMA con dropdown flotante.
+// CimaSearchDropdown — buscador de medicamentos en CIMA con dropdown flotante
+// estilo "mini-cards" sobre un backdrop oscurecido.
 // =============================================================================
 
 .c-cima-search {
   position: relative;
   width: 100%;
 
+  // Backdrop oscurecido que cubre toda la pantalla cuando el dropdown está
+  // abierto. Mantenemos el campo de búsqueda y el dropdown por encima del
+  // backdrop con `z-index` mayor.
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 18;
+    animation: c-cima-search-fade-in var(--transition-fast, 150ms) ease-out;
+  }
+
+  &__field {
+    position: relative;
+    z-index: 21;
+  }
+
   &__dropdown {
     position: absolute;
-    top: calc(100% + var(--space-1));
+    // Pequeña separación visual respecto al input para reforzar la idea
+    // de "lista de resultados" como capa independiente.
+    top: calc(100% + var(--space-3));
     left: 0;
     right: 0;
     z-index: 20;
     background-color: var(--color-surface);
-    border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg, 0 12px 28px rgba(0, 0, 0, 0.18));
     max-height: min(60vh, 28rem);
     overflow-y: auto;
+    padding: var(--space-2);
+    animation: c-cima-search-fade-in var(--transition-fast, 150ms) ease-out;
   }
 
   &__msg {
@@ -34,26 +55,35 @@
   &__list {
     list-style: none;
     margin: 0;
-    padding: var(--space-1);
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
+  // Mini-card por resultado: icono + texto (nombre + dosis) + botón "+".
   &__item {
     display: flex;
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-2) var(--space-3);
-    background-color: var(--color-surface);
+    background-color: var(--color-bg);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
   }
 
   &__item-body {
     flex: 1;
     min-width: 0;
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
     text-align: left;
     background: none;
     border: none;
@@ -66,6 +96,32 @@
       outline-offset: 2px;
       border-radius: var(--radius-sm);
     }
+  }
+
+  &__item-icon {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-primary-tint);
+    color: var(--color-primary);
+    border-radius: var(--radius-md);
+
+    & svg {
+      width: 1.4rem;
+      height: 1.4rem;
+      stroke-width: 1.6;
+    }
+  }
+
+  &__item-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
   &__item-name {
@@ -113,4 +169,9 @@
       outline-offset: 2px;
     }
   }
+}
+
+@keyframes c-cima-search-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
