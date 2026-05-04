@@ -14,9 +14,8 @@
   &__selected {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
-    background-color: var(--color-primary-tint);
 
-    &-name { margin: 0; font-weight: var(--font-weight-semibold); color: var(--color-primary); }
+    &-name { margin: 0; font-weight: var(--font-weight-semibold); color: var(--color-text); }
     &-meta { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }
   }
 
