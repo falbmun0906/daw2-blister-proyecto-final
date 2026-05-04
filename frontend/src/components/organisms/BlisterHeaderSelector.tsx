@@ -8,7 +8,7 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 
-const BLISTER_SELECTOR_TIP_STORAGE_KEY = 'blister-header-selector-tip';
+const BLISTER_SELECTOR_TIP_STORAGE_KEY = 'blister-header-selector-tip-v2';
 
 function buildTipKey(userId: string | null): string | null {
   return userId ? `${BLISTER_SELECTOR_TIP_STORAGE_KEY}:${userId}` : null;
@@ -33,7 +33,7 @@ export function BlisterHeaderSelector() {
 
   useEffect(() => {
     const tipKey = buildTipKey(userId);
-    if (!tipKey || isOpen || blisters.length < 2) {
+    if (!tipKey || isOpen || !currentBlister) {
       setShowTip(false);
       return;
     }
@@ -42,7 +42,7 @@ export function BlisterHeaderSelector() {
       return;
     }
     setShowTip(true);
-  }, [blisters.length, isOpen, userId]);
+  }, [currentBlister, isOpen, userId]);
 
   const dismissTip = (): void => {
     const tipKey = buildTipKey(userId);

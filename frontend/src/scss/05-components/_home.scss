@@ -323,3 +323,9 @@
     border-bottom-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
   }
 }
+
+@media (min-width: 64rem) {
+  .c-home-next__time {
+    font-weight: var(--font-weight-regular);
+  }
+}

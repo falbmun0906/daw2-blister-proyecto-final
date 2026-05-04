@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 
 import { usePageTitleStore } from '../stores/page-title.store';
 
@@ -11,7 +11,7 @@ export function usePageTitle(title: string): void {
   const setTitle = usePageTitleStore((s) => s.setTitle);
   const clear = usePageTitleStore((s) => s.clear);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setTitle(title);
     return () => clear();
   }, [title, setTitle, clear]);
