@@ -62,8 +62,9 @@
             .c-auth-layout__inner {
                 /* la card mantiene el gris interior */
                 background-color: var(--color-bg); // gris de la app
-                min-height: 38rem;
-                max-height: 42rem;
+                height: 100%;
+                min-height: 100%;
+                max-height: none;
                 display: flex;
                 align-items: stretch;
                 justify-content: center;

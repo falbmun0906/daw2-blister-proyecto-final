@@ -202,6 +202,12 @@
       scrollbar-width: none;
     }
 
+    .c-auth-layout__inner--plain {
+      padding-inline: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
     .c-auth-layout__inner::-webkit-scrollbar {
       display: none;
     }
