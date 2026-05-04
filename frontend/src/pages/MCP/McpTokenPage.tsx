@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TbCopy, TbEye, TbEyeOff, TbSparkles } from 'react-icons/tb';
 
 import { Button } from '../../components/atoms/Button';
+import { Modal } from '../../components/atoms/Modal';
 import { VITE_API_URL } from '../../constants/api.constants';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { createMcpToken, revokeMcpToken } from '../../services/mcp.service';
@@ -181,44 +182,33 @@ function McpTokenPage() {
         Revocar todos los accesos
       </button>
 
-      {showRevokeModal ? (
-        <div
-          className="c-mcp-token-page__modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="mcp-revoke-title"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) setShowRevokeModal(false);
-          }}
-        >
-          <div className="c-mcp-token-page__modal">
-            <h3 id="mcp-revoke-title" className="c-mcp-token-page__modal-title">
-              ¿Revocar accesos de IA?
-            </h3>
-            <p className="c-mcp-token-page__modal-description">
-              Esta acción desconectará Blíster de Claude, ChatGPT y cualquier otro asistente
-              vinculado. Tendrás que generar un nuevo token para volver a conectarlos.
-            </p>
-            <div className="c-mcp-token-page__modal-actions">
-              <Button
-                type="button"
-                variant="primary-outline"
-                onClick={() => setShowRevokeModal(false)}
-              >
-                Cancelar
-              </Button>
-              <button
-                type="button"
-                className="c-mcp-token-page__modal-confirm"
-                onClick={() => void handleRevoke()}
-                disabled={isRevoking}
-              >
-                {isRevoking ? 'Revocando…' : 'Sí, revocar accesos'}
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={showRevokeModal}
+        title="¿Revocar accesos de IA?"
+        onClose={() => setShowRevokeModal(false)}
+      >
+        <p className="c-mcp-token-page__modal-description">
+          Esta acción desconectará Blíster de Claude, ChatGPT y cualquier otro asistente
+          vinculado. Tendrás que generar un nuevo token para volver a conectarlos.
+        </p>
+        <div className="c-mcp-token-page__modal-actions">
+          <Button
+            type="button"
+            variant="primary-outline"
+            onClick={() => setShowRevokeModal(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            loading={isRevoking}
+            onClick={() => void handleRevoke()}
+          >
+            Sí, revocar accesos
+          </Button>
         </div>
-      ) : null}
+      </Modal>
     </section>
   );
 }
