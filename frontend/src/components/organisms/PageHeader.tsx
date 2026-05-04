@@ -68,7 +68,7 @@ const resolveParentRoute = (
 
   if (pathname === ROUTES.createBlister || pathname === ROUTES.joinBlister) return ROUTES.blisters;
   if (pathname === ROUTES.blisters) return ROUTES.profile;
-  if (pathname === ROUTES.editProfile || pathname === ROUTES.changePassword || pathname === ROUTES.profileAvatar || pathname === ROUTES.accessibility || pathname === ROUTES.mcpToken) return ROUTES.profile;
+  if (pathname === ROUTES.editProfile || pathname === ROUTES.changePassword || pathname === ROUTES.profileAvatar || pathname === ROUTES.accessibility || pathname === ROUTES.mcpToken || pathname === ROUTES.settings) return ROUTES.profile;
   if (pathname === ROUTES.personalInfo) return ROUTES.editProfile;
   if (pathname === ROUTES.mcpTokenRevoke) return ROUTES.mcpToken;
   if (pathname === ROUTES.profile) return ROUTES.home;

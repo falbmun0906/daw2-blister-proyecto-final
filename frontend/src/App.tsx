@@ -37,6 +37,7 @@ import AvatarPage from './pages/Profile/AvatarPage'
 import AccessibilityPage from './pages/Accessibility/AccessibilityPage'
 import McpTokenPage from './pages/MCP/McpTokenPage'
 import McpTokenRevokePage from './pages/MCP/McpTokenRevokePage'
+import PrivacyPage from './pages/Privacy/PrivacyPage'
 
 function App() {
   return (
@@ -102,7 +103,7 @@ function App() {
             <Route path={ROUTES.accessibility} element={<AccessibilityPage />} />
             <Route path={ROUTES.mcpToken} element={<McpTokenPage />} />
             <Route path={ROUTES.mcpTokenRevoke} element={<McpTokenRevokePage />} />
-            <Route path={ROUTES.settings} element={<PlaceholderPage />} />
+            <Route path={ROUTES.settings} element={<PrivacyPage />} />
             <Route path={ROUTES.mcp} element={<PlaceholderPage />} />
           </Route>
         </Route>

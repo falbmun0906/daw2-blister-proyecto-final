@@ -1,0 +1,62 @@
+.c-privacy-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-2);
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-snug);
+    color: var(--color-text);
+  }
+
+  &__intro {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-muted);
+  }
+
+  &__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  &__section-title {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+
+  &__section-body {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-muted);
+  }
+}
