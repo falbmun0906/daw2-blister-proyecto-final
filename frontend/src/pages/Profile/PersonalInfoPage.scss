@@ -47,4 +47,21 @@
     min-height: 3rem;
     padding-block: var(--space-3);
   }
+
+  &__unsaved {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    p {
+      margin: 0;
+      color: var(--color-text-muted);
+    }
+  }
+
+  &__unsaved-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
 }

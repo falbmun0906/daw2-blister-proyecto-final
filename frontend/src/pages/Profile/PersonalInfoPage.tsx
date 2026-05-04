@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { TbPencil } from 'react-icons/tb';
@@ -7,8 +8,9 @@ import { z } from 'zod';
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
+import { Modal } from '../../components/atoms/Modal';
 import { ROUTES } from '../../constants/routes';
-import { usePageTitle } from '../../hooks/use.page-title';
+import { usePageBackOverride, usePageTitle } from '../../hooks/use.page-title';
 import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -38,12 +40,14 @@ function PersonalInfoPage() {
   const updateUser = useAuthStore((s) => s.updateUser);
   const addToast = useUiStore((s) => s.addToast);
   const navigate = useNavigate();
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingRoute, setPendingRoute] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty, isSubmitting },
   } = useForm<PersonalInfoFormValues>({
     resolver: zodResolver(personalInfoSchema),
     defaultValues: {
@@ -52,6 +56,25 @@ function PersonalInfoPage() {
       email: user?.email ?? '',
     },
   });
+
+  const leavePage = useCallback((route: string): void => {
+    navigate(route);
+  }, [navigate]);
+
+  const requestLeave = useCallback((route: string = ROUTES.editProfile): void => {
+    if (isDirty) {
+      setPendingRoute(route);
+      setShowUnsavedModal(true);
+      return;
+    }
+    leavePage(route);
+  }, [isDirty, leavePage]);
+
+  const handleBack = useCallback(() => {
+    requestLeave(ROUTES.editProfile);
+  }, [requestLeave]);
+
+  usePageBackOverride(handleBack);
 
   if (!user) return null;
 
@@ -99,6 +122,11 @@ function PersonalInfoPage() {
           to={ROUTES.profileAvatar}
           className="c-personal-info-page__avatar-edit"
           aria-label="Cambiar avatar"
+          onClick={(event) => {
+            if (!isDirty) return;
+            event.preventDefault();
+            requestLeave(ROUTES.profileAvatar);
+          }}
         >
           <TbPencil className="c-icon c-icon--sm" aria-hidden="true" />
         </Link>
@@ -145,6 +173,28 @@ function PersonalInfoPage() {
           Guardar cambios
         </Button>
       </form>
+
+      <Modal
+        open={showUnsavedModal}
+        title="Cambios sin guardar"
+        onClose={() => setShowUnsavedModal(false)}
+      >
+        <div className="c-personal-info-page__unsaved">
+          <p>Has cambiado tu información personal, pero todavía no la has guardado.</p>
+          <div className="c-personal-info-page__unsaved-actions">
+            <Button type="button" variant="primary-outline" onClick={() => setShowUnsavedModal(false)}>
+              Seguir editando
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => leavePage(pendingRoute ?? ROUTES.editProfile)}
+            >
+              Salir sin guardar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 }
