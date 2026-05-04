@@ -112,6 +112,18 @@
     &:hover  { background-color: var(--color-error-hover); border-color: var(--color-error-hover); }
   }
 
+  &--terracotta {
+    background-color: var(--color-accent);
+    color: var(--color-text-on-primary);
+    border-color: transparent;
+
+    &:hover,
+    &:active {
+      background-color: color-mix(in srgb, var(--color-accent) 88%, #000);
+      border-color: transparent;
+    }
+  }
+
   // ── Tamaños ────────────────────────────────────────────────────────────
 
   &--sm {
@@ -174,7 +186,8 @@
 .c-forgot-password-page {
   .c-btn--primary,
   .c-btn--secondary,
-  .c-btn--primary-outline {
+  .c-btn--primary-outline,
+  .c-btn--terracotta {
     text-transform: uppercase;
     letter-spacing: var(--tracking-wide);
     font-size: var(--text-base);

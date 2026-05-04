@@ -11,6 +11,7 @@ import {
   TbLock,
   TbCheck,
   TbKey,
+  TbCircle,
 } from 'react-icons/tb';
 
 import { registerSchema } from '../../../../shared/schemas/auth.schema';
@@ -83,6 +84,29 @@ const getFieldError = (error: FieldError | undefined): string | undefined => {
   return error.message ? translateValidationMessage(error.message) : undefined;
 };
 
+const PASSWORD_REQUIREMENTS = [
+  {
+    label: '8 caracteres',
+    test: (value: string) => value.trim().length >= 8,
+  },
+  {
+    label: 'Una mayúscula',
+    test: (value: string) => /[A-ZÁÉÍÓÚÜÑ]/.test(value),
+  },
+  {
+    label: 'Una minúscula',
+    test: (value: string) => /[a-záéíóúüñ]/.test(value),
+  },
+  {
+    label: 'Un número',
+    test: (value: string) => /\d/.test(value),
+  },
+  {
+    label: 'Un símbolo',
+    test: (value: string) => /[^\p{L}\p{N}\s]/u.test(value),
+  },
+];
+
 const applyApiFieldErrors = (
   details: unknown,
   setError: ReturnType<typeof useForm<RegisterFormValues>>['setError'],
@@ -111,6 +135,7 @@ function RegisterPage() {
     register,
     handleSubmit,
     setError,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -127,6 +152,7 @@ function RegisterPage() {
       inviteCode: '',
     },
   });
+  const passwordValue = watch('password') ?? '';
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
@@ -221,6 +247,24 @@ function RegisterPage() {
             <InfoTooltip content="Mínimo 8 caracteres. Debe incluir mayúscula, minúscula, número y símbolo." />
           }
         />
+        <ul className="c-register-page__password-feedback" aria-label="Requisitos de contraseña">
+          {PASSWORD_REQUIREMENTS.map((requirement) => {
+            const isMet = requirement.test(passwordValue);
+            return (
+              <li
+                key={requirement.label}
+                className={isMet ? 'is-met' : undefined}
+              >
+                {isMet ? (
+                  <TbCheck aria-hidden="true" />
+                ) : (
+                  <TbCircle aria-hidden="true" />
+                )}
+                <span>{requirement.label}</span>
+              </li>
+            );
+          })}
+        </ul>
 
         <Input
           label="Confirmar contraseña"

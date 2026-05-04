@@ -16,7 +16,7 @@ type OnboardingSlide = {
   image?: string;
   isWelcome?: boolean;
   isLast?: boolean;
-  variant?: 'primary' | 'primary-outline';
+  variant?: 'primary' | 'primary-outline' | 'terracotta';
   highlight?: string;          // palabra o frase a colorear
   headingLevel?: 'h1' | 'h2';  // para controlar la semántica
 };
@@ -59,7 +59,7 @@ const SLIDES: OnboardingSlide[] = [
     ctaLabel: 'EMPEZAR AHORA',
     image: '/onboarding-5.png',
     isLast: true,
-    variant: 'primary-outline',
+    variant: 'terracotta',
     highlight: 'Habla',
     headingLevel: 'h2',
   },
