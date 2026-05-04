@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
@@ -50,6 +50,56 @@ const getErrorMessage = (code: string | undefined): string => {
   }
 };
 
+const FIELD_ERROR_LABELS: Record<string, keyof RegisterFormValues> = {
+  name: 'name',
+  username: 'username',
+  email: 'email',
+  password: 'password',
+  confirmPassword: 'confirmPassword',
+  privacyConsent: 'privacyConsent',
+  ageConfirmed: 'ageConfirmed',
+  inviteCode: 'inviteCode',
+};
+
+const translateValidationMessage = (message: string): string => {
+  const translations: Record<string, string> = {
+    'Password must include an uppercase letter.': 'La contraseña debe incluir una mayúscula.',
+    'Password must include a lowercase letter.': 'La contraseña debe incluir una minúscula.',
+    'Password must include a number.': 'La contraseña debe incluir un número.',
+    'Password must include a symbol.': 'La contraseña debe incluir un símbolo.',
+    'Passwords do not match.': 'Las contraseñas no coinciden.',
+    'Email must be valid.': 'Introduce un correo válido.',
+    'Username contains invalid characters.': 'Solo minúsculas, números y . _ -.',
+  };
+  return translations[message] ?? message;
+};
+
+const getFieldError = (error: FieldError | undefined): string | undefined => {
+  if (!error) return undefined;
+  const messages = error.types
+    ? Object.values(error.types).filter((value): value is string => typeof value === 'string')
+    : [];
+  if (messages.length > 0) return messages.map(translateValidationMessage).join(' ');
+  return error.message ? translateValidationMessage(error.message) : undefined;
+};
+
+const applyApiFieldErrors = (
+  details: unknown,
+  setError: ReturnType<typeof useForm<RegisterFormValues>>['setError'],
+): boolean => {
+  if (!Array.isArray(details)) return false;
+  let applied = false;
+  for (const detail of details) {
+    if (typeof detail !== 'string') continue;
+    const [field, ...messageParts] = detail.split(': ');
+    const fieldName = FIELD_ERROR_LABELS[field];
+    if (!fieldName) continue;
+    setError(fieldName, { type: 'server', message: translateValidationMessage(messageParts.join(': ')) });
+    applied = true;
+  }
+  return applied;
+};
+
 function RegisterPage() {
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
@@ -60,9 +110,12 @@ function RegisterPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    mode: 'onChange',
+    criteriaMode: 'all',
     defaultValues: {
       name: '',
       username: '',
@@ -94,7 +147,8 @@ function RegisterPage() {
       navigate(ROUTES.home, { replace: true });
     } catch (error) {
       if (isApiError(error)) {
-        setGlobalError(getErrorMessage(error.code));
+        const hasFieldErrors = applyApiFieldErrors(error.details, setError);
+        setGlobalError(hasFieldErrors ? null : getErrorMessage(error.code));
       } else {
         setGlobalError('Ha ocurrido un error inesperado.');
       }
@@ -128,7 +182,7 @@ function RegisterPage() {
           type="text"
           autoComplete="name"
           {...register('name')}
-          error={errors.name?.message}
+          error={getFieldError(errors.name)}
           icon={<TbUserCircle className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
@@ -138,7 +192,7 @@ function RegisterPage() {
           type="text"
           autoComplete="username"
           {...register('username')}
-          error={errors.username?.message}
+          error={getFieldError(errors.username)}
           icon={<TbUser className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
             <InfoTooltip content="Solo minúsculas, números y los caracteres . _ -. Entre 3 y 50 caracteres." />
@@ -151,7 +205,7 @@ function RegisterPage() {
           type="email"
           autoComplete="email"
           {...register('email')}
-          error={errors.email?.message}
+          error={getFieldError(errors.email)}
           icon={<TbMail className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
@@ -161,7 +215,7 @@ function RegisterPage() {
           type="password"
           autoComplete="new-password"
           {...register('password')}
-          error={errors.password?.message}
+          error={getFieldError(errors.password)}
           icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
             <InfoTooltip content="Mínimo 8 caracteres. Debe incluir mayúscula, minúscula, número y símbolo." />
@@ -174,7 +228,7 @@ function RegisterPage() {
           type="password"
           autoComplete="new-password"
           {...register('confirmPassword')}
-          error={errors.confirmPassword?.message}
+          error={getFieldError(errors.confirmPassword)}
           icon={<TbCheck className="c-icon c-icon--md" aria-hidden="true" />}
         />
 
@@ -183,7 +237,7 @@ function RegisterPage() {
           placeholder="ABC12345"
           type="text"
           {...register('inviteCode')}
-          error={errors.inviteCode?.message}
+          error={getFieldError(errors.inviteCode)}
           icon={<TbKey className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
             <InfoTooltip content="Si alguien te ha compartido un blíster familiar, introduce aquí el código que ha generado." />
@@ -213,7 +267,7 @@ function RegisterPage() {
 
           {(errors.privacyConsent || errors.ageConfirmed) && (
             <p className="c-register-page__error-message">
-              {errors.privacyConsent?.message || errors.ageConfirmed?.message}
+              {getFieldError(errors.privacyConsent) || getFieldError(errors.ageConfirmed)}
             </p>
           )}
         </div>

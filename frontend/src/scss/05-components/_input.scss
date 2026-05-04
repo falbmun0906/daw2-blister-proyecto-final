@@ -102,14 +102,8 @@
       background-color: var(--color-surface-tinted);
     }
 
-    &[type='date'] {
-      min-width: 0;
-      padding-right: var(--space-input-x);
-      text-align: left;
-      -webkit-appearance: none;
-      appearance: none;
-    }
-
+    &[type='date'],
+    &[type='time'],
     &[type='datetime-local'] {
       min-width: 0;
       padding-right: var(--space-input-x);
@@ -119,12 +113,14 @@
     }
 
     &[type='date']::-webkit-date-and-time-value,
+    &[type='time']::-webkit-date-and-time-value,
     &[type='datetime-local']::-webkit-date-and-time-value {
       min-width: 0;
       text-align: left;
     }
 
     &[type='date']::-webkit-calendar-picker-indicator,
+    &[type='time']::-webkit-calendar-picker-indicator,
     &[type='datetime-local']::-webkit-calendar-picker-indicator {
       width: 1.25rem;
       height: 1.25rem;
@@ -221,4 +217,13 @@
       padding-inline: var(--space-5);
     }
   }
+}
+
+[data-theme='dark'] .c-field__input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+[data-theme='dark'] .c-field__label-icon,
+[data-theme='dark'] .c-form-section__icon {
+  color: var(--color-text-on-primary);
 }

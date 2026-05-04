@@ -27,7 +27,7 @@ const formSchema = z.object({
   alias: z.string().trim().max(100).optional(),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
   threshold: z.coerce.number().int().min(0, 'El umbral no puede ser negativo.'),
-  expDate: z.string().min(1, 'La fecha de caducidad es obligatoria.'),
+  expDate: z.string().optional(),
 });
 type FormValues = z.infer<typeof formSchema>;
 
@@ -60,7 +60,7 @@ function EditMedicinePage() {
     ?.members.find((member) => member.userId === userId)
     ?.role ?? null;
 
-  const { register, handleSubmit, control, reset, setError, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { alias: '', stock: 0, threshold: 0, expDate: '' },
   });
@@ -100,20 +100,13 @@ function EditMedicinePage() {
 
   const onSubmit = async (data: FormValues) => {
     setSubmitError(null);
-    if (!data.expDate) {
-      setError('expDate', {
-        type: 'manual',
-        message: 'La fecha de caducidad es obligatoria.',
-      });
-      return;
-    }
 
     try {
       const updated = await updateMedicine(blisterId, medicineId, {
         alias: data.alias || undefined,
         stock: data.stock,
         threshold: data.threshold,
-        expDate: new Date(data.expDate),
+        expDate: data.expDate ? new Date(data.expDate) : undefined,
       });
       upsertMedicine(updated);
       await refreshNotifications();

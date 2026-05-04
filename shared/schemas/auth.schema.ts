@@ -36,11 +36,11 @@ export const authProfileSchema = userSchema;
 const passwordSchema = z
   .string()
   .trim()
-  .min(8, 'Password must be at least 8 characters long.')
-  .regex(/[A-Z]/, 'Password must include an uppercase letter.')
-  .regex(/[a-z]/, 'Password must include a lowercase letter.')
-  .regex(/\d/, 'Password must include a number.')
-  .regex(/[^\w\s]/, 'Password must include a symbol.');
+  .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+  .regex(/[A-ZÁÉÍÓÚÜÑ]/, 'La contraseña debe incluir una mayúscula.')
+  .regex(/[a-záéíóúüñ]/, 'La contraseña debe incluir una minúscula.')
+  .regex(/\d/, 'La contraseña debe incluir un número.')
+  .regex(/[^\p{L}\p{N}\s]/u, 'La contraseña debe incluir un símbolo.');
 
 // inviteCode es opcional: si llega vacío, se transforma a undefined y no se valida.
 // Si llega con contenido, se normaliza a mayúsculas y se valida el formato.
