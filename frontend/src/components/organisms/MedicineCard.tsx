@@ -1,5 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { TbAlertTriangle, TbFileText, TbChevronRight, TbPencil } from 'react-icons/tb';
+import { Link } from 'react-router-dom';
+import { TbAlertTriangle, TbFileText, TbChevronRight } from 'react-icons/tb';
 
 import { ROUTES } from '../../constants/routes';
 import type { Medicine } from '../../types/medicine.types';
@@ -35,25 +35,17 @@ function formatExpiry(iso: string): string {
 /**
  * Tarjeta de medicamento con estructura visual:
  *   - Header (fondo tinte primario, esquinas superiores redondeadas):
- *     icono + nombre + lápiz editar + chevron a detalle.
+ *     icono + nombre + chevron a detalle.
  *   - Body: cantidad, caducidad y banderas de contraindicación
  *     (conducción, triángulo amarillo de farmacovigilancia).
  *
- * Toda la tarjeta es enlace al detalle salvo el botón de editar.
+ * Toda la tarjeta es enlace al detalle.
  */
 export function MedicineCard({ medicine, blisterId }: MedicineCardProps) {
-  const navigate = useNavigate();
   const days = daysUntil(medicine.expDate);
   const displayName = medicine.alias?.trim() || medicine.nombre;
   const expiryDate = formatExpiry(medicine.expDate);
   const expiredOrWarning = days < 0 || days <= 30;
-
-  const handleEdit = (event: React.MouseEvent) => {
-    // Evita navegar al detalle al pulsar el lápiz (tarjeta-link).
-    event.preventDefault();
-    event.stopPropagation();
-    navigate(ROUTES.editMedicine(blisterId, medicine._id));
-  };
 
   return (
     <Link
@@ -66,14 +58,6 @@ export function MedicineCard({ medicine, blisterId }: MedicineCardProps) {
           <MedicineIcon type={medicine.iconType} size="sm" />
         </span>
         <span className="c-medicine-card__name">{displayName}</span>
-        <button
-          type="button"
-          className="c-medicine-card__edit"
-          onClick={handleEdit}
-          aria-label={`Editar ${displayName}`}
-        >
-          <TbPencil className="c-icon c-icon--sm" aria-hidden="true" />
-        </button>
         <span className="c-medicine-card__chevron" aria-hidden="true">
           <TbChevronRight className="c-icon c-icon--sm" aria-hidden="true" />
         </span>

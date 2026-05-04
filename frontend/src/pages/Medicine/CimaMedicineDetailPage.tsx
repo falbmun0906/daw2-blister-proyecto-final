@@ -201,7 +201,7 @@ function CimaMedicineDetailPage() {
                 rel="noreferrer"
               >
                 <TbInfoCircle aria-hidden="true" />
-                <span>Prospecto</span>
+                <span>Detalles</span>
               </a>
             ) : null}
             <button

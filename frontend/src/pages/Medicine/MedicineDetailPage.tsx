@@ -133,7 +133,7 @@ function MedicineDetailPage() {
               )}
             </span>
             <div className="c-medicine-detail-page__hero-body">
-              <h2 className="c-medicine-detail-page__name">{medicine.alias?.trim() || medicine.nombre}</h2>
+              <h1 id="medicine-detail-title" className="c-medicine-detail-page__name">{medicine.alias?.trim() || medicine.nombre}</h1>
               {medicine.alias?.trim() ? (
                 <p className="c-medicine-detail-page__official">{medicine.nombre}</p>
               ) : null}
@@ -192,7 +192,7 @@ function MedicineDetailPage() {
                 className="c-btn--card"
                 onClick={() => navigate(ROUTES.cimaMedicineDetail(medicine.nregist))}
               >
-                <TbExternalLink aria-hidden="true" /> Prospecto
+                <TbExternalLink aria-hidden="true" /> Detalles
               </Button>
               <Link
                 to={`${ROUTES.medicineDetail(blisterId, medicine._id)}/edit`}
