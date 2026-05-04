@@ -37,6 +37,21 @@ const userSettingsSchema = new Schema<UserDocument['settings']>(
       maxlength: 100,
       default: undefined,
     },
+    notifications: {
+      pushEnabled: { type: Boolean, required: true, default: false },
+      stock: { type: Boolean, required: true, default: true },
+      expiration: { type: Boolean, required: true, default: true },
+      cima: { type: Boolean, required: true, default: true },
+      adherence: { type: Boolean, required: true, default: true },
+      appointments: { type: Boolean, required: true, default: true },
+      appointmentReminderPreset: {
+        type: String,
+        enum: ['3h', '12h', '1d', 'custom'],
+        required: true,
+        default: '3h',
+      },
+      customAppointmentReminderHours: { type: Number, required: true, min: 1, max: 168, default: 3 },
+    },
   },
   {
     _id: false,

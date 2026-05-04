@@ -6,6 +6,7 @@ export const STOCK_UNITS = ['pastillas', 'ml', 'gotas', 'dosis', 'sobres', 'g'] 
 export const ICON_TYPES = ['pill', 'capsule', 'liquid', 'cream', 'inhaler', 'syringe', 'generic'] as const;
 export const NOTIFICATION_TYPES = [
   'stock_low',
+  'stock_depleted',
   'expiration_warning',
   'adherence_forced',
   'cima_change',

@@ -37,6 +37,16 @@ describe('blister and settings shared schemas', () => {
       theme: 'system',
       font: 'dyslexic',
       fontSize: 'large',
+      notifications: {
+        pushEnabled: true,
+        stock: true,
+        expiration: true,
+        cima: true,
+        adherence: true,
+        appointments: true,
+        appointmentReminderPreset: '1d',
+        customAppointmentReminderHours: 24,
+      },
     });
 
     expect(parsed.font).toBe('dyslexic');

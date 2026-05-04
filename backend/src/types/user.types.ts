@@ -15,6 +15,16 @@ export interface UserSettings {
   font: FontOption;
   fontSize: FontSizeOption;
   avatarKey?: string;
+  notifications: {
+    pushEnabled: boolean;
+    stock: boolean;
+    expiration: boolean;
+    cima: boolean;
+    adherence: boolean;
+    appointments: boolean;
+    appointmentReminderPreset: '3h' | '12h' | '1d' | 'custom';
+    customAppointmentReminderHours: number;
+  };
 }
 
 export interface UserDocument {

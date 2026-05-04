@@ -16,6 +16,7 @@ interface ProfileLinkItem {
 const PROFILE_LINKS: ProfileLinkItem[] = [
   { to: ROUTES.blisters, label: 'Mis blísteres' },
   { to: ROUTES.editProfile, label: 'Editar perfil' },
+  { to: ROUTES.notificationSettings, label: 'Notificaciones' },
   { to: ROUTES.mcpToken, label: 'Vincular Asistente de IA (MCP)' },
   { to: ROUTES.accessibility, label: 'Accesibilidad' },
   { to: ROUTES.settings, label: 'Privacidad' },

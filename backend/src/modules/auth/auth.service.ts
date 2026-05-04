@@ -190,6 +190,16 @@ const createDefaultSettings = (): UserSettings => ({
   theme: THEME_OPTIONS[2],
   font: FONT_OPTIONS[0],
   fontSize: FONT_SIZE_OPTIONS[0],
+  notifications: {
+    pushEnabled: false,
+    stock: true,
+    expiration: true,
+    cima: true,
+    adherence: true,
+    appointments: true,
+    appointmentReminderPreset: '3h',
+    customAppointmentReminderHours: 3,
+  },
 });
 
 /**

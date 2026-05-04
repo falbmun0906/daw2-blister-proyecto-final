@@ -10,7 +10,7 @@ export const getNotificationTargetRoute = (notification: NotificationView): stri
   const blisterId = notification.blisterId;
   const medicineId = getStringMetadata(notification, 'medicineId');
 
-  if ((notification.type === 'stock_low' || notification.type === 'expiration_warning') && blisterId && medicineId) {
+  if ((notification.type === 'stock_low' || notification.type === 'stock_depleted' || notification.type === 'expiration_warning') && blisterId && medicineId) {
     return ROUTES.editMedicine(blisterId, medicineId);
   }
 

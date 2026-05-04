@@ -34,6 +34,7 @@ import EditProfilePage from './pages/Profile/EditProfilePage'
 import PersonalInfoPage from './pages/Profile/PersonalInfoPage'
 import ChangePasswordPage from './pages/Profile/ChangePasswordPage'
 import AvatarPage from './pages/Profile/AvatarPage'
+import NotificationSettingsPage from './pages/Profile/NotificationSettingsPage'
 import AccessibilityPage from './pages/Accessibility/AccessibilityPage'
 import McpTokenPage from './pages/MCP/McpTokenPage'
 import McpTokenRevokePage from './pages/MCP/McpTokenRevokePage'
@@ -100,6 +101,7 @@ function App() {
             <Route path={ROUTES.personalInfo} element={<PersonalInfoPage />} />
             <Route path={ROUTES.changePassword} element={<ChangePasswordPage />} />
             <Route path={ROUTES.profileAvatar} element={<AvatarPage />} />
+            <Route path={ROUTES.notificationSettings} element={<NotificationSettingsPage />} />
             <Route path={ROUTES.accessibility} element={<AccessibilityPage />} />
             <Route path={ROUTES.mcpToken} element={<McpTokenPage />} />
             <Route path={ROUTES.mcpTokenRevoke} element={<McpTokenRevokePage />} />

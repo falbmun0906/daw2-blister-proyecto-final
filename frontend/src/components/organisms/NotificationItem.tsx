@@ -20,6 +20,7 @@ interface NotificationItemProps {
 
 const TYPE_ICONS: Record<NotificationView['type'], typeof TbBell> = {
   stock_low: TbPackage,
+  stock_depleted: TbAlertTriangle,
   expiration_warning: TbCalendarTime,
   adherence_forced: TbPill,
   cima_change: TbAlertTriangle,

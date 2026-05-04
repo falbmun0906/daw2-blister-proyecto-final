@@ -5,6 +5,8 @@ import {
   listNotifications,
   markNotificationAsRead,
 } from '../services/notifications.service';
+import { mirrorUnreadNotificationsToPush } from '../lib/push-notifications';
+import { useAuthStore } from '../stores/auth.store';
 import { useNotificationsStore } from '../stores/notifications.store';
 import { isApiError } from '../types/api.types';
 import type {
@@ -37,6 +39,7 @@ export function useNotifications(
 ): UseNotificationsResult {
   const { page = 1, limit = 20 } = options;
   const notifications = useNotificationsStore((s) => s.notifications);
+  const userSettings = useAuthStore((s) => s.user?.settings ?? null);
   const setNotifications = useNotificationsStore((s) => s.setNotifications);
   const markRead = useNotificationsStore((s) => s.markRead);
   const removeNotification = useNotificationsStore((s) => s.remove);
@@ -51,6 +54,7 @@ export function useNotifications(
       const result = await listNotifications(page, limit);
       setNotifications(result.notifications);
       setMeta(result.meta);
+      await mirrorUnreadNotificationsToPush(result.notifications, userSettings);
     } catch (err) {
       const message = isApiError(err)
         ? err.message
@@ -59,7 +63,7 @@ export function useNotifications(
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, setNotifications]);
+  }, [page, limit, setNotifications, userSettings]);
 
   useEffect(() => {
     void refetch();
@@ -121,9 +125,11 @@ export function useNotifications(
 /** Refresca el buzÃ³n global para que badges y cabecera reaccionen tras mutaciones de dominio. */
 export function useRefreshNotifications(): () => Promise<void> {
   const setNotifications = useNotificationsStore((s) => s.setNotifications);
+  const userSettings = useAuthStore((s) => s.user?.settings ?? null);
 
   return useCallback(async () => {
     const result = await listNotifications(1, 20);
     setNotifications(result.notifications);
-  }, [setNotifications]);
+    await mirrorUnreadNotificationsToPush(result.notifications, userSettings);
+  }, [setNotifications, userSettings]);
 }

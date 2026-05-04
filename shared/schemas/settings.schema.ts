@@ -6,11 +6,23 @@ import {
   themeOptions,
 } from './schema.constants';
 
+export const notificationSettingsSchema = z.object({
+  pushEnabled: z.boolean(),
+  stock: z.boolean(),
+  expiration: z.boolean(),
+  cima: z.boolean(),
+  adherence: z.boolean(),
+  appointments: z.boolean(),
+  appointmentReminderPreset: z.enum(['3h', '12h', '1d', 'custom']),
+  customAppointmentReminderHours: z.number().int().positive().max(168),
+});
+
 export const settingsSchema = z.object({
   theme: z.enum(themeOptions),
   font: z.enum(fontOptions),
   fontSize: z.enum(fontSizeOptions),
   avatarKey: z.string().trim().min(1).max(100).optional(),
+  notifications: notificationSettingsSchema,
 });
 
 export const updateSettingsSchema = settingsSchema.partial().refine(

@@ -125,7 +125,7 @@ const swaggerSpec = swaggerJSDoc({
             },
             type: {
               type: 'string',
-              enum: ['stock_low', 'expiration_warning', 'adherence_forced', 'cima_change', 'system'],
+              enum: ['stock_low', 'stock_depleted', 'expiration_warning', 'adherence_forced', 'cima_change', 'system'],
             },
             severity: {
               type: 'string',

@@ -38,6 +38,7 @@ export const ROUTES = {
   changePassword: '/profile/password',
   profileAvatar: '/profile/avatar',
   accessibility: '/profile/accessibility',
+  notificationSettings: '/profile/notifications',
   mcpToken: '/profile/mcp',
   mcpTokenRevoke: '/profile/mcp/revoke',
   settings: '/settings',

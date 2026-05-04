@@ -133,12 +133,27 @@ const buildStockLowNotification = (
   userId,
   blisterId: medicine.blisterId,
   type: 'stock_low',
-  severity: medicine.stock === 0 ? 'critical' : 'warning',
-  title: medicine.stock === 0 ? 'Stock agotado' : 'Stock bajo',
-  message:
-    medicine.stock === 0
-      ? `El medicamento ${medicine.nombre} se ha quedado sin stock.`
-      : `El medicamento ${medicine.nombre} ha alcanzado el umbral minimo de stock.`,
+  severity: 'warning',
+  title: 'Stock bajo',
+  message: `El medicamento ${medicine.nombre} ha alcanzado el umbral minimo de stock.`,
+  metadata: {
+    medicineId: medicine._id.toString(),
+    threshold: medicine.threshold,
+    currentStock: medicine.stock,
+    stockUnit: medicine.stockUnit,
+  },
+});
+
+const buildStockDepletedNotification = (
+  userId: Types.ObjectId,
+  medicine: MedicineDocument,
+): DomainNotificationInput => ({
+  userId,
+  blisterId: medicine.blisterId,
+  type: 'stock_depleted',
+  severity: 'critical',
+  title: 'Stock agotado',
+  message: `El medicamento ${medicine.nombre} se ha quedado sin stock.`,
   metadata: {
     medicineId: medicine._id.toString(),
     threshold: medicine.threshold,
@@ -275,13 +290,14 @@ export const notifyStockLow = async (
   }
 
   const recipientIds = getRecipientIdsByRoles(blister, STOCK_ALERT_ROLES);
+  const notificationType = medicine.stock === 0 ? 'stock_depleted' : 'stock_low';
   const duplicateChecks = await Promise.all(
     recipientIds.map(async (userId) => ({
       userId,
       exists: await hasRecentUnreadNotification({
         blisterId: blister._id,
         userId,
-        type: 'stock_low',
+        type: notificationType,
         metadataFilters: {
           medicineId: medicine._id.toString(),
         },
@@ -292,7 +308,11 @@ export const notifyStockLow = async (
   await createNotifications(
     duplicateChecks
       .filter((check) => !check.exists)
-      .map((check) => buildStockLowNotification(check.userId, medicine)),
+      .map((check) =>
+        notificationType === 'stock_depleted'
+          ? buildStockDepletedNotification(check.userId, medicine)
+          : buildStockLowNotification(check.userId, medicine),
+      ),
   );
 };
 
