@@ -55,7 +55,8 @@ export function BlisterPillSelector({
       setIndicator(null);
       return;
     }
-    const node = list.children.item(activeIdx) as HTMLElement | null;
+    const items = list.querySelectorAll<HTMLElement>(':scope > .c-blister-pill-selector__item');
+    const node = items.item(activeIdx);
     if (!node) return;
     setIndicator({ left: node.offsetLeft, width: node.offsetWidth });
   }, [activeBlisterId, slots]);

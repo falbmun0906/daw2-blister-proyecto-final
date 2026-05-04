@@ -1,7 +1,6 @@
-// La página gestiona su propio header (icono botiquín + título centrado),
-// así que neutraliza el padding-top del shell de AppLayout y aporta el suyo.
+// La página conserva su padding horizontal propio y hereda el espacio superior
+// del AppLayout para alinear el buscador con Home.
 .c-app-layout:has(.c-inventory-page) .c-app-layout__main {
-  padding-top: 0;
   padding-inline: 0;
 }
 
