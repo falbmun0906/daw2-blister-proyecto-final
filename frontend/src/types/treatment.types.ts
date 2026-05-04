@@ -10,5 +10,6 @@ export interface TreatmentMedicineEntry {
   medicineId: string;
   amount: number;
   frequencyHours: number;
+  isRecurring: boolean;
   note?: string | null;
 }

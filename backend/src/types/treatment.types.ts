@@ -4,6 +4,7 @@ export interface TreatmentMedicineEntry {
   medicineId: Types.ObjectId;
   amount: number;
   frequencyHours: number;
+  isRecurring?: boolean;
   note?: string | null;
 }
 

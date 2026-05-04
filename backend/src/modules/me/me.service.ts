@@ -164,16 +164,24 @@ export const meUpcomingDoses = async (
     if (!blister) continue;
 
     for (const entry of treatment.medicines) {
-      const occurrences = computeDosesInRange(
-        {
-          startDate: treatment.startDate as Date,
-          endDate: (treatment.endDate as Date | null | undefined) ?? null,
-          active: Boolean(treatment.active),
-        },
-        entry.frequencyHours,
-        query.from,
-        query.to,
-      );
+      const source = {
+        startDate: treatment.startDate as Date,
+        endDate: (treatment.endDate as Date | null | undefined) ?? null,
+        active: Boolean(treatment.active),
+      };
+      const singleDoseInRange =
+        source.active &&
+        source.startDate >= query.from &&
+        source.startDate <= query.to &&
+        (!source.endDate || source.startDate <= source.endDate);
+      const occurrences = entry.isRecurring === false
+        ? (singleDoseInRange ? [source.startDate] : [])
+        : computeDosesInRange(
+            source,
+            entry.frequencyHours,
+            query.from,
+            query.to,
+          );
 
       for (const doseAt of occurrences) {
         const doseKey = [

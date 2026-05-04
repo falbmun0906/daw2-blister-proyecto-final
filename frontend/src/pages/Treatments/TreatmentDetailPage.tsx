@@ -107,7 +107,7 @@ function TreatmentMedicineCard({
         <header className="c-treatment-detail__medicine-header">
           <h3 className="c-treatment-detail__medicine-name">{name}</h3>
           <span className="c-treatment-detail__medicine-dose">
-            {entry.amount} unidad(es) · cada {entry.frequencyHours} h
+            {entry.amount} unidad(es) · {entry.isRecurring ? `cada ${entry.frequencyHours} h` : 'toma única'}
           </span>
         </header>
 
@@ -291,6 +291,7 @@ function TreatmentDetailPage() {
             medicineId: item.medicineId,
             amount: item.amount,
             frequencyHours: item.frequencyHours,
+            isRecurring: item.isRecurring,
             note: item.medicineId === medicineId ? nextNote || undefined : item.note ?? undefined,
           })),
         });

@@ -22,6 +22,7 @@ interface TreatmentMedicineView {
   medicineId: string;
   amount: number;
   frequencyHours: number;
+  isRecurring: boolean;
   note: string | null;
 }
 
@@ -59,6 +60,7 @@ const toTreatmentView = (treatment: Awaited<ReturnType<typeof TreatmentModel.fin
     medicineId: entry.medicineId.toString(),
     amount: entry.amount,
     frequencyHours: entry.frequencyHours,
+    isRecurring: entry.isRecurring ?? true,
     note: entry.note ?? null,
   })),
   startDate: treatment!.startDate,
@@ -202,6 +204,7 @@ export const treatmentsCreate = async (
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
       frequencyHours: entry.frequencyHours,
+      isRecurring: entry.isRecurring,
       note: entry.note ?? null,
     })),
     startDate: input.startDate,
@@ -236,6 +239,7 @@ export const treatmentsUpdate = async (
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
       frequencyHours: entry.frequencyHours,
+      isRecurring: entry.isRecurring,
       note: entry.note ?? null,
     }));
   }

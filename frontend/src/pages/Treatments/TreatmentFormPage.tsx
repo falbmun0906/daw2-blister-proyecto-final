@@ -29,9 +29,23 @@ interface FormValues {
   title: string;
   description: string;
   startDate: string;
+  startTime: string;
   endDate: string;
   active: boolean;
-  medicines: { medicineId: string; amount: number; frequencyHours: number; note: string }[];
+  medicines: { medicineId: string; amount: number; frequencyHours: number; isRecurring: boolean; note: string }[];
+}
+
+function toLocalParts(value: Date): { date: string; time: string } {
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60 * 1000);
+  return {
+    date: local.toISOString().slice(0, 10),
+    time: local.toISOString().slice(11, 16),
+  };
+}
+
+function defaultStartParts(): { date: string; time: string } {
+  const now = new Date();
+  return toLocalParts(now);
 }
 
 function toFormValues(
@@ -39,27 +53,32 @@ function toFormValues(
   fallbackPatientUserId = '',
 ): FormValues {
   if (!treatment) {
+    const start = defaultStartParts();
     return {
       patientUserId: fallbackPatientUserId,
       title: '',
       description: '',
-      startDate: new Date().toISOString().slice(0, 10),
+      startDate: start.date,
+      startTime: start.time,
       endDate: '',
       active: true,
-      medicines: [{ medicineId: '', amount: 1, frequencyHours: 8, note: '' }],
+      medicines: [{ medicineId: '', amount: 1, frequencyHours: 8, isRecurring: true, note: '' }],
     };
   }
+  const start = toLocalParts(new Date(treatment.startDate));
   return {
     patientUserId: treatment.patientUserId,
     title: treatment.title,
     description: treatment.description ?? '',
-    startDate: treatment.startDate.slice(0, 10),
+    startDate: start.date,
+    startTime: start.time,
     endDate: treatment.endDate ? treatment.endDate.slice(0, 10) : '',
     active: treatment.active,
     medicines: treatment.medicines.map((entry) => ({
       medicineId: entry.medicineId,
       amount: entry.amount,
       frequencyHours: entry.frequencyHours,
+      isRecurring: entry.isRecurring,
       note: entry.note ?? '',
     })),
   };
@@ -70,8 +89,8 @@ function buildPayload(values: FormValues): CreateTreatmentInput {
     patientUserId: values.patientUserId,
     title: values.title,
     description: values.description || undefined,
-    startDate: values.startDate,
-    endDate: values.endDate ? values.endDate : undefined,
+    startDate: `${values.startDate}T${values.startTime || '08:00'}`,
+    endDate: values.endDate ? `${values.endDate}T23:59` : undefined,
     active: values.active,
     medicines: values.medicines.map((entry) => ({
       ...entry,
@@ -120,8 +139,9 @@ function TreatmentFormPage() {
   const form = useForm<FormValues>({
     defaultValues: toFormValues(null, defaultPatientUserId),
   });
-  const { register, handleSubmit, control, reset, setError, formState } = form;
+  const { register, handleSubmit, control, reset, setError, watch, formState } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'medicines' });
+  const watchedMedicines = watch('medicines');
 
   useEffect(() => {
     if (target) reset(toFormValues(target, defaultPatientUserId));
@@ -238,12 +258,18 @@ function TreatmentFormPage() {
           </label>
         </FormSection>
 
-        <FormSection label="Duración" icon={<TbCalendar />}>
+        <FormSection label="Inicio y primera toma" icon={<TbCalendar />}>
           <Input
             type="date"
-            label="Inicio"
+            label="Día de inicio"
             error={formState.errors.startDate?.message}
             {...register('startDate')}
+          />
+          <Input
+            type="time"
+            label="Hora primera toma"
+            error={formState.errors.startTime?.message}
+            {...register('startTime')}
           />
           <Input
             type="date"
@@ -259,59 +285,85 @@ function TreatmentFormPage() {
           icon={<TbPill />}
         >
           {medsLoading ? <Skeleton height="2rem" /> : null}
-          {fields.map((field, index) => (
-            <div key={field.id} className="c-treatment-form-page__med-row">
-              <label className="c-field">
-                <span className="c-field__label">
-                  <span className="c-field__label-text">Medicamento</span>
-                </span>
-                <select
-                  className="c-field__select"
-                  {...register(`medicines.${index}.medicineId` as const)}
-                >
-                  <option value="">Selecciona…</option>
-                  {medicines.map((m) => (
-                    <option key={m._id} value={m._id}>
-                      {m.alias?.trim() || m.nombre}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Input
-                type="number"
-                label="Cantidad"
-                min={1}
-                {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
-              />
-              <Input
-                type="number"
-                label="Frecuencia (h)"
-                min={1}
-                {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
-              />
-              <label className="c-field c-treatment-form-page__med-note">
-                <span className="c-field__label">
-                  <span className="c-field__label-text">Nota</span>
-                </span>
-                <textarea
-                  className="c-field__textarea"
-                  maxLength={300}
-                  rows={3}
-                  placeholder="Ej. Tomar con comida"
-                  {...register(`medicines.${index}.note` as const)}
+          {fields.map((field, index) => {
+            const isRecurring = watchedMedicines?.[index]?.isRecurring ?? true;
+            return (
+              <div key={field.id} className="c-treatment-form-page__med-row">
+                <div className="c-treatment-form-page__med-row-header">
+                  <p className="c-treatment-form-page__med-row-title">Medicamento {index + 1}</p>
+                  {fields.length > 1 ? (
+                    <Button
+                      variant="danger"
+                      type="button"
+                      className="c-btn--sm"
+                      onClick={() => remove(index)}
+                    >
+                      Quitar
+                    </Button>
+                  ) : null}
+                </div>
+                <label className="c-field">
+                  <span className="c-field__label">
+                    <span className="c-field__label-text">Medicamento</span>
+                  </span>
+                  <select
+                    className="c-field__select"
+                    {...register(`medicines.${index}.medicineId` as const)}
+                  >
+                    <option value="">Selecciona…</option>
+                    {medicines.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.alias?.trim() || m.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Input
+                  type="number"
+                  label="Cantidad"
+                  min={1}
+                  {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
                 />
-              </label>
-              {fields.length > 1 ? (
-                <Button variant="ghost" type="button" onClick={() => remove(index)}>
-                  Quitar
-                </Button>
-              ) : null}
-            </div>
-          ))}
+                <label className="c-treatment-form-page__active c-treatment-form-page__active--compact">
+                  <input type="checkbox" {...register(`medicines.${index}.isRecurring` as const)} />
+                  <span className="c-treatment-form-page__active-control" aria-hidden="true" />
+                  <span className="c-treatment-form-page__active-copy">
+                    <span>Toma recurrente</span>
+                    <small>{isRecurring ? 'Se repetirá según la frecuencia.' : 'Solo se registrará la primera toma.'}</small>
+                  </span>
+                </label>
+                {isRecurring ? (
+                  <Input
+                    type="number"
+                    label="Frecuencia (h)"
+                    min={1}
+                    {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
+                  />
+                ) : (
+                  <input
+                    type="hidden"
+                    {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
+                  />
+                )}
+                <label className="c-field c-treatment-form-page__med-note">
+                  <span className="c-field__label">
+                    <span className="c-field__label-text">Nota</span>
+                  </span>
+                  <textarea
+                    className="c-field__textarea"
+                    maxLength={300}
+                    rows={3}
+                    placeholder="Ej. Tomar con comida"
+                    {...register(`medicines.${index}.note` as const)}
+                  />
+                </label>
+              </div>
+            );
+          })}
           <Button
             variant="primary-outline"
             type="button"
-            onClick={() => append({ medicineId: '', amount: 1, frequencyHours: 8, note: '' })}
+            onClick={() => append({ medicineId: '', amount: 1, frequencyHours: 8, isRecurring: true, note: '' })}
           >
             Añadir medicamento
           </Button>

@@ -19,6 +19,11 @@ const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number
       required: true,
       min: 1,
     },
+    isRecurring: {
+      type: Boolean,
+      required: true,
+      default: true,
+    },
     note: {
       type: String,
       trim: true,
