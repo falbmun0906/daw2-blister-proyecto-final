@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../../constants/routes';
@@ -87,10 +87,12 @@ function renderTitle(slide: OnboardingSlide) {
 
 function OnboardingPage() {
     const [currentSlide, setCurrentSlide] = useState(0);
+    const swipeStart = useRef<{ x: number; y: number } | null>(null);
     const setHasSeenOnboarding = useUiStore((state) => state.setHasSeenOnboarding);
     const navigate = useNavigate();
 
     const slide = SLIDES[currentSlide] ?? SLIDES[0];
+    const navTone = currentSlide === 0 || slide.isLast ? 'dark' : 'light';
 
     const completeOnboarding = useCallback(() => {
         setHasSeenOnboarding(true);
@@ -106,11 +108,32 @@ function OnboardingPage() {
         setCurrentSlide((value) => Math.min(value + 1, SLIDES.length - 1));
     }, [completeOnboarding, slide.isLast]);
 
+    const handlePrevious = useCallback(() => {
+        setCurrentSlide((value) => Math.max(value - 1, 0));
+    }, []);
+
     const handleSkip = useCallback(() => {
         completeOnboarding();
     }, [completeOnboarding]);
 
-    const isOverlaySkip = !slide.isWelcome && !slide.isLast;
+    const handlePointerDown = (event: React.PointerEvent<HTMLElement>): void => {
+        if ((event.target as HTMLElement).closest('button, a, input, textarea, select')) return;
+        swipeStart.current = { x: event.clientX, y: event.clientY };
+    };
+
+    const handlePointerUp = (event: React.PointerEvent<HTMLElement>): void => {
+        if (!swipeStart.current) return;
+        const deltaX = event.clientX - swipeStart.current.x;
+        const deltaY = event.clientY - swipeStart.current.y;
+        swipeStart.current = null;
+
+        if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+        if (deltaX < 0) {
+            handleNext();
+            return;
+        }
+        handlePrevious();
+    };
 
     return (
         <AuthLayout
@@ -121,19 +144,38 @@ function OnboardingPage() {
             <section
                 className="c-onboarding-page__slide"
                 aria-label={`Pantalla ${currentSlide + 1} de ${SLIDES.length}`}
+                data-nav-tone={navTone}
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={() => {
+                    swipeStart.current = null;
+                }}
             >
                 <header className="c-onboarding-page__header">
-                    <button
-                        type="button"
-                        className={
-                            'c-onboarding-page__skip-btn' +
-                            (isOverlaySkip ? ' c-onboarding-page__skip-btn--overlay' : '')
-                        }
-                        onClick={handleSkip}
-                        aria-label="Omitir onboarding"
-                    >
-                        Omitir
-                    </button>
+                    {currentSlide > 0 ? (
+                        <button
+                            type="button"
+                            className="c-onboarding-page__nav-btn c-onboarding-page__back-btn"
+                            onClick={handlePrevious}
+                            aria-label="Volver a la pantalla anterior"
+                        >
+                            Volver
+                        </button>
+                    ) : (
+                        <span className="c-onboarding-page__header-spacer" aria-hidden="true" />
+                    )}
+                    {!slide.isLast ? (
+                        <button
+                            type="button"
+                            className="c-onboarding-page__nav-btn c-onboarding-page__skip-btn"
+                            onClick={handleSkip}
+                            aria-label="Omitir onboarding"
+                        >
+                            Omitir
+                        </button>
+                    ) : (
+                        <span className="c-onboarding-page__header-spacer" aria-hidden="true" />
+                    )}
                 </header>
 
                 {slide.isWelcome ? (
@@ -179,11 +221,13 @@ function OnboardingPage() {
                         onSelect={setCurrentSlide}
                     />
                     <Button
+                        key={slide.id}
                         type="button"
                         variant={slide.variant ?? 'primary'}
                         fullWidth
                         className="c-onboarding-page__cta"
                         onClick={handleNext}
+                        onPointerUp={(event) => event.currentTarget.blur()}
                     >
                         {slide.ctaLabel}
                     </Button>
