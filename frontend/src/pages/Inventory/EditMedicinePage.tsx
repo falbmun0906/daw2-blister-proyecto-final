@@ -60,7 +60,7 @@ function EditMedicinePage() {
     ?.members.find((member) => member.userId === userId)
     ?.role ?? null;
 
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, control, reset, setError, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { alias: '', stock: 0, threshold: 0, expDate: '' },
   });
@@ -100,6 +100,14 @@ function EditMedicinePage() {
 
   const onSubmit = async (data: FormValues) => {
     setSubmitError(null);
+    if (!data.expDate) {
+      setError('expDate', {
+        type: 'manual',
+        message: 'La fecha de caducidad es obligatoria.',
+      });
+      return;
+    }
+
     try {
       const updated = await updateMedicine(blisterId, medicineId, {
         alias: data.alias || undefined,
@@ -141,7 +149,7 @@ function EditMedicinePage() {
           <Skeleton height="3rem" />
         </div>
       ) : (
-        <form className="c-add-medicine-page__form" onSubmit={handleSubmit(onSubmit)}>
+        <form className="c-add-medicine-page__form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="c-add-medicine-page__selected">
             <p className="c-add-medicine-page__selected-name">{medicine.nombre}</p>
             <p className="c-add-medicine-page__selected-meta">{medicine.pactivos}</p>
