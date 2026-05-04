@@ -25,8 +25,10 @@ interface UseAdherenceResult {
    * convierte en error genérico ni se muestra toast).
    */
   logDose: (input: CreateAdherenceLogInput) => Promise<AdherenceLog>;
-  /** Solo posible dentro de la ventana de undo (10 min). */
+  logDoseInBlister: (targetBlisterId: string, input: CreateAdherenceLogInput) => Promise<AdherenceLog>;
+  /** Solo posible dentro de la ventana de undo. */
   undoLog: (logId: string) => Promise<void>;
+  undoLogInBlister: (targetBlisterId: string, logId: string) => Promise<void>;
 }
 
 /**
@@ -83,6 +85,15 @@ export function useAdherence(blisterIdOverride?: string | null): UseAdherenceRes
     [blisterId, addLog],
   );
 
+  const logDoseInBlister = useCallback(
+    async (targetBlisterId: string, input: CreateAdherenceLogInput) => {
+      const created = await logDoseRequest(targetBlisterId, input);
+      addLog(created);
+      return created;
+    },
+    [addLog],
+  );
+
   const undoLog = useCallback(
     async (logId: string) => {
       if (!blisterId) return;
@@ -92,5 +103,22 @@ export function useAdherence(blisterIdOverride?: string | null): UseAdherenceRes
     [blisterId, removeLog],
   );
 
-  return { logs, isLoading, error, refetch, logDose, undoLog };
+  const undoLogInBlister = useCallback(
+    async (targetBlisterId: string, logId: string) => {
+      await undoLogRequest(targetBlisterId, logId);
+      removeLog(logId);
+    },
+    [removeLog],
+  );
+
+  return {
+    logs,
+    isLoading,
+    error,
+    refetch,
+    logDose,
+    logDoseInBlister,
+    undoLog,
+    undoLogInBlister,
+  };
 }

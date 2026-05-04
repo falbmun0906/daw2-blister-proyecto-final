@@ -39,7 +39,7 @@ export async function logDose(
   return adherenceLogSchema.parse(normalizeApiResponse(response));
 }
 
-/** Elimina (deshace) un log dentro de la ventana permitida (10 min). */
+/** Elimina (deshace) un log dentro de la ventana permitida. */
 export async function undoLog(blisterId: string, logId: string): Promise<void> {
   await apiClient.delete(`/blisters/${blisterId}/logs/${logId}`);
 }

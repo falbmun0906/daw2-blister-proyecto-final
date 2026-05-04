@@ -64,6 +64,11 @@
     }
   }
 
+  &__close-spacer {
+    width: 2rem;
+    height: 2rem;
+  }
+
   &__body {
     padding: var(--space-4);
     display: flex;

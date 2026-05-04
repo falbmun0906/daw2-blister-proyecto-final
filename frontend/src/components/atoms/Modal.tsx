@@ -8,6 +8,7 @@ interface ModalProps {
   title?: string;
   /** Si `true`, oculta la cabecera con título + cerrar. */
   hideHeader?: boolean;
+  hideCloseButton?: boolean;
   /** Si `true`, no permite cerrar haciendo clic en el fondo. */
   disableBackdropClose?: boolean;
   children: React.ReactNode;
@@ -25,6 +26,7 @@ export function Modal({
   onClose,
   title,
   hideHeader,
+  hideCloseButton,
   disableBackdropClose,
   children,
   ariaLabel,
@@ -77,14 +79,18 @@ export function Modal({
             ) : (
               <span aria-hidden="true" />
             )}
-            <button
-              type="button"
-              className="c-modal__close"
-              onClick={onClose}
-              aria-label="Cerrar"
-            >
-              <TbX aria-hidden="true" />
-            </button>
+            {hideCloseButton ? (
+              <span className="c-modal__close-spacer" aria-hidden="true" />
+            ) : (
+              <button
+                type="button"
+                className="c-modal__close"
+                onClick={onClose}
+                aria-label="Cerrar"
+              >
+                <TbX aria-hidden="true" />
+              </button>
+            )}
           </header>
         ) : null}
         <div className="c-modal__body">{children}</div>

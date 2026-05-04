@@ -12,6 +12,7 @@ export const upcomingDoseSchema = z.object({
   blisterAvatarKey: z.string().nullable(),
   patientUserId: objectIdSchema,
   patientName: z.string(),
+  patientAvatarKey: z.string().nullable(),
   treatmentId: objectIdSchema,
   treatmentTitle: z.string(),
   medicineId: objectIdSchema,

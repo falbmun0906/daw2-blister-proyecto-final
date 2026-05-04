@@ -9,16 +9,18 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Modal } from '../../components/atoms/Modal';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
-import { UndoToast } from '../../components/molecules/UndoToast';
 import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
 import { useBlisters } from '../../hooks/use.blisters';
-import { useMedicines } from '../../hooks/use.medicines';
 import { useRefreshNotifications } from '../../hooks/use.notifications';
+import { ADHERENCE_UNDO_WINDOW_MS } from '../../constants/ui.constants';
 import { ROUTES } from '../../constants/routes';
+import { listMedicines } from '../../services/medicines.service';
 import { getUpcomingDoses, type UpcomingDose } from '../../services/me.service';
+import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
+import type { Medicine } from '../../types/medicine.types';
 
 interface HomeTimelineItem {
   key: string;
@@ -27,13 +29,24 @@ interface HomeTimelineItem {
   medicineName: string;
   detail: string;
   avatarName: string;
+  avatarKey: string | null;
+  avatarTooltip: string;
   dose?: UpcomingDose;
 }
 
 interface ActiveUndo {
   logId: string;
+  blisterId: string;
   createdAt: number;
-  message: string;
+  medicineName: string;
+  treatmentTitle: string;
+  patientName: string;
+  patientAvatarKey: string | null;
+  doseAt: string;
+}
+
+interface HomeMedicine extends Medicine {
+  blisterName: string;
 }
 
 const EARLY_DOSE_GRACE_MS = 5 * 60 * 1000;
@@ -61,6 +74,75 @@ function formatTodayLabel(): string {
   }).format(new Date());
 }
 
+function formatRemaining(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+interface InlineUndoDoseProps {
+  undo: ActiveUndo;
+  onUndo: (logId: string) => void;
+  onExpire: (logId: string) => void;
+}
+
+function InlineUndoDose({ undo, onUndo, onExpire }: InlineUndoDoseProps) {
+  const expiresAt = undo.createdAt + ADHERENCE_UNDO_WINDOW_MS;
+  const [remaining, setRemaining] = useState(() => Math.max(0, expiresAt - Date.now()));
+  const date = new Date(undo.doseAt);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const next = Math.max(0, expiresAt - Date.now());
+      setRemaining(next);
+      if (next <= 0) {
+        window.clearInterval(interval);
+        onExpire(undo.logId);
+      }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [expiresAt, onExpire, undo.logId]);
+
+  if (remaining <= 0) return null;
+
+  return (
+    <li className="c-home-next__item c-home-next__item--taken c-home-next__item--undo">
+      <span className="c-home-next__time">{timeFormatter.format(date)}</span>
+      <span className="c-home-next__marker" aria-hidden="true">
+        <TbCheck className="c-icon c-icon--sm" aria-hidden="true" />
+      </span>
+      <article className="c-home-next__card c-home-next__card--undo">
+        <header className="c-home-next__card-header">
+          <span className="c-home-next__card-name">{undo.medicineName}</span>
+          <span title={undo.patientName}>
+            <Avatar
+              name={undo.patientName}
+              avatarKey={undo.patientAvatarKey ?? undefined}
+              size="sm"
+            />
+          </span>
+        </header>
+        <p className="c-home-next__card-detail">
+          Registrada ahora · {undo.treatmentTitle}
+        </p>
+        <div className="c-home-next__undo-actions">
+          <span className="c-home-next__undo-timer" aria-label="Tiempo restante para deshacer">
+            {formatRemaining(remaining)}
+          </span>
+          <button
+            type="button"
+            className="c-home-next__btn c-home-next__btn--ghost"
+            onClick={() => onUndo(undo.logId)}
+          >
+            Deshacer
+          </button>
+        </div>
+      </article>
+    </li>
+  );
+}
+
 /** Pantalla raíz autenticada. Muestra alertas y próximas dosis del blíster activo. */
 export default function HomePage() {
   const navigate = useNavigate();
@@ -68,10 +150,12 @@ export default function HomePage() {
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
   const blisters = useBlisterStore((s) => s.blisters);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const addToast = useUiStore((s) => s.addToast);
-  const { medicines, refetch: refetchMedicines } = useMedicines(activeBlisterId);
-  const { logDose, undoLog } = useAdherence(activeBlisterId);
+  const { logDoseInBlister, undoLogInBlister } = useAdherence(activeBlisterId);
   const refreshNotifications = useRefreshNotifications();
+  const [homeMedicines, setHomeMedicines] = useState<HomeMedicine[]>([]);
+  const [homeMedicinesLoading, setHomeMedicinesLoading] = useState(false);
   const [upcomingDoses, setUpcomingDoses] = useState<UpcomingDose[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [upcomingError, setUpcomingError] = useState<string | null>(null);
@@ -79,16 +163,28 @@ export default function HomePage() {
   const [earlyDose, setEarlyDose] = useState<UpcomingDose | null>(null);
   const [activeUndos, setActiveUndos] = useState<ActiveUndo[]>([]);
   const [dismissedLowStockAlertKey, setDismissedLowStockAlertKey] = useState<string | null>(null);
+  const [lowStockDismissCandidate, setLowStockDismissCandidate] = useState<string | null>(null);
 
   const todayLabel = useMemo(() => formatTodayLabel(), []);
   const lowStockMedicine = useMemo(
-    () => medicines.find((medicine) => medicine.stock <= medicine.threshold) ?? null,
-    [medicines],
+    () => homeMedicines.find((medicine) => medicine.stock <= medicine.threshold) ?? null,
+    [homeMedicines],
   );
   const lowStockAlertKey = lowStockMedicine
     ? `${lowStockMedicine._id}-${lowStockMedicine.stock}-${lowStockMedicine.threshold}`
     : null;
-  const showLowStockAlert = Boolean(lowStockMedicine && lowStockAlertKey !== dismissedLowStockAlertKey);
+  const showLowStockAlert = !homeMedicinesLoading && Boolean(lowStockMedicine && lowStockAlertKey !== dismissedLowStockAlertKey);
+  const searchBlister = useMemo(
+    () => blisters.find((blister) => blister._id === activeBlisterId) ?? blisters[0] ?? null,
+    [activeBlisterId, blisters],
+  );
+  const searchRole = useMemo(
+    () =>
+      searchBlister?.members.find((member) => member.userId === userId)?.role ??
+      (searchBlister?._id === activeBlisterId ? activeRole : null),
+    [activeBlisterId, activeRole, searchBlister, userId],
+  );
+  const canSearchBlisterMutate = searchRole === 'OWNER' || searchRole === 'CAREGIVER';
 
   const timelineItems = useMemo<HomeTimelineItem[]>(() => {
     const items = upcomingDoses.map<HomeTimelineItem>((dose, index) => ({
@@ -96,16 +192,50 @@ export default function HomePage() {
         status: index === 0 ? 'next' : 'pending',
         date: new Date(dose.doseAt),
         medicineName: dose.medicineName,
-        detail: `${dose.amount} unidad(es) · ${dose.treatmentTitle}`,
+        detail: `${dose.amount} unidad(es) · ${dose.treatmentTitle} · ${dose.blisterName}`,
         avatarName: dose.patientName || dose.blisterName,
+        avatarKey: dose.patientAvatarKey,
+        avatarTooltip: dose.patientName || dose.blisterName,
         dose,
       }));
 
     return items.slice(0, 4);
   }, [upcomingDoses]);
 
+  const refreshHomeMedicines = useCallback(async () => {
+    if (blisters.length === 0) {
+      setHomeMedicines([]);
+      return;
+    }
+
+    setHomeMedicinesLoading(true);
+    try {
+      const results = await Promise.all(
+        blisters.map(async (blister) => {
+          const items = await listMedicines(blister._id);
+          return items.map((medicine) => ({
+            ...medicine,
+            blisterName: blister.name,
+          }));
+        }),
+      );
+      setHomeMedicines(results.flat());
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se han podido cargar las alertas del botiquín.',
+        variant: 'error',
+      });
+    } finally {
+      setHomeMedicinesLoading(false);
+    }
+  }, [addToast, blisters]);
+
+  useEffect(() => {
+    void refreshHomeMedicines();
+  }, [refreshHomeMedicines]);
+
   const refreshUpcoming = useCallback(async () => {
-    if (!activeBlisterId) {
+    if (blisters.length === 0) {
       setUpcomingDoses([]);
       return;
     }
@@ -115,14 +245,14 @@ export default function HomePage() {
     setUpcomingLoading(true);
     setUpcomingError(null);
     try {
-      const list = await getUpcomingDoses({ from, to, blisterId: activeBlisterId });
+      const list = await getUpcomingDoses({ from, to });
       setUpcomingDoses(list.slice(0, 4));
     } catch (err) {
       setUpcomingError(isApiError(err) ? err.message : 'No se han podido cargar las próximas tomas.');
     } finally {
       setUpcomingLoading(false);
     }
-  }, [activeBlisterId]);
+  }, [blisters.length]);
 
   useEffect(() => {
     void refreshUpcoming();
@@ -136,21 +266,26 @@ export default function HomePage() {
     const key = `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`;
     setLoggingDoseKey(key);
     try {
-      const log = await logDose({
+      const log = await logDoseInBlister(dose.blisterId, {
         treatmentId: dose.treatmentId,
         medicineId: dose.medicineId,
         amount: dose.amount,
         timestamp: new Date(dose.doseAt),
       });
       setUpcomingDoses((prev) => prev.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key));
-      await Promise.all([refetchMedicines(), refreshUpcoming(), refreshNotifications()]);
+      await Promise.all([refreshHomeMedicines(), refreshUpcoming(), refreshNotifications()]);
       setActiveUndos((prev) => [
-        ...prev,
         {
           logId: log.id,
+          blisterId: dose.blisterId,
           createdAt: Date.now(),
-          message: `Toma registrada: ${dose.medicineName}.`,
+          medicineName: dose.medicineName,
+          treatmentTitle: dose.treatmentTitle,
+          patientName: dose.patientName || dose.blisterName,
+          patientAvatarKey: dose.patientAvatarKey,
+          doseAt: dose.doseAt,
         },
+        ...prev,
       ]);
     } catch (err) {
       const message = isStockInsufficientError(err)
@@ -172,10 +307,12 @@ export default function HomePage() {
   };
 
   const handleUndo = async (logId: string): Promise<void> => {
+    const undo = activeUndos.find((item) => item.logId === logId);
+    if (!undo) return;
     dismissUndoToast(logId);
     try {
-      await undoLog(logId);
-      await Promise.all([refetchMedicines(), refreshUpcoming()]);
+      await undoLogInBlister(undo.blisterId, logId);
+      await Promise.all([refreshHomeMedicines(), refreshUpcoming(), refreshNotifications()]);
       addToast({ message: 'Toma deshecha.', variant: 'success' });
     } catch (err) {
       addToast({
@@ -188,7 +325,7 @@ export default function HomePage() {
   if (isLoading) return <HomeSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => void refresh()} />;
 
-  if (!activeBlisterId || blisters.length === 0) {
+  if (blisters.length === 0) {
     return (
       <EmptyState
         title="Aún no tienes blísters"
@@ -204,11 +341,13 @@ export default function HomePage() {
   }
 
   return (
-    <section className="c-home" aria-label="Resumen del blíster activo">
-      <CimaSearchDropdown
-        blisterId={activeBlisterId}
-        canMutate={activeRole === 'OWNER' || activeRole === 'CAREGIVER'}
-      />
+    <section className="c-home" aria-label="Resumen de todos tus blísteres">
+      {searchBlister ? (
+        <CimaSearchDropdown
+          blisterId={searchBlister._id}
+          canMutate={canSearchBlisterMutate}
+        />
+      ) : null}
 
       {showLowStockAlert && lowStockMedicine && lowStockAlertKey ? (
         <article className="c-home-alert" role="alert">
@@ -218,19 +357,20 @@ export default function HomePage() {
           <div className="c-home-alert__body">
             <p className="c-home-alert__text">
               Quedan {lowStockMedicine.stock} {lowStockMedicine.stockUnit} de {lowStockMedicine.alias?.trim() || lowStockMedicine.nombre}
+              <span className="c-home-alert__context"> {lowStockMedicine.blisterName}</span>
             </p>
             <div className="c-home-alert__actions">
               <button
                 type="button"
                 className="c-home-alert__btn c-home-alert__btn--ghost"
-                onClick={() => setDismissedLowStockAlertKey(lowStockAlertKey)}
+                onClick={() => setLowStockDismissCandidate(lowStockAlertKey)}
               >
                 Descartar
               </button>
               <button
                 type="button"
                 className="c-home-alert__btn c-home-alert__btn--solid"
-                onClick={() => navigate(ROUTES.editMedicine(activeBlisterId, lowStockMedicine._id))}
+                onClick={() => navigate(ROUTES.editMedicine(lowStockMedicine.blisterId, lowStockMedicine._id))}
               >
                 Añadir más unidades
               </button>
@@ -252,13 +392,21 @@ export default function HomePage() {
             <Skeleton height="5rem" />
             <Skeleton height="5rem" />
           </div>
-        ) : timelineItems.length === 0 ? (
+        ) : timelineItems.length === 0 && activeUndos.length === 0 ? (
           <EmptyState
             title="Sin próximas tomas"
             description="Cuando haya tratamientos activos, sus próximas dosis aparecerán aquí."
           />
         ) : (
           <ol className="c-home-next__timeline">
+            {activeUndos.map((undo) => (
+              <InlineUndoDose
+                key={undo.logId}
+                undo={undo}
+                onUndo={(id) => void handleUndo(id)}
+                onExpire={dismissUndoToast}
+              />
+            ))}
             {timelineItems.map((item) => {
               return (
                 <li
@@ -280,7 +428,13 @@ export default function HomePage() {
                   <article className="c-home-next__card">
                     <header className="c-home-next__card-header">
                       <span className="c-home-next__card-name">{item.medicineName}</span>
-                      <Avatar name={item.avatarName} size="sm" />
+                      <span title={item.avatarTooltip}>
+                        <Avatar
+                          name={item.avatarName}
+                          avatarKey={item.avatarKey ?? undefined}
+                          size="sm"
+                        />
+                      </span>
                     </header>
 
                     <p className="c-home-next__card-detail">
@@ -319,6 +473,7 @@ export default function HomePage() {
       <Modal
         open={earlyDose !== null}
         title="Aún no es la hora"
+        hideCloseButton
         onClose={() => setEarlyDose(null)}
       >
         <p className="c-home__modal-text">
@@ -338,25 +493,35 @@ export default function HomePage() {
               void performLogDose(dose);
             }}
           >
-            Marcar como tomada
+            Tomar ahora
           </Button>
         </div>
       </Modal>
 
-      {activeUndos.length > 0 ? (
-        <div className="c-home__undo-stack" aria-live="polite">
-          {activeUndos.map((undo) => (
-            <UndoToast
-              key={undo.logId}
-              logId={undo.logId}
-              message={undo.message}
-              createdAt={undo.createdAt}
-              onUndo={(id) => void handleUndo(id)}
-              onExpire={dismissUndoToast}
-            />
-          ))}
+      <Modal
+        open={lowStockDismissCandidate !== null}
+        title="Descartar aviso de stock"
+        onClose={() => setLowStockDismissCandidate(null)}
+      >
+        <p className="c-home__modal-text">
+          Este aviso puede pertenecer a un tratamiento activo. Si lo descartas, dejará de mostrarse en Inicio hasta que cambie el stock o el umbral.
+        </p>
+        <div className="c-home__modal-actions">
+          <Button type="button" variant="primary-outline" onClick={() => setLowStockDismissCandidate(null)}>
+            Seguir avisando
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => {
+              if (lowStockDismissCandidate) setDismissedLowStockAlertKey(lowStockDismissCandidate);
+              setLowStockDismissCandidate(null);
+            }}
+          >
+            Descartar aviso
+          </Button>
         </div>
-      ) : null}
+      </Modal>
     </section>
   );
 }

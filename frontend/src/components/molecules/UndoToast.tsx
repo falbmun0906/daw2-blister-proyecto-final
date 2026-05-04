@@ -11,7 +11,7 @@ interface UndoToastProps {
   createdAt: number;
   /** Callback al pulsar "Deshacer". El padre llama a `undoLog(logId)`. */
   onUndo: (logId: string) => void;
-  /** Callback al expirar la ventana de 10 minutos. */
+  /** Callback al expirar la ventana de deshacer. */
   onExpire: (logId: string) => void;
 }
 

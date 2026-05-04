@@ -20,6 +20,7 @@ export interface UpcomingDoseItem {
   blisterAvatarKey: string | null;
   patientUserId: string;
   patientName: string;
+  patientAvatarKey: string | null;
   treatmentId: string;
   treatmentTitle: string;
   medicineId: string;
@@ -87,14 +88,27 @@ const findAccessibleBlisters = async (
     .filter((value): value is AccessibleBlisterContext => value !== null);
 };
 
-const buildPatientNameMap = async (userIds: Types.ObjectId[]): Promise<Map<string, string>> => {
+interface PatientView {
+  name: string;
+  avatarKey: string | null;
+}
+
+const buildPatientMap = async (userIds: Types.ObjectId[]): Promise<Map<string, PatientView>> => {
   if (userIds.length === 0) {
     return new Map();
   }
   const users = await UserModel.find({ _id: { $in: userIds } })
-    .select('name')
+    .select('name settings.avatarKey')
     .lean();
-  return new Map(users.map((user) => [user._id.toString(), user.name]));
+  return new Map(
+    users.map((user) => [
+      user._id.toString(),
+      {
+        name: user.name,
+        avatarKey: (user.settings?.avatarKey as string | undefined) ?? null,
+      },
+    ]),
+  );
 };
 
 /**
@@ -133,7 +147,7 @@ export const meUpcomingDoses = async (
       (medicine.alias as string | undefined) ?? medicine.nombre,
     ]),
   );
-  const patientNames = await buildPatientNameMap(
+  const patients = await buildPatientMap(
     treatments.map((treatment) => treatment.patientUserId as Types.ObjectId),
   );
   const takenDoseKeys = new Set(
@@ -176,7 +190,9 @@ export const meUpcomingDoses = async (
           blisterAvatarKey: blister.avatarKey,
           patientUserId: (treatment.patientUserId as Types.ObjectId).toString(),
           patientName:
-            patientNames.get((treatment.patientUserId as Types.ObjectId).toString()) ?? '',
+            patients.get((treatment.patientUserId as Types.ObjectId).toString())?.name ?? '',
+          patientAvatarKey:
+            patients.get((treatment.patientUserId as Types.ObjectId).toString())?.avatarKey ?? null,
           treatmentId: (treatment._id as Types.ObjectId).toString(),
           treatmentTitle: treatment.title as string,
           medicineId: (entry.medicineId as Types.ObjectId).toString(),
@@ -225,7 +241,7 @@ export const meCalendar = async (
 
   const [appointmentDocs, doses] = await Promise.all([appointmentsPromise, dosesPromise]);
 
-  const patientNames = await buildPatientNameMap(
+  const patients = await buildPatientMap(
     appointmentDocs.map((appointment) => appointment.patientUserId as Types.ObjectId),
   );
 
@@ -242,7 +258,7 @@ export const meCalendar = async (
         blisterAvatarKey: blister.avatarKey,
         patientUserId: (appointment.patientUserId as Types.ObjectId).toString(),
         patientName:
-          patientNames.get((appointment.patientUserId as Types.ObjectId).toString()) ?? '',
+          patients.get((appointment.patientUserId as Types.ObjectId).toString())?.name ?? '',
         treatmentId: appointment.treatmentId
           ? (appointment.treatmentId as Types.ObjectId).toString()
           : null,
