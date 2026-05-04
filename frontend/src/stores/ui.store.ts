@@ -18,6 +18,7 @@ interface UiState {
   hasSeenOnboarding: boolean;
   canReplayOnboarding: boolean;
   notificationsSheetOpen: boolean;
+  blisterSelectorOpen: boolean;
   addToast: (toast: Omit<ToastItem, 'id' | 'durationMs'> & { durationMs?: number }) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
@@ -26,6 +27,8 @@ interface UiState {
   disableOnboardingReplay: () => void;
   openNotificationsSheet: () => void;
   closeNotificationsSheet: () => void;
+  toggleBlisterSelector: () => void;
+  closeBlisterSelector: () => void;
 }
 
 const createToastId = (): string =>
@@ -38,6 +41,7 @@ export const useUiStore = create<UiState>()(
       hasSeenOnboarding: false,
       canReplayOnboarding: false,
       notificationsSheetOpen: false,
+      blisterSelectorOpen: false,
       addToast: ({ message, variant, durationMs = TOAST_DURATION_MS }) => {
         const id = createToastId();
         set((state) => ({
@@ -55,6 +59,9 @@ export const useUiStore = create<UiState>()(
       disableOnboardingReplay: () => set({ canReplayOnboarding: false }),
       openNotificationsSheet: () => set({ notificationsSheetOpen: true }),
       closeNotificationsSheet: () => set({ notificationsSheetOpen: false }),
+      toggleBlisterSelector: () =>
+        set((state) => ({ blisterSelectorOpen: !state.blisterSelectorOpen })),
+      closeBlisterSelector: () => set({ blisterSelectorOpen: false }),
     }),
     {
       name: 'blister-ui',

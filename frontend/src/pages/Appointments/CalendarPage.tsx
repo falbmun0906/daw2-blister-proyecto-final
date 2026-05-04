@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
+import { BlisterPageSelector } from '../../components/organisms/BlisterPageSelector';
 import { ROUTES } from '../../constants/routes';
 import { isStockInsufficientError, useAdherence } from '../../hooks/use.adherence';
 import { useAppointments } from '../../hooks/use.appointments';
@@ -383,6 +384,8 @@ function CalendarPage() {
 
   return (
     <section className="c-calendar-page" aria-label="Calendario">
+      <BlisterPageSelector />
+
       <div className="c-calendar-page__tabs" role="tablist" aria-label="Vistas del calendario">
         <button
           type="button"

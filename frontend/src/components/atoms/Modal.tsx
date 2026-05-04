@@ -6,9 +6,6 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  className?: string;
-  panelClassName?: string;
-  bodyClassName?: string;
   hideHeader?: boolean;
   hideCloseButton?: boolean;
   disableBackdropClose?: boolean;
@@ -20,9 +17,6 @@ export function Modal({
   open,
   onClose,
   title,
-  className,
-  panelClassName,
-  bodyClassName,
   hideHeader,
   hideCloseButton,
   disableBackdropClose,
@@ -55,7 +49,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className={['c-modal', className].filter(Boolean).join(' ')}
+      className="c-modal"
       role="dialog"
       aria-modal="true"
       aria-label={!title && ariaLabel ? ariaLabel : undefined}
@@ -64,10 +58,7 @@ export function Modal({
         if (!disableBackdropClose) onClose();
       }}
     >
-      <div
-        className={['c-modal__panel', panelClassName].filter(Boolean).join(' ')}
-        onClick={(event) => event.stopPropagation()}
-      >
+      <div className="c-modal__panel" onClick={(event) => event.stopPropagation()}>
         {!hideHeader ? (
           <header className="c-modal__header">
             {title ? (
@@ -91,9 +82,7 @@ export function Modal({
             )}
           </header>
         ) : null}
-        <div className={['c-modal__body', bodyClassName].filter(Boolean).join(' ')}>
-          {children}
-        </div>
+        <div className="c-modal__body">{children}</div>
       </div>
     </div>,
     portalTarget,

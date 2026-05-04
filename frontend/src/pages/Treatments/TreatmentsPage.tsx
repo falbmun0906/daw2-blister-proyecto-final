@@ -4,6 +4,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { BlisterPageSelector } from '../../components/organisms/BlisterPageSelector';
 import { TreatmentRow } from '../../components/organisms/TreatmentRow';
 import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
@@ -77,6 +78,8 @@ function TreatmentsPage() {
 
   return (
     <section className="c-treatments-page" aria-label="Listado de tratamientos">
+      <BlisterPageSelector />
+
       {error ? (
         <ErrorState message={error} onRetry={() => void refetch()} />
       ) : isLoading ? (

@@ -14,23 +14,19 @@
   background-color: var(--color-bg);
   border-bottom: 0;
 
-  &__spacer {
-    min-height: var(--space-touch-min);
-  }
-
   &__right {
     justify-self: end;
     display: inline-flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
 
   &__title {
     margin: 0;
-    text-align: right;
+    text-align: left;
     font-family: var(--font-display);
     font-weight: var(--font-weight-medium);
-    font-size: clamp(1.25rem, 5.5vw, 1.75rem);
+    font-size: clamp(1.45rem, 6vw, 1.95rem);
     letter-spacing: var(--tracking-xtight);
     line-height: 1;
     color: var(--color-text);

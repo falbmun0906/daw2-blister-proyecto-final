@@ -1,0 +1,18 @@
+.c-blister-page-selector {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows var(--transition-base) cubic-bezier(0.16, 1, 0.3, 1),
+    margin-bottom var(--transition-base) cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 0;
+
+  &.is-open {
+    grid-template-rows: 1fr;
+    margin-bottom: var(--space-2);
+  }
+
+  &__inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+}

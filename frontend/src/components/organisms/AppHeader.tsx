@@ -14,11 +14,9 @@ export function AppHeader() {
 
   return (
     <header className="c-app-header" role="banner">
-      <span className="c-app-header__spacer" aria-hidden="true" />
+      <h1 className="c-app-header__title">Blíster</h1>
 
       <div className="c-app-header__right">
-        <h1 className="c-app-header__title">Blíster</h1>
-
         <div className="c-app-header__actions">
           <button
             type="button"
