@@ -1,19 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   TbCalendar,
+  TbCheck,
   TbChevronLeft,
   TbChevronRight,
   TbPill,
   TbPlus,
 } from 'react-icons/tb';
 
+import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
 import { ROUTES } from '../../constants/routes';
+import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
 import { useAppointments } from '../../hooks/use.appointments';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -165,6 +168,7 @@ function CalendarPage() {
   const addToast = useUiStore((s) => s.addToast);
   const { appointments, isLoading, error, refetch, removeAppointment } = useAppointments(blisterId);
   const { treatments } = useTreatments(blisterId);
+  const { logDoseInBlister } = useAdherence(blisterId);
 
   const [view, setView] = useState<CalendarView>('appointments');
   const [cursor, setCursor] = useState(() => new Date());
@@ -173,6 +177,7 @@ function CalendarPage() {
   const [calendarDoses, setCalendarDoses] = useState<UpcomingDose[]>([]);
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
 
   const currentBlister = useMemo(
     () => blisters.find((blister) => blister._id === blisterId) ?? null,
@@ -185,19 +190,28 @@ function CalendarPage() {
   const role = routeRole ?? (blisterId === activeBlisterId ? activeRole : null);
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';
 
-  useEffect(() => {
-    if (!blisterId) return;
+  const refreshCalendarDoses = useCallback(async () => {
+    if (!blisterId) {
+      setCalendarDoses([]);
+      return;
+    }
     const from = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
     const to = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
     setCalendarLoading(true);
     setCalendarError(null);
-    getCalendar({ from, to, blisterId, kinds: ['doses'] })
-      .then((payload) => setCalendarDoses(payload.doses))
-      .catch((err: unknown) => {
-        setCalendarError(isApiError(err) ? err.message : 'No se ha podido cargar el pastillero.');
-      })
-      .finally(() => setCalendarLoading(false));
+    try {
+      const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'] });
+      setCalendarDoses(payload.doses);
+    } catch (err) {
+      setCalendarError(isApiError(err) ? err.message : 'No se ha podido cargar el pastillero.');
+    } finally {
+      setCalendarLoading(false);
+    }
   }, [blisterId, cursor]);
+
+  useEffect(() => {
+    void refreshCalendarDoses();
+  }, [refreshCalendarDoses]);
 
   const appointmentDays = useMemo(() => {
     const set = new Set<string>();
@@ -245,6 +259,28 @@ function CalendarPage() {
         message: isApiError(err) ? err.message : 'No se ha podido eliminar la cita.',
         variant: 'error',
       });
+    }
+  };
+
+  const handleLogDose = async (dose: UpcomingDose): Promise<void> => {
+    const key = `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`;
+    setLoggingDoseKey(key);
+    try {
+      await logDoseInBlister(dose.blisterId, {
+        treatmentId: dose.treatmentId,
+        medicineId: dose.medicineId,
+        amount: dose.amount,
+        timestamp: new Date(dose.doseAt),
+      });
+      setCalendarDoses((prev) => prev.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key));
+      addToast({ message: 'Toma marcada como tomada.', variant: 'success' });
+    } catch (err) {
+      const message = isStockInsufficientError(err)
+        ? 'No hay stock suficiente para registrar esta toma.'
+        : isApiError(err) ? err.message : 'No se ha podido registrar la toma.';
+      addToast({ message, variant: 'error' });
+    } finally {
+      setLoggingDoseKey(null);
     }
   };
 
@@ -335,7 +371,7 @@ function CalendarPage() {
         <div className="c-calendar-page__pillbox">
           <h3 className="c-calendar-page__day-title">{longDateFormatter.format(selected)}</h3>
           {calendarError ? (
-            <ErrorState message={calendarError} onRetry={() => setCursor(new Date(cursor))} />
+            <ErrorState message={calendarError} onRetry={() => void refreshCalendarDoses()} />
           ) : calendarLoading ? (
             <Skeleton height="5rem" />
           ) : dayDoses.length === 0 ? (
@@ -353,8 +389,41 @@ function CalendarPage() {
                       {timeFormatter.format(time)}
                     </time>
                     <div className="c-dose-row__body">
-                      <p className="c-dose-row__title">{dose.medicineName}</p>
-                      <p className="c-dose-row__meta">{dose.amount} unidad(es) · {dose.treatmentTitle}</p>
+                      <header className="c-dose-row__header">
+                        <div className="c-dose-row__heading">
+                          <p className="c-dose-row__title">{dose.medicineName}</p>
+                          <p className="c-dose-row__meta">
+                            {dose.amount} unidad(es) · {dose.treatmentTitle} · {dose.blisterName}
+                          </p>
+                        </div>
+                        <span title={dose.patientName || dose.blisterName}>
+                          <Avatar
+                            name={dose.patientName || dose.blisterName}
+                            avatarKey={dose.patientAvatarKey ?? undefined}
+                            size="sm"
+                          />
+                        </span>
+                      </header>
+                      {(dose.callerRole === 'OWNER' || dose.callerRole === 'CAREGIVER') ? (
+                        <div className="c-dose-row__actions">
+                          <button
+                            type="button"
+                            className="c-dose-row__btn c-dose-row__btn--solid"
+                            disabled={loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`}
+                            onClick={() => void handleLogDose(dose)}
+                          >
+                            <TbCheck aria-hidden="true" />
+                            <span>{loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}` ? 'Marcando...' : 'Marcar toma'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="c-dose-row__btn c-dose-row__btn--ghost"
+                            onClick={() => navigate(ROUTES.editTreatment(dose.blisterId, dose.treatmentId))}
+                          >
+                            Editar dosis
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   </li>
                 );

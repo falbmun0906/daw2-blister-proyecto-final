@@ -231,8 +231,9 @@
 
 // ── Filas de dosis (vista pastillero) ────────────────────────────────────
 .c-dose-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3);
   background-color: var(--color-surface);
@@ -250,7 +251,22 @@
   &__body {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
   }
 
   &__title {
@@ -264,5 +280,48 @@
     margin: 0;
     font-size: var(--text-xs);
     color: var(--color-text-muted);
+    line-height: var(--leading-snug);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  &__btn {
+    flex: 1 1 auto;
+    min-height: var(--space-touch-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-primary-mid);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: progress;
+    }
+
+    &--solid {
+      background-color: var(--color-primary-mid);
+      color: var(--color-text-on-primary);
+    }
+
+    &--ghost {
+      background-color: transparent;
+      color: var(--color-primary-mid);
+    }
   }
 }
