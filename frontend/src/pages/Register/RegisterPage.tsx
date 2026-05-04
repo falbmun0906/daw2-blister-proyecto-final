@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm, type FieldError } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, type FieldError, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
 import {
@@ -84,6 +83,42 @@ const getFieldError = (error: FieldError | undefined): string | undefined => {
   return error.message ? translateValidationMessage(error.message) : undefined;
 };
 
+const registerFormResolver: Resolver<RegisterFormValues> = async (values) => {
+  const parsed = registerSchema.safeParse(values);
+
+  if (parsed.success) {
+    return {
+      values: parsed.data as RegisterFormValues,
+      errors: {},
+    };
+  }
+
+  const errors: Partial<Record<keyof RegisterFormValues, FieldError>> = {};
+
+  for (const issue of parsed.error.issues) {
+    const fieldName = issue.path[0];
+    if (typeof fieldName !== 'string' || !(fieldName in FIELD_ERROR_LABELS)) continue;
+
+    const key = FIELD_ERROR_LABELS[fieldName];
+    const message = translateValidationMessage(issue.message);
+    const current = errors[key];
+
+    errors[key] = {
+      type: current?.type ?? issue.code,
+      message: current?.message ?? message,
+      types: {
+        ...(current?.types ?? {}),
+        [`${issue.code}-${Object.keys(current?.types ?? {}).length}`]: message,
+      },
+    };
+  }
+
+  return {
+    values: {},
+    errors,
+  };
+};
+
 const PASSWORD_REQUIREMENTS = [
   {
     label: '8 caracteres',
@@ -150,7 +185,7 @@ function RegisterPage() {
     watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+    resolver: registerFormResolver,
     mode: 'onChange',
     criteriaMode: 'all',
     defaultValues: {
@@ -223,7 +258,7 @@ function RegisterPage() {
 
       {globalError ? <ErrorState message={globalError} /> : null}
 
-      <form className="c-register-page__form" onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)}>
+      <form className="c-register-page__form" onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)} noValidate>
         <Input
           label="Nombre completo"
           placeholder="Tu nombre completo"
