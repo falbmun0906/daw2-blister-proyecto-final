@@ -18,7 +18,7 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Modal } from '../../components/atoms/Modal';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { getBlisterIcon } from '../../constants/blister-avatars';
+import { BLISTER_AVATAR_KEYS, type BlisterAvatarKey, getBlisterIcon } from '../../constants/blister-avatars';
 import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -29,6 +29,7 @@ import {
   listBlisterMembers,
   removeBlisterMember,
   softDeleteBlister,
+  updateBlister,
   updateBlisterMemberRole,
 } from '../../services/blisters.service';
 import { useAuthStore } from '../../stores/auth.store';
@@ -54,11 +55,21 @@ const ROLE_LABEL_FEMALE: Record<BlisterRole, string> = {
   OBSERVER: 'Observadora',
 };
 
+const ROLE_DESCRIPTION: Record<BlisterRole, string> = {
+  OWNER: 'Puede editar el blíster, gestionar miembros, medicamentos, tratamientos, citas e invitaciones.',
+  CAREGIVER: 'Puede gestionar contenido y registrar tomas, pero no cambia la propiedad ni elimina el blíster.',
+  OBSERVER: 'Puede consultar la información del blíster, sin editar contenido ni gestionar miembros.',
+};
+
 function formatRole(role: BlisterRole, fullName: string): string {
   // Heurística simple por terminación. Se documenta como aproximación
   // estética, no como inferencia de género real.
   const last = fullName.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
   return last.endsWith('a') ? ROLE_LABEL_FEMALE[role] : ROLE_LABEL[role];
+}
+
+function toBlisterAvatarKey(value: string | null | undefined): BlisterAvatarKey | null {
+  return BLISTER_AVATAR_KEYS.includes(value as BlisterAvatarKey) ? (value as BlisterAvatarKey) : null;
 }
 
 function ListSkeleton() {
@@ -137,6 +148,8 @@ function MemberRoleModal({ open, member, onClose, onChangeRole, onDelete }: Memb
           </button>
         ))}
       </div>
+      <p className="c-member-role-modal__description">{ROLE_DESCRIPTION[role]}</p>
+      <hr className="c-member-role-modal__rule" />
       <div className="c-member-role-modal__actions">
         <Button
           type="button"
@@ -392,17 +405,23 @@ function BlisterCard({
   const [expanded, setExpanded] = useState(false);
   const [members, setMembers] = useState<BlisterMemberDetail[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [name, setName] = useState(blister.name);
+  const [draftAvatarKey, setDraftAvatarKey] = useState<BlisterAvatarKey | null>(
+    toBlisterAvatarKey(blister.avatarKey),
+  );
+  const [isTitleEditing, setIsTitleEditing] = useState(false);
 
   const [activeMember, setActiveMember] = useState<BlisterMemberDetail | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<BlisterMemberDetail | null>(null);
   const [confirmDeleteBlister, setConfirmDeleteBlister] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [inviteBaselineCount, setInviteBaselineCount] = useState<number | null>(null);
   const [inviteJoinedNotified, setInviteJoinedNotified] = useState(false);
 
   const editing = editingBlisterId === blister._id;
   const canStartEditing = editingBlisterId === null || editing;
-  const Icon = useMemo(() => getBlisterIcon(blister.avatarKey), [blister.avatarKey]);
+  const Icon = useMemo(() => getBlisterIcon(draftAvatarKey), [draftAvatarKey]);
 
   const refreshMembers = useCallback(async (): Promise<BlisterMemberDetail[]> => {
     setLoadingMembers(true);
@@ -428,6 +447,13 @@ function BlisterCard({
   useEffect(() => {
     if (editing) setExpanded(true);
   }, [editing]);
+
+  useEffect(() => {
+    if (editing) return;
+    setName(blister.name);
+    setDraftAvatarKey(toBlisterAvatarKey(blister.avatarKey));
+    setIsTitleEditing(false);
+  }, [blister.avatarKey, blister.name, editing]);
 
   useEffect(() => {
     if (!showAddMember) {
@@ -465,11 +491,37 @@ function BlisterCard({
   };
 
   const handleSaveEdit = async () => {
-    onStopEditing();
-    await onChanged();
+    try {
+      const payload: { name?: string; avatarKey?: BlisterAvatarKey | null } = {};
+      const trimmedName = name.trim();
+
+      if (trimmedName && trimmedName !== blister.name) {
+        payload.name = trimmedName;
+      }
+      if (draftAvatarKey !== (blister.avatarKey ?? null)) {
+        payload.avatarKey = draftAvatarKey;
+      }
+
+      if (Object.keys(payload).length > 0) {
+        await updateBlister(blister._id, payload);
+        addToast({ message: 'Cambios guardados.', variant: 'success' });
+      }
+
+      setIsTitleEditing(false);
+      onStopEditing();
+      await onChanged();
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se han podido guardar los cambios.',
+        variant: 'error',
+      });
+    }
   };
 
   const handleDiscard = () => {
+    setName(blister.name);
+    setDraftAvatarKey(toBlisterAvatarKey(blister.avatarKey));
+    setIsTitleEditing(false);
     onStopEditing();
   };
 
@@ -532,18 +584,45 @@ function BlisterCard({
           <span className="c-blister-card__icon" aria-hidden="true">
             <Icon />
           </span>
+          {editing ? (
+            <button
+              type="button"
+              className="c-blister-card__avatar-edit"
+              aria-label="Cambiar avatar del blíster"
+              onClick={() => setShowAvatarPicker(true)}
+            >
+              <TbPencil aria-hidden="true" />
+            </button>
+          ) : null}
         </span>
         {editing ? (
           <div className="c-blister-card__open c-blister-card__open--editing">
             <span className="c-blister-card__heading">
-              <span className="c-blister-card__title">{blister.name}</span>
+              {isTitleEditing ? (
+                <input
+                  type="text"
+                  className="c-blister-card__name-input"
+                  value={name}
+                  maxLength={120}
+                  onChange={(event) => setName(event.target.value)}
+                  onBlur={() => setIsTitleEditing(false)}
+                  autoFocus
+                />
+              ) : (
+                <span className="c-blister-card__title">{name}</span>
+              )}
               <span className="c-blister-card__owner">
                 <TbUser aria-hidden="true" /> Propietario: {ownerLabel}
               </span>
             </span>
-            <span className="c-blister-card__edit-mark" aria-hidden="true">
-              <TbPencil />
-            </span>
+            <button
+              type="button"
+              className="c-blister-card__edit-mark"
+              aria-label="Editar título del blíster"
+              onClick={() => setIsTitleEditing(true)}
+            >
+              <TbPencil aria-hidden="true" />
+            </button>
           </div>
         ) : (
           <button type="button" className="c-blister-card__open" onClick={handleSelect}>
@@ -627,13 +706,13 @@ function BlisterCard({
       <footer className="c-blister-card__footer">
         {expanded && editing ? (
           <div className="c-blister-card__edit-actions">
-            <Button type="button" variant="primary" className="c-btn--sm" onClick={() => void handleSaveEdit()}>
+            <Button type="button" variant="primary" onClick={() => void handleSaveEdit()}>
               Guardar
             </Button>
-            <Button type="button" variant="primary-outline" className="c-btn--sm" onClick={handleDiscard}>
+            <Button type="button" variant="primary-outline" onClick={handleDiscard}>
               Descartar
             </Button>
-            <Button type="button" variant="danger" className="c-btn--sm" onClick={() => setConfirmDeleteBlister(true)}>
+            <Button type="button" variant="danger" onClick={() => setConfirmDeleteBlister(true)}>
               Eliminar
             </Button>
           </div>
@@ -641,7 +720,6 @@ function BlisterCard({
           <Button
             type="button"
             variant="primary-outline"
-            className="c-btn--sm"
             disabled={!canStartEditing}
             onClick={() => {
               onStartEditing(blister._id);
@@ -697,6 +775,33 @@ function BlisterCard({
         }}
         onCreateInvite={handleCreateInvite}
       />
+      <Modal
+        open={showAvatarPicker}
+        onClose={() => setShowAvatarPicker(false)}
+        title="Elegir avatar del blíster"
+      >
+        <div className="c-blister-avatar-picker" role="radiogroup" aria-label="Elegir avatar del blíster">
+          {BLISTER_AVATAR_KEYS.map((avatarKey) => {
+            const AvatarIcon = getBlisterIcon(avatarKey);
+            const isSelected = draftAvatarKey === avatarKey;
+            return (
+              <button
+                key={avatarKey}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                className={`c-blister-avatar-picker__option${isSelected ? ' is-selected' : ''}`}
+                onClick={() => {
+                  setDraftAvatarKey(avatarKey);
+                  setShowAvatarPicker(false);
+                }}
+              >
+                <AvatarIcon aria-hidden="true" />
+              </button>
+            );
+          })}
+        </div>
+      </Modal>
     </li>
   );
 }
