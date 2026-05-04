@@ -184,7 +184,7 @@ const ensureUserBelowBlisterCap = async (userId: string): Promise<void> => {
   if (active >= MAX_BLISTERS_PER_USER) {
     throw new AppError({
       code: 'BLISTER_LIMIT_REACHED',
-      message: `A user cannot belong to more than ${MAX_BLISTERS_PER_USER} active blisters.`,
+      message: `No puedes pertenecer a más de ${MAX_BLISTERS_PER_USER} blísteres activos.`,
       statusCode: HTTP_STATUS_CONFLICT,
     });
   }

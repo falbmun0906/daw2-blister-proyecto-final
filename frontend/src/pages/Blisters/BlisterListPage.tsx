@@ -18,12 +18,7 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Modal } from '../../components/atoms/Modal';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import {
-  BLISTER_AVATAR_KEYS,
-  type BlisterAvatarKey,
-  getBlisterAvatarLabel,
-  getBlisterIcon,
-} from '../../constants/blister-avatars';
+import { getBlisterIcon } from '../../constants/blister-avatars';
 import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -34,7 +29,6 @@ import {
   listBlisterMembers,
   removeBlisterMember,
   softDeleteBlister,
-  updateBlister,
   updateBlisterMemberRole,
 } from '../../services/blisters.service';
 import { useAuthStore } from '../../stores/auth.store';
@@ -373,39 +367,6 @@ function NewBlisterModal({ open, onClose, onCreated }: NewBlisterModalProps) {
 
 // ── Card individual ────────────────────────────────────────────────────────
 
-interface BlisterAvatarModalProps {
-  open: boolean;
-  currentKey: BlisterAvatarKey | null;
-  onClose: () => void;
-  onSelect: (key: BlisterAvatarKey) => void;
-}
-
-function BlisterAvatarModal({ open, currentKey, onClose, onSelect }: BlisterAvatarModalProps) {
-  return (
-    <Modal open={open} onClose={onClose} title="Elige un icono" ariaLabel="Selección de icono">
-      <div className="c-blister-avatar-picker" role="radiogroup" aria-label="Elige un icono">
-        {BLISTER_AVATAR_KEYS.map((key) => {
-          const Icon = getBlisterIcon(key);
-          const isSelected = currentKey === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              aria-label={getBlisterAvatarLabel(key)}
-              className={`c-blister-avatar-picker__option${isSelected ? ' is-selected' : ''}`}
-              onClick={() => onSelect(key)}
-            >
-              <Icon aria-hidden="true" />
-            </button>
-          );
-        })}
-      </div>
-    </Modal>
-  );
-}
-
 interface BlisterCardProps {
   blister: Blister;
   isOwner: boolean;
@@ -429,10 +390,6 @@ function BlisterCard({
   const addToast = useUiStore((s) => s.addToast);
 
   const [expanded, setExpanded] = useState(false);
-  const [name, setName] = useState(blister.name);
-  const [draftAvatarKey, setDraftAvatarKey] = useState<BlisterAvatarKey | null>(
-    (blister.avatarKey as BlisterAvatarKey | null) ?? null,
-  );
   const [members, setMembers] = useState<BlisterMemberDetail[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
@@ -440,13 +397,12 @@ function BlisterCard({
   const [confirmRemove, setConfirmRemove] = useState<BlisterMemberDetail | null>(null);
   const [confirmDeleteBlister, setConfirmDeleteBlister] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [inviteBaselineCount, setInviteBaselineCount] = useState<number | null>(null);
   const [inviteJoinedNotified, setInviteJoinedNotified] = useState(false);
 
   const editing = editingBlisterId === blister._id;
   const canStartEditing = editingBlisterId === null || editing;
-  const Icon = useMemo(() => getBlisterIcon(editing ? draftAvatarKey : blister.avatarKey), [blister.avatarKey, draftAvatarKey, editing]);
+  const Icon = useMemo(() => getBlisterIcon(blister.avatarKey), [blister.avatarKey]);
 
   const refreshMembers = useCallback(async (): Promise<BlisterMemberDetail[]> => {
     setLoadingMembers(true);
@@ -470,11 +426,8 @@ function BlisterCard({
   }, [refreshMembers]);
 
   useEffect(() => {
-    if (!editing) {
-      setName(blister.name);
-      setDraftAvatarKey((blister.avatarKey as BlisterAvatarKey | null) ?? null);
-    }
-  }, [blister.avatarKey, blister.name, editing]);
+    if (editing) setExpanded(true);
+  }, [editing]);
 
   useEffect(() => {
     if (!showAddMember) {
@@ -512,31 +465,11 @@ function BlisterCard({
   };
 
   const handleSaveEdit = async () => {
-    try {
-      const payload: Parameters<typeof updateBlister>[1] = {};
-      if (name.trim() && name.trim() !== blister.name) {
-        payload.name = name.trim();
-      }
-      if (draftAvatarKey !== ((blister.avatarKey as BlisterAvatarKey | null) ?? null)) {
-        payload.avatarKey = draftAvatarKey;
-      }
-      if (Object.keys(payload).length > 0) {
-        await updateBlister(blister._id, payload);
-      }
-      addToast({ message: 'Cambios guardados.', variant: 'success' });
-      onStopEditing();
-      await onChanged();
-    } catch (err) {
-      addToast({
-        message: isApiError(err) ? err.message : 'No se han podido guardar los cambios.',
-        variant: 'error',
-      });
-    }
+    onStopEditing();
+    await onChanged();
   };
 
   const handleDiscard = () => {
-    setName(blister.name);
-    setDraftAvatarKey((blister.avatarKey as BlisterAvatarKey | null) ?? null);
     onStopEditing();
   };
 
@@ -558,6 +491,7 @@ function BlisterCard({
     addToast({ message: 'Rol actualizado.', variant: 'success' });
     const list = await listBlisterMembers(blister._id);
     setMembers(list);
+    setExpanded(true);
     await onChanged();
   };
 
@@ -566,6 +500,7 @@ function BlisterCard({
     addToast({ message: 'Miembro eliminado.', variant: 'success' });
     const list = await listBlisterMembers(blister._id);
     setMembers(list);
+    setExpanded(true);
     await onChanged();
   };
 
@@ -597,32 +532,15 @@ function BlisterCard({
           <span className="c-blister-card__icon" aria-hidden="true">
             <Icon />
           </span>
-          {editing ? (
-            <button
-              type="button"
-              className="c-blister-card__avatar-edit"
-              aria-label="Cambiar icono del blíster"
-              onClick={() => setShowAvatarPicker(true)}
-            >
-              <TbPencil aria-hidden="true" />
-            </button>
-          ) : null}
         </span>
         {editing ? (
           <div className="c-blister-card__open c-blister-card__open--editing">
-            <label className="c-blister-card__heading">
-              <span className="u-sr-only">Nombre del blíster</span>
-              <input
-                type="text"
-                className="c-blister-card__name-input"
-                value={name}
-                maxLength={120}
-                onChange={(event) => setName(event.target.value)}
-              />
+            <span className="c-blister-card__heading">
+              <span className="c-blister-card__title">{blister.name}</span>
               <span className="c-blister-card__owner">
                 <TbUser aria-hidden="true" /> Propietario: {ownerLabel}
               </span>
-            </label>
+            </span>
             <span className="c-blister-card__edit-mark" aria-hidden="true">
               <TbPencil />
             </span>
@@ -774,18 +692,10 @@ function BlisterCard({
         open={showAddMember}
         onClose={() => {
           setShowAddMember(false);
+          setExpanded(true);
           void refreshMembers().then(() => onChanged());
         }}
         onCreateInvite={handleCreateInvite}
-      />
-      <BlisterAvatarModal
-        open={showAvatarPicker}
-        currentKey={draftAvatarKey}
-        onClose={() => setShowAvatarPicker(false)}
-        onSelect={(key) => {
-          setDraftAvatarKey(key);
-          setShowAvatarPicker(false);
-        }}
       />
     </li>
   );
