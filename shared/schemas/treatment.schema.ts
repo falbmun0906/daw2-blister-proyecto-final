@@ -24,7 +24,7 @@ export const treatmentMedicineSchema = z.object({
   medicineId: objectIdSchema,
   amount: positiveIntegerSchema('Amount'),
   frequencyHours: positiveIntegerSchema('Frequency in hours'),
-  isRecurring: z.boolean().default(true),
+  isRecurring: z.boolean().optional(),
   note: optionalTrimmedString(300),
 });
 

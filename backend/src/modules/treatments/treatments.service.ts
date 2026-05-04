@@ -204,7 +204,7 @@ export const treatmentsCreate = async (
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
       frequencyHours: entry.frequencyHours,
-      isRecurring: entry.isRecurring,
+      isRecurring: entry.isRecurring ?? true,
       note: entry.note ?? null,
     })),
     startDate: input.startDate,
@@ -239,7 +239,7 @@ export const treatmentsUpdate = async (
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
       frequencyHours: entry.frequencyHours,
-      isRecurring: entry.isRecurring,
+      isRecurring: entry.isRecurring ?? true,
       note: entry.note ?? null,
     }));
   }
