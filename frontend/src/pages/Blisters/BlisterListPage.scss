@@ -56,8 +56,8 @@
 
   &__avatar-edit {
     position: absolute;
-    right: -4px;
-    bottom: -4px;
+    right: -0.25rem;
+    bottom: -0.25rem;
     width: 1.4rem;
     height: 1.4rem;
     display: inline-flex;
@@ -81,8 +81,12 @@
   &__heading {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0.125rem;
     min-width: 0;
+  }
+
+  &__open--editing {
+    cursor: default;
   }
 
   &__title {
@@ -93,10 +97,28 @@
     @include truncate;
   }
 
+  &__name-input {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-mid);
+      outline-offset: 2px;
+    }
+  }
+
   &__owner {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 0.25rem;
     font-size: var(--text-xs);
     color: var(--color-text-muted);
 
