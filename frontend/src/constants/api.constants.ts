@@ -1,4 +1,5 @@
 const rawApiOrigin = import.meta.env.VITE_API_URL?.trim();
+const rawMcpOrigin = import.meta.env.VITE_MCP_URL?.trim();
 
 /**
  * Base URL del backend (con prefijo `/api/v1`).
@@ -15,6 +16,44 @@ function buildApiBaseUrl(origin: string | undefined): string {
   return base.endsWith('/api/v1') ? base : `${base}/api/v1`;
 }
 
+function stripApiPrefix(origin: string): string {
+  return origin.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
+}
+
+function appendMcpPath(origin: string): string {
+  const base = origin.replace(/\/+$/, '');
+  return base.endsWith('/mcp') ? base : `${base}/mcp`;
+}
+
+function buildLocalMcpUrl(apiBaseUrl: string): string | null {
+  try {
+    const url = new URL(stripApiPrefix(apiBaseUrl));
+    const port = Number.parseInt(url.port, 10);
+
+    if (!['localhost', '127.0.0.1'].includes(url.hostname) || !Number.isInteger(port)) {
+      return null;
+    }
+
+    url.port = String(port + 1);
+    url.pathname = '/mcp';
+    url.search = '';
+    url.hash = '';
+
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return null;
+  }
+}
+
+function buildMcpBaseUrl(origin: string | undefined, apiBaseUrl: string): string {
+  if (origin && origin.length > 0) {
+    return appendMcpPath(origin);
+  }
+
+  return buildLocalMcpUrl(apiBaseUrl) ?? appendMcpPath(stripApiPrefix(apiBaseUrl));
+}
+
 export const VITE_API_URL = buildApiBaseUrl(rawApiOrigin);
+export const VITE_MCP_URL = buildMcpBaseUrl(rawMcpOrigin, VITE_API_URL);
 
 export const API_TIMEOUT_MS = 10_000;

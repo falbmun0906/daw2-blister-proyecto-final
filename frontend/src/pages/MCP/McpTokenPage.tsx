@@ -1,27 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TbCopy, TbEye, TbEyeOff, TbSparkles } from 'react-icons/tb';
 
 import { Button } from '../../components/atoms/Button';
 import { Modal } from '../../components/atoms/Modal';
-import { VITE_API_URL } from '../../constants/api.constants';
+import { VITE_MCP_URL } from '../../constants/api.constants';
 import { usePageTitle } from '../../hooks/use.page-title';
-import { createMcpToken, revokeMcpToken } from '../../services/mcp.service';
+import {
+  createMcpToken,
+  getMcpTokenStatus,
+  revokeMcpToken,
+  type McpTokenStatus,
+} from '../../services/mcp.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import './McpTokenPage.scss';
 
-const MCP_URL = `${VITE_API_URL}/mcp`;
+const EMPTY_TOKEN_STATUS: McpTokenStatus = {
+  hasToken: false,
+  createdAt: null,
+  expiresAt: null,
+  lastUsedAt: null,
+};
+
+const TOKEN_PLACEHOLDER = 'TU_TOKEN_AQUI';
 
 const buildConfigSnippet = (token: string): string =>
   JSON.stringify(
     {
       mcpServers: {
         blister: {
-          command: 'npx',
-          args: ['@blister/mcp-server'],
-          env: {
-            BLISTER_API_URL: MCP_URL,
-            BLISTER_ACCESS_TOKEN: token || 'TU_TOKEN_AQUÍ',
+          type: 'streamable-http',
+          url: VITE_MCP_URL,
+          headers: {
+            Authorization: `Bearer ${token || TOKEN_PLACEHOLDER}`,
           },
         },
       },
@@ -30,20 +41,68 @@ const buildConfigSnippet = (token: string): string =>
     2,
   );
 
+const formatMcpDate = (value: string | null): string => {
+  if (!value) {
+    return 'No disponible';
+  }
+
+  return new Intl.DateTimeFormat('es-ES', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+};
+
 function McpTokenPage() {
   usePageTitle('Vincular Asistente de IA (MCP)');
   const addToast = useUiStore((s) => s.addToast);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+  const [tokenStatus, setTokenStatus] = useState<McpTokenStatus>(EMPTY_TOKEN_STATUS);
   const [showToken, setShowToken] = useState(false);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void getMcpTokenStatus()
+      .then((status) => {
+        if (isMounted) {
+          setTokenStatus(status);
+        }
+      })
+      .catch((err: unknown) => {
+        const message = isApiError(err) ? err.message : 'No se ha podido cargar el estado MCP.';
+        addToast({ message, variant: 'error' });
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingStatus(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [addToast]);
+
+  const configSnippet = useMemo(
+    () => buildConfigSnippet(generatedToken ?? ''),
+    [generatedToken],
+  );
 
   const handleGenerate = async (): Promise<void> => {
     setIsGenerating(true);
     try {
       const result = await createMcpToken();
       setGeneratedToken(result.token);
+      setTokenStatus({
+        hasToken: result.hasToken,
+        createdAt: result.createdAt,
+        expiresAt: result.expiresAt,
+        lastUsedAt: result.lastUsedAt,
+      });
       setShowToken(true);
       addToast({ message: 'Token generado. Cópialo ahora.', variant: 'success' });
     } catch (err) {
@@ -68,6 +127,7 @@ function McpTokenPage() {
     try {
       await revokeMcpToken();
       setGeneratedToken(null);
+      setTokenStatus(EMPTY_TOKEN_STATUS);
       setShowToken(false);
       setShowRevokeModal(false);
       addToast({ message: 'Accesos revocados correctamente.', variant: 'success' });
@@ -79,7 +139,13 @@ function McpTokenPage() {
     }
   };
 
-  const tokenDisplay = generatedToken ? (showToken ? generatedToken : '*'.repeat(14)) : '*'.repeat(14);
+  const tokenDisplay = generatedToken
+    ? showToken
+      ? generatedToken
+      : '*'.repeat(14)
+    : tokenStatus.hasToken
+      ? 'Token activo'
+      : 'Sin token activo';
 
   return (
     <section className="c-mcp-token-page" aria-label="Configuración del token MCP">
@@ -89,19 +155,47 @@ function McpTokenPage() {
 
       <h2 className="c-mcp-token-page__heading">¿Qué es esto?</h2>
       <p className="c-mcp-token-page__paragraph">
-        Autoriza a asistentes como Claude o ChatGPT para que puedan consultar tu botiquín,
-        registrar tus tomas y avisarte de faltas de stock mediante lenguaje natural.
+        Autoriza a asistentes como Claude o ChatGPT para consultar tu botiquín,
+        registrar tomas y revisar avisos usando los permisos de tus blísters.
       </p>
+
+      <div
+        className={[
+          'c-mcp-token-page__status',
+          tokenStatus.hasToken && 'c-mcp-token-page__status--active',
+        ].filter(Boolean).join(' ')}
+      >
+        <span className="c-mcp-token-page__status-label">Estado</span>
+        <strong className="c-mcp-token-page__status-value">
+          {isLoadingStatus ? 'Comprobando...' : tokenStatus.hasToken ? 'Activo' : 'Sin vincular'}
+        </strong>
+        {tokenStatus.hasToken ? (
+          <dl className="c-mcp-token-page__status-details">
+            <div>
+              <dt>Generado</dt>
+              <dd>{formatMcpDate(tokenStatus.createdAt)}</dd>
+            </div>
+            <div>
+              <dt>Caduca</dt>
+              <dd>{formatMcpDate(tokenStatus.expiresAt)}</dd>
+            </div>
+            <div>
+              <dt>Último uso</dt>
+              <dd>{formatMcpDate(tokenStatus.lastUsedAt)}</dd>
+            </div>
+          </dl>
+        ) : null}
+      </div>
 
       <div className="c-mcp-token-page__field">
         <p className="c-mcp-token-page__field-label">URL</p>
         <div className="c-mcp-token-page__pill">
-          <span className="c-mcp-token-page__pill-text">{MCP_URL}</span>
+          <span className="c-mcp-token-page__pill-text">{VITE_MCP_URL}</span>
           <button
             type="button"
             className="c-mcp-token-page__pill-action"
             aria-label="Copiar URL"
-            onClick={() => void handleCopy(MCP_URL, 'URL')}
+            onClick={() => void handleCopy(VITE_MCP_URL, 'URL')}
           >
             <TbCopy aria-hidden="true" />
           </button>
@@ -118,7 +212,7 @@ function McpTokenPage() {
             type="button"
             className="c-mcp-token-page__pill-action"
             aria-label={showToken ? 'Ocultar token' : 'Mostrar token'}
-            onClick={() => setShowToken((v) => !v)}
+            onClick={() => setShowToken((value) => !value)}
             disabled={!generatedToken}
           >
             {showToken ? <TbEyeOff aria-hidden="true" /> : <TbEye aria-hidden="true" />}
@@ -139,29 +233,29 @@ function McpTokenPage() {
           onClick={() => void handleGenerate()}
           disabled={isGenerating}
         >
-          {isGenerating ? 'Generando…' : 'Generar nuevo Token'}
+          {isGenerating ? 'Generando...' : tokenStatus.hasToken ? 'Regenerar token' : 'Generar token MCP'}
         </button>
         <p className="c-mcp-token-page__hint">
-          No compartas este token. Da acceso total a tu información de salud a través de la IA.
+          El token solo se muestra al generarlo. Si no lo conservas, genera uno nuevo.
         </p>
       </div>
 
-      <h2 className="c-mcp-token-page__heading">Instrucciones de Configuración</h2>
+      <h2 className="c-mcp-token-page__heading">Configuración</h2>
       <ol className="c-mcp-token-page__steps">
-        <li><strong>Copia la URL y el Token</strong> de arriba.</li>
-        <li><strong>Abre la configuración de tu asistente</strong> (ej: Claude Desktop).</li>
-        <li><strong>Pega la configuración</strong> que te facilitamos a continuación.</li>
+        <li><strong>Copia el token</strong> cuando lo generes.</li>
+        <li><strong>Abre la configuración de tu asistente</strong>.</li>
+        <li><strong>Pega este bloque</strong> en la sección MCP remoto.</li>
       </ol>
 
       <div className="c-mcp-token-page__snippet">
         <pre className="c-mcp-token-page__snippet-code">
-          <code>{buildConfigSnippet(generatedToken ?? '')}</code>
+          <code>{configSnippet}</code>
         </pre>
         <button
           type="button"
           className="c-mcp-token-page__snippet-copy"
           aria-label="Copiar configuración"
-          onClick={() => void handleCopy(buildConfigSnippet(generatedToken ?? ''), 'Configuración')}
+          onClick={() => void handleCopy(configSnippet, 'Configuración')}
         >
           <TbCopy aria-hidden="true" />
         </button>
@@ -169,15 +263,15 @@ function McpTokenPage() {
 
       <h2 className="c-mcp-token-page__heading">Seguridad y accesos</h2>
       <p className="c-mcp-token-page__paragraph">
-        Si has perdido el acceso a tu asistente o crees que tu token ha sido comprometido,
-        puedes invalidar todos los accesos actuales. Esto desconectará Blíster de cualquier IA
-        de forma inmediata.
+        El asistente hereda tus permisos por blíster. Los observadores solo pueden consultar,
+        y los propietarios o cuidadores pueden registrar tomas o ajustar stock.
       </p>
 
       <button
         type="button"
         className="c-mcp-token-page__revoke"
         onClick={() => setShowRevokeModal(true)}
+        disabled={isRevoking || !tokenStatus.hasToken}
       >
         Revocar todos los accesos
       </button>
