@@ -168,7 +168,7 @@ export const createMcpHttpServer = (): Server =>
     });
   });
 
-const resolveMcpPort = (): number => {
+export const resolveMcpPort = (): number => {
   const raw = process.env.MCP_PORT;
 
   if (!raw) {

@@ -172,8 +172,15 @@ describe('MCP e2e', () => {
     });
     const treatment = await TreatmentModel.create({
       blisterId: blister._id,
+      patientUserId: owner._id,
       title: 'Tension',
-      medicines: [{ medicineId: medicine._id, amount: 1, frequency: 24 }],
+      medicines: [{
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-01-01T08:00:00.000Z'),
+        frequencyHours: 24,
+        isRecurring: true,
+      }],
       startDate: new Date('2030-01-01T08:00:00.000Z'),
       endDate: null,
       active: true,

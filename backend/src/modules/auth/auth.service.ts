@@ -19,7 +19,7 @@ import {
   HTTP_STATUS_CONFLICT,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.constants';
-import { BCRYPT_SALT_ROUNDS } from '../../constants/security.constants';
+import { BCRYPT_SALT_ROUNDS, MCP_TOKEN_DAY_MS } from '../../constants/security.constants';
 import { BlisterModel } from '../../models/blister.model';
 import { UserModel } from '../../models/user.model';
 import { type AuthTokens, type JwtAccessPayload, type JwtRefreshPayload } from '../../types/auth.types';
@@ -49,6 +49,17 @@ interface AuthResult {
 
 interface McpTokenResult {
   token: string;
+  hasToken: true;
+  createdAt: Date;
+  expiresAt: Date;
+  lastUsedAt: Date | null;
+}
+
+interface McpTokenStatus {
+  hasToken: boolean;
+  createdAt: Date | null;
+  expiresAt: Date | null;
+  lastUsedAt: Date | null;
 }
 
 type UserAuthDocument = UserDocument & {
@@ -56,7 +67,29 @@ type UserAuthDocument = UserDocument & {
   refreshTokenExpiresAt?: Date | null;
 };
 
+type UserMcpDocument = UserDocument & {
+  mcpToken?: string | null;
+  mcpTokenCreatedAt?: Date | null;
+  mcpTokenExpiresAt?: Date | null;
+  mcpTokenLastUsedAt?: Date | null;
+};
+
 const hashValue = (value: string): string => createHash('sha256').update(value).digest('hex');
+
+const MCP_TOKEN_SELECT = '+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt +mcpTokenLastUsedAt';
+
+const emptyMcpTokenStatus = (): McpTokenStatus => ({
+  hasToken: false,
+  createdAt: null,
+  expiresAt: null,
+  lastUsedAt: null,
+});
+
+const getMcpTokenExpiry = (createdAt: Date, expiresInDays: number): Date =>
+  new Date(createdAt.getTime() + expiresInDays * MCP_TOKEN_DAY_MS);
+
+const isExpired = (date: Date | null | undefined): boolean =>
+  Boolean(date && date.getTime() <= Date.now());
 
 const sanitizeUser = (user: UserDocument): PublicUser => ({
   id: user._id.toString(),
@@ -429,20 +462,54 @@ export const authUpdateProfile = async (
  */
 export const authCreateMcpToken = async (
   userId: string,
-  _input: McpTokenInput,
+  input: McpTokenInput,
 ): Promise<McpTokenResult> => {
   const token = randomBytes(32).toString('hex');
+  const createdAt = new Date();
+  const expiresAt = getMcpTokenExpiry(createdAt, input.expiresInDays ?? env.mcpTokenTtlDays);
 
   await UserModel.updateOne(
     { _id: userId },
     {
       $set: {
         mcpToken: hashValue(token),
+        mcpTokenCreatedAt: createdAt,
+        mcpTokenExpiresAt: expiresAt,
+        mcpTokenLastUsedAt: null,
       },
     },
   );
 
-  return { token };
+  return {
+    token,
+    hasToken: true,
+    createdAt,
+    expiresAt,
+    lastUsedAt: null,
+  };
+};
+
+/**
+ * Returns whether the authenticated user has an active MCP token.
+ */
+export const authGetMcpTokenStatus = async (userId: string): Promise<McpTokenStatus> => {
+  const user = (await UserModel.findById(userId).select(MCP_TOKEN_SELECT)) as UserMcpDocument | null;
+
+  if (!user?.mcpToken) {
+    return emptyMcpTokenStatus();
+  }
+
+  if (isExpired(user.mcpTokenExpiresAt)) {
+    await authRevokeMcpToken(userId);
+    return emptyMcpTokenStatus();
+  }
+
+  return {
+    hasToken: true,
+    createdAt: user.mcpTokenCreatedAt ?? null,
+    expiresAt: user.mcpTokenExpiresAt ?? null,
+    lastUsedAt: user.mcpTokenLastUsedAt ?? null,
+  };
 };
 
 /**
@@ -454,6 +521,9 @@ export const authRevokeMcpToken = async (userId: string): Promise<void> => {
     {
       $set: {
         mcpToken: null,
+        mcpTokenCreatedAt: null,
+        mcpTokenExpiresAt: null,
+        mcpTokenLastUsedAt: null,
       },
     },
   );

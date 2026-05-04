@@ -6,6 +6,7 @@ import {
 } from '../../constants/http.constants';
 import {
   authCreateMcpToken,
+  authGetMcpTokenStatus,
   authLogin,
   authRefresh,
   authRegister,
@@ -71,6 +72,22 @@ export const authUpdateProfileController = async (
     authenticatedRequest.auth.userId,
     request.body as UpdateProfileInput,
   );
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: result,
+  });
+};
+
+/**
+ * Returns the active MCP token status for the authenticated user.
+ */
+export const authGetMcpTokenStatusController = async (
+  request: Request,
+  response: Response,
+): Promise<void> => {
+  const authenticatedRequest = request as AuthenticatedRequest;
+  const result = await authGetMcpTokenStatus(authenticatedRequest.auth.userId);
 
   response.status(HTTP_STATUS_OK).json({
     success: true,

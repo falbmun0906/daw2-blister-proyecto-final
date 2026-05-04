@@ -18,6 +18,9 @@ describe('UserModel', () => {
     expect(user.settings.theme).toBe('system');
     expect(user.settings.font).toBe('standard');
     expect(user.settings.fontSize).toBe('normal');
+    expect(user.mcpTokenCreatedAt).toBeNull();
+    expect(user.mcpTokenExpiresAt).toBeNull();
+    expect(user.mcpTokenLastUsedAt).toBeNull();
     expect(user.deletedAt).toBeNull();
   });
 

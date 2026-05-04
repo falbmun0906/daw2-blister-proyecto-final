@@ -34,6 +34,9 @@ export interface UserDocument {
   email: string;
   password: string;
   mcpToken?: string | null;
+  mcpTokenCreatedAt?: Date | null;
+  mcpTokenExpiresAt?: Date | null;
+  mcpTokenLastUsedAt?: Date | null;
   refreshTokenHash?: string | null;
   refreshTokenExpiresAt?: Date | null;
   settings: UserSettings;

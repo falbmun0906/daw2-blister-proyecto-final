@@ -10,6 +10,7 @@ import { mcpTokenHeaderSchema } from '../../../shared/schemas';
 import { type McpAuthContext, type McpBlisterContext } from './types';
 
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
+const MCP_TOKEN_SELECT = '+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt +mcpTokenLastUsedAt';
 
 const findTokenFromAuthorizationHeader = (authorizationHeader?: string): string | null => {
   if (!authorizationHeader) {
@@ -69,7 +70,7 @@ export const resolveMcpContextFromToken = async (token: string): Promise<McpAuth
   const user = await UserModel.findOne({
     mcpToken: tokenHash,
     deletedAt: null,
-  }).select('+mcpToken').lean();
+  }).select(MCP_TOKEN_SELECT).lean();
 
   if (!user) {
     throw new AppError({
@@ -78,6 +79,35 @@ export const resolveMcpContextFromToken = async (token: string): Promise<McpAuth
       statusCode: HTTP_STATUS_UNAUTHORIZED,
     });
   }
+
+  if (user.mcpTokenExpiresAt && user.mcpTokenExpiresAt.getTime() <= Date.now()) {
+    await UserModel.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          mcpToken: null,
+          mcpTokenCreatedAt: null,
+          mcpTokenExpiresAt: null,
+          mcpTokenLastUsedAt: null,
+        },
+      },
+    );
+
+    throw new AppError({
+      code: 'MCP_TOKEN_EXPIRED',
+      message: 'MCP token is expired. Generate a new token from Blister.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+
+  await UserModel.updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        mcpTokenLastUsedAt: new Date(),
+      },
+    },
+  );
 
   const userId = user._id.toString();
   const blisters = await BlisterModel.find({

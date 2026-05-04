@@ -19,6 +19,7 @@ import { authenticate } from '../../middleware/authenticate';
 import { validate } from '../../middleware/validate';
 import {
   authCreateMcpTokenController,
+  authGetMcpTokenStatusController,
   authLoginController,
   authRefreshController,
   authRegisterController,
@@ -120,6 +121,17 @@ authRouter.patch(
 /**
  * @openapi
  * /auth/mcp-token:
+ *   get:
+ *     summary: Get the authenticated user MCP token status
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: MCP token status returned.
+ *       401:
+ *         description: Missing or invalid JWT.
  *   post:
  *     summary: Create an MCP token for the authenticated user
  *     tags:
@@ -143,6 +155,7 @@ authRouter.patch(
  *       401:
  *         description: Missing or invalid JWT.
  */
+authRouter.get('/mcp-token', authenticate, authGetMcpTokenStatusController);
 authRouter.post(
   '/mcp-token',
   authenticate,

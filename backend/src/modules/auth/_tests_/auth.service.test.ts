@@ -6,6 +6,7 @@ import { BlisterModel } from '../../../models/blister.model';
 import { UserModel } from '../../../models/user.model';
 import {
   authCreateMcpToken,
+  authGetMcpTokenStatus,
   authLogin,
   authRefresh,
   authRegister,
@@ -124,11 +125,39 @@ describe('auth.service', () => {
     });
 
     const mcpTokenResult = await authCreateMcpToken(registerResult.user.id, {});
-    const storedUser = await UserModel.findById(registerResult.user.id).select('+mcpToken');
+    const storedUser = await UserModel.findById(registerResult.user.id)
+      .select('+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt');
 
     expect(mcpTokenResult.token).toHaveLength(64);
+    expect(mcpTokenResult.createdAt).toBeInstanceOf(Date);
+    expect(mcpTokenResult.expiresAt).toBeInstanceOf(Date);
     expect(storedUser?.mcpToken).toBeTruthy();
+    expect(storedUser?.mcpTokenCreatedAt).toBeInstanceOf(Date);
+    expect(storedUser?.mcpTokenExpiresAt).toBeInstanceOf(Date);
     expect(storedUser?.mcpToken).not.toBe(mcpTokenResult.token);
+  });
+
+  it('returns MCP token status without exposing the clear text value', async () => {
+    const registerResult = await authRegister({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      privacyConsent: true,
+      ageConfirmed: true,
+      inviteCode: undefined,
+    });
+
+    const mcpTokenResult = await authCreateMcpToken(registerResult.user.id, { expiresInDays: 1 });
+    const status = await authGetMcpTokenStatus(registerResult.user.id);
+
+    expect(status).toMatchObject({
+      hasToken: true,
+      lastUsedAt: null,
+    });
+    expect(status.createdAt?.toISOString()).toBe(mcpTokenResult.createdAt.toISOString());
+    expect(status.expiresAt?.toISOString()).toBe(mcpTokenResult.expiresAt.toISOString());
   });
 
   it('authenticates existing users with username or email', async () => {

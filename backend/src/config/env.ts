@@ -20,6 +20,7 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().trim().min(1).default(DEFAULT_ACCESS_TOKEN_TTL),
   JWT_REFRESH_EXPIRES_IN: z.string().trim().min(1).default(DEFAULT_REFRESH_TOKEN_TTL),
   MCP_TOKEN_TTL_DAYS: z.coerce.number().int().positive().max(DEFAULT_MCP_TOKEN_TTL_DAYS).default(DEFAULT_MCP_TOKEN_TTL_DAYS),
+  MCP_SERVER_ENABLED: z.enum(['true', 'false']).default('true'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -38,6 +39,7 @@ export const env = {
   jwtAccessExpiresIn: parsedEnv.data.JWT_ACCESS_EXPIRES_IN,
   jwtRefreshExpiresIn: parsedEnv.data.JWT_REFRESH_EXPIRES_IN,
   mcpTokenTtlDays: parsedEnv.data.MCP_TOKEN_TTL_DAYS,
+  mcpServerEnabled: parsedEnv.data.MCP_SERVER_ENABLED === 'true',
 } as const;
 
 export type Env = typeof env;

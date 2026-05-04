@@ -98,6 +98,21 @@ const userSchema = new Schema<UserDocument>({
     sparse: true,
     select: false,
   },
+  mcpTokenCreatedAt: {
+    type: Date,
+    default: null,
+    select: false,
+  },
+  mcpTokenExpiresAt: {
+    type: Date,
+    default: null,
+    select: false,
+  },
+  mcpTokenLastUsedAt: {
+    type: Date,
+    default: null,
+    select: false,
+  },
   refreshTokenHash: {
     type: String,
     trim: true,
