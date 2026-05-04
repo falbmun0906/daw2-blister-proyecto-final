@@ -59,7 +59,7 @@
             /* fondo exterior brand */
             background-color: var(--color-brand-surface);
 
-            &__inner {
+            .c-auth-layout__inner {
                 /* la card mantiene el gris interior */
                 background-color: var(--color-bg); // gris de la app
                 min-height: 38rem;
