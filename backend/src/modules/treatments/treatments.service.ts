@@ -21,6 +21,7 @@ import {
 interface TreatmentMedicineView {
   medicineId: string;
   amount: number;
+  firstDoseAt: Date;
   frequencyHours: number;
   isRecurring: boolean;
   note: string | null;
@@ -59,8 +60,9 @@ const toTreatmentView = (treatment: Awaited<ReturnType<typeof TreatmentModel.fin
   medicines: treatment!.medicines.map((entry: TreatmentMedicineEntry) => ({
     medicineId: entry.medicineId.toString(),
     amount: entry.amount,
+    firstDoseAt: entry.firstDoseAt,
     frequencyHours: entry.frequencyHours,
-    isRecurring: entry.isRecurring ?? true,
+    isRecurring: entry.isRecurring,
     note: entry.note ?? null,
   })),
   startDate: treatment!.startDate,
@@ -203,8 +205,9 @@ export const treatmentsCreate = async (
     medicines: input.medicines.map((entry) => ({
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
+      firstDoseAt: entry.firstDoseAt,
       frequencyHours: entry.frequencyHours,
-      isRecurring: entry.isRecurring ?? true,
+      isRecurring: entry.isRecurring,
       note: entry.note ?? null,
     })),
     startDate: input.startDate,
@@ -238,8 +241,9 @@ export const treatmentsUpdate = async (
     treatment.medicines = input.medicines.map((entry) => ({
       medicineId: new Types.ObjectId(entry.medicineId),
       amount: entry.amount,
+      firstDoseAt: entry.firstDoseAt,
       frequencyHours: entry.frequencyHours,
-      isRecurring: entry.isRecurring ?? true,
+      isRecurring: entry.isRecurring,
       note: entry.note ?? null,
     }));
   }

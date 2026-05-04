@@ -74,7 +74,9 @@ describe('adherence.service', () => {
         {
           medicineId: medicine._id,
           amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),
@@ -160,7 +162,9 @@ describe('adherence.service', () => {
         {
           medicineId: medicine._id,
           amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),
@@ -218,7 +222,7 @@ describe('adherence.service', () => {
     expect(storedMedicine?.stock).toBe(0);
   });
 
-  it('creates forced-adherence and stock-low notifications for writer roles', async () => {
+  it('creates forced-adherence and stock-depleted notifications for writer roles', async () => {
     const owner = await createUser(`fo${Math.random().toString(16).slice(2, 8)}`);
     const caregiver = await createUser(`fc${Math.random().toString(16).slice(2, 8)}`);
     const observer = await createUser(`fb${Math.random().toString(16).slice(2, 8)}`);
@@ -251,7 +255,9 @@ describe('adherence.service', () => {
         {
           medicineId: medicine._id,
           amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),
@@ -271,7 +277,7 @@ describe('adherence.service', () => {
       notifications.filter((notification) => notification.type === 'adherence_forced'),
     ).toHaveLength(2);
     expect(
-      notifications.filter((notification) => notification.type === 'stock_low'),
+      notifications.filter((notification) => notification.type === 'stock_depleted'),
     ).toHaveLength(2);
     expect(
       notifications.every(

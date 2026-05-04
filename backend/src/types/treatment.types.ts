@@ -3,8 +3,9 @@ import { type Types } from 'mongoose';
 export interface TreatmentMedicineEntry {
   medicineId: Types.ObjectId;
   amount: number;
+  firstDoseAt: Date;
   frequencyHours: number;
-  isRecurring?: boolean;
+  isRecurring: boolean;
   note?: string | null;
 }
 

@@ -88,7 +88,9 @@ describe('adherence.routes', () => {
         {
           medicineId: medicine._id,
           amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),
@@ -254,7 +256,9 @@ describe('adherence.routes', () => {
         {
           medicineId: medicine._id,
           amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-11-02T00:00:00.000Z'),

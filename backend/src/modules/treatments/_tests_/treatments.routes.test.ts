@@ -83,7 +83,7 @@ describe('treatments.routes', () => {
       .send({
         title: 'Tratamiento A',
         patientUserId: user._id.toString(),
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, firstDoseAt: '2030-11-02T08:00:00.000Z', frequencyHours: 8, isRecurring: true }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
     await request(app)
@@ -92,7 +92,7 @@ describe('treatments.routes', () => {
       .send({
         title: 'Tratamiento B',
         patientUserId: user._id.toString(),
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 12 }],
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, firstDoseAt: '2030-11-03T08:00:00.000Z', frequencyHours: 12, isRecurring: true }],
         startDate: '2030-11-03T00:00:00.000Z',
       });
 
@@ -136,7 +136,7 @@ describe('treatments.routes', () => {
       .send({
         title: 'Dolor',
         patientUserId: user._id.toString(),
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, firstDoseAt: '2030-11-02T08:00:00.000Z', frequencyHours: 8, isRecurring: true }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
 
@@ -170,7 +170,7 @@ describe('treatments.routes', () => {
       .send({
         title: 'No permitido',
         patientUserId: user._id.toString(),
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, firstDoseAt: '2030-11-02T08:00:00.000Z', frequencyHours: 8, isRecurring: true }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
 
@@ -204,7 +204,7 @@ describe('treatments.routes', () => {
       .send({
         title: 'Diabetes',
         patientUserId: user._id.toString(),
-        medicines: [{ medicineId: medicine._id.toString(), amount: 1, frequencyHours: 8 }],
+        medicines: [{ medicineId: medicine._id.toString(), amount: 1, firstDoseAt: '2030-11-02T08:00:00.000Z', frequencyHours: 8, isRecurring: true }],
         startDate: '2030-11-02T00:00:00.000Z',
       });
 

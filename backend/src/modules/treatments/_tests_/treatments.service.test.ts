@@ -76,7 +76,9 @@ describe('treatments.service', () => {
         {
           medicineId: medicine._id.toString(),
           amount: 1,
+          firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-10-02T00:00:00.000Z'),
@@ -88,7 +90,9 @@ describe('treatments.service', () => {
         {
           medicineId: medicine._id.toString(),
           amount: 1,
+          firstDoseAt: new Date('2030-10-03T08:00:00.000Z'),
           frequencyHours: 12,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-10-03T00:00:00.000Z'),
@@ -115,7 +119,9 @@ describe('treatments.service', () => {
         {
           medicineId: medicine._id.toString(),
           amount: 1,
+          firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-10-02T00:00:00.000Z'),
@@ -148,7 +154,9 @@ describe('treatments.service', () => {
           {
             medicineId: foreignMedicineId,
             amount: 1,
+            firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
             frequencyHours: 8,
+            isRecurring: true,
           },
         ],
         startDate: new Date('2030-10-02T00:00:00.000Z'),
@@ -169,7 +177,9 @@ describe('treatments.service', () => {
           {
             medicineId: medicine._id.toString(),
             amount: 1,
+            firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
             frequencyHours: 8,
+            isRecurring: true,
           },
         ],
         startDate: new Date('2030-10-02T00:00:00.000Z'),
@@ -188,7 +198,9 @@ describe('treatments.service', () => {
         {
           medicineId: medicine._id.toString(),
           amount: 1,
+          firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-10-02T00:00:00.000Z'),

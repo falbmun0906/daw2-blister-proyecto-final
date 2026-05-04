@@ -165,7 +165,7 @@ export const meUpcomingDoses = async (
 
     for (const entry of treatment.medicines) {
       const source = {
-        startDate: treatment.startDate as Date,
+        startDate: entry.firstDoseAt as Date,
         endDate: (treatment.endDate as Date | null | undefined) ?? null,
         active: Boolean(treatment.active),
       };

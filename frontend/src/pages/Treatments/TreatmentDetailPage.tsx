@@ -290,6 +290,7 @@ function TreatmentDetailPage() {
           medicines: treatment.medicines.map((item) => ({
             medicineId: item.medicineId,
             amount: item.amount,
+            firstDoseAt: new Date(item.firstDoseAt),
             frequencyHours: item.frequencyHours,
             isRecurring: item.isRecurring,
             note: item.medicineId === medicineId ? nextNote || undefined : item.note ?? undefined,

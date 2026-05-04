@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
-import { TbCalendar, TbPill, TbStethoscope, TbToggleRight, TbUserHeart } from 'react-icons/tb';
+import { TbCalendar, TbClock, TbPill, TbStethoscope, TbToggleRight, TbUserHeart } from 'react-icons/tb';
 
 import {
   createTreatmentSchema,
@@ -29,10 +29,9 @@ interface FormValues {
   title: string;
   description: string;
   startDate: string;
-  startTime: string;
   endDate: string;
   active: boolean;
-  medicines: { medicineId: string; amount: number; frequencyHours: number; isRecurring: boolean; note: string }[];
+  medicines: { medicineId: string; amount: number; firstDoseTime: string; frequencyHours: number; isRecurring: boolean; note: string }[];
 }
 
 function toLocalParts(value: Date): { date: string; time: string } {
@@ -48,6 +47,15 @@ function defaultStartParts(): { date: string; time: string } {
   return toLocalParts(now);
 }
 
+const createTreatmentMedicine = (firstDoseTime = '08:00'): FormValues['medicines'][number] => ({
+  medicineId: '',
+  amount: 1,
+  firstDoseTime,
+  frequencyHours: 8,
+  isRecurring: true,
+  note: '',
+});
+
 function toFormValues(
   treatment: ReturnType<typeof useTreatments>['treatments'][number] | null,
   fallbackPatientUserId = '',
@@ -59,10 +67,9 @@ function toFormValues(
       title: '',
       description: '',
       startDate: start.date,
-      startTime: start.time,
       endDate: '',
       active: true,
-      medicines: [{ medicineId: '', amount: 1, frequencyHours: 8, isRecurring: true, note: '' }],
+      medicines: [createTreatmentMedicine(start.time)],
     };
   }
   const start = toLocalParts(new Date(treatment.startDate));
@@ -71,12 +78,12 @@ function toFormValues(
     title: treatment.title,
     description: treatment.description ?? '',
     startDate: start.date,
-    startTime: start.time,
     endDate: treatment.endDate ? treatment.endDate.slice(0, 10) : '',
     active: treatment.active,
     medicines: treatment.medicines.map((entry) => ({
       medicineId: entry.medicineId,
       amount: entry.amount,
+      firstDoseTime: toLocalParts(new Date(entry.firstDoseAt)).time,
       frequencyHours: entry.frequencyHours,
       isRecurring: entry.isRecurring,
       note: entry.note ?? '',
@@ -89,11 +96,15 @@ function buildPayload(values: FormValues): CreateTreatmentInput {
     patientUserId: values.patientUserId,
     title: values.title,
     description: values.description || undefined,
-    startDate: `${values.startDate}T${values.startTime || '08:00'}`,
+    startDate: `${values.startDate}T00:00`,
     endDate: values.endDate ? `${values.endDate}T23:59` : undefined,
     active: values.active,
     medicines: values.medicines.map((entry) => ({
-      ...entry,
+      medicineId: entry.medicineId,
+      amount: entry.amount,
+      firstDoseAt: `${values.startDate}T${entry.firstDoseTime || '08:00'}`,
+      frequencyHours: entry.frequencyHours,
+      isRecurring: entry.isRecurring,
       note: entry.note || undefined,
     })),
   });
@@ -258,18 +269,12 @@ function TreatmentFormPage() {
           </label>
         </FormSection>
 
-        <FormSection label="Inicio y primera toma" icon={<TbCalendar />}>
+        <FormSection label="Duración del tratamiento" icon={<TbCalendar />}>
           <Input
             type="date"
             label="Día de inicio"
             error={formState.errors.startDate?.message}
             {...register('startDate')}
-          />
-          <Input
-            type="time"
-            label="Hora primera toma"
-            error={formState.errors.startTime?.message}
-            {...register('startTime')}
           />
           <Input
             type="date"
@@ -324,6 +329,14 @@ function TreatmentFormPage() {
                   min={1}
                   {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
                 />
+                <Input
+                  type="time"
+                  label="Hora primera toma"
+                  icon={<TbClock aria-hidden="true" />}
+                  wrapperClassName="c-treatment-form-page__time-field"
+                  error={formState.errors.medicines?.[index]?.firstDoseTime?.message}
+                  {...register(`medicines.${index}.firstDoseTime` as const)}
+                />
                 <label className="c-treatment-form-page__active c-treatment-form-page__active--compact">
                   <input type="checkbox" {...register(`medicines.${index}.isRecurring` as const)} />
                   <span className="c-treatment-form-page__active-control" aria-hidden="true" />
@@ -363,7 +376,7 @@ function TreatmentFormPage() {
           <Button
             variant="primary-outline"
             type="button"
-            onClick={() => append({ medicineId: '', amount: 1, frequencyHours: 8, isRecurring: true, note: '' })}
+            onClick={() => append(createTreatmentMedicine())}
           >
             Añadir medicamento
           </Button>

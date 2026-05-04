@@ -14,6 +14,10 @@ const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number
       required: true,
       min: 1,
     },
+    firstDoseAt: {
+      type: Date,
+      required: true,
+    },
     frequencyHours: {
       type: Number,
       required: true,
@@ -22,7 +26,6 @@ const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number
     isRecurring: {
       type: Boolean,
       required: true,
-      default: true,
     },
     note: {
       type: String,

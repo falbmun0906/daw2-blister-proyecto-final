@@ -110,7 +110,9 @@ describe('appointments.routes', () => {
         {
           medicineId: new Types.ObjectId(),
           amount: 1,
+          firstDoseAt: new Date('2030-12-01T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-12-01T00:00:00.000Z'),

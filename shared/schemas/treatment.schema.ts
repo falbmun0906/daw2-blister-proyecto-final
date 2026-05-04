@@ -23,8 +23,9 @@ export const treatmentsListQuerySchema = collectionPaginationQuerySchema;
 export const treatmentMedicineSchema = z.object({
   medicineId: objectIdSchema,
   amount: positiveIntegerSchema('Amount'),
+  firstDoseAt: dateSchema('firstDoseAt'),
   frequencyHours: positiveIntegerSchema('Frequency in hours'),
-  isRecurring: z.boolean().optional(),
+  isRecurring: z.boolean(),
   note: optionalTrimmedString(300),
 });
 
@@ -97,6 +98,7 @@ export const treatmentSchema = z.object({
     z.object({
       medicineId: objectIdSchema,
       amount: z.number().int().positive(),
+      firstDoseAt: z.string(),
       frequencyHours: z.number().int().positive(),
       isRecurring: z.boolean(),
       note: z.string().nullable(),

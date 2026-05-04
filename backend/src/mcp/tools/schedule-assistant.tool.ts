@@ -34,7 +34,7 @@ export const scheduleAssistantTool: McpScheduleAssistantTool = {
             treatment.medicines
               .filter((entry) => entry.frequencyHours > 0)
               .map((entry) => {
-                const nextDoseAt = computeNextDose(treatment.startDate, entry.frequencyHours, from);
+                const nextDoseAt = computeNextDose(entry.firstDoseAt, entry.frequencyHours, from);
 
                 if (nextDoseAt < from || nextDoseAt > to) {
                   return null;

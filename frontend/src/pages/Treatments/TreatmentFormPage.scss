@@ -74,6 +74,10 @@
     margin-top: var(--space-1);
   }
 
+  &__time-field {
+    min-width: 0;
+  }
+
   &__med-label {
     display: flex;
     flex-direction: column;

@@ -26,7 +26,9 @@ describe('TreatmentModel', () => {
         {
           medicineId: new Types.ObjectId(),
           amount: 1,
+          firstDoseAt: new Date('2026-04-24T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2026-04-24T08:00:00.000Z'),
@@ -46,7 +48,9 @@ describe('TreatmentModel', () => {
         {
           medicineId: new Types.ObjectId(),
           amount: 1,
+          firstDoseAt: new Date('2026-04-24T08:00:00.000Z'),
           frequencyHours: 8,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2026-04-24T08:00:00.000Z'),
