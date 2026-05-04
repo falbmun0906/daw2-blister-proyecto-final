@@ -1,7 +1,7 @@
 import request from 'supertest';
 
 const { Client } = require('@modelcontextprotocol/sdk/client');
-const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp');
+const { StreamableHTTPClientTransport } = require('@modelcontextprotocol/sdk/client/streamableHttp.js');
 
 import { createApp } from '../../../src/app';
 import { env } from '../../../src/config/env';
