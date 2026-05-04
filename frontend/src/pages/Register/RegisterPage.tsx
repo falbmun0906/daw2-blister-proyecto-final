@@ -107,6 +107,17 @@ const PASSWORD_REQUIREMENTS = [
   },
 ];
 
+const getMissingPasswordRequirements = (value: string): string[] =>
+  PASSWORD_REQUIREMENTS
+    .filter((requirement) => !requirement.test(value))
+    .map((requirement) => requirement.label.toLowerCase());
+
+const getPasswordRequirementMessage = (value: string): string => {
+  const missing = getMissingPasswordRequirements(value);
+  if (missing.length === 0) return 'La contraseña no está bien cumplimentada.';
+  return `La contraseña debe incluir: ${missing.join(', ')}.`;
+};
+
 const applyApiFieldErrors = (
   details: unknown,
   setError: ReturnType<typeof useForm<RegisterFormValues>>['setError'],
@@ -135,6 +146,7 @@ function RegisterPage() {
     register,
     handleSubmit,
     setError,
+    setFocus,
     watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
@@ -183,6 +195,16 @@ function RegisterPage() {
     }
   };
 
+  const handleInvalidSubmit = () => {
+    setGlobalError(null);
+    if (getMissingPasswordRequirements(passwordValue).length === 0) return;
+    setError('password', {
+      type: 'manual',
+      message: getPasswordRequirementMessage(passwordValue),
+    });
+    setFocus('password');
+  };
+
   return (
     <AuthLayout className="c-register-page" tone="brand" innerClassName="c-register-page__inner">
       <header className="c-register-page__header">
@@ -201,7 +223,7 @@ function RegisterPage() {
 
       {globalError ? <ErrorState message={globalError} /> : null}
 
-      <form className="c-register-page__form" onSubmit={handleSubmit(onSubmit)}>
+      <form className="c-register-page__form" onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)}>
         <Input
           label="Nombre completo"
           placeholder="Tu nombre completo"
