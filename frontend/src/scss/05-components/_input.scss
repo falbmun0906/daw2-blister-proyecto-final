@@ -21,6 +21,7 @@
 @use '../01-tools/mixins' as *;
 
 .c-field {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -70,6 +71,9 @@
     @include touch-target;
 
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: var(--space-input-y) var(--space-input-x);
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -99,12 +103,24 @@
     }
 
     &[type='date'] {
-      padding-right: calc(var(--space-input-x) + 2rem);
+      min-width: 0;
+      padding-right: var(--space-input-x);
       text-align: left;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
     &[type='datetime-local'] {
-      padding-right: calc(var(--space-input-x) + 2rem);
+      min-width: 0;
+      padding-right: var(--space-input-x);
+      text-align: left;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    &[type='date']::-webkit-date-and-time-value,
+    &[type='datetime-local']::-webkit-date-and-time-value {
+      min-width: 0;
       text-align: left;
     }
 
@@ -119,14 +135,43 @@
   }
 
   &__hint {
+    order: 4;
     font-size: var(--text-xs);
     color: var(--color-text-muted);
   }
 
   &__error {
+    order: 2;
+    align-self: flex-start;
+    position: relative;
+    max-width: 100%;
+    margin-bottom: calc(var(--space-1) * -1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-error);
+    box-shadow: var(--shadow-sm);
     font-size: var(--text-xs);
-    color: var(--color-error);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-on-primary);
+    line-height: var(--leading-snug);
     display: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: var(--space-3);
+      bottom: -0.25rem;
+      width: 0.5rem;
+      height: 0.5rem;
+      background-color: var(--color-error);
+      transform: rotate(45deg);
+    }
+  }
+
+  &__input,
+  &__select,
+  &__textarea {
+    order: 3;
   }
 
   // ── Estado de error ────────────────────────────────────────────────────
