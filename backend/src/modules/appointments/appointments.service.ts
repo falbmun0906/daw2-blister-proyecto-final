@@ -77,7 +77,7 @@ const getAppointmentDocument = async (blisterId: string, appointmentId: string) 
 
 const ensureTreatmentBelongsToBlister = async (
   blisterId: string,
-  treatmentId?: string,
+  treatmentId?: string | null,
   patientUserId?: string,
 ): Promise<void> => {
   if (!treatmentId) {

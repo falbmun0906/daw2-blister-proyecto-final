@@ -38,8 +38,15 @@ function buildPayload(values: FormValues): CreateAppointmentInput {
     title: values.title,
     location: values.location || undefined,
     date: values.date,
-    treatmentId: values.treatmentId ? values.treatmentId : undefined,
+    treatmentId: values.treatmentId ? values.treatmentId : null,
   });
+}
+
+function toLocalDateTimeInput(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
+  return local.toISOString().slice(0, 16);
 }
 
 function AppointmentFormPage() {
@@ -96,7 +103,7 @@ function AppointmentFormPage() {
         patientUserId: target.patientUserId,
         title: target.title,
         location: target.location ?? '',
-        date: target.date.slice(0, 16),
+        date: toLocalDateTimeInput(target.date),
         treatmentId: target.treatmentId ?? '',
       });
     }

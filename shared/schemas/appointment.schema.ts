@@ -24,7 +24,7 @@ const appointmentBaseSchema = z.object({
   title: nonEmptyTrimmedString('Appointment title', 200),
   location: optionalTrimmedString(200),
   date: futureDateSchema('date'),
-  treatmentId: objectIdSchema.optional(),
+  treatmentId: objectIdSchema.nullable().optional(),
 });
 
 export const createAppointmentSchema = appointmentBaseSchema;
