@@ -68,10 +68,10 @@ function HomeSkeleton() {
 }
 
 function formatTodayLabel(): string {
-  return new Intl.DateTimeFormat('es-ES', {
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date());
+  const formatter = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' });
+  const from = new Date();
+  const to = new Date(from.getTime() + 3 * 24 * 60 * 60 * 1000);
+  return `${formatter.format(from)} - ${formatter.format(to)}`;
 }
 
 function formatRemaining(ms: number): string {
@@ -199,7 +199,7 @@ export default function HomePage() {
         dose,
       }));
 
-    return items.slice(0, 4);
+    return items;
   }, [upcomingDoses]);
 
   const refreshHomeMedicines = useCallback(async () => {
@@ -241,12 +241,12 @@ export default function HomePage() {
     }
 
     const from = new Date();
-    const to = new Date(from.getTime() + 48 * 60 * 60 * 1000);
+    const to = new Date(from.getTime() + 72 * 60 * 60 * 1000);
     setUpcomingLoading(true);
     setUpcomingError(null);
     try {
       const list = await getUpcomingDoses({ from, to });
-      setUpcomingDoses(list.slice(0, 4));
+      setUpcomingDoses(list);
     } catch (err) {
       setUpcomingError(isApiError(err) ? err.message : 'No se han podido cargar las próximas tomas.');
     } finally {

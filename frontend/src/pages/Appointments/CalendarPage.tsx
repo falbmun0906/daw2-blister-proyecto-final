@@ -21,6 +21,7 @@ import { useAppointments } from '../../hooks/use.appointments';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
+import { scheduleAppointmentNotifications } from '../../lib/push-notifications';
 import { getCalendar, type UpcomingDose } from '../../services/me.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -38,6 +39,22 @@ const dayKey = (date: Date): string =>
 
 const isSameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+const startOfToday = (): Date => {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate());
+};
+
+const addDays = (date: Date, days: number): Date =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+
+const isWithinWindow = (date: Date, from: Date, to: Date): boolean =>
+  date >= from && date < to;
+
+const buildWindowDays = (visibleDays: number): Date[] => {
+  const start = startOfToday();
+  return Array.from({ length: visibleDays }, (_, index) => addDays(start, index));
+};
 
 const monthFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' });
 const longDateFormatter = new Intl.DateTimeFormat('es-ES', {
@@ -163,6 +180,7 @@ function CalendarPage() {
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
   const userId = useAuthStore((s) => s.user?.id ?? null);
+  const userSettings = useAuthStore((s) => s.user?.settings ?? null);
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const addToast = useUiStore((s) => s.addToast);
@@ -178,6 +196,7 @@ function CalendarPage() {
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
+  const [visibleDays, setVisibleDays] = useState(3);
 
   const currentBlister = useMemo(
     () => blisters.find((blister) => blister._id === blisterId) ?? null,
@@ -195,8 +214,8 @@ function CalendarPage() {
       setCalendarDoses([]);
       return;
     }
-    const from = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-    const to = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    const from = startOfToday();
+    const to = addDays(from, visibleDays);
     setCalendarLoading(true);
     setCalendarError(null);
     try {
@@ -207,7 +226,7 @@ function CalendarPage() {
     } finally {
       setCalendarLoading(false);
     }
-  }, [blisterId, cursor]);
+  }, [blisterId, visibleDays]);
 
   useEffect(() => {
     void refreshCalendarDoses();
@@ -225,17 +244,18 @@ function CalendarPage() {
     return set;
   }, [calendarDoses]);
 
-  const dayAppointments = useMemo(() => {
+  const windowDays = useMemo(() => buildWindowDays(visibleDays), [visibleDays]);
+  const windowStart = windowDays[0] ?? startOfToday();
+  const windowEnd = addDays(windowStart, visibleDays);
+  const visibleAppointments = useMemo(() => {
     return appointments
-      .filter((a) => isSameDay(new Date(a.date), selected))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [appointments, selected]);
+      .filter((appointment) => isWithinWindow(new Date(appointment.date), windowStart, windowEnd))
+      .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
+  }, [appointments, windowEnd, windowStart]);
 
-  const dayDoses = useMemo(() => {
-    return calendarDoses
-      .filter((dose) => isSameDay(new Date(dose.doseAt), selected))
-      .sort((a, b) => new Date(a.doseAt).getTime() - new Date(b.doseAt).getTime());
-  }, [calendarDoses, selected]);
+  useEffect(() => {
+    scheduleAppointmentNotifications(visibleAppointments, userSettings);
+  }, [userSettings, visibleAppointments]);
 
   if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;
@@ -325,35 +345,51 @@ function CalendarPage() {
           />
 
           <div className="c-calendar-page__day">
-            <h3 className="c-calendar-page__day-title">{longDateFormatter.format(selected)}</h3>
+            <h3 className="c-calendar-page__day-title">Próximos {visibleDays} días</h3>
             {error ? (
               <ErrorState message={error} onRetry={() => void refetch()} />
             ) : isLoading ? (
               <Skeleton height="5rem" />
-            ) : dayAppointments.length === 0 ? (
+            ) : visibleAppointments.length === 0 ? (
               <EmptyState
-                title="Sin citas para este día"
+                title="Sin citas próximas"
                 description={
                   canMutate
-                    ? 'Selecciona otro día o añade una cita nueva.'
-                    : 'Selecciona otro día.'
+                    ? 'Añade una cita nueva o muestra más días.'
+                    : 'Puedes mostrar más días para revisar la agenda.'
                 }
               />
             ) : (
-              <ul className="c-calendar-page__list">
-                {dayAppointments.map((appointment) => (
-                  <li key={appointment.id} className="c-calendar-page__item">
-                    <AppointmentCard
-                      appointment={appointment}
-                      treatments={treatments}
-                      blisterId={blisterId}
-                      userRole={role}
-                      onDelete={(a) => setConfirmDelete(a)}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <div className="c-calendar-page__groups">
+                {windowDays.map((day) => {
+                  const items = visibleAppointments.filter((appointment) => isSameDay(new Date(appointment.date), day));
+                  if (items.length === 0) return null;
+                  return (
+                    <section key={dayKey(day)} className="c-calendar-page__group" aria-labelledby={`appointments-${dayKey(day)}`}>
+                      <h4 id={`appointments-${dayKey(day)}`} className="c-calendar-page__group-title">
+                        {longDateFormatter.format(day)}
+                      </h4>
+                      <ul className="c-calendar-page__list">
+                        {items.map((appointment) => (
+                          <li key={appointment.id} className="c-calendar-page__item">
+                            <AppointmentCard
+                              appointment={appointment}
+                              treatments={treatments}
+                              blisterId={blisterId}
+                              userRole={role}
+                              onDelete={(a) => setConfirmDelete(a)}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  );
+                })}
+              </div>
             )}
+            <Button type="button" variant="primary-outline" fullWidth onClick={() => setVisibleDays((days) => days + 3)}>
+              Mostrar más
+            </Button>
           </div>
 
           {canMutate ? (
@@ -369,67 +405,85 @@ function CalendarPage() {
         </>
       ) : (
         <div className="c-calendar-page__pillbox">
-          <h3 className="c-calendar-page__day-title">{longDateFormatter.format(selected)}</h3>
+          <h3 className="c-calendar-page__day-title">Próximos {visibleDays} días</h3>
           {calendarError ? (
             <ErrorState message={calendarError} onRetry={() => void refreshCalendarDoses()} />
           ) : calendarLoading ? (
             <Skeleton height="5rem" />
-          ) : dayDoses.length === 0 ? (
+          ) : calendarDoses.length === 0 ? (
             <EmptyState
               title="Sin tomas programadas"
-              description="Selecciona otro día o añade tratamientos activos para ver aquí su agenda."
+              description="Añade tratamientos activos o muestra más días para ver aquí su agenda."
             />
           ) : (
-            <ul className="c-calendar-page__doses">
-              {dayDoses.map((dose) => {
-                const time = new Date(dose.doseAt);
+            <div className="c-calendar-page__groups">
+              {windowDays.map((day) => {
+                const items = calendarDoses
+                  .filter((dose) => isSameDay(new Date(dose.doseAt), day))
+                  .sort((left, right) => new Date(left.doseAt).getTime() - new Date(right.doseAt).getTime());
+                if (items.length === 0) return null;
                 return (
-                  <li key={`${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`} className="c-dose-row">
-                    <time className="c-dose-row__time" dateTime={time.toISOString()}>
-                      {timeFormatter.format(time)}
-                    </time>
-                    <div className="c-dose-row__body">
-                      <header className="c-dose-row__header">
-                        <div className="c-dose-row__heading">
-                          <p className="c-dose-row__title">{dose.medicineName}</p>
-                          <p className="c-dose-row__meta">
-                            {dose.amount} unidad(es) · {dose.treatmentTitle} · {dose.blisterName}
-                          </p>
-                        </div>
-                        <span title={dose.patientName || dose.blisterName}>
-                          <Avatar
-                            name={dose.patientName || dose.blisterName}
-                            avatarKey={dose.patientAvatarKey ?? undefined}
-                            size="sm"
-                          />
-                        </span>
-                      </header>
-                      {(dose.callerRole === 'OWNER' || dose.callerRole === 'CAREGIVER') ? (
-                        <div className="c-dose-row__actions">
-                          <button
-                            type="button"
-                            className="c-dose-row__btn c-dose-row__btn--solid"
-                            disabled={loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`}
-                            onClick={() => void handleLogDose(dose)}
-                          >
-                            <TbCheck aria-hidden="true" />
-                            <span>{loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}` ? 'Marcando...' : 'Marcar toma'}</span>
-                          </button>
-                          <button
-                            type="button"
-                            className="c-dose-row__btn c-dose-row__btn--ghost"
-                            onClick={() => navigate(ROUTES.editTreatment(dose.blisterId, dose.treatmentId))}
-                          >
-                            Editar dosis
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </li>
+                  <section key={dayKey(day)} className="c-calendar-page__group" aria-labelledby={`doses-${dayKey(day)}`}>
+                    <h4 id={`doses-${dayKey(day)}`} className="c-calendar-page__group-title">
+                      {longDateFormatter.format(day)}
+                    </h4>
+                    <ul className="c-calendar-page__doses">
+                      {items.map((dose) => {
+                        const time = new Date(dose.doseAt);
+                        return (
+                          <li key={`${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`} className="c-dose-row">
+                            <time className="c-dose-row__time" dateTime={time.toISOString()}>
+                              {timeFormatter.format(time)}
+                            </time>
+                            <div className="c-dose-row__body">
+                              <header className="c-dose-row__header">
+                                <div className="c-dose-row__heading">
+                                  <p className="c-dose-row__title">{dose.medicineName}</p>
+                                  <p className="c-dose-row__meta">
+                                    {dose.amount} unidad(es) · {dose.treatmentTitle} · {dose.blisterName}
+                                  </p>
+                                </div>
+                                <span title={dose.patientName || dose.blisterName}>
+                                  <Avatar
+                                    name={dose.patientName || dose.blisterName}
+                                    avatarKey={dose.patientAvatarKey ?? undefined}
+                                    size="sm"
+                                  />
+                                </span>
+                              </header>
+                              {(dose.callerRole === 'OWNER' || dose.callerRole === 'CAREGIVER') ? (
+                                <div className="c-dose-row__actions">
+                                  <button
+                                    type="button"
+                                    className="c-dose-row__btn c-dose-row__btn--solid"
+                                    disabled={loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`}
+                                    onClick={() => void handleLogDose(dose)}
+                                  >
+                                    <TbCheck aria-hidden="true" />
+                                    <span>{loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}` ? 'Marcando...' : 'Marcar toma'}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="c-dose-row__btn c-dose-row__btn--ghost"
+                                    onClick={() => navigate(ROUTES.editTreatment(dose.blisterId, dose.treatmentId))}
+                                  >
+                                    Editar dosis
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
                 );
               })}
-            </ul>
+            </div>
           )}
+          <Button type="button" variant="primary-outline" fullWidth onClick={() => setVisibleDays((days) => days + 3)}>
+            Mostrar más
+          </Button>
         </div>
       )}
 
