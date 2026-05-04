@@ -1,9 +1,10 @@
-import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa6';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../../constants/routes';
 import { useBlisterStore } from '../../stores/blister.store';
 import { usePageTitleStore } from '../../stores/page-title.store';
+import { BlisterHeaderSelector } from './BlisterHeaderSelector';
 
 interface RouteMatchParams {
   blisterId?: string;
@@ -68,7 +69,16 @@ const resolveParentRoute = (
 
   if (pathname === ROUTES.createBlister || pathname === ROUTES.joinBlister) return ROUTES.blisters;
   if (pathname === ROUTES.blisters) return ROUTES.profile;
-  if (pathname === ROUTES.editProfile || pathname === ROUTES.changePassword || pathname === ROUTES.profileAvatar || pathname === ROUTES.accessibility || pathname === ROUTES.mcpToken || pathname === ROUTES.settings) return ROUTES.profile;
+  if (
+    pathname === ROUTES.editProfile
+    || pathname === ROUTES.changePassword
+    || pathname === ROUTES.profileAvatar
+    || pathname === ROUTES.accessibility
+    || pathname === ROUTES.mcpToken
+    || pathname === ROUTES.settings
+  ) {
+    return ROUTES.profile;
+  }
   if (pathname === ROUTES.personalInfo) return ROUTES.editProfile;
   if (pathname === ROUTES.mcpTokenRevoke) return ROUTES.mcpToken;
   if (pathname === ROUTES.profile) return ROUTES.home;
@@ -81,17 +91,17 @@ const resolveParentRoute = (
   return ROUTES.home;
 };
 
-/**
- * Header minimalista que se muestra en todas las páginas autenticadas
- * excepto en /home. Izquierda: botón de volver. Centro: título de la
- * sección registrado vía `usePageTitle()`. Derecha: vacío (reservado).
- */
 export function PageHeader() {
   const navigate = useNavigate();
   const location = useLocation();
-  const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
-  const title = usePageTitleStore((s) => s.title);
-  const backHandler = usePageTitleStore((s) => s.backHandler);
+  const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
+  const title = usePageTitleStore((state) => state.title);
+  const backHandler = usePageTitleStore((state) => state.backHandler);
+
+  const mainMedicine = getMatchParams(location.pathname, ROUTES.blisterMedications(':blisterId'));
+  const mainTreatments = getMatchParams(location.pathname, ROUTES.blisterTreatments(':blisterId'));
+  const mainAppointments = getMatchParams(location.pathname, ROUTES.blisterAppointments(':blisterId'));
+  const isPrimarySection = Boolean(mainMedicine || mainTreatments || mainAppointments);
 
   const handleBack = (): void => {
     if (backHandler) backHandler();
@@ -100,16 +110,28 @@ export function PageHeader() {
 
   return (
     <header className="c-page-header" role="banner">
-      <button
-        type="button"
-        className="c-page-header__back"
-        onClick={handleBack}
-        aria-label="Volver atrás"
-      >
-        <FaArrowLeft className="c-icon c-icon--lg" aria-hidden="true" />
-      </button>
+      <div className="c-page-header__side c-page-header__side--start">
+        {isPrimarySection ? (
+          <span className="c-page-header__spacer" aria-hidden="true" />
+        ) : (
+          <button
+            type="button"
+            className="c-page-header__back"
+            onClick={handleBack}
+            aria-label="Volver atrás"
+          >
+            <FaArrowLeft className="c-icon c-icon--lg" aria-hidden="true" />
+          </button>
+        )}
+      </div>
       <h1 className="c-page-header__title">{title}</h1>
-      <span className="c-page-header__spacer" aria-hidden="true" />
+      <div className="c-page-header__side c-page-header__side--end">
+        {isPrimarySection ? (
+          <BlisterHeaderSelector />
+        ) : (
+          <span className="c-page-header__spacer" aria-hidden="true" />
+        )}
+      </div>
     </header>
   );
 }

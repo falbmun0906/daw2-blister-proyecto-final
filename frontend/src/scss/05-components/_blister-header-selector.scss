@@ -1,0 +1,90 @@
+.c-blister-header-selector {
+  position: relative;
+
+  &__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    min-height: var(--space-touch-min);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  &__stack {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--size-avatar-sm);
+  }
+
+  &__avatar {
+    display: inline-flex;
+    border: 0.125rem solid var(--color-surface);
+    border-radius: var(--radius-full);
+
+    &:not(:first-child) {
+      margin-left: -0.65rem;
+    }
+  }
+
+  &__extra {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--size-avatar-sm);
+    height: var(--size-avatar-sm);
+    margin-left: -0.65rem;
+    padding-inline: 0.3rem;
+    border: 0.125rem solid var(--color-surface);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &__chevron {
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-text-muted);
+  }
+
+  &__modal-copy {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  &__modal-kicker {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__modal-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    line-height: var(--leading-snug);
+  }
+}
+
+.c-modal--blister-selector {
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(0.65rem);
+}
+
+.c-modal__panel--blister-selector {
+  max-width: min(30rem, calc(100vw - 2 * var(--space-4)));
+}
+
+.c-modal__body--blister-selector {
+  gap: var(--space-4);
+}

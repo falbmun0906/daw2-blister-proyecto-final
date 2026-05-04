@@ -1,13 +1,12 @@
 import { useMemo, useRef } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 
-import { ROUTES } from '../../constants/routes';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
-import { BlisterPillSelector } from '../../components/organisms/BlisterPillSelector';
 import { MedicineCard } from '../../components/organisms/MedicineCard';
+import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
 import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -18,25 +17,23 @@ import './InventoryPage.scss';
 function filterMedicines(list: ReturnType<typeof useMedicines>['medicines'], query: string) {
   const q = query.trim().toLowerCase();
   if (!q) return list;
-  return list.filter((m) => {
-    const name = (m.alias?.trim() || m.nombre).toLowerCase();
+  return list.filter((medicine) => {
+    const name = (medicine.alias?.trim() || medicine.nombre).toLowerCase();
     return (
-      name.includes(q) ||
-      m.pactivos.toLowerCase().includes(q) ||
-      m.nregist.includes(q)
+      name.includes(q)
+      || medicine.pactivos.toLowerCase().includes(q)
+      || medicine.nregist.includes(q)
     );
   });
 }
 
 function InventoryPage() {
   usePageTitle('Botiquín');
-  const navigate = useNavigate();
   const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
-  const blisters = useBlisterStore((s) => s.blisters);
-  const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
-  const activeRole = useBlisterStore((s) => s.activeRole);
-  const setActiveBlister = useBlisterStore((s) => s.setActiveBlister);
-  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const blisters = useBlisterStore((state) => state.blisters);
+  const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
+  const activeRole = useBlisterStore((state) => state.activeRole);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const { medicines, isLoading, error, refetch } = useMedicines(blisterId);
@@ -51,7 +48,6 @@ function InventoryPage() {
     [currentBlister, userId],
   );
   const role = routeRole ?? (blisterId === activeBlisterId ? activeRole : null);
-
   const visible = useMemo(() => filterMedicines(medicines, ''), [medicines]);
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';
 
@@ -78,21 +74,6 @@ function InventoryPage() {
         ariaLabel="Buscar medicamento en CIMA"
       />
 
-      {blisters.length > 0 ? (
-        <BlisterPillSelector
-          blisters={blisters}
-          activeBlisterId={blisterId}
-          onCreate={() => navigate(ROUTES.createBlister)}
-          onSelect={(b) => {
-            const role = userId
-              ? (b.members.find((m) => m.userId === userId)?.role ?? null)
-              : null;
-            setActiveBlister(b._id, role);
-            navigate(ROUTES.blisterMedications(b._id));
-          }}
-        />
-      ) : null}
-
       {error ? (
         <ErrorState message={error} onRetry={() => void refetch()} />
       ) : isLoading ? (
@@ -114,9 +95,9 @@ function InventoryPage() {
         />
       ) : (
         <ul className="c-inventory-page__list">
-          {visible.map((m) => (
-            <li key={m._id} className="c-inventory-page__item">
-              <MedicineCard medicine={m} blisterId={blisterId} />
+          {visible.map((medicine) => (
+            <li key={medicine._id} className="c-inventory-page__item">
+              <MedicineCard medicine={medicine} blisterId={blisterId} />
             </li>
           ))}
         </ul>

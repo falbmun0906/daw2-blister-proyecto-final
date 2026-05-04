@@ -4,15 +4,14 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { BlisterPillSelector } from '../../components/organisms/BlisterPillSelector';
 import { TreatmentRow } from '../../components/organisms/TreatmentRow';
 import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
 import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
-import { useBlisterStore } from '../../stores/blister.store';
 import { useAuthStore } from '../../stores/auth.store';
+import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Treatment } from '../../types/treatment.types';
@@ -22,12 +21,11 @@ function TreatmentsPage() {
   usePageTitle('Tratamientos');
   const navigate = useNavigate();
   const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
-  const blisters = useBlisterStore((s) => s.blisters);
-  const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
-  const activeRole = useBlisterStore((s) => s.activeRole);
-  const setActiveBlister = useBlisterStore((s) => s.setActiveBlister);
-  const userId = useAuthStore((s) => s.user?.id ?? null);
-  const addToast = useUiStore((s) => s.addToast);
+  const blisters = useBlisterStore((state) => state.blisters);
+  const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
+  const activeRole = useBlisterStore((state) => state.activeRole);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const addToast = useUiStore((state) => state.addToast);
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const { treatments, isLoading, error, refetch, removeTreatment } = useTreatments(blisterId);
@@ -79,21 +77,6 @@ function TreatmentsPage() {
 
   return (
     <section className="c-treatments-page" aria-label="Listado de tratamientos">
-      {blisters.length > 0 ? (
-        <BlisterPillSelector
-          blisters={blisters}
-          activeBlisterId={blisterId}
-          onCreate={() => navigate(ROUTES.createBlister)}
-          onSelect={(blister) => {
-            const role = userId
-              ? (blister.members.find((member) => member.userId === userId)?.role ?? null)
-              : null;
-            setActiveBlister(blister._id, role);
-            navigate(ROUTES.blisterTreatments(blister._id));
-          }}
-        />
-      ) : null}
-
       {error ? (
         <ErrorState message={error} onRetry={() => void refetch()} />
       ) : isLoading ? (
@@ -153,7 +136,6 @@ function TreatmentsPage() {
           ) : null}
         </ul>
       )}
-
     </section>
   );
 }

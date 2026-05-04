@@ -1,53 +1,33 @@
-// components/_app-header.scss
-//
-// Cabecera de pantallas autenticadas.
-// Estructura: [trigger blister] [título] [acciones (notif + perfil)]
-
 @use '../01-tools/mixins' as *;
 
 .c-app-header {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-
   display: grid;
-  // Mismas anchuras a izquierda y derecha → la columna central queda
-  // centrada respecto al ancho del dispositivo independientemente del
-  // tamaño de los iconos de marca/acciones.
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
-
   min-height: var(--size-header-height);
   padding: var(--space-3) var(--space-screen-x);
   padding-top: calc(var(--space-3) + var(--space-safe-top));
-
   background-color: var(--color-bg);
   border-bottom: 0;
 
-  &__brand {
-    @include touch-target;
-    justify-self: start;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1.5px solid var(--color-primary-mid);
-    border-radius: var(--radius-md);
-    padding: var(--space-1) var(--space-2);
-    color: var(--color-primary-mid);
+  &__spacer {
+    min-height: var(--space-touch-min);
   }
 
-  &__brand-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    display: block;
-    stroke-width: 1.5;
+  &__right {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
   }
 
   &__title {
     margin: 0;
-    text-align: center;
+    text-align: right;
     font-family: var(--font-display);
     font-weight: var(--font-weight-medium);
     font-size: clamp(1.25rem, 5.5vw, 1.75rem);
@@ -57,7 +37,6 @@
   }
 
   &__actions {
-    justify-self: end;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
@@ -75,8 +54,13 @@
     text-decoration: none;
     transition: background-color var(--transition-fast);
 
-    &:hover { background-color: var(--color-primary-tint); }
-    &:focus-visible { @include focus-ring; }
+    &:hover {
+      background-color: var(--color-primary-tint);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
   }
 
   &__action-icon {
@@ -91,7 +75,9 @@
     border-radius: var(--radius-full);
     overflow: hidden;
 
-    &:hover { background-color: transparent; }
+    &:hover {
+      background-color: transparent;
+    }
   }
 
   &__badge {

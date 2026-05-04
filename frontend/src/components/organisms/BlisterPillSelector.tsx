@@ -41,9 +41,10 @@ export function BlisterPillSelector({
 }: BlisterPillSelectorProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+  const placeholderCount = onCreate ? Math.max(0, 3 - blisters.length) : 0;
   const slots = useMemo(
-    () => Array.from({ length: 3 }, (_, index) => blisters[index] ?? null),
-    [blisters],
+    () => [...blisters, ...Array.from({ length: placeholderCount }, () => null)],
+    [blisters, placeholderCount],
   );
 
   // Posiciona el indicador deslizante sobre el item activo.
@@ -58,6 +59,7 @@ export function BlisterPillSelector({
     const items = list.querySelectorAll<HTMLElement>(':scope > .c-blister-pill-selector__item');
     const node = items.item(activeIdx);
     if (!node) return;
+    node.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     setIndicator({ left: node.offsetLeft, width: node.offsetWidth });
   }, [activeBlisterId, slots]);
 

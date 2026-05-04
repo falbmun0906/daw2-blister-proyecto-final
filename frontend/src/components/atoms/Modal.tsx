@@ -6,25 +6,23 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  /** Si `true`, oculta la cabecera con título + cerrar. */
+  className?: string;
+  panelClassName?: string;
+  bodyClassName?: string;
   hideHeader?: boolean;
   hideCloseButton?: boolean;
-  /** Si `true`, no permite cerrar haciendo clic en el fondo. */
   disableBackdropClose?: boolean;
   children: React.ReactNode;
-  /** Etiqueta accesible cuando no hay `title` visible. */
   ariaLabel?: string;
 }
 
-/**
- * Diálogo accesible centrado con fondo difuminado. Cierra con tecla Esc y con
- * clic fuera salvo que se desactive expresamente. Renderizado por portal en
- * `document.body` para escapar del stacking context de la página.
- */
 export function Modal({
   open,
   onClose,
   title,
+  className,
+  panelClassName,
+  bodyClassName,
   hideHeader,
   hideCloseButton,
   disableBackdropClose,
@@ -57,7 +55,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="c-modal"
+      className={['c-modal', className].filter(Boolean).join(' ')}
       role="dialog"
       aria-modal="true"
       aria-label={!title && ariaLabel ? ariaLabel : undefined}
@@ -67,7 +65,7 @@ export function Modal({
       }}
     >
       <div
-        className="c-modal__panel"
+        className={['c-modal__panel', panelClassName].filter(Boolean).join(' ')}
         onClick={(event) => event.stopPropagation()}
       >
         {!hideHeader ? (
@@ -93,7 +91,9 @@ export function Modal({
             )}
           </header>
         ) : null}
-        <div className="c-modal__body">{children}</div>
+        <div className={['c-modal__body', bodyClassName].filter(Boolean).join(' ')}>
+          {children}
+        </div>
       </div>
     </div>,
     portalTarget,
