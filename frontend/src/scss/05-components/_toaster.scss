@@ -16,22 +16,22 @@
 }
 
 .c-toast {
-  --toast-accent: var(--color-primary-mid);
-  --toast-soft: var(--color-primary-tint);
+  --toast-accent: var(--color-accent);
+  --toast-soft: color-mix(in srgb, var(--color-accent) 76%, var(--color-surface));
 
   pointer-events: auto;
   position: relative;
   width: 100%;
-  max-width: 28rem;
+  max-width: 25rem;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
-  border: 0.0625rem solid var(--color-border-subtle);
-  border-radius: var(--radius-xl, var(--radius-lg));
-  background: linear-gradient(115deg, var(--color-surface), var(--color-surface-tinted));
-  color: var(--color-text);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--toast-accent);
+  color: var(--color-text-on-primary);
   box-shadow:
     0 0.75rem 1.5rem -0.5rem color-mix(in srgb, var(--color-text) 18%, transparent),
     0 0.125rem 0.25rem color-mix(in srgb, var(--color-text) 6%, transparent);
@@ -39,42 +39,21 @@
   animation: c-toast-enter 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   will-change: transform, opacity;
 
-  &::before {
-    content: '';
-    position: absolute;
-    inset-block: var(--space-2);
-    inset-inline-start: var(--space-2);
-    width: 0.4rem;
-    border-radius: var(--radius-full);
-    background-color: var(--toast-accent);
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset-block-start: var(--space-2);
-    inset-inline-end: var(--space-12);
-    width: 2.25rem;
-    height: 0.5rem;
-    border-radius: var(--radius-full);
-    background-color: var(--toast-soft);
-    opacity: 0.75;
-    transform: rotate(-12deg);
-  }
-
   &.is-leaving {
     animation: c-toast-exit 0.22s ease-in both;
   }
 
   &__icon {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 2rem;
     height: 2rem;
     border-radius: var(--radius-full);
-    background-color: var(--toast-soft);
-    color: var(--toast-accent);
+    background-color: color-mix(in srgb, var(--color-text-on-primary) 16%, transparent);
+    color: var(--color-text-on-primary);
 
     svg {
       width: 1.25rem;
@@ -86,15 +65,19 @@
     margin: 0;
     font-size: var(--text-sm);
     line-height: 1.35;
-    color: var(--color-text);
+    color: var(--color-text-on-primary);
+    position: relative;
+    z-index: 1;
     word-break: break-word;
   }
 
   &__close {
+    position: relative;
+    z-index: 1;
     appearance: none;
     border: 0;
     background: transparent;
-    color: var(--color-text-muted);
+    color: var(--color-text-on-primary);
     cursor: pointer;
     width: 2rem;
     height: 2rem;
@@ -106,7 +89,7 @@
 
     svg { width: 1rem; height: 1rem; }
 
-    &:hover { background-color: var(--toast-soft); color: var(--color-text); }
+    &:hover { background-color: color-mix(in srgb, var(--color-text-on-primary) 16%, transparent); color: var(--color-text-on-primary); }
     &:focus-visible {
       outline: 0.125rem solid var(--toast-accent);
       outline-offset: 0.125rem;
@@ -117,31 +100,29 @@
     position: absolute;
     left: 0;
     bottom: 0;
-    height: 0.1875rem;
+    top: 0;
+    height: 100%;
     width: 100%;
-    background-color: currentColor;
-    opacity: 0.35;
+    background-color: var(--toast-soft);
+    opacity: 0.32;
     transform-origin: left center;
+    z-index: 0;
     animation-name: c-toast-progress;
     animation-timing-function: linear;
     animation-fill-mode: forwards;
   }
 
   &--success {
-    --toast-accent: var(--color-success);
-    --toast-soft: var(--color-success-subtle);
+    --toast-accent: var(--color-accent);
   }
   &--error {
-    --toast-accent: var(--color-error);
-    --toast-soft: var(--color-error-subtle);
+    --toast-accent: var(--color-accent);
   }
   &--warning {
-    --toast-accent: var(--color-warning);
-    --toast-soft: var(--color-warning-subtle);
+    --toast-accent: var(--color-accent);
   }
   &--info {
-    --toast-accent: var(--color-primary-mid);
-    --toast-soft: var(--color-primary-tint);
+    --toast-accent: var(--color-accent);
   }
 }
 

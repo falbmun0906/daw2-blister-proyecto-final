@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   TbAlertCircle,
+  TbBook2,
   TbFileDescription,
   TbInfoCircle,
   TbPhoto,
@@ -200,8 +201,8 @@ function CimaMedicineDetailPage() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <TbInfoCircle aria-hidden="true" />
-                <span>Detalles</span>
+                <TbBook2 aria-hidden="true" />
+                <span>Prospecto</span>
               </a>
             ) : null}
             <button
