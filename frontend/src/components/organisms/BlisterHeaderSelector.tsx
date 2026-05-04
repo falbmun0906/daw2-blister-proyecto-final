@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { matchPath, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { TbChevronDown } from 'react-icons/tb';
 
@@ -9,6 +9,8 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import type { Blister } from '../../types/blister.types';
 import { BlisterPillSelector } from './BlisterPillSelector';
+
+const BLISTER_SELECTOR_TIP_STORAGE_KEY = 'blister-header-selector-tip';
 
 function resolveCurrentRoute(pathname: string, blisterId: string): string {
   if (matchPath({ path: ROUTES.blisterTreatments(':blisterId'), end: true }, pathname)) {
@@ -25,6 +27,10 @@ function resolveUserRole(blister: Blister, userId: string | null) {
   return blister.members.find((member) => member.userId === userId)?.role ?? null;
 }
 
+function buildTipKey(userId: string | null): string | null {
+  return userId ? `${BLISTER_SELECTOR_TIP_STORAGE_KEY}:${userId}` : null;
+}
+
 export function BlisterHeaderSelector() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +40,7 @@ export function BlisterHeaderSelector() {
   const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
   const setActiveBlister = useBlisterStore((state) => state.setActiveBlister);
   const [open, setOpen] = useState(false);
+  const [showTip, setShowTip] = useState(false);
 
   const blisterId = routeBlisterId ?? activeBlisterId;
   const currentBlister = useMemo(
@@ -42,6 +49,34 @@ export function BlisterHeaderSelector() {
   );
   const visibleMembers = currentBlister?.members.slice(0, 2) ?? [];
   const extraMembers = Math.max(0, (currentBlister?.members.length ?? 0) - visibleMembers.length);
+
+  useEffect(() => {
+    const tipKey = buildTipKey(userId);
+    if (!tipKey || open || blisters.length < 2) {
+      setShowTip(false);
+      return;
+    }
+
+    if (window.localStorage.getItem(tipKey) === '1') {
+      setShowTip(false);
+      return;
+    }
+
+    setShowTip(true);
+  }, [blisters.length, open, userId]);
+
+  const dismissTip = (): void => {
+    const tipKey = buildTipKey(userId);
+    if (tipKey) {
+      window.localStorage.setItem(tipKey, '1');
+    }
+    setShowTip(false);
+  };
+
+  const handleOpen = (): void => {
+    dismissTip();
+    setOpen(true);
+  };
 
   const handleSelect = (blister: Blister): void => {
     setActiveBlister(blister._id, resolveUserRole(blister, userId));
@@ -58,7 +93,7 @@ export function BlisterHeaderSelector() {
           aria-label={currentBlister ? `Cambiar blíster. Activo: ${currentBlister.name}` : 'Cambiar blíster'}
           aria-expanded={open}
           aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
+          onClick={handleOpen}
         >
           <span className="c-blister-header-selector__stack" aria-hidden="true">
             {visibleMembers.map((member, index) => (
@@ -80,6 +115,33 @@ export function BlisterHeaderSelector() {
           </span>
           <TbChevronDown className="c-blister-header-selector__chevron" aria-hidden="true" />
         </button>
+
+        {showTip ? (
+          <div className="c-blister-header-selector__coachmark" role="presentation">
+            <button
+              type="button"
+              className="c-blister-header-selector__coachmark-backdrop"
+              aria-label="Cerrar ayuda del selector de blíster"
+              onClick={dismissTip}
+            />
+            <div className="c-blister-header-selector__coachmark-bubble" role="note" aria-live="polite">
+              <span className="c-blister-header-selector__coachmark-hand" aria-hidden="true">
+                👆
+              </span>
+              <p className="c-blister-header-selector__coachmark-title">Cambia aquí de blíster</p>
+              <p className="c-blister-header-selector__coachmark-copy">
+                Desde este botón puedes ver otro blíster sin salir de la pantalla.
+              </p>
+              <button
+                type="button"
+                className="c-blister-header-selector__coachmark-cta"
+                onClick={dismissTip}
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <Modal
