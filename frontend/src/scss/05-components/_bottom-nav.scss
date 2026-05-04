@@ -6,6 +6,9 @@
 @use '../01-tools/mixins' as *;
 
 .c-bottom-nav {
+  --bottom-nav-selected: var(--color-text-on-primary);
+  --bottom-nav-muted: color-mix(in srgb, var(--color-text-on-primary) 68%, transparent);
+
   position: fixed;
   inset-inline: 0;
   bottom: -1px;
@@ -22,6 +25,7 @@
   padding-bottom: calc(var(--space-safe-bottom) + 1px);
   border-top-left-radius: var(--radius-xl);
   border-top-right-radius: var(--radius-xl);
+  overflow: hidden;
 
   &__item {
     @include touch-target;
@@ -35,7 +39,7 @@
     min-height: var(--size-bottom-nav-height);
     padding: var(--space-2) var(--space-1);
 
-    color: var(--color-text-on-primary);
+    color: var(--bottom-nav-muted);
     text-decoration: none;
     font-family: var(--font-body);
     font-size: var(--text-xs);
@@ -44,15 +48,19 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    opacity: 0.86;
-    transition: opacity var(--transition-fast),
-                background-color var(--transition-fast);
+    opacity: 1;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--transition-fast);
 
-    &:hover { opacity: 1; }
+    &:hover,
+    &:active {
+      color: var(--bottom-nav-selected);
+      background: transparent;
+    }
     &:focus-visible { @include focus-ring(var(--color-text-on-primary), 2px); }
 
     &.is-active {
-      opacity: 1;
+      color: var(--bottom-nav-selected);
       font-weight: var(--font-weight-semibold);
     }
 
@@ -77,6 +85,10 @@
 
     svg {
       stroke-width: 1.65;
+    }
+
+    .c-icon {
+      display: block;
     }
   }
 

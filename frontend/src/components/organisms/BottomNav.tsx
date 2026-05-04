@@ -1,7 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactElement } from 'react';
-import { FaBriefcaseMedical } from 'react-icons/fa6';
 import {
+  FaBriefcaseMedical,
+  FaCalendarDays,
+  FaCapsules,
+  FaHouse,
+} from 'react-icons/fa6';
+import {
+  TbBriefcase,
   TbHome,
   TbPill,
   TbCalendar,
@@ -14,6 +20,7 @@ interface NavItem {
   to: string | null;
   label: string;
   icon: ReactElement;
+  activeIcon: ReactElement;
   requiresBlister?: boolean;
 }
 
@@ -26,30 +33,34 @@ export function BottomNav() {
       to: ROUTES.home,
       label: 'Inicio',
       icon: <TbHome className="c-icon c-icon--lg" aria-hidden="true" />,
+      activeIcon: <FaHouse className="c-icon c-icon--lg" aria-hidden="true" />,
     },
     {
       to: activeBlisterId ? ROUTES.blisterMedications(activeBlisterId) : null,
       label: 'Botiquín',
-      icon: <FaBriefcaseMedical className="c-icon c-icon--lg" aria-hidden="true" />,
+      icon: <TbBriefcase className="c-icon c-icon--lg" aria-hidden="true" />,
+      activeIcon: <FaBriefcaseMedical className="c-icon c-icon--lg" aria-hidden="true" />,
       requiresBlister: true,
     },
     {
       to: activeBlisterId ? ROUTES.blisterTreatments(activeBlisterId) : null,
       label: 'Tratamientos',
       icon: <TbPill className="c-icon c-icon--lg" aria-hidden="true" />,
+      activeIcon: <FaCapsules className="c-icon c-icon--lg" aria-hidden="true" />,
       requiresBlister: true,
     },
     {
       to: activeBlisterId ? ROUTES.blisterAppointments(activeBlisterId) : null,
       label: 'Calendario',
       icon: <TbCalendar className="c-icon c-icon--lg" aria-hidden="true" />,
+      activeIcon: <FaCalendarDays className="c-icon c-icon--lg" aria-hidden="true" />,
       requiresBlister: true,
     },
   ];
 
   return (
     <nav className="c-bottom-nav" aria-label="Navegación principal">
-      {items.map(({ to, label, icon, requiresBlister }) => {
+      {items.map(({ to, label, icon, activeIcon, requiresBlister }) => {
         const isDisabled = (requiresBlister && !activeBlisterId) || to === null;
         if (isDisabled || to === null) {
           return (
@@ -74,8 +85,14 @@ export function BottomNav() {
               ['c-bottom-nav__item', isActive && 'is-active'].filter(Boolean).join(' ')
             }
           >
-            <span className="c-bottom-nav__icon-wrapper">{icon}</span>
-            <span className="c-bottom-nav__label">{label}</span>
+            {({ isActive }) => (
+              <>
+                <span className="c-bottom-nav__icon-wrapper">
+                  {isActive ? activeIcon : icon}
+                </span>
+                <span className="c-bottom-nav__label">{label}</span>
+              </>
+            )}
           </NavLink>
         );
       })}
