@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import {
-  TbCalendar,
-  TbCheck,
-  TbChevronLeft,
-  TbChevronRight,
-  TbPill,
-  TbPlus,
-} from 'react-icons/tb';
+import { TbCalendar, TbCheck, TbChevronLeft, TbChevronRight, TbPill, TbPlus } from 'react-icons/tb';
 
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
@@ -16,7 +9,7 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
 import { ROUTES } from '../../constants/routes';
-import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
+import { isStockInsufficientError, useAdherence } from '../../hooks/use.adherence';
 import { useAppointments } from '../../hooks/use.appointments';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -37,13 +30,22 @@ const WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 const dayKey = (date: Date): string =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
+const capitalizeFirst = (value: string): string =>
+  value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
 const isSameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
-const startOfToday = (): Date => {
-  const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), today.getDate());
-};
+const startOfDay = (date: Date): Date =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const startOfToday = (): Date => startOfDay(new Date());
+
+const startOfMonth = (date: Date): Date =>
+  new Date(date.getFullYear(), date.getMonth(), 1);
+
+const startOfNextMonth = (date: Date): Date =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
 const addDays = (date: Date, days: number): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
@@ -51,10 +53,8 @@ const addDays = (date: Date, days: number): Date =>
 const isWithinWindow = (date: Date, from: Date, to: Date): boolean =>
   date >= from && date < to;
 
-const buildWindowDays = (visibleDays: number): Date[] => {
-  const start = startOfToday();
-  return Array.from({ length: visibleDays }, (_, index) => addDays(start, index));
-};
+const buildWindowDays = (start: Date, visibleDays: number): Date[] =>
+  Array.from({ length: visibleDays }, (_, index) => addDays(start, index));
 
 const monthFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' });
 const longDateFormatter = new Intl.DateTimeFormat('es-ES', {
@@ -67,6 +67,12 @@ const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   minute: '2-digit',
 });
 
+const formatMonthTitle = (date: Date): string =>
+  capitalizeFirst(monthFormatter.format(date));
+
+const formatDayLabel = (date: Date): string =>
+  capitalizeFirst(longDateFormatter.format(date).replace(',', ''));
+
 interface MonthCalendarProps {
   cursor: Date;
   selected: Date;
@@ -77,22 +83,32 @@ interface MonthCalendarProps {
   onNextMonth: () => void;
 }
 
-/** Cuadrícula mensual con casillas marcadas para días con citas. */
-function MonthCalendar({ cursor, selected, doseDays, appointmentDays, onSelect, onPrevMonth, onNextMonth }: MonthCalendarProps) {
+function MonthCalendar({
+  cursor,
+  selected,
+  doseDays,
+  appointmentDays,
+  onSelect,
+  onPrevMonth,
+  onNextMonth,
+}: MonthCalendarProps) {
   const today = new Date();
   const firstOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-  // Lunes como primer día (0 = Lu .. 6 = Do).
   const firstWeekDay = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
   const cells: Array<{ date: Date; outside: boolean }> = [];
-  // Días del mes anterior para completar la primera fila.
-  for (let i = firstWeekDay; i > 0; i -= 1) {
-    cells.push({ date: new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth(), 1 - i), outside: true });
+
+  for (let index = firstWeekDay; index > 0; index -= 1) {
+    cells.push({
+      date: new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth(), 1 - index),
+      outside: true,
+    });
   }
-  for (let d = 1; d <= daysInMonth; d += 1) {
-    cells.push({ date: new Date(cursor.getFullYear(), cursor.getMonth(), d), outside: false });
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push({ date: new Date(cursor.getFullYear(), cursor.getMonth(), day), outside: false });
   }
-  // Hasta completar 6 filas (42 celdas).
+
   while (cells.length < 42) {
     const last = cells[cells.length - 1]!.date;
     cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), outside: true });
@@ -109,7 +125,7 @@ function MonthCalendar({ cursor, selected, doseDays, appointmentDays, onSelect, 
         >
           <TbChevronLeft aria-hidden="true" />
         </button>
-        <h2 className="c-month-calendar__title">{monthFormatter.format(cursor)}</h2>
+        <h2 className="c-month-calendar__title">{formatMonthTitle(cursor)}</h2>
         <button
           type="button"
           className="c-month-calendar__nav"
@@ -121,8 +137,8 @@ function MonthCalendar({ cursor, selected, doseDays, appointmentDays, onSelect, 
       </header>
 
       <div className="c-month-calendar__weekdays" aria-hidden="true">
-        {WEEK_DAYS.map((d) => (
-          <span key={d}>{d}</span>
+        {WEEK_DAYS.map((day) => (
+          <span key={day}>{day}</span>
         ))}
       </div>
 
@@ -136,20 +152,21 @@ function MonthCalendar({ cursor, selected, doseDays, appointmentDays, onSelect, 
           const isMarked = hasDose || hasAppointment;
           const className = [
             'c-month-calendar__cell',
-            outside && 'is-outside',
-            isToday && 'is-today',
-            isSelected && 'is-selected',
-            isMarked && 'is-marked',
+            outside ? 'is-outside' : null,
+            isToday ? 'is-today' : null,
+            isSelected ? 'is-selected' : null,
+            isMarked ? 'is-marked' : null,
           ]
             .filter(Boolean)
             .join(' ');
+
           return (
             <button
               key={key}
               type="button"
               role="gridcell"
               aria-pressed={isSelected}
-              aria-label={longDateFormatter.format(date)}
+              aria-label={formatDayLabel(date)}
               className={className}
               onClick={() => onSelect(date)}
             >
@@ -164,6 +181,7 @@ function MonthCalendar({ cursor, selected, doseDays, appointmentDays, onSelect, 
           );
         })}
       </div>
+
       <div className="c-month-calendar__legend" aria-label="Leyenda del calendario">
         <span><i className="c-month-calendar__dot c-month-calendar__dot--dose" aria-hidden="true" /> Toma</span>
         <span><i className="c-month-calendar__dot c-month-calendar__dot--appointment" aria-hidden="true" /> Cita médica</span>
@@ -176,14 +194,14 @@ function CalendarPage() {
   usePageTitle('Calendario');
   const navigate = useNavigate();
   const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
-  const blisters = useBlisterStore((s) => s.blisters);
-  const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
-  const activeRole = useBlisterStore((s) => s.activeRole);
-  const userId = useAuthStore((s) => s.user?.id ?? null);
-  const userSettings = useAuthStore((s) => s.user?.settings ?? null);
+  const blisters = useBlisterStore((state) => state.blisters);
+  const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
+  const activeRole = useBlisterStore((state) => state.activeRole);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const userSettings = useAuthStore((state) => state.user?.settings ?? null);
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
-  const addToast = useUiStore((s) => s.addToast);
+  const addToast = useUiStore((state) => state.addToast);
   const { appointments, isLoading, error, refetch, removeAppointment } = useAppointments(blisterId);
   const { treatments } = useTreatments(blisterId);
   const { logDoseInBlister } = useAdherence(blisterId);
@@ -193,10 +211,13 @@ function CalendarPage() {
   const [selected, setSelected] = useState(() => new Date());
   const [confirmDelete, setConfirmDelete] = useState<Appointment | null>(null);
   const [calendarDoses, setCalendarDoses] = useState<UpcomingDose[]>([]);
+  const [monthDoseMarkers, setMonthDoseMarkers] = useState<UpcomingDose[]>([]);
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
-  const [visibleDays, setVisibleDays] = useState(3);
+  const [appointmentAnchorDate, setAppointmentAnchorDate] = useState(() => startOfToday());
+  const [appointmentVisibleDays, setAppointmentVisibleDays] = useState(3);
+  const [doseVisibleDays, setDoseVisibleDays] = useState(3);
 
   const currentBlister = useMemo(
     () => blisters.find((blister) => blister._id === blisterId) ?? null,
@@ -214,10 +235,12 @@ function CalendarPage() {
       setCalendarDoses([]);
       return;
     }
+
     const from = startOfToday();
-    const to = addDays(from, visibleDays);
+    const to = addDays(from, doseVisibleDays);
     setCalendarLoading(true);
     setCalendarError(null);
+
     try {
       const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'] });
       setCalendarDoses(payload.doses);
@@ -226,32 +249,78 @@ function CalendarPage() {
     } finally {
       setCalendarLoading(false);
     }
-  }, [blisterId, visibleDays]);
+  }, [blisterId, doseVisibleDays]);
+
+  const refreshMonthDoseMarkers = useCallback(async () => {
+    if (!blisterId) {
+      setMonthDoseMarkers([]);
+      return;
+    }
+
+    const today = startOfToday();
+    const from = cursor < today ? today : startOfMonth(cursor);
+    const to = startOfNextMonth(cursor);
+
+    if (from >= to) {
+      setMonthDoseMarkers([]);
+      return;
+    }
+
+    try {
+      const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'] });
+      setMonthDoseMarkers(payload.doses);
+    } catch {
+      setMonthDoseMarkers([]);
+    }
+  }, [blisterId, cursor]);
 
   useEffect(() => {
     void refreshCalendarDoses();
   }, [refreshCalendarDoses]);
 
+  useEffect(() => {
+    void refreshMonthDoseMarkers();
+  }, [refreshMonthDoseMarkers]);
+
   const appointmentDays = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of appointments) set.add(dayKey(new Date(a.date)));
-    return set;
+    const today = startOfToday();
+    const days = new Set<string>();
+
+    for (const appointment of appointments) {
+      const date = new Date(appointment.date);
+      if (date >= today) {
+        days.add(dayKey(date));
+      }
+    }
+
+    return days;
   }, [appointments]);
 
   const doseDays = useMemo(() => {
-    const set = new Set<string>();
-    for (const dose of calendarDoses) set.add(dayKey(new Date(dose.doseAt)));
-    return set;
-  }, [calendarDoses]);
+    const days = new Set<string>();
+    for (const dose of monthDoseMarkers) {
+      days.add(dayKey(new Date(dose.doseAt)));
+    }
+    return days;
+  }, [monthDoseMarkers]);
 
-  const windowDays = useMemo(() => buildWindowDays(visibleDays), [visibleDays]);
-  const windowStart = windowDays[0] ?? startOfToday();
-  const windowEnd = addDays(windowStart, visibleDays);
+  const appointmentWindowStart = appointmentAnchorDate;
+  const appointmentWindowEnd = addDays(appointmentWindowStart, appointmentVisibleDays);
+  const appointmentWindowDays = useMemo(
+    () => buildWindowDays(appointmentWindowStart, appointmentVisibleDays),
+    [appointmentVisibleDays, appointmentWindowStart],
+  );
+
   const visibleAppointments = useMemo(() => {
     return appointments
-      .filter((appointment) => isWithinWindow(new Date(appointment.date), windowStart, windowEnd))
+      .filter((appointment) => isWithinWindow(new Date(appointment.date), appointmentWindowStart, appointmentWindowEnd))
       .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
-  }, [appointments, windowEnd, windowStart]);
+  }, [appointmentWindowEnd, appointmentWindowStart, appointments]);
+
+  const doseWindowDays = useMemo(
+    () => buildWindowDays(startOfToday(), doseVisibleDays),
+    [doseVisibleDays],
+  );
 
   useEffect(() => {
     scheduleAppointmentNotifications(visibleAppointments, userSettings);
@@ -285,6 +354,7 @@ function CalendarPage() {
   const handleLogDose = async (dose: UpcomingDose): Promise<void> => {
     const key = `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`;
     setLoggingDoseKey(key);
+
     try {
       await logDoseInBlister(dose.blisterId, {
         treatmentId: dose.treatmentId,
@@ -292,12 +362,19 @@ function CalendarPage() {
         amount: dose.amount,
         timestamp: new Date(dose.doseAt),
       });
-      setCalendarDoses((prev) => prev.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key));
+      setCalendarDoses((previous) =>
+        previous.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key),
+      );
+      setMonthDoseMarkers((previous) =>
+        previous.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key),
+      );
       addToast({ message: 'Toma marcada como tomada.', variant: 'success' });
     } catch (err) {
       const message = isStockInsufficientError(err)
         ? 'No hay stock suficiente para registrar esta toma.'
-        : isApiError(err) ? err.message : 'No se ha podido registrar la toma.';
+        : isApiError(err)
+          ? err.message
+          : 'No se ha podido registrar la toma.';
       addToast({ message, variant: 'error' });
     } finally {
       setLoggingDoseKey(null);
@@ -339,13 +416,15 @@ function CalendarPage() {
             onSelect={(date) => {
               setSelected(date);
               setCursor(date);
+              setAppointmentAnchorDate(startOfDay(date));
+              setAppointmentVisibleDays(1);
             }}
             onPrevMonth={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
             onNextMonth={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
           />
 
           <div className="c-calendar-page__day">
-            <h3 className="c-calendar-page__day-title">Próximos {visibleDays} días</h3>
+            <h3 className="c-calendar-page__day-title">Próximas citas</h3>
             {error ? (
               <ErrorState message={error} onRetry={() => void refetch()} />
             ) : isLoading ? (
@@ -355,19 +434,25 @@ function CalendarPage() {
                 title="Sin citas próximas"
                 description={
                   canMutate
-                    ? 'Añade una cita nueva o muestra más días.'
-                    : 'Puedes mostrar más días para revisar la agenda.'
+                    ? 'Añade una cita nueva o revisa otro día del calendario.'
+                    : 'Selecciona otro día del calendario para revisar la agenda.'
                 }
               />
             ) : (
               <div className="c-calendar-page__groups">
-                {windowDays.map((day) => {
-                  const items = visibleAppointments.filter((appointment) => isSameDay(new Date(appointment.date), day));
-                  if (items.length === 0) return null;
+                {appointmentWindowDays.map((day) => {
+                  const items = visibleAppointments.filter((appointment) =>
+                    isSameDay(new Date(appointment.date), day),
+                  );
+
+                  if (items.length === 0) {
+                    return null;
+                  }
+
                   return (
                     <section key={dayKey(day)} className="c-calendar-page__group" aria-labelledby={`appointments-${dayKey(day)}`}>
                       <h4 id={`appointments-${dayKey(day)}`} className="c-calendar-page__group-title">
-                        {longDateFormatter.format(day)}
+                        {formatDayLabel(day)}
                       </h4>
                       <ul className="c-calendar-page__list">
                         {items.map((appointment) => (
@@ -377,7 +462,7 @@ function CalendarPage() {
                               treatments={treatments}
                               blisterId={blisterId}
                               userRole={role}
-                              onDelete={(a) => setConfirmDelete(a)}
+                              onDelete={(item) => setConfirmDelete(item)}
                             />
                           </li>
                         ))}
@@ -387,9 +472,17 @@ function CalendarPage() {
                 })}
               </div>
             )}
-            <Button type="button" variant="primary-outline" fullWidth onClick={() => setVisibleDays((days) => days + 3)}>
-              Mostrar más
-            </Button>
+
+            {visibleAppointments.length > 0 ? (
+              <Button
+                type="button"
+                variant="primary-outline"
+                fullWidth
+                onClick={() => setAppointmentVisibleDays((days) => days + 3)}
+              >
+                Mostrar más
+              </Button>
+            ) : null}
           </div>
 
           {canMutate ? (
@@ -405,7 +498,7 @@ function CalendarPage() {
         </>
       ) : (
         <div className="c-calendar-page__pillbox">
-          <h3 className="c-calendar-page__day-title">Próximos {visibleDays} días</h3>
+          <h3 className="c-calendar-page__day-title">Próximos {doseVisibleDays} días</h3>
           {calendarError ? (
             <ErrorState message={calendarError} onRetry={() => void refreshCalendarDoses()} />
           ) : calendarLoading ? (
@@ -417,19 +510,24 @@ function CalendarPage() {
             />
           ) : (
             <div className="c-calendar-page__groups">
-              {windowDays.map((day) => {
+              {doseWindowDays.map((day) => {
                 const items = calendarDoses
                   .filter((dose) => isSameDay(new Date(dose.doseAt), day))
                   .sort((left, right) => new Date(left.doseAt).getTime() - new Date(right.doseAt).getTime());
-                if (items.length === 0) return null;
+
+                if (items.length === 0) {
+                  return null;
+                }
+
                 return (
                   <section key={dayKey(day)} className="c-calendar-page__group" aria-labelledby={`doses-${dayKey(day)}`}>
                     <h4 id={`doses-${dayKey(day)}`} className="c-calendar-page__group-title">
-                      {longDateFormatter.format(day)}
+                      {formatDayLabel(day)}
                     </h4>
                     <ul className="c-calendar-page__doses">
                       {items.map((dose) => {
                         const time = new Date(dose.doseAt);
+
                         return (
                           <li key={`${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`} className="c-dose-row">
                             <time className="c-dose-row__time" dateTime={time.toISOString()}>
@@ -451,7 +549,7 @@ function CalendarPage() {
                                   />
                                 </span>
                               </header>
-                              {(dose.callerRole === 'OWNER' || dose.callerRole === 'CAREGIVER') ? (
+                              {dose.callerRole === 'OWNER' || dose.callerRole === 'CAREGIVER' ? (
                                 <div className="c-dose-row__actions">
                                   <button
                                     type="button"
@@ -460,7 +558,11 @@ function CalendarPage() {
                                     onClick={() => void handleLogDose(dose)}
                                   >
                                     <TbCheck aria-hidden="true" />
-                                    <span>{loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}` ? 'Marcando...' : 'Marcar toma'}</span>
+                                    <span>
+                                      {loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`
+                                        ? 'Marcando...'
+                                        : 'Marcar toma'}
+                                    </span>
                                   </button>
                                   <button
                                     type="button"
@@ -481,7 +583,8 @@ function CalendarPage() {
               })}
             </div>
           )}
-          <Button type="button" variant="primary-outline" fullWidth onClick={() => setVisibleDays((days) => days + 3)}>
+
+          <Button type="button" variant="primary-outline" fullWidth onClick={() => setDoseVisibleDays((days) => days + 3)}>
             Mostrar más
           </Button>
         </div>
