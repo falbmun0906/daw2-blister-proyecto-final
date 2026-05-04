@@ -117,3 +117,13 @@ export function useNotifications(
     dismiss,
   };
 }
+
+/** Refresca el buzÃ³n global para que badges y cabecera reaccionen tras mutaciones de dominio. */
+export function useRefreshNotifications(): () => Promise<void> {
+  const setNotifications = useNotificationsStore((s) => s.setNotifications);
+
+  return useCallback(async () => {
+    const result = await listNotifications(1, 20);
+    setNotifications(result.notifications);
+  }, [setNotifications]);
+}

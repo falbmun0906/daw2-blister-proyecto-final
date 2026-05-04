@@ -6,6 +6,7 @@ import {
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
+import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { AppError } from '../../utils/app-error';
 import {
@@ -14,6 +15,7 @@ import {
 import {
   normalizeMedicineIconType,
 } from './medicines.utils';
+import { notifyStockLow } from '../notifications/notifications.service';
 import {
   type CreateMedicineInput,
   type MedicinesListQuery,
@@ -219,6 +221,19 @@ export const medicinesUpdate = async (
   }
 
   await medicine.save();
+
+  if (
+    (input.stock !== undefined || input.threshold !== undefined) &&
+    medicine.stock <= medicine.threshold
+  ) {
+    const blister = await BlisterModel.findOne({
+      _id: new Types.ObjectId(blisterId),
+      deletedAt: null,
+    });
+    if (blister) {
+      await notifyStockLow(medicine, blister);
+    }
+  }
 
   return toMedicineView(medicine);
 };

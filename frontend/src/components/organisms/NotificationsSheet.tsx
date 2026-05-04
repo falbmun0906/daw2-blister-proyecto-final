@@ -57,6 +57,7 @@ export function NotificationsSheet() {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const startY = useRef<number | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const groups = useMemo(() => groupByDate(notifications), [notifications]);
 
@@ -79,20 +80,54 @@ export function NotificationsSheet() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [open, close]);
 
+  useEffect(() => {
+    if (!open) return;
+    const scrollTargets = [
+      document.body,
+      document.querySelector<HTMLElement>('.c-app-layout__main'),
+      document.querySelector<HTMLElement>('.c-desktop-device-shell__screen'),
+    ].filter((target): target is HTMLElement => target !== null);
+    const previous = scrollTargets.map((target) => ({
+      target,
+      overflow: target.style.overflow,
+      overscrollBehavior: target.style.overscrollBehavior,
+    }));
+
+    for (const target of scrollTargets) {
+      target.style.overflow = 'hidden';
+      target.style.overscrollBehavior = 'contain';
+    }
+
+    return () => {
+      for (const item of previous) {
+        item.target.style.overflow = item.overflow;
+        item.target.style.overscrollBehavior = item.overscrollBehavior;
+      }
+    };
+  }, [open]);
+
   // Refresca al abrir.
   useEffect(() => {
     if (open) void refetch();
   }, [open, refetch]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    const isHandle = Boolean(target.closest('.c-notifications-sheet__handle-area'));
+    if (!isHandle && target.closest('button, a')) return;
     startY.current = event.clientY;
-    setIsDragging(true);
     (event.target as Element).setPointerCapture?.(event.pointerId);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (startY.current === null) return;
     const delta = event.clientY - startY.current;
+    const bodyScrollTop = bodyRef.current?.scrollTop ?? 0;
+    if (!isDragging) {
+      if (delta <= 0 || bodyScrollTop > 0) return;
+      setIsDragging(true);
+    }
+    event.preventDefault();
     setDragOffset(Math.max(0, delta));
   };
 
@@ -163,14 +198,12 @@ export function NotificationsSheet() {
         role="dialog"
         aria-modal="true"
         aria-label="Notificaciones"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
-        <div
-          className="c-notifications-sheet__handle-area"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-        >
+        <div className="c-notifications-sheet__handle-area">
           <span className="c-notifications-sheet__handle" aria-hidden="true" />
         </div>
 
@@ -187,7 +220,7 @@ export function NotificationsSheet() {
           ) : null}
         </header>
 
-        <div className="c-notifications-sheet__body">
+        <div className="c-notifications-sheet__body" ref={bodyRef}>
           {isLoading ? (
             <>
               <Skeleton />

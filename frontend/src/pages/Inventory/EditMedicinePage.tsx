@@ -13,6 +13,7 @@ import { Stepper } from '../../components/atoms/Stepper';
 import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { useRefreshNotifications } from '../../hooks/use.notifications';
 import { getMedicine, removeMedicine, updateMedicine } from '../../services/medicines.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -47,6 +48,7 @@ function EditMedicinePage() {
   const upsertMedicine = useMedicinesStore((s) => s.upsertMedicine);
   const removeFromStore = useMedicinesStore((s) => s.removeMedicine);
   const addToast = useUiStore((s) => s.addToast);
+  const refreshNotifications = useRefreshNotifications();
 
   const [medicine, setMedicine] = useState<Medicine | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -106,6 +108,7 @@ function EditMedicinePage() {
         expDate: new Date(data.expDate),
       });
       upsertMedicine(updated);
+      await refreshNotifications();
       addToast({ message: 'Medicamento actualizado.', variant: 'success' });
       navigate(ROUTES.medicineDetail(blisterId, medicineId));
     } catch (err) {

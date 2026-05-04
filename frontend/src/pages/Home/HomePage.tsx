@@ -13,6 +13,7 @@ import { UndoToast } from '../../components/molecules/UndoToast';
 import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
 import { useBlisters } from '../../hooks/use.blisters';
 import { useMedicines } from '../../hooks/use.medicines';
+import { useRefreshNotifications } from '../../hooks/use.notifications';
 import { ROUTES } from '../../constants/routes';
 import { getUpcomingDoses, type UpcomingDose } from '../../services/me.service';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -70,6 +71,7 @@ export default function HomePage() {
   const addToast = useUiStore((s) => s.addToast);
   const { medicines, refetch: refetchMedicines } = useMedicines(activeBlisterId);
   const { logDose, undoLog } = useAdherence(activeBlisterId);
+  const refreshNotifications = useRefreshNotifications();
   const [upcomingDoses, setUpcomingDoses] = useState<UpcomingDose[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [upcomingError, setUpcomingError] = useState<string | null>(null);
@@ -141,7 +143,7 @@ export default function HomePage() {
         timestamp: new Date(dose.doseAt),
       });
       setUpcomingDoses((prev) => prev.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key));
-      await Promise.all([refetchMedicines(), refreshUpcoming()]);
+      await Promise.all([refetchMedicines(), refreshUpcoming(), refreshNotifications()]);
       setActiveUndos((prev) => [
         ...prev,
         {
