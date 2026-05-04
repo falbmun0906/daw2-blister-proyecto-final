@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { Button } from '../../components/atoms/Button';
+import { Modal } from '../../components/atoms/Modal';
 import { FontSelector } from '../../components/molecules/FontSelector';
 import { TextSizeSelector } from '../../components/molecules/TextSizeSelector';
 import { ThemeSelector } from '../../components/molecules/ThemeSelector';
@@ -29,6 +31,7 @@ function AccessibilityPage() {
 
   const [draft, setDraft] = useState<UserSettings | null>(user?.settings ?? null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   useEffect(() => {
     if (draft) applyUserSettings(draft);
@@ -38,17 +41,19 @@ function AccessibilityPage() {
 
   const persist = async (
     next: Pick<UserSettings, 'theme' | 'font' | 'fontSize'>,
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     setIsSaving(true);
     try {
       const updated = await updateProfile({ settings: next });
       updateUser(updated);
       applyUserSettings(updated.settings);
+      return true;
     } catch (err) {
       const message = isApiError(err)
         ? err.message
         : 'No se han podido guardar las preferencias.';
       addToast({ message, variant: 'error' });
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -61,10 +66,17 @@ function AccessibilityPage() {
   };
 
   const handleReset = (): void => {
+    setIsResetModalOpen(true);
+  };
+
+  const confirmReset = async (): Promise<void> => {
+    setIsResetModalOpen(false);
     setDraft({ ...draft, ...DEFAULT_SETTINGS });
-    void persist(DEFAULT_SETTINGS);
-    addToast({ message: 'Ajustes restablecidos.', variant: 'info' });
-    navigate(ROUTES.profile);
+    const saved = await persist(DEFAULT_SETTINGS);
+    if (saved) {
+      addToast({ message: 'Ajustes restablecidos.', variant: 'info' });
+      navigate(ROUTES.profile);
+    }
   };
 
   return (
@@ -101,6 +113,33 @@ function AccessibilityPage() {
       >
         Restablecer ajustes básicos
       </button>
+
+      <Modal
+        open={isResetModalOpen}
+        title="Restablecer ajustes"
+        onClose={() => setIsResetModalOpen(false)}
+      >
+        <p className="c-accessibility-page__modal-text">
+          Se volverá al modo de pantalla del sistema, la tipografía estándar y el tamaño de texto normal.
+        </p>
+        <div className="c-accessibility-page__modal-actions">
+          <Button
+            type="button"
+            variant="primary-outline"
+            onClick={() => setIsResetModalOpen(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            loading={isSaving}
+            onClick={() => void confirmReset()}
+          >
+            Restablecer
+          </Button>
+        </div>
+      </Modal>
     </section>
   );
 }
