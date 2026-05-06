@@ -17,8 +17,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-ES', {
   minute: '2-digit',
 });
 
-/** Comprueba si el log sigue dentro de la ventana de deshacer (10 min). */
-export function isWithinUndoWindow(log: AdherenceLog): boolean {
+function isWithinUndoWindow(log: AdherenceLog): boolean {
   const elapsed = Date.now() - new Date(log.timestamp).getTime();
   return elapsed >= 0 && elapsed < ADHERENCE_UNDO_WINDOW_MS;
 }

@@ -14,8 +14,7 @@ const VARIANT_LABEL: Record<StockLevel, string> = {
   empty: 'Sin stock',
 };
 
-/** Calcula el nivel de stock a partir de stock y threshold. */
-export function getStockLevel(stock: number, threshold: number): StockLevel {
+function getStockLevel(stock: number, threshold: number): StockLevel {
   if (stock <= 0) return 'empty';
   if (stock <= Math.max(1, Math.floor(threshold / 2))) return 'critical';
   if (stock <= threshold) return 'low';

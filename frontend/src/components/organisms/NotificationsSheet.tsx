@@ -39,6 +39,11 @@ function groupByDate(items: NotificationView[]): NotificationGroup[] {
 
 const CLOSE_THRESHOLD_PX = 120;
 
+function getPortalTarget(): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  return document.querySelector<HTMLElement>('.c-desktop-device-shell__screen') ?? document.body;
+}
+
 /**
  * Bottom sheet de notificaciones. Se monta siempre y se anima en función del
  * estado del store de UI; soporta arrastre vertical para cerrar acompañando
@@ -54,24 +59,20 @@ export function NotificationsSheet() {
 
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const startY = useRef<number | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const groups = useMemo(() => groupByDate(notifications), [notifications]);
-
-  useEffect(() => {
-    setPortalTarget(
-      document.querySelector<HTMLElement>('.c-desktop-device-shell__screen') ?? document.body,
-    );
-  }, [open]);
+  const portalTarget = open ? getPortalTarget() : null;
 
   useEffect(() => {
     if (!open) {
-      setDragOffset(0);
-      setIsDragging(false);
-      return;
+      const timeoutId = window.setTimeout(() => {
+        setDragOffset(0);
+        setIsDragging(false);
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close();
@@ -108,7 +109,11 @@ export function NotificationsSheet() {
 
   // Refresca al abrir.
   useEffect(() => {
-    if (open) void refetch();
+    if (!open) return;
+    const timeoutId = window.setTimeout(() => {
+      void refetch();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [open, refetch]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {

@@ -32,7 +32,6 @@ export function DesktopDeviceShell({ children }: DesktopDeviceShellProps) {
   useEffect(() => {
     const media = window.matchMedia(DESKTOP_QUERY);
     const handleChange = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
-    setIsDesktop(media.matches);
     media.addEventListener('change', handleChange);
     return () => media.removeEventListener('change', handleChange);
   }, []);

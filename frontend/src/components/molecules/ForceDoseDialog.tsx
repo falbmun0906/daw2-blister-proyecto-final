@@ -15,19 +15,22 @@ interface ForceDoseDialogProps {
  * antes de relanzar la creación del log con `force: true`.
  */
 export function ForceDoseDialog({ isOpen, onConfirm, onCancel }: ForceDoseDialogProps) {
+  if (!isOpen) return null;
+  return <ForceDoseDialogContent onConfirm={onConfirm} onCancel={onCancel} />;
+}
+
+function ForceDoseDialogContent({
+  onConfirm,
+  onCancel,
+}: Pick<ForceDoseDialogProps, 'onConfirm' | 'onCancel'>) {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setNotes('');
-      setError(null);
-      window.setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+    const timeoutId = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const handleConfirm = (): void => {
     const trimmed = notes.trim();

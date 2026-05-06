@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TbX } from 'react-icons/tb';
 
@@ -13,6 +13,11 @@ interface ModalProps {
   ariaLabel?: string;
 }
 
+function getPortalTarget(): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+  return document.querySelector<HTMLElement>('.c-desktop-device-shell__screen') ?? document.body;
+}
+
 export function Modal({
   open,
   onClose,
@@ -23,13 +28,7 @@ export function Modal({
   children,
   ariaLabel,
 }: ModalProps) {
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    setPortalTarget(
-      document.querySelector<HTMLElement>('.c-desktop-device-shell__screen') ?? document.body,
-    );
-  }, [open]);
+  const portalTarget = open ? getPortalTarget() : null;
 
   useEffect(() => {
     if (!open) return;

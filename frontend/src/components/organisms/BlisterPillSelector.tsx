@@ -49,18 +49,21 @@ export function BlisterPillSelector({
 
   // Posiciona el indicador deslizante sobre el item activo.
   useLayoutEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-    const activeIdx = slots.findIndex((b) => b?._id === activeBlisterId);
-    if (activeIdx < 0) {
-      setIndicator(null);
-      return;
-    }
-    const items = list.querySelectorAll<HTMLElement>(':scope > .c-blister-pill-selector__item');
-    const node = items.item(activeIdx);
-    if (!node) return;
-    node.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    setIndicator({ left: node.offsetLeft, width: node.offsetWidth });
+    const animationFrameId = window.requestAnimationFrame(() => {
+      const list = listRef.current;
+      if (!list) return;
+      const activeIdx = slots.findIndex((b) => b?._id === activeBlisterId);
+      if (activeIdx < 0) {
+        setIndicator(null);
+        return;
+      }
+      const items = list.querySelectorAll<HTMLElement>(':scope > .c-blister-pill-selector__item');
+      const node = items.item(activeIdx);
+      if (!node) return;
+      node.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      setIndicator({ left: node.offsetLeft, width: node.offsetWidth });
+    });
+    return () => window.cancelAnimationFrame(animationFrameId);
   }, [activeBlisterId, slots]);
 
   return (

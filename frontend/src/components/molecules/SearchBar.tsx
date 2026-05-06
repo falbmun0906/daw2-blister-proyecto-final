@@ -63,7 +63,8 @@ export function SearchBar({
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
-    setInternal(value);
+    const timeoutId = window.setTimeout(() => setInternal(value), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [value]);
 
   useEffect(() => {

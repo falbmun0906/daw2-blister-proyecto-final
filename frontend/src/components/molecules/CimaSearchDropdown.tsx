@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TbPill, TbPlus } from 'react-icons/tb';
 
@@ -78,17 +78,24 @@ export function CimaSearchDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const trimmed = query.trim();
+  const handleQueryChange = useCallback((value: string): void => {
+    const trimmed = value.trim();
+    setQuery(value);
     if (trimmed.length < 2) {
       setResults([]);
       setError(null);
       setIsSearching(false);
+      setIsOpen(false);
       return;
     }
-    let cancelled = false;
     setIsSearching(true);
     setError(null);
+  }, []);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return;
+    let cancelled = false;
     searchCima(trimmed)
       .then((items) => {
         if (!cancelled) {
@@ -163,7 +170,7 @@ export function CimaSearchDropdown({
       <div className="c-cima-search__field">
         <SearchBar
           value={query}
-          onChange={setQuery}
+          onChange={handleQueryChange}
           placeholder={placeholder}
           ariaLabel={ariaLabel}
           enableVoice
