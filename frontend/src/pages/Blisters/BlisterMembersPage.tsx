@@ -64,7 +64,10 @@ export default function BlisterMembersPage() {
   }, [blisterId]);
 
   useEffect(() => {
-    void refresh();
+    const timeoutId = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refresh]);
 
   const handleRoleChange = async (memberId: string, role: BlisterRole) => {

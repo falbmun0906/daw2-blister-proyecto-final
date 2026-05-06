@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
 import { TbCalendar, TbClock, TbPill, TbStethoscope, TbToggleRight, TbUserHeart } from 'react-icons/tb';
@@ -150,9 +150,9 @@ function TreatmentFormPage() {
   const form = useForm<FormValues>({
     defaultValues: toFormValues(null, defaultPatientUserId),
   });
-  const { register, handleSubmit, control, reset, setError, watch, formState } = form;
+  const { register, handleSubmit, control, reset, setError, formState } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'medicines' });
-  const watchedMedicines = watch('medicines');
+  const watchedMedicines = useWatch({ control, name: 'medicines' });
 
   useEffect(() => {
     if (target) reset(toFormValues(target, defaultPatientUserId));

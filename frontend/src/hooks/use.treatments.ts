@@ -58,7 +58,10 @@ export function useTreatments(blisterIdOverride?: string | null): UseTreatmentsR
   }, [blisterId, clear, setTreatments]);
 
   useEffect(() => {
-    void refetch();
+    const timeoutId = window.setTimeout(() => {
+      void refetch();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refetch]);
 
   const createTreatment = useCallback(

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm, type FieldError, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, type FieldError, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
 import {
@@ -179,10 +179,10 @@ function RegisterPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     setFocus,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: registerFormResolver,
@@ -199,7 +199,7 @@ function RegisterPage() {
       inviteCode: '',
     },
   });
-  const passwordValue = watch('password') ?? '';
+  const passwordValue = useWatch({ control, name: 'password' }) ?? '';
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);

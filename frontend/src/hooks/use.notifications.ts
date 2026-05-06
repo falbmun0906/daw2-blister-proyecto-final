@@ -66,7 +66,10 @@ export function useNotifications(
   }, [page, limit, setNotifications, userSettings]);
 
   useEffect(() => {
-    void refetch();
+    const timeoutId = window.setTimeout(() => {
+      void refetch();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refetch]);
 
   const markAsRead = useCallback(

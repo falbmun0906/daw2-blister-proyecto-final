@@ -73,61 +73,67 @@ function CimaMedicineDetailPage() {
   useEffect(() => {
     if (!nregist) return;
     let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-    getCimaDetail(nregist)
-      .then((data) => {
-        if (!cancelled) setInfo(data);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(isApiError(err) ? err.message : 'No se ha podido cargar la ficha CIMA.');
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+    const timeoutId = window.setTimeout(() => {
+      setIsLoading(true);
+      setError(null);
+      getCimaDetail(nregist)
+        .then((data) => {
+          if (!cancelled) setInfo(data);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setError(isApiError(err) ? err.message : 'No se ha podido cargar la ficha CIMA.');
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    }, 0);
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
   }, [nregist]);
 
   // Calcula en qué blísters del usuario está presente este medicamento.
   useEffect(() => {
-    if (!nregist || blisters.length === 0) {
-      setUsage([]);
-      return;
-    }
     let cancelled = false;
-    setUsageLoading(true);
-    Promise.all(
-      blisters.map(async (b) => {
-        try {
-          const meds = await listMedicines(b._id);
-          if (!meds.some((m) => m.nregist === nregist)) return null;
-          const members = await listBlisterMembers(b._id).catch(
-            () => [] as BlisterMemberDetail[],
-          );
-          const owner = members.find((m) => m.role === 'OWNER');
-          return {
-            blisterId: b._id,
-            name: b.name,
-            ownerName: owner?.fullName ?? '—',
-            members,
-          } satisfies BlisterUsage;
-        } catch {
-          return null;
-        }
-      }),
-    )
-      .then((results) => {
-        if (cancelled) return;
-        setUsage(results.filter((r): r is BlisterUsage => r !== null));
-      })
-      .finally(() => {
-        if (!cancelled) setUsageLoading(false);
-      });
+    const timeoutId = window.setTimeout(() => {
+      if (!nregist || blisters.length === 0) {
+        setUsage([]);
+        return;
+      }
+      setUsageLoading(true);
+      Promise.all(
+        blisters.map(async (b) => {
+          try {
+            const meds = await listMedicines(b._id);
+            if (!meds.some((m) => m.nregist === nregist)) return null;
+            const members = await listBlisterMembers(b._id).catch(
+              () => [] as BlisterMemberDetail[],
+            );
+            const owner = members.find((m) => m.role === 'OWNER');
+            return {
+              blisterId: b._id,
+              name: b.name,
+              ownerName: owner?.fullName ?? '—',
+              members,
+            } satisfies BlisterUsage;
+          } catch {
+            return null;
+          }
+        }),
+      )
+        .then((results) => {
+          if (cancelled) return;
+          setUsage(results.filter((r): r is BlisterUsage => r !== null));
+        })
+        .finally(() => {
+          if (!cancelled) setUsageLoading(false);
+        });
+    }, 0);
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
   }, [nregist, blisters]);
 

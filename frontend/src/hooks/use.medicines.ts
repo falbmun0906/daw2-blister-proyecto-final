@@ -45,7 +45,10 @@ export function useMedicines(blisterIdOverride?: string | null): UseMedicinesRes
   }, [blisterId, clear, setMedicines]);
 
   useEffect(() => {
-    void refetch();
+    const timeoutId = window.setTimeout(() => {
+      void refetch();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refetch]);
 
   return { medicines, isLoading, error, refetch };

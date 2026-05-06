@@ -81,6 +81,10 @@ function formatRemaining(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function isOutsideEarlyDoseGrace(doseAt: string): boolean {
+  return new Date(doseAt).getTime() - Date.now() > EARLY_DOSE_GRACE_MS;
+}
+
 interface InlineUndoDoseProps {
   undo: ActiveUndo;
   onUndo: (logId: string) => void;
@@ -231,7 +235,10 @@ export default function HomePage() {
   }, [addToast, blisters]);
 
   useEffect(() => {
-    void refreshHomeMedicines();
+    const timeoutId = window.setTimeout(() => {
+      void refreshHomeMedicines();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refreshHomeMedicines]);
 
   const refreshUpcoming = useCallback(async () => {
@@ -255,7 +262,10 @@ export default function HomePage() {
   }, [blisters.length]);
 
   useEffect(() => {
-    void refreshUpcoming();
+    const timeoutId = window.setTimeout(() => {
+      void refreshUpcoming();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refreshUpcoming]);
 
   const dismissUndoToast = useCallback((logId: string) => {
@@ -298,8 +308,7 @@ export default function HomePage() {
   };
 
   const handleLogDose = async (dose: UpcomingDose): Promise<void> => {
-    const doseTime = new Date(dose.doseAt).getTime();
-    if (doseTime - Date.now() > EARLY_DOSE_GRACE_MS) {
+    if (isOutsideEarlyDoseGrace(dose.doseAt)) {
       setEarlyDose(dose);
       return;
     }

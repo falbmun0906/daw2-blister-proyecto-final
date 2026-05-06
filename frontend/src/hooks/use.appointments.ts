@@ -56,7 +56,10 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
   }, [blisterId, clear, setAppointments]);
 
   useEffect(() => {
-    void refetch();
+    const timeoutId = window.setTimeout(() => {
+      void refetch();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refetch]);
 
   const createAppointment = useCallback(

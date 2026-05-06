@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TbChevronDown,
@@ -116,7 +116,9 @@ function MemberRoleModal({ open, member, onClose, onChangeRole, onDelete }: Memb
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (member) setRole(member.role);
+    if (!member) return;
+    const timeoutId = window.setTimeout(() => setRole(member.role), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [member]);
 
   if (!member) return null;
@@ -230,10 +232,12 @@ function AddMemberModal({ open, onClose, onCreateInvite }: AddMemberModalProps) 
   const addToast = useUiStore((s) => s.addToast);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const timeoutId = window.setTimeout(() => {
       setRole('OBSERVER');
       setCode(null);
-    }
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [open]);
 
   const handleCopy = async () => {
@@ -314,10 +318,12 @@ function NewBlisterModal({ open, onClose, onCreated }: NewBlisterModalProps) {
   const addToast = useUiStore((s) => s.addToast);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const timeoutId = window.setTimeout(() => {
       setName('');
       setCode('');
-    }
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [open]);
 
   const handleSubmit = async () => {
@@ -421,7 +427,6 @@ function BlisterCard({
 
   const editing = editingBlisterId === blister._id;
   const canStartEditing = editingBlisterId === null || editing;
-  const Icon = useMemo(() => getBlisterIcon(draftAvatarKey), [draftAvatarKey]);
 
   const refreshMembers = useCallback(async (): Promise<BlisterMemberDetail[]> => {
     setLoadingMembers(true);
@@ -441,25 +446,35 @@ function BlisterCard({
   }, [addToast, blister._id]);
 
   useEffect(() => {
-    void refreshMembers();
+    const timeoutId = window.setTimeout(() => {
+      void refreshMembers();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refreshMembers]);
 
   useEffect(() => {
-    if (editing) setExpanded(true);
+    if (!editing) return;
+    const timeoutId = window.setTimeout(() => setExpanded(true), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [editing]);
 
   useEffect(() => {
     if (editing) return;
-    setName(blister.name);
-    setDraftAvatarKey(toBlisterAvatarKey(blister.avatarKey));
-    setIsTitleEditing(false);
+    const timeoutId = window.setTimeout(() => {
+      setName(blister.name);
+      setDraftAvatarKey(toBlisterAvatarKey(blister.avatarKey));
+      setIsTitleEditing(false);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [blister.avatarKey, blister.name, editing]);
 
   useEffect(() => {
     if (!showAddMember) {
-      setInviteBaselineCount(null);
-      setInviteJoinedNotified(false);
-      return;
+      const timeoutId = window.setTimeout(() => {
+        setInviteBaselineCount(null);
+        setInviteJoinedNotified(false);
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
     if (inviteBaselineCount === null || inviteJoinedNotified) return;
 
@@ -582,7 +597,7 @@ function BlisterCard({
       <div className="c-blister-card__row">
         <span className="c-blister-card__icon-wrapper">
           <span className="c-blister-card__icon" aria-hidden="true">
-            <Icon />
+            {createElement(getBlisterIcon(draftAvatarKey))}
           </span>
           {editing ? (
             <button

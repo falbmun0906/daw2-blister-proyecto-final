@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
 import { TbCalendarEvent, TbClock, TbMapPin, TbStethoscope, TbUserHeart } from 'react-icons/tb';
@@ -90,8 +90,8 @@ function AppointmentFormPage() {
   const form = useForm<FormValues>({
     defaultValues: { patientUserId: defaultPatientUserId, title: '', location: '', date: '', treatmentId: '' },
   });
-  const { register, handleSubmit, reset, setError, watch, formState } = form;
-  const selectedPatientUserId = watch('patientUserId');
+  const { register, handleSubmit, reset, setError, control, formState } = form;
+  const selectedPatientUserId = useWatch({ control, name: 'patientUserId' });
   const linkedTreatments = useMemo(
     () => treatments.filter((treatment) => !selectedPatientUserId || treatment.patientUserId === selectedPatientUserId),
     [selectedPatientUserId, treatments],

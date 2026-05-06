@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { TbCalendar, TbFileText, TbInfoCircle, TbNumbers, TbTag } from 'react-icons/tb';
@@ -65,7 +65,6 @@ function AddMedicinePage() {
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -73,31 +72,34 @@ function AddMedicinePage() {
     defaultValues: { alias: '', stock: 0, stockUnit: 'pastillas', threshold: 5, expDate: '' },
   });
 
-  const stockUnit = watch('stockUnit');
+  const stockUnit = useWatch({ control, name: 'stockUnit' });
 
   useEffect(() => {
     if (!presetNregist) return;
     let cancelled = false;
-    setLoadError(null);
-    getCimaDetail(presetNregist)
-      .then((info) => {
-        if (cancelled) return;
-        setSelected({
-          nregist: info.nregist,
-          nombre: info.nombre,
-          pactivos: info.pactivos,
-          labtitular: info.labtitular,
-          formaOficial: info.formaOficial,
-          dosisOficial: info.dosisOficial,
-          fotoUrl: info.fotos.find((foto) => foto.url)?.url ?? null,
+    const timeoutId = window.setTimeout(() => {
+      setLoadError(null);
+      getCimaDetail(presetNregist)
+        .then((info) => {
+          if (cancelled) return;
+          setSelected({
+            nregist: info.nregist,
+            nombre: info.nombre,
+            pactivos: info.pactivos,
+            labtitular: info.labtitular,
+            formaOficial: info.formaOficial,
+            dosisOficial: info.dosisOficial,
+            fotoUrl: info.fotos.find((foto) => foto.url)?.url ?? null,
+          });
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setLoadError(isApiError(err) ? err.message : 'No se ha podido cargar el medicamento.');
         });
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setLoadError(isApiError(err) ? err.message : 'No se ha podido cargar el medicamento.');
-      });
+    }, 0);
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
   }, [presetNregist]);
 

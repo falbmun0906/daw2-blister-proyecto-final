@@ -276,11 +276,17 @@ function CalendarPage() {
   }, [blisterId, cursor]);
 
   useEffect(() => {
-    void refreshCalendarDoses();
+    const timeoutId = window.setTimeout(() => {
+      void refreshCalendarDoses();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refreshCalendarDoses]);
 
   useEffect(() => {
-    void refreshMonthDoseMarkers();
+    const timeoutId = window.setTimeout(() => {
+      void refreshMonthDoseMarkers();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [refreshMonthDoseMarkers]);
 
   const appointmentDays = useMemo(() => {

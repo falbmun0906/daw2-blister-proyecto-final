@@ -68,8 +68,11 @@ export function useBlisters(preferredBlisterId?: string | null): UseBlistersResu
   }, [activeBlisterId, clearActiveBlister, preferredBlisterId, setActiveBlister, setBlisters, userId]);
 
   useEffect(() => {
-    void refresh();
+    const timeoutId = window.setTimeout(() => {
+      void refresh();
+    }, 0);
     // Solo se ejecuta una vez por montaje del consumidor.
+    return () => window.clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

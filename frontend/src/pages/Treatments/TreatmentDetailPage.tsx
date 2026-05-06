@@ -180,6 +180,17 @@ function AppointmentCard({ appointment, isPast }: { appointment: Appointment; is
   );
 }
 
+function splitAppointmentsByCurrentTime(appointments: Appointment[]): {
+  upcoming: Appointment[];
+  past: Appointment[];
+} {
+  const now = Date.now();
+  return {
+    upcoming: appointments.filter((appointment) => new Date(appointment.date).getTime() >= now),
+    past: appointments.filter((appointment) => new Date(appointment.date).getTime() < now),
+  };
+}
+
 function TreatmentDetailPage() {
   usePageTitle('Tratamiento');
   const navigate = useNavigate();
@@ -229,14 +240,12 @@ function TreatmentDetailPage() {
     () => appointments.filter((appointment) => appointment.treatmentId === treatment?.id),
     [appointments, treatment?.id],
   );
-  const upcomingAppointments = useMemo(
-    () => treatmentAppointments.filter((appointment) => new Date(appointment.date).getTime() >= Date.now()),
+  const appointmentGroups = useMemo(
+    () => splitAppointmentsByCurrentTime(treatmentAppointments),
     [treatmentAppointments],
   );
-  const pastAppointments = useMemo(
-    () => treatmentAppointments.filter((appointment) => new Date(appointment.date).getTime() < Date.now()),
-    [treatmentAppointments],
-  );
+  const upcomingAppointments = appointmentGroups.upcoming;
+  const pastAppointments = appointmentGroups.past;
   const progress = treatment ? getProgress(treatment) : null;
 
   const getMedicineLabel = useCallback(
@@ -246,7 +255,10 @@ function TreatmentDetailPage() {
 
   useEffect(() => {
     if (!treatment) return;
-    setNotes(Object.fromEntries(treatment.medicines.map((entry) => [entry.medicineId, entry.note ?? ''])));
+    const timeoutId = window.setTimeout(() => {
+      setNotes(Object.fromEntries(treatment.medicines.map((entry) => [entry.medicineId, entry.note ?? ''])));
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [treatment]);
 
   useEffect(() => {

@@ -68,27 +68,32 @@ function EditMedicinePage() {
   useEffect(() => {
     if (!blisterId || !medicineId) return;
     let cancelled = false;
-    setLoadError(null);
-    getMedicine(blisterId, medicineId)
-      .then((m) => {
-        if (cancelled) return;
-        if (!m) {
-          setLoadError('Medicamento no encontrado.');
-          return;
-        }
-        setMedicine(m);
-        reset({
-          alias: m.alias ?? '',
-          stock: m.stock,
-          threshold: m.threshold,
-          expDate: toDateInputValue(m.expDate),
+    const timeoutId = window.setTimeout(() => {
+      setLoadError(null);
+      getMedicine(blisterId, medicineId)
+        .then((m) => {
+          if (cancelled) return;
+          if (!m) {
+            setLoadError('Medicamento no encontrado.');
+            return;
+          }
+          setMedicine(m);
+          reset({
+            alias: m.alias ?? '',
+            stock: m.stock,
+            threshold: m.threshold,
+            expDate: toDateInputValue(m.expDate),
+          });
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setLoadError(isApiError(err) ? err.message : 'No se ha podido cargar el medicamento.');
         });
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setLoadError(isApiError(err) ? err.message : 'No se ha podido cargar el medicamento.');
-      });
-    return () => { cancelled = true; };
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [blisterId, medicineId, reset]);
 
   if (!blisterId) return <Navigate to={ROUTES.blisters} replace />;
