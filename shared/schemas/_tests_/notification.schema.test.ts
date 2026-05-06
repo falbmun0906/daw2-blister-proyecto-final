@@ -2,6 +2,7 @@ import {
   notificationIdParamsSchema,
   notificationSchema,
   notificationsListQuerySchema,
+  pushSubscriptionSchema,
 } from '../notification.schema';
 
 describe('notification shared schemas', () => {
@@ -26,5 +27,18 @@ describe('notification shared schemas', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('validates browser push subscriptions', () => {
+    const result = pushSubscriptionSchema.parse({
+      endpoint: 'https://push.example.test/subscription/1',
+      expirationTime: null,
+      keys: {
+        p256dh: 'public-key',
+        auth: 'auth-secret',
+      },
+    });
+
+    expect(result.endpoint).toBe('https://push.example.test/subscription/1');
   });
 });

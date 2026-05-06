@@ -1,5 +1,6 @@
 import { BlisterModel } from '../../../models/blister.model';
 import { NotificationModel } from '../../../models/notification.model';
+import { PushSubscriptionModel } from '../../../models/pushSubscription.model';
 import { UserModel } from '../../../models/user.model';
 import {
   clearTestDatabase,
@@ -10,6 +11,12 @@ import {
   notificationsList,
   notificationsMarkAsRead,
 } from '../notifications.service';
+import {
+  notificationsPushConfig,
+  notificationsPushSubscribe,
+  notificationsPushSubscriptionsList,
+  notificationsPushUnsubscribe,
+} from '../notifications-push.service';
 
 describe('notifications.service', () => {
   beforeAll(async () => {
@@ -141,6 +148,48 @@ describe('notifications.service', () => {
       notificationsMarkAsRead(notification._id.toString(), otherUser._id.toString()),
     ).rejects.toMatchObject({
       code: 'NOTIFICATION_NOT_FOUND',
+    });
+  });
+
+  it('lists and removes push subscriptions for the authenticated user', async () => {
+    const owner = await createUser('push-owner');
+    const otherUser = await createUser('push-other');
+    await PushSubscriptionModel.create([
+      {
+        userId: owner._id,
+        endpoint: 'https://push.example.test/subscription/owner',
+        keys: { p256dh: 'owner-key', auth: 'owner-auth' },
+      },
+      {
+        userId: otherUser._id,
+        endpoint: 'https://push.example.test/subscription/other',
+        keys: { p256dh: 'other-key', auth: 'other-auth' },
+      },
+    ]);
+
+    const list = await notificationsPushSubscriptionsList(owner._id.toString());
+    await notificationsPushUnsubscribe(owner._id.toString(), {
+      endpoint: 'https://push.example.test/subscription/owner',
+    });
+
+    expect(list).toHaveLength(1);
+    expect(await PushSubscriptionModel.exists({ userId: owner._id })).toBeNull();
+    expect(await PushSubscriptionModel.exists({ userId: otherUser._id })).not.toBeNull();
+  });
+
+  it('rejects subscription registration when VAPID keys are missing', async () => {
+    if (notificationsPushConfig().enabled) return;
+
+    const owner = await createUser('push-disabled');
+
+    await expect(
+      notificationsPushSubscribe(owner._id.toString(), {
+        endpoint: 'https://push.example.test/subscription/disabled',
+        expirationTime: null,
+        keys: { p256dh: 'public-key', auth: 'auth-secret' },
+      }),
+    ).rejects.toMatchObject({
+      code: 'PUSH_NOT_CONFIGURED',
     });
   });
 });

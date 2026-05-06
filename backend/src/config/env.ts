@@ -21,6 +21,10 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().trim().min(1).default(DEFAULT_REFRESH_TOKEN_TTL),
   MCP_TOKEN_TTL_DAYS: z.coerce.number().int().positive().max(DEFAULT_MCP_TOKEN_TTL_DAYS).default(DEFAULT_MCP_TOKEN_TTL_DAYS),
   MCP_SERVER_ENABLED: z.enum(['true', 'false']).default('true'),
+  WEB_PUSH_VAPID_PUBLIC_KEY: z.string().trim().optional(),
+  WEB_PUSH_VAPID_PRIVATE_KEY: z.string().trim().optional(),
+  WEB_PUSH_VAPID_SUBJECT: z.string().trim().default('mailto:admin@example.com'),
+  PUSH_REMINDER_SCAN_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -40,6 +44,10 @@ export const env = {
   jwtRefreshExpiresIn: parsedEnv.data.JWT_REFRESH_EXPIRES_IN,
   mcpTokenTtlDays: parsedEnv.data.MCP_TOKEN_TTL_DAYS,
   mcpServerEnabled: parsedEnv.data.MCP_SERVER_ENABLED === 'true',
+  webPushVapidPublicKey: parsedEnv.data.WEB_PUSH_VAPID_PUBLIC_KEY,
+  webPushVapidPrivateKey: parsedEnv.data.WEB_PUSH_VAPID_PRIVATE_KEY,
+  webPushVapidSubject: parsedEnv.data.WEB_PUSH_VAPID_SUBJECT,
+  pushReminderScanIntervalMs: parsedEnv.data.PUSH_REMINDER_SCAN_INTERVAL_MS,
 } as const;
 
 export type Env = typeof env;

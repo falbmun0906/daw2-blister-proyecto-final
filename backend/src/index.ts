@@ -4,6 +4,10 @@ import { createApp } from './app';
 import { connectDb, disconnectDb } from './config/db';
 import { env } from './config/env';
 import { createMcpHttpServer, resolveMcpPort } from './mcp/server';
+import {
+  notificationsSchedulerStart,
+  notificationsSchedulerStop,
+} from './modules/notifications/notifications-scheduler.service';
 
 const app = createApp({
   clientOrigin: env.clientOrigin,
@@ -52,6 +56,7 @@ const bootstrap = async (): Promise<void> => {
     console.log(`Blister backend listening on port ${env.port}`);
   });
   startMcpServer();
+  notificationsSchedulerStart();
 };
 
 void bootstrap().catch((error: unknown) => {
@@ -65,6 +70,7 @@ const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
   console.log(`Received ${signal}. Shutting down gracefully.`);
 
   await Promise.all([closeServer(server), closeServer(mcpServer)]);
+  notificationsSchedulerStop();
   await disconnectDb().catch((error: unknown) => {
     // eslint-disable-next-line no-console
     console.error('Failed to close MongoDB connection', error);

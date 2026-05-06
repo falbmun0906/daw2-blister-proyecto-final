@@ -10,6 +10,7 @@ export const NOTIFICATION_TYPES = [
   'expiration_warning',
   'adherence_forced',
   'cima_change',
+  'appointment_reminder',
   'system',
 ] as const;
 export const NOTIFICATION_SEVERITIES = ['info', 'warning', 'critical'] as const;
@@ -21,6 +22,10 @@ export const ADHERENCE_LOG_UNDO_WINDOW_MS = 3 * 60 * 1000;
 export const NOTIFICATION_DEDUPLICATION_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const CIMA_SYNC_META_KEY = 'cimaSync' as const;
 export const DEFAULT_CIMA_SYNC_LOOKBACK_DAYS = 30;
+export const APPOINTMENT_REMINDER_LOOKAHEAD_HOURS = 168;
+export const APPOINTMENT_REMINDER_FOLLOW_UP_DELAY_MS = 15 * 60 * 1000;
+export const APPOINTMENT_REMINDER_FOLLOW_UP_LOOKBACK_MS = 24 * 60 * 60 * 1000;
+export const PUSH_NOTIFICATION_TTL_SECONDS = 24 * 60 * 60;
 
 export const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi blíster';
 export const MAX_BLISTERS_PER_USER = 3;

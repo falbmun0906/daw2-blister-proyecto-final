@@ -1,8 +1,16 @@
 import { Types } from 'mongoose';
 
-import { NOTIFICATION_DEDUPLICATION_WINDOW_MS } from '../../constants/domain.constants';
+import {
+  APPOINTMENT_REMINDER_FOLLOW_UP_DELAY_MS,
+  APPOINTMENT_REMINDER_FOLLOW_UP_LOOKBACK_MS,
+  APPOINTMENT_REMINDER_LOOKAHEAD_HOURS,
+  NOTIFICATION_DEDUPLICATION_WINDOW_MS,
+} from '../../constants/domain.constants';
 import { HTTP_STATUS_NOT_FOUND } from '../../constants/http.constants';
 import { NotificationModel } from '../../models/notification.model';
+import { AppointmentModel } from '../../models/appointment.model';
+import { BlisterModel } from '../../models/blister.model';
+import { UserModel } from '../../models/user.model';
 import { type AdherenceLogDocument } from '../../types/adherence-log.types';
 import {
   type BlisterDocument,
@@ -16,9 +24,12 @@ import {
   type NotificationSeverity,
   type NotificationType,
 } from '../../types/notification.types';
+import { type AppointmentDocument } from '../../types/appointment.types';
+import { type UserSettings } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
 import { type NotificationsListQuery } from '../../../../shared/schemas';
 import { type CimaChangeLogDocument } from '../../types/cima-change-log.types';
+import { sendPushForNotifications } from './notifications-push.service';
 
 type PersistedNotification = NonNullable<Awaited<ReturnType<typeof NotificationModel.findOne>>>;
 
@@ -61,6 +72,9 @@ const EXPIRATION_LEVEL_DAYS: Record<ExpirationWarningLevel, number> = {
   '15d': 15,
   '7d': 7,
 };
+const HOUR_MS = 60 * 60 * 1000;
+
+type AppointmentReminderPhase = 'before' | 'after';
 
 const toNotificationView = (
   notification: PersistedNotification,
@@ -95,7 +109,8 @@ const createNotifications = async (
     return;
   }
 
-  await NotificationModel.insertMany(notifications);
+  const createdNotifications = await NotificationModel.insertMany(notifications);
+  await sendPushForNotifications(createdNotifications);
 };
 
 const hasRecentUnreadNotification = async ({
@@ -198,6 +213,67 @@ const buildForcedAdherenceNotification = (
     recordedAmount: adherenceLog.amount,
     remainingStock: medicine.stock,
     notes: adherenceLog.notes ?? null,
+  },
+});
+
+const getAppointmentReminderHours = (settings: UserSettings): number => {
+  switch (settings.notifications.appointmentReminderPreset) {
+    case '12h':
+      return 12;
+    case '1d':
+      return 24;
+    case 'custom':
+      return settings.notifications.customAppointmentReminderHours;
+    case '3h':
+    default:
+      return 3;
+  }
+};
+
+const buildAppointmentReminderKey = (
+  appointment: AppointmentDocument,
+  userId: Types.ObjectId,
+  phase: AppointmentReminderPhase,
+  targetAt: Date,
+): string =>
+  [
+    appointment._id.toString(),
+    userId.toString(),
+    phase,
+    targetAt.toISOString(),
+  ].join(':');
+
+const buildAppointmentReminderNotification = ({
+  userId,
+  appointment,
+  phase,
+  targetAt,
+  reminderHours,
+}: {
+  userId: Types.ObjectId;
+  appointment: AppointmentDocument;
+  phase: AppointmentReminderPhase;
+  targetAt: Date;
+  reminderHours: number;
+}): DomainNotificationInput => ({
+  userId,
+  blisterId: appointment.blisterId,
+  type: 'appointment_reminder',
+  severity: 'info',
+  title: phase === 'before' ? 'Cita medica proxima' : 'Tras la cita',
+  message: phase === 'before'
+    ? `Tienes ${appointment.title} dentro de ${reminderHours} h.`
+    : appointment.treatmentId
+      ? 'Tras la cita, revisa si hay cambios que aplicar al tratamiento.'
+      : 'Tras la cita, revisa si hay algun cambio que anotar.',
+  metadata: {
+    appointmentId: appointment._id.toString(),
+    treatmentId: appointment.treatmentId?.toString() ?? null,
+    appointmentDate: appointment.date.toISOString(),
+    reminderPhase: phase,
+    reminderAt: targetAt.toISOString(),
+    reminderHours,
+    reminderKey: buildAppointmentReminderKey(appointment, userId, phase, targetAt),
   },
 });
 
@@ -451,6 +527,102 @@ export const notifyCimaChange = async (
           changeSignature,
         },
       })),
+  );
+};
+
+/**
+ * Scans upcoming and recently finished appointments and creates reminder notifications once per user.
+ */
+export const notifyUpcomingAppointmentReminders = async (
+  referenceDate = new Date(),
+): Promise<void> => {
+  const from = new Date(referenceDate.getTime() - APPOINTMENT_REMINDER_FOLLOW_UP_LOOKBACK_MS);
+  const to = new Date(referenceDate.getTime() + APPOINTMENT_REMINDER_LOOKAHEAD_HOURS * HOUR_MS);
+  const appointments = await AppointmentModel.find({
+    date: { $gte: from, $lte: to },
+  });
+
+  if (appointments.length === 0) {
+    return;
+  }
+
+  const blisterIds = [...new Set(appointments.map((appointment) => appointment.blisterId.toString()))];
+  const blisters = await BlisterModel.find({
+    _id: { $in: blisterIds.map((id) => new Types.ObjectId(id)) },
+    deletedAt: null,
+  });
+  const blisterById = new Map(blisters.map((blister) => [blister._id.toString(), blister]));
+  const recipientIds = [
+    ...new Set(
+      blisters.flatMap((blister) =>
+        (blister.members as BlisterDocument['members']).map((member) => member.userId.toString()),
+      ),
+    ),
+  ];
+  const users = await UserModel.find({
+    _id: { $in: recipientIds.map((id) => new Types.ObjectId(id)) },
+    deletedAt: null,
+  }).select('settings');
+  const settingsByUserId = new Map(
+    users.map((user) => [user._id.toString(), user.settings as UserSettings]),
+  );
+  const candidates: Array<{ key: string; input: DomainNotificationInput }> = [];
+
+  for (const appointment of appointments) {
+    const blister = blisterById.get(appointment.blisterId.toString());
+    if (!blister) continue;
+
+    for (const member of blister.members) {
+      const settings = settingsByUserId.get(member.userId.toString());
+      if (!settings?.notifications.appointments) continue;
+
+      const reminderHours = getAppointmentReminderHours(settings);
+      const beforeAt = new Date(appointment.date.getTime() - reminderHours * HOUR_MS);
+      const followUpAt = new Date(appointment.date.getTime() + APPOINTMENT_REMINDER_FOLLOW_UP_DELAY_MS);
+      const phases: Array<{ phase: AppointmentReminderPhase; targetAt: Date }> = [];
+
+      if (beforeAt <= referenceDate && appointment.date > referenceDate) {
+        phases.push({ phase: 'before', targetAt: beforeAt });
+      }
+
+      if (followUpAt <= referenceDate && appointment.date >= from) {
+        phases.push({ phase: 'after', targetAt: followUpAt });
+      }
+
+      for (const { phase, targetAt } of phases) {
+        const key = buildAppointmentReminderKey(appointment, member.userId, phase, targetAt);
+        candidates.push({
+          key,
+          input: buildAppointmentReminderNotification({
+            userId: member.userId,
+            appointment,
+            phase,
+            targetAt,
+            reminderHours,
+          }),
+        });
+      }
+    }
+  }
+
+  if (candidates.length === 0) {
+    return;
+  }
+
+  const existing = await NotificationModel.find({
+    type: 'appointment_reminder',
+    'metadata.reminderKey': { $in: candidates.map((candidate) => candidate.key) },
+  }).select('metadata.reminderKey');
+  const existingKeys = new Set(
+    existing
+      .map((notification) => notification.metadata?.reminderKey)
+      .filter((key): key is string => typeof key === 'string'),
+  );
+
+  await createNotifications(
+    candidates
+      .filter((candidate) => !existingKeys.has(candidate.key))
+      .map((candidate) => candidate.input),
   );
 };
 

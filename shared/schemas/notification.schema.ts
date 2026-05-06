@@ -38,9 +38,26 @@ export const notificationIdParamsSchema = z.object({
   id: objectIdSchema,
 });
 
+export const pushSubscriptionKeysSchema = z.object({
+  p256dh: z.string().trim().min(1, 'p256dh key is required.'),
+  auth: z.string().trim().min(1, 'auth key is required.'),
+});
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z.string().trim().url('Endpoint must be a valid URL.'),
+  expirationTime: z.number().int().nonnegative().nullable().optional(),
+  keys: pushSubscriptionKeysSchema,
+});
+
+export const deletePushSubscriptionSchema = z.object({
+  endpoint: z.string().trim().url('Endpoint must be a valid URL.'),
+});
+
 export const expirationWarningLevelSchema = z.enum(expirationWarningLevels);
 
 export type NotificationInput = z.infer<typeof notificationSchema>;
 export type NotificationsListQuery = z.infer<typeof notificationsListQuerySchema>;
 export type NotificationIdParams = z.infer<typeof notificationIdParamsSchema>;
+export type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;
+export type DeletePushSubscriptionInput = z.infer<typeof deletePushSubscriptionSchema>;
 export type ExpirationWarningLevelInput = z.infer<typeof expirationWarningLevelSchema>;

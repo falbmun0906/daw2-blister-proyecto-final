@@ -1,8 +1,10 @@
 import { Router } from 'express';
 
 import {
+  deletePushSubscriptionSchema,
   notificationIdParamsSchema,
   notificationsListQuerySchema,
+  pushSubscriptionSchema,
 } from '../../../../shared/schemas';
 import { authenticate } from '../../middleware/authenticate';
 import { validate } from '../../middleware/validate';
@@ -10,6 +12,10 @@ import {
   notificationsDeleteController,
   notificationsListController,
   notificationsMarkAsReadController,
+  notificationsPushConfigController,
+  notificationsPushSubscribeController,
+  notificationsPushSubscriptionsListController,
+  notificationsPushUnsubscribeController,
 } from './notifications.controller';
 
 export const notificationsRouter = Router();
@@ -91,6 +97,24 @@ notificationsRouter.get(
   '/',
   validate({ query: notificationsListQuerySchema }),
   notificationsListController,
+);
+notificationsRouter.get(
+  '/push/config',
+  notificationsPushConfigController,
+);
+notificationsRouter.get(
+  '/push/subscriptions',
+  notificationsPushSubscriptionsListController,
+);
+notificationsRouter.post(
+  '/push/subscriptions',
+  validate({ body: pushSubscriptionSchema }),
+  notificationsPushSubscribeController,
+);
+notificationsRouter.delete(
+  '/push/subscriptions',
+  validate({ body: deletePushSubscriptionSchema }),
+  notificationsPushUnsubscribeController,
 );
 notificationsRouter.patch(
   '/:id/read',

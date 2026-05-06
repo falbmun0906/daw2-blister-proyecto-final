@@ -5,6 +5,7 @@ import { createApp } from '../../../app';
 import { env } from '../../../config/env';
 import { BlisterModel } from '../../../models/blister.model';
 import { NotificationModel } from '../../../models/notification.model';
+import { PushSubscriptionModel } from '../../../models/pushSubscription.model';
 import { UserModel } from '../../../models/user.model';
 import {
   clearTestDatabase,
@@ -151,5 +152,48 @@ describe('notifications.routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.body.error.code).toBe('NOTIFICATION_NOT_FOUND');
+  });
+
+  it('returns Web Push configuration for authenticated users', async () => {
+    const owner = await createUser('route-push-config');
+
+    const response = await request(app)
+      .get('/api/v1/notifications/push/config')
+      .set('Authorization', `Bearer ${createAccessToken(owner._id.toString())}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveProperty('enabled');
+    expect(response.body.data).toHaveProperty('publicKey');
+  });
+
+  it('lists and removes push subscriptions owned by the authenticated user', async () => {
+    const owner = await createUser('route-push-owner');
+    const otherUser = await createUser('route-push-other');
+    await PushSubscriptionModel.create([
+      {
+        userId: owner._id,
+        endpoint: 'https://push.example.test/subscription/route-owner',
+        keys: { p256dh: 'owner-key', auth: 'owner-auth' },
+      },
+      {
+        userId: otherUser._id,
+        endpoint: 'https://push.example.test/subscription/route-other',
+        keys: { p256dh: 'other-key', auth: 'other-auth' },
+      },
+    ]);
+
+    const listResponse = await request(app)
+      .get('/api/v1/notifications/push/subscriptions')
+      .set('Authorization', `Bearer ${createAccessToken(owner._id.toString())}`);
+    const deleteResponse = await request(app)
+      .delete('/api/v1/notifications/push/subscriptions')
+      .send({ endpoint: 'https://push.example.test/subscription/route-owner' })
+      .set('Authorization', `Bearer ${createAccessToken(owner._id.toString())}`);
+
+    expect(listResponse.status).toBe(200);
+    expect(listResponse.body.data).toHaveLength(1);
+    expect(deleteResponse.status).toBe(204);
+    expect(await PushSubscriptionModel.exists({ userId: owner._id })).toBeNull();
+    expect(await PushSubscriptionModel.exists({ userId: otherUser._id })).not.toBeNull();
   });
 });
