@@ -20,7 +20,8 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "types": [
-      "node"
+      "node",
+      "web-push"
     ]
   },
   "include": [
