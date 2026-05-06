@@ -29,10 +29,25 @@ export const notificationsListMetaSchema = z.object({
   totalPages: z.number().int().nonnegative(),
 });
 
+export const pushConfigSchema = z.object({
+  enabled: z.boolean(),
+  publicKey: z.string().min(1).nullable(),
+});
+
+export const pushSubscriptionViewSchema = z.object({
+  id: z.string().min(1),
+  endpoint: z.string().url(),
+  expirationTime: z.number().int().nonnegative().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 export type NotificationView = z.infer<typeof notificationViewSchema>;
 export type NotificationType = NotificationView['type'];
 export type NotificationSeverity = NotificationView['severity'];
 export type NotificationsListMeta = z.infer<typeof notificationsListMetaSchema>;
+export type PushConfig = z.infer<typeof pushConfigSchema>;
+export type PushSubscriptionView = z.infer<typeof pushSubscriptionViewSchema>;
 
 export interface NotificationsListResult {
   notifications: NotificationView[];

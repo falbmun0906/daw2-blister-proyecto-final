@@ -5,7 +5,10 @@ import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { FormSection } from '../../components/molecules/FormSection';
 import { usePageTitle } from '../../hooks/use.page-title';
-import { requestPushPermission } from '../../lib/push-notifications';
+import {
+  subscribeToServerPush,
+  unsubscribeFromServerPush,
+} from '../../lib/push-notifications';
 import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
@@ -65,10 +68,10 @@ export default function NotificationSettingsPage() {
     setError(null);
     try {
       if (settings.pushEnabled) {
-        const permission = await requestPushPermission();
-        if (permission !== 'granted') {
+        const result = await subscribeToServerPush();
+        if (!result.enabled) {
           setSettings((current) => ({ ...current, pushEnabled: false }));
-          throw new Error('Activa los permisos de notificaciones del navegador para usar avisos push.');
+          throw new Error(result.reason ?? 'No se ha podido activar Web Push.');
         }
       }
       const updated = await updateProfile({
@@ -78,6 +81,9 @@ export default function NotificationSettingsPage() {
         },
       });
       updateUser(updated);
+      if (!settings.pushEnabled) {
+        await unsubscribeFromServerPush();
+      }
       addToast({ message: 'Preferencias de notificaciones guardadas.', variant: 'success' });
     } catch (err) {
       const message = err instanceof Error

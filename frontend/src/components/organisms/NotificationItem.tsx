@@ -24,6 +24,7 @@ const TYPE_ICONS: Record<NotificationView['type'], typeof TbBell> = {
   expiration_warning: TbCalendarTime,
   adherence_forced: TbPill,
   cima_change: TbAlertTriangle,
+  appointment_reminder: TbCalendarTime,
   system: TbBell,
 };
 

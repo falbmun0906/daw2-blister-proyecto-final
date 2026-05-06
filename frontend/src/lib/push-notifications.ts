@@ -1,44 +1,56 @@
-import type { UserSettings } from '../types/auth.types';
-import type { NotificationView } from '../types/notification.types';
+import {
+  deletePushSubscription,
+  getPushConfig,
+  savePushSubscription,
+} from '../services/notifications.service';
+import {
+  pushSubscriptionSchema,
+  type PushSubscriptionInput,
+} from '../../../shared/schemas';
 
-interface SchedulableAppointment {
-  id: string;
-  title: string;
-  date: string;
-  treatmentId: string | null;
+export interface ServerPushSyncResult {
+  enabled: boolean;
+  reason?: string;
 }
 
-const shownNotificationIds = new Set<string>();
-const scheduledAppointmentTimers = new Map<string, number>();
+const SERVICE_WORKER_READY_TIMEOUT_MS = 5000;
 
-const getReminderHours = (settings: UserSettings): number => {
-  switch (settings.notifications.appointmentReminderPreset) {
-    case '12h':
-      return 12;
-    case '1d':
-      return 24;
-    case 'custom':
-      return settings.notifications.customAppointmentReminderHours;
-    case '3h':
-    default:
-      return 3;
+const urlBase64ToUint8Array = (value: string): Uint8Array<ArrayBuffer> => {
+  const padding = '='.repeat((4 - (value.length % 4)) % 4);
+  const base64 = `${value}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
+  const raw = window.atob(base64);
+  const output = new Uint8Array(new ArrayBuffer(raw.length));
+
+  for (let index = 0; index < raw.length; index += 1) {
+    output[index] = raw.charCodeAt(index);
   }
+
+  return output;
 };
 
-const allowsNotificationType = (notification: NotificationView, settings: UserSettings): boolean => {
-  switch (notification.type) {
-    case 'stock_low':
-    case 'stock_depleted':
-      return settings.notifications.stock;
-    case 'expiration_warning':
-      return settings.notifications.expiration;
-    case 'cima_change':
-      return settings.notifications.cima;
-    case 'adherence_forced':
-      return settings.notifications.adherence;
-    case 'system':
-      return true;
-  }
+const isServerPushSupported = (): boolean =>
+  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+const getReadyServiceWorker = async (): Promise<ServiceWorkerRegistration | null> =>
+  Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<null>((resolve) => {
+      window.setTimeout(() => resolve(null), SERVICE_WORKER_READY_TIMEOUT_MS);
+    }),
+  ]);
+
+const serializeSubscription = (
+  subscription: PushSubscription,
+): PushSubscriptionInput => {
+  const json = subscription.toJSON();
+  return pushSubscriptionSchema.parse({
+    endpoint: json.endpoint,
+    expirationTime: json.expirationTime ?? null,
+    keys: {
+      p256dh: json.keys?.p256dh,
+      auth: json.keys?.auth,
+    },
+  });
 };
 
 export const requestPushPermission = async (): Promise<NotificationPermission> => {
@@ -49,7 +61,7 @@ export const requestPushPermission = async (): Promise<NotificationPermission> =
 
 export const showPushNotification = async (title: string, body: string): Promise<void> => {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.ready.catch(() => null) : null;
+  const registration = 'serviceWorker' in navigator ? await getReadyServiceWorker() : null;
   if (registration) {
     await registration.showNotification(title, {
       body,
@@ -61,59 +73,55 @@ export const showPushNotification = async (title: string, body: string): Promise
   new Notification(title, { body, icon: '/pwa-192x192.png' });
 };
 
-export const mirrorUnreadNotificationsToPush = async (
-  notifications: NotificationView[],
-  settings: UserSettings | null | undefined,
-): Promise<void> => {
-  if (!settings?.notifications.pushEnabled) return;
-  const permission = await requestPushPermission();
-  if (permission !== 'granted') return;
-
-  for (const notification of notifications) {
-    if (notification.isRead || shownNotificationIds.has(notification.id)) continue;
-    if (!allowsNotificationType(notification, settings)) continue;
-    shownNotificationIds.add(notification.id);
-    await showPushNotification(notification.title, notification.message);
+export const subscribeToServerPush = async (): Promise<ServerPushSyncResult> => {
+  if (!isServerPushSupported()) {
+    return {
+      enabled: false,
+      reason: 'Este navegador no soporta Web Push.',
+    };
   }
+
+  const permission = await requestPushPermission();
+  if (permission !== 'granted') {
+    return {
+      enabled: false,
+      reason: 'Activa los permisos de notificaciones del navegador.',
+    };
+  }
+
+  const config = await getPushConfig();
+  if (!config.enabled || !config.publicKey) {
+    return {
+      enabled: false,
+      reason: 'El servidor no tiene configuradas las claves Web Push.',
+    };
+  }
+
+  const registration = await getReadyServiceWorker();
+  if (!registration) {
+    return {
+      enabled: false,
+      reason: 'El service worker de la PWA todavia no esta listo.',
+    };
+  }
+  const existingSubscription = await registration.pushManager.getSubscription();
+  const subscription = existingSubscription ?? await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(config.publicKey),
+  });
+  await savePushSubscription(serializeSubscription(subscription));
+
+  return { enabled: true };
 };
 
-export const scheduleAppointmentNotifications = (
-  appointments: SchedulableAppointment[],
-  settings: UserSettings | null | undefined,
-): void => {
-  if (!settings?.notifications.pushEnabled || !settings.notifications.appointments) return;
-  const reminderHours = getReminderHours(settings);
-  const now = Date.now();
+export const unsubscribeFromServerPush = async (): Promise<void> => {
+  if (!isServerPushSupported()) return;
 
-  for (const appointment of appointments) {
-    const appointmentAt = new Date(appointment.date).getTime();
-    const reminderAt = appointmentAt - reminderHours * 60 * 60 * 1000;
-    const followUpAt = appointmentAt + 15 * 60 * 1000;
-    const reminders = [
-      {
-        key: `${appointment.id}:before:${reminderHours}`,
-        at: reminderAt,
-        title: 'Cita médica próxima',
-        body: `Tienes ${appointment.title} dentro de ${reminderHours} h.`,
-      },
-      {
-        key: `${appointment.id}:after`,
-        at: followUpAt,
-        title: 'Tras la cita',
-        body: appointment.treatmentId
-          ? 'Tras la cita, ¿hay algún cambio que quieras realizar al tratamiento?'
-          : 'Tras la cita, ¿hay algún cambio que quieras anotar?',
-      },
-    ];
+  const registration = await getReadyServiceWorker();
+  const subscription = await registration?.pushManager.getSubscription();
+  if (!subscription) return;
 
-    for (const reminder of reminders) {
-      if (reminder.at <= now || scheduledAppointmentTimers.has(reminder.key)) continue;
-      const delay = reminder.at - now;
-      const timerId = window.setTimeout(() => {
-        scheduledAppointmentTimers.delete(reminder.key);
-        void showPushNotification(reminder.title, reminder.body);
-      }, delay);
-      scheduledAppointmentTimers.set(reminder.key, timerId);
-    }
-  }
+  const input = serializeSubscription(subscription);
+  await deletePushSubscription({ endpoint: input.endpoint });
+  await subscription.unsubscribe();
 };

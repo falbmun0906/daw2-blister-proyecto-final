@@ -15,7 +15,6 @@ import { useAppointments } from '../../hooks/use.appointments';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
-import { scheduleAppointmentNotifications } from '../../lib/push-notifications';
 import { getCalendar, type UpcomingDose } from '../../services/me.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -199,7 +198,6 @@ function CalendarPage() {
   const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
   const activeRole = useBlisterStore((state) => state.activeRole);
   const userId = useAuthStore((state) => state.user?.id ?? null);
-  const userSettings = useAuthStore((state) => state.user?.settings ?? null);
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const addToast = useUiStore((state) => state.addToast);
@@ -328,10 +326,6 @@ function CalendarPage() {
     () => buildWindowDays(startOfToday(), doseVisibleDays),
     [doseVisibleDays],
   );
-
-  useEffect(() => {
-    scheduleAppointmentNotifications(visibleAppointments, userSettings);
-  }, [userSettings, visibleAppointments]);
 
   if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;

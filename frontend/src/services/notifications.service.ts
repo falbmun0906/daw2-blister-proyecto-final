@@ -1,10 +1,19 @@
 import { apiClient, normalizeApiResponse } from './api.client';
+import { z } from 'zod';
 import {
   notificationViewSchema,
   notificationsListMetaSchema,
+  pushConfigSchema,
+  pushSubscriptionViewSchema,
   type NotificationView,
   type NotificationsListResult,
+  type PushConfig,
+  type PushSubscriptionView,
 } from '../types/notification.types';
+import type {
+  DeletePushSubscriptionInput,
+  PushSubscriptionInput,
+} from '../../../shared/schemas';
 
 interface ListNotificationsRawResponse {
   data: unknown[];
@@ -39,4 +48,32 @@ export async function markNotificationAsRead(
 /** DELETE /notifications/:id. Elimina una notificación del buzón. */
 export async function deleteNotification(notificationId: string): Promise<void> {
   await apiClient.delete(`/notifications/${notificationId}`);
+}
+
+/** GET /notifications/push/config. Devuelve disponibilidad y clave publica VAPID. */
+export async function getPushConfig(): Promise<PushConfig> {
+  const response = await apiClient.get('/notifications/push/config');
+  return pushConfigSchema.parse(normalizeApiResponse(response));
+}
+
+/** GET /notifications/push/subscriptions. Lista dispositivos suscritos del usuario. */
+export async function listPushSubscriptions(): Promise<PushSubscriptionView[]> {
+  const response = await apiClient.get('/notifications/push/subscriptions');
+  const data = normalizeApiResponse(response);
+  return z.array(pushSubscriptionViewSchema).parse(data);
+}
+
+/** POST /notifications/push/subscriptions. Registra la suscripcion Web Push actual. */
+export async function savePushSubscription(
+  input: PushSubscriptionInput,
+): Promise<PushSubscriptionView> {
+  const response = await apiClient.post('/notifications/push/subscriptions', input);
+  return pushSubscriptionViewSchema.parse(normalizeApiResponse(response));
+}
+
+/** DELETE /notifications/push/subscriptions. Da de baja la suscripcion Web Push actual. */
+export async function deletePushSubscription(
+  input: DeletePushSubscriptionInput,
+): Promise<void> {
+  await apiClient.delete('/notifications/push/subscriptions', { data: input });
 }
