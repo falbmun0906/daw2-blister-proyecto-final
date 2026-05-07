@@ -260,7 +260,7 @@ const buildAppointmentReminderNotification = ({
   blisterId: appointment.blisterId,
   type: 'appointment_reminder',
   severity: 'info',
-  title: phase === 'before' ? 'Cita medica proxima' : 'Tras la cita',
+  title: phase === 'before' ? 'Cita medica proxima' : '¿Qué tal ha ido la cita?',
   message: phase === 'before'
     ? `Tienes ${appointment.title} dentro de ${reminderHours} h.`
     : appointment.treatmentId
