@@ -3,7 +3,6 @@ import {
   TbAlertTriangle,
   TbBell,
   TbCalendarTime,
-  TbChevronRight,
   TbPackage,
   TbPill,
   TbX,
@@ -15,7 +14,7 @@ interface NotificationItemProps {
   notification: NotificationView;
   onMarkAsRead: (id: string) => void;
   onOpen?: (notification: NotificationView) => void;
-  onDismiss?: (id: string) => void;
+  onDismiss?: (notification: NotificationView) => void;
 }
 
 const TYPE_ICONS: Record<NotificationView['type'], typeof TbBell> = {
@@ -89,8 +88,8 @@ export function NotificationItem({
         onClick={handleClick}
         aria-label={
           notification.isRead
-            ? `Notificación: ${notification.title}`
-            : `Marcar como leída: ${notification.title}`
+            ? `Notificacion: ${notification.title}`
+            : `Marcar como leida: ${notification.title}`
         }
       >
         <span className="c-notification-item__icon" aria-hidden="true">
@@ -106,14 +105,13 @@ export function NotificationItem({
             {relativeTime}
           </time>
         </span>
-        <TbChevronRight className="c-notification-item__chevron" aria-hidden="true" />
       </button>
       {onDismiss ? (
         <button
           type="button"
           className="c-notification-item__dismiss"
-          aria-label={`Eliminar notificación: ${notification.title}`}
-          onClick={() => onDismiss(notification.id)}
+          aria-label={`Eliminar notificacion: ${notification.title}`}
+          onClick={() => onDismiss(notification)}
         >
           <TbX aria-hidden="true" />
         </button>

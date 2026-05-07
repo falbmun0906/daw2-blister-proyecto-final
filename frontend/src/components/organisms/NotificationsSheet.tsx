@@ -5,12 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { EmptyState } from '../atoms/EmptyState';
 import { ErrorState } from '../atoms/ErrorState';
 import { Skeleton } from '../atoms/Skeleton';
-import { NotificationItem } from './NotificationItem';
 import { useNotifications } from '../../hooks/use.notifications';
 import { getNotificationTargetRoute } from '../../lib/notification-routing';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { NotificationView } from '../../types/notification.types';
+import { NotificationItem } from './NotificationItem';
 
 interface NotificationGroup {
   key: 'today' | 'week' | 'older';
@@ -24,12 +24,14 @@ function groupByDate(items: NotificationView[]): NotificationGroup[] {
   const today: NotificationView[] = [];
   const week: NotificationView[] = [];
   const older: NotificationView[] = [];
+
   for (const item of items) {
     const diff = now - new Date(item.createdAt).getTime();
     if (diff < dayMs) today.push(item);
     else if (diff < dayMs * 7) week.push(item);
     else older.push(item);
   }
+
   return [
     { key: 'today' as const, label: 'Hoy', items: today },
     { key: 'week' as const, label: 'Esta semana', items: week },
@@ -45,9 +47,9 @@ function getPortalTarget(): HTMLElement | null {
 }
 
 /**
- * Bottom sheet de notificaciones. Se monta siempre y se anima en función del
- * estado del store de UI; soporta arrastre vertical para cerrar acompañando
- * al dedo, similar al patrón de iOS.
+ * Bottom sheet de notificaciones. Se monta siempre y se anima en funcion del
+ * estado del store de UI; soporta arrastre vertical para cerrar acompasado
+ * con el dedo, similar al patron de iOS.
  */
 export function NotificationsSheet() {
   const navigate = useNavigate();
@@ -60,7 +62,6 @@ export function NotificationsSheet() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef<number | null>(null);
-  const sheetRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const groups = useMemo(() => groupByDate(notifications), [notifications]);
@@ -107,7 +108,6 @@ export function NotificationsSheet() {
     };
   }, [open]);
 
-  // Refresca al abrir.
   useEffect(() => {
     if (!open) return;
     const timeoutId = window.setTimeout(() => {
@@ -151,10 +151,10 @@ export function NotificationsSheet() {
     if (unread.length === 0) return;
     try {
       await Promise.all(unread.map((n) => markAsRead(n.id)));
-      addToast({ message: 'Notificaciones marcadas como leídas.', variant: 'success' });
+      addToast({ message: 'Notificaciones marcadas como leidas.', variant: 'success' });
     } catch (err) {
       addToast({
-        message: isApiError(err) ? err.message : 'No se han podido marcar todas como leídas.',
+        message: isApiError(err) ? err.message : 'No se han podido marcar todas como leidas.',
         variant: 'error',
       });
     }
@@ -163,7 +163,7 @@ export function NotificationsSheet() {
   const handleMarkAsRead = (id: string): void => {
     void markAsRead(id).catch((err) => {
       addToast({
-        message: isApiError(err) ? err.message : 'No se ha podido marcar como leída.',
+        message: isApiError(err) ? err.message : 'No se ha podido marcar como leida.',
         variant: 'error',
       });
     });
@@ -176,10 +176,10 @@ export function NotificationsSheet() {
     navigate(route);
   };
 
-  const handleDismiss = (id: string): void => {
-    void dismiss(id).catch((err) => {
+  const handleDismiss = (notification: NotificationView): void => {
+    void dismiss(notification).catch((err) => {
       addToast({
-        message: isApiError(err) ? err.message : 'No se ha podido eliminar la notificación.',
+        message: isApiError(err) ? err.message : 'No se ha podido eliminar la notificacion.',
         variant: 'error',
       });
     });
@@ -197,7 +197,6 @@ export function NotificationsSheet() {
         onClick={close}
       />
       <div
-        ref={sheetRef}
         className={`c-notifications-sheet__panel${isDragging ? ' is-dragging' : ''}`}
         style={isDragging || dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
         role="dialog"
@@ -220,7 +219,7 @@ export function NotificationsSheet() {
               className="c-notifications-sheet__mark-all"
               onClick={() => void handleMarkAll()}
             >
-              Marcar todas como leídas
+              Marcar todas como leidas
             </button>
           ) : null}
         </header>

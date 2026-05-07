@@ -55,11 +55,11 @@ function NotificationsPage() {
     if (unread.length === 0) return;
     try {
       await Promise.all(unread.map((n) => markAsRead(n.id)));
-      addToast({ message: 'Notificaciones marcadas como leídas.', variant: 'success' });
+      addToast({ message: 'Notificaciones marcadas como leidas.', variant: 'success' });
     } catch (err) {
       const message = isApiError(err)
         ? err.message
-        : 'No se han podido marcar todas como leídas.';
+        : 'No se han podido marcar todas como leidas.';
       addToast({ message, variant: 'error' });
     }
   };
@@ -68,7 +68,7 @@ function NotificationsPage() {
     void markAsRead(id).catch((err) => {
       const message = isApiError(err)
         ? err.message
-        : 'No se ha podido marcar como leída.';
+        : 'No se ha podido marcar como leida.';
       addToast({ message, variant: 'error' });
     });
   };
@@ -78,11 +78,11 @@ function NotificationsPage() {
     if (route) navigate(route);
   };
 
-  const handleDismiss = (id: string): void => {
-    void dismiss(id).catch((err) => {
+  const handleDismiss = (notification: NotificationView): void => {
+    void dismiss(notification).catch((err) => {
       const message = isApiError(err)
         ? err.message
-        : 'No se ha podido eliminar la notificación.';
+        : 'No se ha podido eliminar la notificacion.';
       addToast({ message, variant: 'error' });
     });
   };
@@ -96,7 +96,7 @@ function NotificationsPage() {
             className="c-notifications-page__mark-all"
             onClick={() => void handleMarkAll()}
           >
-            Marcar todas como leídas
+            Marcar todas como leidas
           </button>
         </header>
       ) : null}

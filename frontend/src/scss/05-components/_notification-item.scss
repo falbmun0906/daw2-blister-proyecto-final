@@ -13,7 +13,7 @@
 
   &__button {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr;
     gap: var(--space-3);
     align-items: flex-start;
     width: 100%;

@@ -25,12 +25,12 @@ interface UseNotificationsResult {
   error: string | null;
   refetch: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
-  dismiss: (id: string) => Promise<void>;
+  dismiss: (notification: NotificationView) => Promise<void>;
 }
 
 /**
  * Carga notificaciones del usuario autenticado, las hidrata en el store global,
- * y expone una acción optimista para marcarlas como leídas.
+ * y expone acciones optimistas para lectura y descarte.
  */
 export function useNotifications(
   options: UseNotificationsOptions = {},
@@ -78,7 +78,7 @@ export function useNotifications(
         setNotifications(previous);
         const message = isApiError(err)
           ? err.message
-          : 'No se ha podido marcar la notificación como leída.';
+          : 'No se ha podido marcar la notificacion como leida.';
         setError(message);
         throw err;
       }
@@ -87,16 +87,17 @@ export function useNotifications(
   );
 
   const dismiss = useCallback(
-    async (id: string) => {
+    async (notification: NotificationView) => {
       const previous = useNotificationsStore.getState().notifications;
-      removeNotification(id);
+      removeNotification(notification.id);
+
       try {
-        await deleteNotification(id);
+        await deleteNotification(notification.id);
       } catch (err) {
         setNotifications(previous);
         const message = isApiError(err)
           ? err.message
-          : 'No se ha podido eliminar la notificación.';
+          : 'No se ha podido eliminar la notificacion.';
         setError(message);
         throw err;
       }
@@ -121,7 +122,7 @@ export function useNotifications(
   };
 }
 
-/** Refresca el buzÃ³n global para que badges y cabecera reaccionen tras mutaciones de dominio. */
+/** Refresca el buzon global para que badges y cabecera reaccionen tras mutaciones de dominio. */
 export function useRefreshNotifications(): () => Promise<void> {
   const setNotifications = useNotificationsStore((s) => s.setNotifications);
 
