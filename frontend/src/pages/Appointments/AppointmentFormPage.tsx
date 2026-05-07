@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
-import { TbCalendarEvent, TbClock, TbMapPin, TbStethoscope, TbUserHeart } from 'react-icons/tb';
+import { TbCalendarEvent, TbClock, TbMapPin, TbNotes, TbStethoscope, TbUserHeart } from 'react-icons/tb';
 
 import {
   createAppointmentSchema,
@@ -28,15 +28,22 @@ interface FormValues {
   patientUserId: string;
   title: string;
   location: string;
+  description: string;
   date: string;
   treatmentId: string;
 }
+
+const toNullableText = (value: string): string | null => {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+};
 
 function buildPayload(values: FormValues): CreateAppointmentInput {
   return createAppointmentSchema.parse({
     patientUserId: values.patientUserId,
     title: values.title,
-    location: values.location || undefined,
+    location: toNullableText(values.location),
+    description: toNullableText(values.description),
     date: values.date,
     treatmentId: values.treatmentId ? values.treatmentId : null,
   });
@@ -88,7 +95,14 @@ function AppointmentFormPage() {
   );
 
   const form = useForm<FormValues>({
-    defaultValues: { patientUserId: defaultPatientUserId, title: '', location: '', date: '', treatmentId: '' },
+    defaultValues: {
+      patientUserId: defaultPatientUserId,
+      title: '',
+      location: '',
+      description: '',
+      date: '',
+      treatmentId: '',
+    },
   });
   const { register, handleSubmit, reset, setError, control, formState } = form;
   const selectedPatientUserId = useWatch({ control, name: 'patientUserId' });
@@ -103,6 +117,7 @@ function AppointmentFormPage() {
         patientUserId: target.patientUserId,
         title: target.title,
         location: target.location ?? '',
+        description: target.description ?? '',
         date: toLocalDateTimeInput(target.date),
         treatmentId: target.treatmentId ?? '',
       });
@@ -111,7 +126,14 @@ function AppointmentFormPage() {
 
   useEffect(() => {
     if (!isEditing && defaultPatientUserId) {
-      reset({ patientUserId: defaultPatientUserId, title: '', location: '', date: '', treatmentId: '' });
+      reset({
+        patientUserId: defaultPatientUserId,
+        title: '',
+        location: '',
+        description: '',
+        date: '',
+        treatmentId: '',
+      });
     }
   }, [defaultPatientUserId, isEditing, reset]);
 
@@ -216,6 +238,24 @@ function AppointmentFormPage() {
             error={formState.errors.location?.message}
             {...register('location')}
           />
+        </FormSection>
+
+        <FormSection label="Descripción" icon={<TbNotes />}>
+          <label className={['c-field', formState.errors.description && 'c-field--error'].filter(Boolean).join(' ')}>
+            <span className="c-field__label">
+              <span className="c-field__label-text">Notas de la cita</span>
+            </span>
+            <textarea
+              className="c-field__textarea"
+              rows={4}
+              maxLength={600}
+              placeholder="Motivo, pruebas pendientes o indicaciones"
+              {...register('description')}
+            />
+            {formState.errors.description?.message ? (
+              <span className="c-field__error">{formState.errors.description.message}</span>
+            ) : null}
+          </label>
         </FormSection>
 
         <FormSection label="Fecha y hora" icon={<TbClock />}>

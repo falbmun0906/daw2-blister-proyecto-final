@@ -1,8 +1,10 @@
 import {
+  appointmentCommentBodySchema,
   appointmentSchema,
   createAppointmentSchema,
   updateAppointmentSchema,
   type Appointment,
+  type AppointmentCommentInput,
   type CreateAppointmentInput,
   type UpdateAppointmentInput,
 } from '../../../shared/schemas/appointment.schema';
@@ -57,4 +59,45 @@ export async function removeAppointment(
   appointmentId: string,
 ): Promise<void> {
   await apiClient.delete(`/blisters/${blisterId}/appointments/${appointmentId}`);
+}
+
+/** Añade un comentario a una cita. */
+export async function addAppointmentComment(
+  blisterId: string,
+  appointmentId: string,
+  input: AppointmentCommentInput,
+): Promise<Appointment> {
+  const payload = appointmentCommentBodySchema.parse(input);
+  const response = await apiClient.post(
+    `/blisters/${blisterId}/appointments/${appointmentId}/comments`,
+    payload,
+  );
+  return appointmentSchema.parse(normalizeApiResponse(response));
+}
+
+/** Actualiza un comentario de una cita. */
+export async function updateAppointmentComment(
+  blisterId: string,
+  appointmentId: string,
+  commentId: string,
+  input: AppointmentCommentInput,
+): Promise<Appointment> {
+  const payload = appointmentCommentBodySchema.parse(input);
+  const response = await apiClient.patch(
+    `/blisters/${blisterId}/appointments/${appointmentId}/comments/${commentId}`,
+    payload,
+  );
+  return appointmentSchema.parse(normalizeApiResponse(response));
+}
+
+/** Elimina un comentario de una cita. */
+export async function removeAppointmentComment(
+  blisterId: string,
+  appointmentId: string,
+  commentId: string,
+): Promise<Appointment> {
+  const response = await apiClient.delete(
+    `/blisters/${blisterId}/appointments/${appointmentId}/comments/${commentId}`,
+  );
+  return appointmentSchema.parse(normalizeApiResponse(response));
 }

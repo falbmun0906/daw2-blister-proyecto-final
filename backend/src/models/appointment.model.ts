@@ -2,6 +2,33 @@ import { model, models, Schema } from 'mongoose';
 
 import { type AppointmentDocument } from '../types/appointment.types';
 
+const appointmentCommentSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 500,
+    },
+    createdAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+  },
+  { _id: true, id: false },
+);
+
 const appointmentSchema = new Schema<AppointmentDocument>({
   blisterId: {
     type: Schema.Types.ObjectId,
@@ -27,6 +54,12 @@ const appointmentSchema = new Schema<AppointmentDocument>({
     maxlength: 200,
     default: null,
   },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 600,
+    default: null,
+  },
   date: {
     type: Date,
     required: true,
@@ -35,6 +68,10 @@ const appointmentSchema = new Schema<AppointmentDocument>({
     type: Schema.Types.ObjectId,
     ref: 'Treatment',
     default: null,
+  },
+  comments: {
+    type: [appointmentCommentSchema],
+    default: [],
   },
 });
 

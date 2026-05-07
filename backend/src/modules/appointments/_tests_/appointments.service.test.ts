@@ -8,9 +8,12 @@ import {
   disconnectTestDatabase,
 } from '../../auth/_tests_/auth-test.utils';
 import {
+  appointmentsAddComment,
   appointmentsCreate,
   appointmentsDelete,
+  appointmentsDeleteComment,
   appointmentsList,
+  appointmentsUpdateComment,
   appointmentsUpdate,
 } from '../appointments.service';
 
@@ -97,6 +100,7 @@ describe('appointments.service', () => {
     const created = await appointmentsCreate(blister._id.toString(), 'CAREGIVER', {
       title: 'Cardiologia',
       patientUserId: user._id.toString(),
+      description: 'Llevar informe de tension',
       date: new Date('2030-12-02T10:00:00.000Z'),
       treatmentId: treatment._id.toString(),
     });
@@ -111,7 +115,83 @@ describe('appointments.service', () => {
     );
 
     expect(created.treatmentId).toBe(treatment._id.toString());
+    expect(created.description).toBe('Llevar informe de tension');
     expect(updated.title).toBe('Cardiologia anual');
+  });
+
+  it('adds, updates and deletes appointment comments with author data', async () => {
+    const { user, blister } = await createBlisterWithTreatment('CAREGIVER');
+    const appointment = await appointmentsCreate(blister._id.toString(), 'CAREGIVER', {
+      title: 'Revision',
+      patientUserId: user._id.toString(),
+      date: new Date('2030-12-02T10:00:00.000Z'),
+    });
+
+    const withComment = await appointmentsAddComment(
+      blister._id.toString(),
+      appointment.id,
+      user._id.toString(),
+      'CAREGIVER',
+      { text: 'Preparar analitica' },
+    );
+    const comment = withComment.comments[0]!;
+
+    const edited = await appointmentsUpdateComment(
+      blister._id.toString(),
+      appointment.id,
+      comment.id,
+      user._id.toString(),
+      'CAREGIVER',
+      { text: 'Preparar analitica y DNI' },
+    );
+    const cleaned = await appointmentsDeleteComment(
+      blister._id.toString(),
+      appointment.id,
+      comment.id,
+      user._id.toString(),
+      'CAREGIVER',
+    );
+
+    expect(comment.authorName).toBe(user.name);
+    expect(edited.comments[0]?.text).toBe('Preparar analitica y DNI');
+    expect(cleaned.comments).toHaveLength(0);
+  });
+
+  it('prevents caregivers from editing comments written by another member', async () => {
+    const owner = await createUser('owner');
+    const caregiver = await createUser('caregiver');
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+      ],
+    });
+    const appointment = await appointmentsCreate(blister._id.toString(), 'OWNER', {
+      title: 'Revision',
+      patientUserId: owner._id.toString(),
+      date: new Date('2030-12-02T10:00:00.000Z'),
+    });
+    const withComment = await appointmentsAddComment(
+      blister._id.toString(),
+      appointment.id,
+      owner._id.toString(),
+      'OWNER',
+      { text: 'Nota del propietario' },
+    );
+
+    await expect(
+      appointmentsUpdateComment(
+        blister._id.toString(),
+        appointment.id,
+        withComment.comments[0]!.id,
+        caregiver._id.toString(),
+        'CAREGIVER',
+        { text: 'Cambio no permitido' },
+      ),
+    ).rejects.toMatchObject({
+      code: 'APPOINTMENT_COMMENT_FORBIDDEN',
+    });
   });
 
   it('rejects linked treatments from other blisters', async () => {

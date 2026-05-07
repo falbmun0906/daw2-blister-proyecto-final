@@ -124,12 +124,55 @@ describe('appointments.routes', () => {
       .send({
         title: 'Cardiologia',
         patientUserId: user._id.toString(),
+        description: 'Llevar informe de tension',
         date: '2030-12-10T10:00:00.000Z',
         treatmentId: treatment._id.toString(),
       });
 
     expect(response.status).toBe(201);
     expect(response.body.data.treatmentId).toBe(treatment._id.toString());
+    expect(response.body.data.description).toBe('Llevar informe de tension');
+  });
+
+  it('creates, updates and deletes appointment comments', async () => {
+    const user = await createUser('95');
+    const token = createAccessToken(user._id.toString());
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [{ userId: user._id, role: 'OWNER' }],
+    });
+    const createResponse = await request(app)
+      .post(`/api/v1/blisters/${blister._id.toString()}/appointments`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Neurologia',
+        patientUserId: user._id.toString(),
+        date: '2030-12-10T10:00:00.000Z',
+      });
+
+    const addResponse = await request(app)
+      .post(`/api/v1/blisters/${blister._id.toString()}/appointments/${createResponse.body.data.id}/comments`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ text: 'Pedir justificante' });
+    const commentId = addResponse.body.data.comments[0].id;
+    const updateResponse = await request(app)
+      .patch(`/api/v1/blisters/${blister._id.toString()}/appointments/${createResponse.body.data.id}/comments/${commentId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ text: 'Pedir justificante y receta' });
+    const deleteResponse = await request(app)
+      .delete(`/api/v1/blisters/${blister._id.toString()}/appointments/${createResponse.body.data.id}/comments/${commentId}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(addResponse.status).toBe(201);
+    expect(addResponse.body.data.comments[0]).toMatchObject({
+      userId: user._id.toString(),
+      authorName: user.name,
+      text: 'Pedir justificante',
+    });
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.body.data.comments[0].text).toBe('Pedir justificante y receta');
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteResponse.body.data.comments).toHaveLength(0);
   });
 
   it('blocks observer writes', async () => {

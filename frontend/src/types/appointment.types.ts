@@ -1,7 +1,8 @@
 import type {
   Appointment,
+  AppointmentCommentInput,
   CreateAppointmentInput,
   UpdateAppointmentInput,
 } from '../../../shared/schemas/appointment.schema';
 
-export type { Appointment, CreateAppointmentInput, UpdateAppointmentInput };
+export type { Appointment, AppointmentCommentInput, CreateAppointmentInput, UpdateAppointmentInput };

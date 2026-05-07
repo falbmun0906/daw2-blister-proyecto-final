@@ -8,13 +8,29 @@ import {
 import { AppointmentModel } from '../../models/appointment.model';
 import { BlisterModel } from '../../models/blister.model';
 import { TreatmentModel } from '../../models/treatment.model';
+import { UserModel } from '../../models/user.model';
+import {
+  type AppointmentCommentDocument,
+  type AppointmentDocument,
+} from '../../types/appointment.types';
 import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
 import { AppError } from '../../utils/app-error';
 import {
+  type AppointmentCommentInput,
   type AppointmentsListQuery,
   type CreateAppointmentInput,
   type UpdateAppointmentInput,
 } from '../../../../shared/schemas';
+
+interface AppointmentCommentView {
+  id: string;
+  userId: string;
+  authorName: string;
+  authorAvatarKey: string | null;
+  text: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 interface AppointmentView {
   id: string;
@@ -22,8 +38,10 @@ interface AppointmentView {
   patientUserId: string;
   title: string;
   location: string | null;
+  description: string | null;
   date: Date;
   treatmentId: string | null;
+  comments: AppointmentCommentView[];
 }
 
 interface AppointmentsListResult {
@@ -37,16 +55,92 @@ interface AppointmentsListResult {
 }
 
 const WRITER_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
+const FALLBACK_COMMENT_AUTHOR_NAME = 'Miembro del blister';
 
-const toAppointmentView = (appointment: Awaited<ReturnType<typeof AppointmentModel.findOne>>): AppointmentView => ({
-  id: appointment!._id.toString(),
-  blisterId: appointment!.blisterId.toString(),
-  patientUserId: appointment!.patientUserId.toString(),
-  title: appointment!.title,
-  location: appointment!.location ?? null,
-  date: appointment!.date,
-  treatmentId: appointment!.treatmentId?.toString() ?? null,
+interface CommentAuthorView {
+  name: string;
+  avatarKey: string | null;
+}
+
+interface LeanCommentAuthor {
+  _id: Types.ObjectId;
+  name?: string;
+  settings?: {
+    avatarKey?: string;
+  };
+}
+
+const toAppointmentCommentView = (
+  comment: AppointmentCommentDocument,
+  authors: Map<string, CommentAuthorView>,
+): AppointmentCommentView => {
+  const userId = comment.userId.toString();
+  const author = authors.get(userId);
+
+  return {
+    id: comment._id.toString(),
+    userId,
+    authorName: author?.name ?? FALLBACK_COMMENT_AUTHOR_NAME,
+    authorAvatarKey: author?.avatarKey ?? null,
+    text: comment.text,
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
+  };
+};
+
+const toAppointmentView = (
+  appointment: AppointmentDocument,
+  authors = new Map<string, CommentAuthorView>(),
+): AppointmentView => ({
+  id: appointment._id.toString(),
+  blisterId: appointment.blisterId.toString(),
+  patientUserId: appointment.patientUserId.toString(),
+  title: appointment.title,
+  location: appointment.location ?? null,
+  description: appointment.description ?? null,
+  date: appointment.date,
+  treatmentId: appointment.treatmentId?.toString() ?? null,
+  comments: appointment.comments.map((comment) => toAppointmentCommentView(comment, authors)),
 });
+
+const buildCommentAuthorMap = async (
+  appointments: AppointmentDocument[],
+): Promise<Map<string, CommentAuthorView>> => {
+  const authorIds = [
+    ...new Set(
+      appointments.flatMap((appointment) =>
+        appointment.comments.map((comment) => comment.userId.toString()),
+      ),
+    ),
+  ];
+
+  if (authorIds.length === 0) {
+    return new Map();
+  }
+
+  const users = await UserModel.find({
+    _id: { $in: authorIds.map((id) => new Types.ObjectId(id)) },
+  })
+    .select('name settings.avatarKey')
+    .lean<LeanCommentAuthor[]>();
+
+  return new Map(
+    users.map((user) => [
+      user._id.toString(),
+      {
+        name: user.name ?? FALLBACK_COMMENT_AUTHOR_NAME,
+        avatarKey: user.settings?.avatarKey ?? null,
+      },
+    ]),
+  );
+};
+
+const toAppointmentViewWithAuthors = async (
+  appointment: AppointmentDocument,
+): Promise<AppointmentView> => {
+  const authors = await buildCommentAuthorMap([appointment]);
+  return toAppointmentView(appointment, authors);
+};
 
 const ensureWriterRole = (blisterRole: BlisterRole): void => {
   if (!WRITER_ROLES.includes(blisterRole)) {
@@ -73,6 +167,39 @@ const getAppointmentDocument = async (blisterId: string, appointmentId: string) 
   }
 
   return appointment;
+};
+
+const getAppointmentComment = (
+  appointment: AppointmentDocument,
+  commentId: string,
+): AppointmentCommentDocument => {
+  const comment = appointment.comments.find((item) => item._id.toString() === commentId);
+
+  if (!comment) {
+    throw new AppError({
+      code: 'APPOINTMENT_COMMENT_NOT_FOUND',
+      message: 'Appointment comment not found.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+
+  return comment;
+};
+
+const ensureCommentMutationAllowed = (
+  comment: AppointmentCommentDocument,
+  userId: string,
+  blisterRole: BlisterRole,
+): void => {
+  if (comment.userId.toString() === userId || blisterRole === 'OWNER') {
+    return;
+  }
+
+  throw new AppError({
+    code: 'APPOINTMENT_COMMENT_FORBIDDEN',
+    message: 'You can only edit or delete your own comments.',
+    statusCode: HTTP_STATUS_FORBIDDEN,
+  });
 };
 
 const ensureTreatmentBelongsToBlister = async (
@@ -149,9 +276,10 @@ export const appointmentsList = async (
       .limit(limit),
     AppointmentModel.countDocuments(filter),
   ]);
+  const authors = await buildCommentAuthorMap(appointments);
 
   return {
-    appointments: appointments.map((appointment) => toAppointmentView(appointment)),
+    appointments: appointments.map((appointment) => toAppointmentView(appointment, authors)),
     meta: {
       page,
       limit,
@@ -178,6 +306,7 @@ export const appointmentsCreate = async (
     patientUserId: new Types.ObjectId(input.patientUserId),
     title: input.title,
     location: input.location ?? null,
+    description: input.description ?? null,
     date: input.date,
     treatmentId: input.treatmentId ? new Types.ObjectId(input.treatmentId) : null,
   });
@@ -206,7 +335,11 @@ export const appointmentsUpdate = async (
     appointment.patientUserId = new Types.ObjectId(input.patientUserId);
   }
 
-  await ensureTreatmentBelongsToBlister(blisterId, input.treatmentId, nextPatientId);
+  const treatmentIdToValidate = input.treatmentId !== undefined
+    ? input.treatmentId
+    : appointment.treatmentId?.toString() ?? null;
+
+  await ensureTreatmentBelongsToBlister(blisterId, treatmentIdToValidate, nextPatientId);
 
   if (input.title !== undefined) {
     appointment.title = input.title;
@@ -214,6 +347,10 @@ export const appointmentsUpdate = async (
 
   if (input.location !== undefined) {
     appointment.location = input.location ?? null;
+  }
+
+  if (input.description !== undefined) {
+    appointment.description = input.description ?? null;
   }
 
   if (input.date !== undefined) {
@@ -226,7 +363,84 @@ export const appointmentsUpdate = async (
 
   await appointment.save();
 
-  return toAppointmentView(appointment);
+  return toAppointmentViewWithAuthors(appointment);
+};
+
+/**
+ * Adds a comment to an appointment in the target blister.
+ */
+export const appointmentsAddComment = async (
+  blisterId: string,
+  appointmentId: string,
+  userId: string,
+  blisterRole: BlisterRole,
+  input: AppointmentCommentInput,
+): Promise<AppointmentView> => {
+  ensureWriterRole(blisterRole);
+
+  const appointment = await getAppointmentDocument(blisterId, appointmentId);
+  const now = new Date();
+
+  appointment.comments.push({
+    _id: new Types.ObjectId(),
+    userId: new Types.ObjectId(userId),
+    text: input.text,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await appointment.save();
+
+  return toAppointmentViewWithAuthors(appointment);
+};
+
+/**
+ * Updates a comment when the caller is its author or owns the blister.
+ */
+export const appointmentsUpdateComment = async (
+  blisterId: string,
+  appointmentId: string,
+  commentId: string,
+  userId: string,
+  blisterRole: BlisterRole,
+  input: AppointmentCommentInput,
+): Promise<AppointmentView> => {
+  ensureWriterRole(blisterRole);
+
+  const appointment = await getAppointmentDocument(blisterId, appointmentId);
+  const comment = getAppointmentComment(appointment, commentId);
+  ensureCommentMutationAllowed(comment, userId, blisterRole);
+
+  comment.text = input.text;
+  comment.updatedAt = new Date();
+
+  await appointment.save();
+
+  return toAppointmentViewWithAuthors(appointment);
+};
+
+/**
+ * Deletes a comment when the caller is its author or owns the blister.
+ */
+export const appointmentsDeleteComment = async (
+  blisterId: string,
+  appointmentId: string,
+  commentId: string,
+  userId: string,
+  blisterRole: BlisterRole,
+): Promise<AppointmentView> => {
+  ensureWriterRole(blisterRole);
+
+  const appointment = await getAppointmentDocument(blisterId, appointmentId);
+  const comment = getAppointmentComment(appointment, commentId);
+  ensureCommentMutationAllowed(comment, userId, blisterRole);
+
+  appointment.comments = appointment.comments.filter(
+    (item: AppointmentCommentDocument) => item._id.toString() !== commentId,
+  );
+  await appointment.save();
+
+  return toAppointmentViewWithAuthors(appointment);
 };
 
 /**

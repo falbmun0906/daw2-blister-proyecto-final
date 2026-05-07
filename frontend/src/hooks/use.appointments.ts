@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
+  addAppointmentComment as addAppointmentCommentRequest,
   createAppointment as createAppointmentRequest,
   listAppointments,
   removeAppointment as removeAppointmentRequest,
+  removeAppointmentComment as removeAppointmentCommentRequest,
+  updateAppointmentComment as updateAppointmentCommentRequest,
   updateAppointment as updateAppointmentRequest,
 } from '../services/appointments.service';
 import { useAppointmentsStore } from '../stores/appointments.store';
@@ -11,6 +14,7 @@ import { useBlisterStore } from '../stores/blister.store';
 import { isApiError } from '../types/api.types';
 import type {
   Appointment,
+  AppointmentCommentInput,
   CreateAppointmentInput,
   UpdateAppointmentInput,
 } from '../types/appointment.types';
@@ -23,6 +27,13 @@ interface UseAppointmentsResult {
   createAppointment: (input: CreateAppointmentInput) => Promise<Appointment>;
   updateAppointment: (id: string, input: UpdateAppointmentInput) => Promise<Appointment>;
   removeAppointment: (id: string) => Promise<void>;
+  addAppointmentComment: (id: string, input: AppointmentCommentInput) => Promise<Appointment>;
+  updateAppointmentComment: (
+    id: string,
+    commentId: string,
+    input: AppointmentCommentInput,
+  ) => Promise<Appointment>;
+  removeAppointmentComment: (id: string, commentId: string) => Promise<Appointment>;
 }
 
 /** Carga y muta las citas del blíster activo. */
@@ -95,6 +106,42 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
     [blisterId, remove],
   );
 
+  const addAppointmentComment = useCallback(
+    async (id: string, input: AppointmentCommentInput) => {
+      if (!blisterId) {
+        throw new Error('No hay blíster activo.');
+      }
+      const updated = await addAppointmentCommentRequest(blisterId, id, input);
+      upsert(updated);
+      return updated;
+    },
+    [blisterId, upsert],
+  );
+
+  const updateAppointmentComment = useCallback(
+    async (id: string, commentId: string, input: AppointmentCommentInput) => {
+      if (!blisterId) {
+        throw new Error('No hay blíster activo.');
+      }
+      const updated = await updateAppointmentCommentRequest(blisterId, id, commentId, input);
+      upsert(updated);
+      return updated;
+    },
+    [blisterId, upsert],
+  );
+
+  const removeAppointmentComment = useCallback(
+    async (id: string, commentId: string) => {
+      if (!blisterId) {
+        throw new Error('No hay blíster activo.');
+      }
+      const updated = await removeAppointmentCommentRequest(blisterId, id, commentId);
+      upsert(updated);
+      return updated;
+    },
+    [blisterId, upsert],
+  );
+
   return {
     appointments,
     isLoading,
@@ -103,5 +150,8 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
     createAppointment,
     updateAppointment,
     removeAppointment,
+    addAppointmentComment,
+    updateAppointmentComment,
+    removeAppointmentComment,
   };
 }

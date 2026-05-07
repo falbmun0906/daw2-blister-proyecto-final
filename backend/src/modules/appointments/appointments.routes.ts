@@ -1,6 +1,8 @@
 import { Router } from 'express';
 
 import {
+  appointmentCommentBodySchema,
+  appointmentCommentParamsSchema,
   appointmentIdParamsSchema,
   appointmentsListQuerySchema,
   blisterAppointmentParamsSchema,
@@ -11,9 +13,12 @@ import { authenticate } from '../../middleware/authenticate';
 import { checkBlisterAccess } from '../../middleware/checkBlisterAccess';
 import { validate } from '../../middleware/validate';
 import {
+  appointmentsAddCommentController,
   appointmentsCreateController,
+  appointmentsDeleteCommentController,
   appointmentsDeleteController,
   appointmentsListController,
+  appointmentsUpdateCommentController,
   appointmentsUpdateController,
 } from './appointments.controller';
 
@@ -144,6 +149,24 @@ appointmentsRouter.patch(
   validate({ params: appointmentIdParamsSchema, body: updateAppointmentSchema }),
   checkBlisterAccess,
   appointmentsUpdateController,
+);
+appointmentsRouter.post(
+  '/:blisterId/appointments/:id/comments',
+  validate({ params: appointmentIdParamsSchema, body: appointmentCommentBodySchema }),
+  checkBlisterAccess,
+  appointmentsAddCommentController,
+);
+appointmentsRouter.patch(
+  '/:blisterId/appointments/:id/comments/:commentId',
+  validate({ params: appointmentCommentParamsSchema, body: appointmentCommentBodySchema }),
+  checkBlisterAccess,
+  appointmentsUpdateCommentController,
+);
+appointmentsRouter.delete(
+  '/:blisterId/appointments/:id/comments/:commentId',
+  validate({ params: appointmentCommentParamsSchema }),
+  checkBlisterAccess,
+  appointmentsDeleteCommentController,
 );
 appointmentsRouter.delete(
   '/:blisterId/appointments/:id',
