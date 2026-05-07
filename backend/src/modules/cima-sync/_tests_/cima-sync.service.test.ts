@@ -45,6 +45,57 @@ describe('cima-sync.service', () => {
       },
     });
 
+  const documentedCimaChangeCases = [
+    {
+      change: 'estado',
+      nregist: '610001',
+      severity: 'warning',
+      title: 'Cambio en el estado de autorizacion',
+    },
+    {
+      change: 'comerc',
+      nregist: '610002',
+      severity: 'warning',
+      title: 'Cambio en la comercializacion',
+    },
+    {
+      change: 'prosp',
+      nregist: '610003',
+      severity: 'info',
+      title: 'Actualizacion de prospecto',
+    },
+    {
+      change: 'ft',
+      nregist: '610004',
+      severity: 'info',
+      title: 'Actualizacion de ficha tecnica',
+    },
+    {
+      change: 'psum',
+      nregist: '610005',
+      severity: 'critical',
+      title: 'Nuevo problema de suministro en CIMA',
+    },
+    {
+      change: 'notasSeguridad',
+      nregist: '610006',
+      severity: 'critical',
+      title: 'Nueva nota de seguridad en CIMA',
+    },
+    {
+      change: 'matinf',
+      nregist: '610007',
+      severity: 'info',
+      title: 'Actualizacion de materiales informativos',
+    },
+    {
+      change: 'otros',
+      nregist: '610008',
+      severity: 'info',
+      title: 'Cambio relevante en CIMA',
+    },
+  ] as const;
+
   it('reads and updates CIMA sync metadata preserving dd/mm/yyyy lastCimaSync', async () => {
     const today = formatCimaSyncDate(new Date('2026-04-26T10:00:00.000Z'));
 
@@ -164,6 +215,82 @@ describe('cima-sync.service', () => {
       true,
     );
   });
+
+  it.each(documentedCimaChangeCases)(
+    'notifies documented CIMA registroCambios value $change',
+    async ({ change, nregist, severity, title }) => {
+      const owner = await createUser(`cima-${change}-owner`);
+      const blister = await BlisterModel.create({
+        name: 'Familia',
+        members: [{ userId: owner._id, role: 'OWNER' }],
+      });
+      await MedicineModel.create({
+        blisterId: blister._id,
+        nregist,
+        nombre: 'Medicamento CIMA',
+        pactivos: 'Principio activo',
+        formaOficial: 'COMPRIMIDO',
+        dosisOficial: '10 mg',
+        iconType: 'pill',
+        stock: 8,
+        stockUnit: 'pastillas',
+        threshold: 2,
+        expDate: new Date('2030-01-01T00:00:00.000Z'),
+      });
+
+      jest.spyOn(externalService, 'externalGetRegistroCambios').mockResolvedValue([
+        {
+          nregistro: nregist,
+          fecha: new Date('2026-04-26T10:00:00.000Z').getTime(),
+          tipoCambio: 3,
+          cambios: [change],
+        },
+      ]);
+      jest.spyOn(externalService, 'externalGetMedicineInfo').mockResolvedValue({
+        nregist,
+        nombre: 'Medicamento CIMA Actualizado',
+        pactivos: 'Principio activo',
+        labtitular: 'Lab',
+        formaOficial: 'COMPRIMIDO',
+        formaSimplificada: 'COMPRIMIDO',
+        dosisOficial: '10 mg',
+        comerc: true,
+        psum: change === 'psum',
+        notas: change === 'notasSeguridad',
+        materialesInf: change === 'matinf',
+        docs: [],
+        fotos: [],
+        atcs: [],
+        principiosActivos: [],
+        excipientes: [],
+        viasAdministracion: [],
+        cpresc: null,
+        receta: false,
+        fechaAutorizacion: null,
+        conduc: false,
+        triangulo: false,
+        cimaStatus: {
+          estado: change === 'estado' ? 2 : 1,
+          psum: change === 'psum',
+          hasAlerts: change === 'psum' || change === 'notasSeguridad',
+          comerc: true,
+          notas: change === 'notasSeguridad',
+          materialesInf: change === 'matinf',
+        },
+      });
+
+      await syncCimaFromRegistroCambios();
+
+      const notifications = await NotificationModel.find({ type: 'cima_change' });
+      const logs = await CimaChangeLogModel.find({ nregist });
+
+      expect(logs).toHaveLength(1);
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0]?.severity).toBe(severity);
+      expect(notifications[0]?.title).toBe(title);
+      expect(notifications[0]?.metadata?.cambios).toEqual([change]);
+    },
+  );
 
   it('creates low severity notifications for ficha tecnica or prospecto updates', async () => {
     const owner = await createUser('cima-ft-owner');

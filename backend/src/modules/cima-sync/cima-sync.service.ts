@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import {
+  CIMA_REGISTRO_CAMBIOS_NOTIFICATION_FIELDS,
   CIMA_CHANGE_TYPES,
   CIMA_SYNC_META_KEY,
   DEFAULT_CIMA_SYNC_LOOKBACK_DAYS,
@@ -35,14 +36,9 @@ const DEFAULT_CIMA_SYNC_META: CimaSyncMeta = {
   lastCimaSync: null,
 };
 
-const CIMA_RELEVANT_NOTIFICATION_CHANGES = new Set([
-  'estado',
-  'comerc',
-  'ft',
-  'prosp',
-  'psum',
-  'notasSeguridad',
-]);
+const CIMA_RELEVANT_NOTIFICATION_CHANGES = new Set<string>(
+  CIMA_REGISTRO_CAMBIOS_NOTIFICATION_FIELDS,
+);
 
 type PersistedMedicine = NonNullable<Awaited<ReturnType<typeof MedicineModel.findOne>>>;
 

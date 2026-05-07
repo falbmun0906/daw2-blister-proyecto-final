@@ -473,7 +473,15 @@ const getCimaChangeTitle = (cambios: string[]): string => {
     return 'Actualizacion de ficha tecnica';
   }
 
-  return 'Actualizacion de prospecto';
+  if (cambios.includes('prosp')) {
+    return 'Actualizacion de prospecto';
+  }
+
+  if (cambios.includes('matinf')) {
+    return 'Actualizacion de materiales informativos';
+  }
+
+  return 'Cambio relevante en CIMA';
 };
 
 /**
