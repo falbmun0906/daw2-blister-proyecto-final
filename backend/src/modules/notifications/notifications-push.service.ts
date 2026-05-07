@@ -130,8 +130,6 @@ const getNotificationTargetUrl = (notification: NotificationDocument): string =>
   }
 
   if (notification.type === 'appointment_reminder' && blisterId) {
-    const appointmentId = getStringMetadata(notification, 'appointmentId');
-    if (appointmentId) return `/blisters/${blisterId}/appointments/${appointmentId}/edit`;
     return `/blisters/${blisterId}/appointments`;
   }
 

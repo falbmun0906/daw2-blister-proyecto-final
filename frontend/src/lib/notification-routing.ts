@@ -25,8 +25,6 @@ export const getNotificationTargetRoute = (notification: NotificationView): stri
   }
 
   if (notification.type === 'appointment_reminder' && blisterId) {
-    const appointmentId = getStringMetadata(notification, 'appointmentId');
-    if (appointmentId) return ROUTES.editAppointment(blisterId, appointmentId);
     return ROUTES.blisterAppointments(blisterId);
   }
 
