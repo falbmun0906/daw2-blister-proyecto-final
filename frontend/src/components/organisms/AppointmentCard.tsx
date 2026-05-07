@@ -2,11 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TbCalendar,
+  TbChevronDown,
+  TbChevronUp,
   TbClock,
   TbDotsVertical,
   TbMapPin,
   TbMessageCircle,
   TbPencil,
+  TbSend,
   TbStethoscope,
   TbTrash,
 } from 'react-icons/tb';
@@ -64,6 +67,34 @@ const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   minute: '2-digit',
 });
 
+const hasCommentBeenEdited = (comment: AppointmentComment): boolean => {
+  const createdAt = Date.parse(comment.createdAt);
+  const updatedAt = Date.parse(comment.updatedAt);
+
+  return Number.isFinite(createdAt) && Number.isFinite(updatedAt) && updatedAt > createdAt;
+};
+
+const buildMapsSearchHref = (location: string): string => {
+  const query = encodeURIComponent(location);
+
+  if (typeof navigator === 'undefined') {
+    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+  }
+
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (isIos) {
+    return `http://maps.apple.com/?q=${query}`;
+  }
+
+  if (/Android/i.test(navigator.userAgent)) {
+    return `geo:0,0?q=${query}`;
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+};
+
 function CommentItem({
   appointment,
   comment,
@@ -75,6 +106,7 @@ function CommentItem({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.text);
   const [busy, setBusy] = useState(false);
+  const isEdited = hasCommentBeenEdited(comment);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -114,7 +146,10 @@ function CommentItem({
             </div>
           </form>
         ) : (
-          <p className="c-appointment-card__comment-text">{comment.text}</p>
+          <p className="c-appointment-card__comment-text">
+            <span>{comment.text}</span>
+            {isEdited ? <span className="c-appointment-card__comment-edited">(editado)</span> : null}
+          </p>
         )}
       </div>
       {editable ? (
@@ -173,13 +208,19 @@ export function AppointmentCard({
   onDeleteComment,
 }: AppointmentCardProps) {
   const [cardMenuOpen, setCardMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentBusy, setCommentBusy] = useState(false);
   const editable = canMutate(userRole);
   const linkedTreatment = appointment.treatmentId
     ? treatments.find((t) => t.id === appointment.treatmentId)
     : null;
+  const treatmentLabel = linkedTreatment?.title ?? 'Sin tratamiento vinculado';
+  const location = appointment.location?.trim() || '';
+  const mapsHref = location ? buildMapsSearchHref(location) : null;
   const appointmentDate = new Date(appointment.date);
+  const detailsId = `appointment-card-details-${appointment.id}`;
+  const canSubmitComment = commentText.trim().length > 0 && !commentBusy;
 
   const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -199,14 +240,13 @@ export function AppointmentCard({
       <header className="c-appointment-card__header">
         <div className="c-appointment-card__heading">
           <h3 className="c-appointment-card__title">{appointment.title}</h3>
-          {linkedTreatment ? (
-            <p className="c-appointment-card__treatment">
-              <TbStethoscope aria-hidden="true" />
-              <span>{linkedTreatment.title}</span>
-            </p>
-          ) : null}
+          <p className="c-appointment-card__treatment">
+            <TbStethoscope aria-hidden="true" />
+            <span>{treatmentLabel}</span>
+          </p>
         </div>
-        {editable ? (
+        <div className="c-appointment-card__actions">
+          {editable ? (
           <div className="c-appointment-card__menu">
             <button
               type="button"
@@ -241,7 +281,18 @@ export function AppointmentCard({
               </div>
             ) : null}
           </div>
-        ) : null}
+          ) : null}
+          <button
+            type="button"
+            className="c-appointment-card__expand-toggle"
+            aria-label={expanded ? 'Plegar detalles de la cita' : 'Desplegar detalles de la cita'}
+            aria-expanded={expanded}
+            aria-controls={detailsId}
+            onClick={() => setExpanded((current) => !current)}
+          >
+            {expanded ? <TbChevronUp aria-hidden="true" /> : <TbChevronDown aria-hidden="true" />}
+          </button>
+        </div>
       </header>
 
       <dl className="c-appointment-card__meta">
@@ -255,52 +306,75 @@ export function AppointmentCard({
         </div>
         <div className="c-appointment-card__meta-item">
           <dt><TbMapPin aria-hidden="true" /><span>Lugar</span></dt>
-          <dd>{appointment.location?.trim() || 'Lugar pendiente'}</dd>
+          <dd>
+            {mapsHref ? (
+              <a
+                className="c-appointment-card__location-link"
+                href={mapsHref}
+                aria-label={`Abrir ubicación en mapas: ${location}`}
+              >
+                {location}
+              </a>
+            ) : 'Lugar pendiente'}
+          </dd>
         </div>
       </dl>
 
-      {appointment.description ? (
-        <section className="c-appointment-card__description" aria-label="Descripción">
-          <h4>Descripción</h4>
-          <p>{appointment.description}</p>
-        </section>
-      ) : null}
+      {expanded ? (
+        <div id={detailsId} className="c-appointment-card__details">
+          {appointment.description ? (
+            <section className="c-appointment-card__description" aria-label="Descripción">
+              <h4>Descripción</h4>
+              <p>{appointment.description}</p>
+            </section>
+          ) : null}
 
-      <section className="c-appointment-card__comments" aria-label="Comentarios">
-        <h4 className="c-appointment-card__comments-title">
-          <TbMessageCircle aria-hidden="true" />
-          <span>Comentarios</span>
-        </h4>
-        {appointment.comments.length > 0 ? (
-          <ul className="c-appointment-card__comment-list">
-            {appointment.comments.map((comment) => (
-              <CommentItem
-                key={comment.id}
-                appointment={appointment}
-                comment={comment}
-                editable={editable && canEditComment(comment, currentUserId, userRole)}
-                onUpdateComment={onUpdateComment}
-                onDeleteComment={onDeleteComment}
-              />
-            ))}
-          </ul>
-        ) : null}
-        {editable ? (
-          <form className="c-appointment-card__comment-form" onSubmit={(event) => void handleCommentSubmit(event)}>
-            <textarea
-              className="c-field__textarea"
-              value={commentText}
-              rows={3}
-              maxLength={500}
-              placeholder="Añadir comentario"
-              onChange={(event) => setCommentText(event.target.value)}
-            />
-            <Button type="submit" variant="primary-outline" loading={commentBusy}>
-              Comentar
-            </Button>
-          </form>
-        ) : null}
-      </section>
+          <section className="c-appointment-card__comments" aria-label="Comentarios">
+            <h4 className="c-appointment-card__comments-title">
+              <TbMessageCircle aria-hidden="true" />
+              <span>Comentarios</span>
+            </h4>
+            {appointment.comments.length > 0 ? (
+              <ul className="c-appointment-card__comment-list">
+                {appointment.comments.map((comment) => (
+                  <CommentItem
+                    key={comment.id}
+                    appointment={appointment}
+                    comment={comment}
+                    editable={editable && canEditComment(comment, currentUserId, userRole)}
+                    onUpdateComment={onUpdateComment}
+                    onDeleteComment={onDeleteComment}
+                  />
+                ))}
+              </ul>
+            ) : null}
+            {editable ? (
+              <form className="c-appointment-card__comment-form" onSubmit={(event) => void handleCommentSubmit(event)}>
+                <div className="c-appointment-card__comment-input-shell">
+                  <input
+                    className="c-appointment-card__comment-input"
+                    type="text"
+                    value={commentText}
+                    maxLength={500}
+                    placeholder="Añadir comentario"
+                    autoComplete="off"
+                    onChange={(event) => setCommentText(event.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className="c-appointment-card__comment-submit"
+                    disabled={!canSubmitComment}
+                    aria-label={commentBusy ? 'Enviando comentario' : 'Enviar comentario'}
+                    aria-busy={commentBusy || undefined}
+                  >
+                    <TbSend aria-hidden="true" />
+                  </button>
+                </div>
+              </form>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
     </article>
   );
 }
