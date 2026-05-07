@@ -1,5 +1,4 @@
 import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   TbChevronDown,
   TbChevronUp,
@@ -19,7 +18,6 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Modal } from '../../components/atoms/Modal';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { BLISTER_AVATAR_KEYS, type BlisterAvatarKey, getBlisterIcon } from '../../constants/blister-avatars';
-import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
 import { usePageTitle } from '../../hooks/use.page-title';
 import {
@@ -219,6 +217,52 @@ function ConfirmRemoveModal({ open, message, onClose, onConfirm }: ConfirmRemove
   );
 }
 
+interface RenameBlisterModalProps {
+  open: boolean;
+  initialValue: string;
+  onClose: () => void;
+  onConfirm: (nextName: string) => void;
+}
+
+function RenameBlisterModal({
+  open,
+  initialValue,
+  onClose,
+  onConfirm,
+}: RenameBlisterModalProps) {
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    if (!open) return;
+    const timeoutId = window.setTimeout(() => setValue(initialValue), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [initialValue, open]);
+
+  return (
+    <Modal open={open} onClose={onClose} title="Editar titulo del blister">
+      <label className="c-new-blister-modal__label">
+        <span>Nuevo titulo</span>
+        <input
+          type="text"
+          className="c-pill-input"
+          value={value}
+          maxLength={120}
+          onChange={(event) => setValue(event.target.value)}
+          autoFocus
+        />
+      </label>
+      <div className="c-confirm-modal__actions">
+        <Button type="button" variant="primary-outline" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button type="button" variant="primary" onClick={() => onConfirm(value)}>
+          Guardar
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 interface AddMemberModalProps {
   open: boolean;
   onClose: () => void;
@@ -403,7 +447,6 @@ function BlisterCard({
   onStopEditing,
   onChanged,
 }: BlisterCardProps) {
-  const navigate = useNavigate();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const setActiveBlister = useBlisterStore((s) => s.setActiveBlister);
   const addToast = useUiStore((s) => s.addToast);
@@ -415,7 +458,7 @@ function BlisterCard({
   const [draftAvatarKey, setDraftAvatarKey] = useState<BlisterAvatarKey | null>(
     toBlisterAvatarKey(blister.avatarKey),
   );
-  const [isTitleEditing, setIsTitleEditing] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
 
   const [activeMember, setActiveMember] = useState<BlisterMemberDetail | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<BlisterMemberDetail | null>(null);
@@ -463,7 +506,7 @@ function BlisterCard({
     const timeoutId = window.setTimeout(() => {
       setName(blister.name);
       setDraftAvatarKey(toBlisterAvatarKey(blister.avatarKey));
-      setIsTitleEditing(false);
+      setShowRenameModal(false);
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [blister.avatarKey, blister.name, editing]);
@@ -498,11 +541,10 @@ function BlisterCard({
   const owner = members.find((m) => m.role === 'OWNER');
   const ownerLabel = owner ? (owner.userId === userId ? 'Tú' : owner.fullName) : '—';
 
-  const handleSelect = () => {
-    if (editing) return;
+  const handleExpand = () => {
     const role = blister.members.find((m) => m.userId === userId)?.role ?? null;
     setActiveBlister(blister._id, role);
-    navigate(ROUTES.home);
+    setExpanded(true);
   };
 
   const handleSaveEdit = async () => {
@@ -522,7 +564,7 @@ function BlisterCard({
         addToast({ message: 'Cambios guardados.', variant: 'success' });
       }
 
-      setIsTitleEditing(false);
+      setShowRenameModal(false);
       onStopEditing();
       await onChanged();
     } catch (err) {
@@ -536,8 +578,13 @@ function BlisterCard({
   const handleDiscard = () => {
     setName(blister.name);
     setDraftAvatarKey(toBlisterAvatarKey(blister.avatarKey));
-    setIsTitleEditing(false);
+    setShowRenameModal(false);
     onStopEditing();
+  };
+
+  const handleRenameConfirm = (nextName: string) => {
+    setName(nextName);
+    setShowRenameModal(false);
   };
 
   const handleDeleteBlister = async () => {
@@ -593,7 +640,22 @@ function BlisterCard({
   );
 
   return (
-    <li className="c-blister-card">
+    <li
+      className="c-blister-card"
+      role={!editing ? 'button' : undefined}
+      tabIndex={!editing ? 0 : undefined}
+      onClick={(event) => {
+        if (editing) return;
+        if ((event.target as HTMLElement).closest('button, a, input, textarea, select')) return;
+        handleExpand();
+      }}
+      onKeyDown={(event) => {
+        if (editing) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        handleExpand();
+      }}
+    >
       <div className="c-blister-card__row">
         <span className="c-blister-card__icon-wrapper">
           <span className="c-blister-card__icon" aria-hidden="true">
@@ -613,19 +675,7 @@ function BlisterCard({
         {editing ? (
           <div className="c-blister-card__open c-blister-card__open--editing">
             <span className="c-blister-card__heading">
-              {isTitleEditing ? (
-                <input
-                  type="text"
-                  className="c-blister-card__name-input"
-                  value={name}
-                  maxLength={120}
-                  onChange={(event) => setName(event.target.value)}
-                  onBlur={() => setIsTitleEditing(false)}
-                  autoFocus
-                />
-              ) : (
-                <span className="c-blister-card__title">{name}</span>
-              )}
+              <span className="c-blister-card__title">{name}</span>
               <span className="c-blister-card__owner">
                 <TbUser aria-hidden="true" /> Propietario: {ownerLabel}
               </span>
@@ -634,13 +684,13 @@ function BlisterCard({
               type="button"
               className="c-blister-card__edit-mark"
               aria-label="Editar título del blíster"
-              onClick={() => setIsTitleEditing(true)}
+              onClick={() => setShowRenameModal(true)}
             >
               <TbPencil aria-hidden="true" />
             </button>
           </div>
         ) : (
-          <button type="button" className="c-blister-card__open" onClick={handleSelect}>
+          <div className="c-blister-card__open">
             <span className="c-blister-card__heading">
               <span className="c-blister-card__title">{blister.name}</span>
               <span className="c-blister-card__owner">
@@ -648,7 +698,7 @@ function BlisterCard({
               </span>
             </span>
             {!expanded ? <MemberStack members={stack} /> : null}
-          </button>
+          </div>
         )}
       </div>
 
@@ -817,6 +867,12 @@ function BlisterCard({
           })}
         </div>
       </Modal>
+      <RenameBlisterModal
+        open={showRenameModal}
+        initialValue={name}
+        onClose={() => setShowRenameModal(false)}
+        onConfirm={handleRenameConfirm}
+      />
     </li>
   );
 }
