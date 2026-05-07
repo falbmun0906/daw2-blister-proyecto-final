@@ -14,11 +14,11 @@ import {
 } from 'react-icons/tb';
 
 import { registerSchema } from '../../../../shared/schemas/auth.schema';
-import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Button } from '../../components/atoms/Button';
-import { Input } from '../../components/atoms/Input';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { InfoTooltip } from '../../components/atoms/InfoTooltip';
+import { Input } from '../../components/atoms/Input';
+import { AuthLayout } from '../../components/layout/AuthLayout';
 import { ROUTES } from '../../constants/routes';
 import { applyUserSettings } from '../../lib/applyUserSettings';
 import { register as registerService } from '../../services/auth.service';
@@ -38,15 +38,15 @@ type RegisterFormValues = Omit<RegisterFormData, 'privacyConsent' | 'ageConfirme
 const getErrorMessage = (code: string | undefined): string => {
   switch (code) {
     case 'AUTH_EMAIL_CONFLICT':
-      return 'Este correo electrónico ya está registrado.';
+      return 'Este correo electronico ya esta registrado.';
     case 'AUTH_USERNAME_CONFLICT':
-      return 'Este nombre de usuario ya está en uso.';
+      return 'Este nombre de usuario ya esta en uso.';
     case 'AUTH_INVITE_INVALID':
-      return 'El código de invitación es inválido o ha expirado.';
+      return 'El codigo de invitacion es invalido o ha expirado.';
     case 'VALIDATION_ERROR':
-      return 'Datos inválidos. Verifique los campos.';
+      return 'Datos invalidos. Verifica los campos.';
     default:
-      return 'Ha ocurrido un error al crear la cuenta. Intente nuevamente.';
+      return 'Ha ocurrido un error al crear la cuenta. Intentalo de nuevo.';
   }
 };
 
@@ -63,13 +63,20 @@ const FIELD_ERROR_LABELS: Record<string, keyof RegisterFormValues> = {
 
 const translateValidationMessage = (message: string): string => {
   const translations: Record<string, string> = {
-    'Password must include an uppercase letter.': 'La contraseña debe incluir una mayúscula.',
-    'Password must include a lowercase letter.': 'La contraseña debe incluir una minúscula.',
-    'Password must include a number.': 'La contraseña debe incluir un número.',
-    'Password must include a symbol.': 'La contraseña debe incluir un símbolo.',
-    'Passwords do not match.': 'Las contraseñas no coinciden.',
-    'Email must be valid.': 'Introduce un correo válido.',
-    'Username contains invalid characters.': 'Solo minúsculas, números y . _ -.',
+    'Name is required.': 'El nombre completo es obligatorio.',
+    'Name must be 100 characters or fewer.': 'El nombre completo no puede superar los 100 caracteres.',
+    'Username must be at least 3 characters long.': 'El nombre de usuario debe tener al menos 3 caracteres.',
+    'Username must be 50 characters or fewer.': 'El nombre de usuario no puede superar los 50 caracteres.',
+    'Password must include an uppercase letter.': 'La contrasena debe incluir una mayuscula.',
+    'Password must include a lowercase letter.': 'La contrasena debe incluir una minuscula.',
+    'Password must include a number.': 'La contrasena debe incluir un numero.',
+    'Password must include a symbol.': 'La contrasena debe incluir un simbolo.',
+    'Passwords do not match.': 'Las contrasenas no coinciden.',
+    'Email must be valid.': 'Introduce un correo valido.',
+    'Username contains invalid characters.': 'Solo minusculas, numeros y . _ -.',
+    'Invite code must contain 6 to 8 alphanumeric characters.': 'El codigo de invitacion debe tener entre 6 y 8 caracteres alfanumericos.',
+    'Privacy consent is required.': 'Debes aceptar la politica de privacidad.',
+    'Age confirmation is required.': 'Debes confirmar que tienes 18 anos o mas.',
   };
   return translations[message] ?? message;
 };
@@ -125,19 +132,19 @@ const PASSWORD_REQUIREMENTS = [
     test: (value: string) => value.trim().length >= 8,
   },
   {
-    label: 'Una mayúscula',
-    test: (value: string) => /[A-ZÁÉÍÓÚÜÑ]/.test(value),
+    label: 'Una mayuscula',
+    test: (value: string) => /\p{Lu}/u.test(value),
   },
   {
-    label: 'Una minúscula',
-    test: (value: string) => /[a-záéíóúüñ]/.test(value),
+    label: 'Una minuscula',
+    test: (value: string) => /\p{Ll}/u.test(value),
   },
   {
-    label: 'Un número',
+    label: 'Un numero',
     test: (value: string) => /\d/.test(value),
   },
   {
-    label: 'Un símbolo',
+    label: 'Un simbolo',
     test: (value: string) => /[^\p{L}\p{N}\s]/u.test(value),
   },
 ];
@@ -149,8 +156,8 @@ const getMissingPasswordRequirements = (value: string): string[] =>
 
 const getPasswordRequirementMessage = (value: string): string => {
   const missing = getMissingPasswordRequirements(value);
-  if (missing.length === 0) return 'La contraseña no está bien cumplimentada.';
-  return `La contraseña debe incluir: ${missing.join(', ')}.`;
+  if (missing.length === 0) return 'La contrasena no esta bien cumplimentada.';
+  return `La contrasena debe incluir: ${missing.join(', ')}.`;
 };
 
 const applyApiFieldErrors = (
@@ -207,13 +214,12 @@ function RegisterPage() {
 
     try {
       const session = await registerService(data as RegisterFormData);
-      // El registro implica una nueva cuenta: descarta cualquier dato cacheado.
       resetAppStores();
       applyUserSettings(session.user.settings);
       setSession(session);
 
       addToast({
-        message: `¡Bienvenido, ${session.user.name}!`,
+        message: `Bienvenido, ${session.user.name}.`,
         variant: 'success',
       });
 
@@ -278,12 +284,12 @@ function RegisterPage() {
           error={getFieldError(errors.username)}
           icon={<TbUser className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
-            <InfoTooltip content="Solo minúsculas, números y los caracteres . _ -. Entre 3 y 50 caracteres." />
+            <InfoTooltip content="Solo minusculas, numeros y los caracteres . _ -. Entre 3 y 50 caracteres." />
           }
         />
 
         <Input
-          label="Correo electrónico"
+          label="Correo electronico"
           placeholder="tu@correo.com"
           type="email"
           autoComplete="email"
@@ -293,18 +299,18 @@ function RegisterPage() {
         />
 
         <Input
-          label="Contraseña"
-          placeholder="••••••••"
+          label="Contrasena"
+          placeholder="********"
           type="password"
           autoComplete="new-password"
           {...register('password')}
           error={getFieldError(errors.password)}
           icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
-            <InfoTooltip content="Mínimo 8 caracteres. Debe incluir mayúscula, minúscula, número y símbolo." />
+            <InfoTooltip content="Minimo 8 caracteres. Debe incluir mayuscula, minuscula, numero y simbolo." />
           }
         />
-        <ul className="c-register-page__password-feedback" aria-label="Requisitos de contraseña">
+        <ul className="c-register-page__password-feedback" aria-label="Requisitos de contrasena">
           {PASSWORD_REQUIREMENTS.map((requirement) => {
             const isMet = requirement.test(passwordValue);
             return (
@@ -324,8 +330,8 @@ function RegisterPage() {
         </ul>
 
         <Input
-          label="Confirmar contraseña"
-          placeholder="••••••••"
+          label="Confirmar contrasena"
+          placeholder="********"
           type="password"
           autoComplete="new-password"
           {...register('confirmPassword')}
@@ -334,43 +340,51 @@ function RegisterPage() {
         />
 
         <Input
-          label="Código de invitación (opcional)"
+          label="Codigo de invitacion (opcional)"
           placeholder="ABC12345"
           type="text"
           {...register('inviteCode')}
           error={getFieldError(errors.inviteCode)}
           icon={<TbKey className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
-            <InfoTooltip content="Si alguien te ha compartido un blíster familiar, introduce aquí el código que ha generado." />
+            <InfoTooltip content="Si alguien te ha compartido un blister familiar, introduce aqui el codigo que ha generado." />
           }
         />
 
         <div className="c-register-page__checkboxes">
-          <label className="c-register-page__checkbox-label">
-            <input
-              type="checkbox"
-              {...register('privacyConsent')}
-              className="c-register-page__checkbox-input"
-            />
-            <span className="c-register-page__checkbox-text">
-              Acepto la <a href="#privacy" className="c-register-page__link">política de privacidad</a>
-            </span>
-          </label>
+          <div className="c-register-page__checkbox-field">
+            <label className="c-register-page__checkbox-label">
+              <input
+                type="checkbox"
+                {...register('privacyConsent')}
+                className="c-register-page__checkbox-input"
+              />
+              <span className="c-register-page__checkbox-text">
+                Acepto la <a href="#privacy" className="c-register-page__link">politica de privacidad</a>
+              </span>
+            </label>
+            {errors.privacyConsent ? (
+              <p className="c-register-page__error-message">
+                {getFieldError(errors.privacyConsent)}
+              </p>
+            ) : null}
+          </div>
 
-          <label className="c-register-page__checkbox-label">
-            <input
-              type="checkbox"
-              {...register('ageConfirmed')}
-              className="c-register-page__checkbox-input"
-            />
-            <span className="c-register-page__checkbox-text">Confirmo que tengo 18 años o más</span>
-          </label>
-
-          {(errors.privacyConsent || errors.ageConfirmed) && (
-            <p className="c-register-page__error-message">
-              {getFieldError(errors.privacyConsent) || getFieldError(errors.ageConfirmed)}
-            </p>
-          )}
+          <div className="c-register-page__checkbox-field">
+            <label className="c-register-page__checkbox-label">
+              <input
+                type="checkbox"
+                {...register('ageConfirmed')}
+                className="c-register-page__checkbox-input"
+              />
+              <span className="c-register-page__checkbox-text">Confirmo que tengo 18 anos o mas</span>
+            </label>
+            {errors.ageConfirmed ? (
+              <p className="c-register-page__error-message">
+                {getFieldError(errors.ageConfirmed)}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <Button type="submit" variant="primary" fullWidth loading={isLoading} className="c-register-page__submit">
@@ -379,7 +393,7 @@ function RegisterPage() {
       </form>
 
       <p className="c-register-page__footer">
-        ¿Ya tienes una cuenta? <Link to={ROUTES.login} className="c-register-page__login-link">Inicia sesión</Link>
+        Ya tienes una cuenta? <Link to={ROUTES.login} className="c-register-page__login-link">Inicia sesion</Link>
       </p>
     </AuthLayout>
   );
