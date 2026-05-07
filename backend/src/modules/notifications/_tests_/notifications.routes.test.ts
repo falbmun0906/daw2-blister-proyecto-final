@@ -127,6 +127,30 @@ describe('notifications.routes', () => {
     expect(storedNotification?.isRead).toBe(true);
   });
 
+  it('deletes an owned notification from the inbox', async () => {
+    const owner = await createUser('route-delete-owner');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [{ userId: owner._id, role: 'OWNER' }],
+    });
+    const notification = await NotificationModel.create({
+      userId: owner._id,
+      blisterId: blister._id,
+      type: 'system',
+      severity: 'info',
+      title: 'Descartable',
+      message: 'Debe eliminarse del buzon',
+      isRead: true,
+    });
+
+    const response = await request(app)
+      .delete(`/api/v1/notifications/${notification._id.toString()}`)
+      .set('Authorization', `Bearer ${createAccessToken(owner._id.toString())}`);
+
+    expect(response.status).toBe(204);
+    expect(await NotificationModel.findById(notification._id)).toBeNull();
+  });
+
   it('returns 404 when accessing another user notification', async () => {
     const owner = await createUser('route-404-owner');
     const otherUser = await createUser('route-404-other');
