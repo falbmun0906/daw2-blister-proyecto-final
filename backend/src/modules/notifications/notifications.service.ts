@@ -287,6 +287,7 @@ export const notificationsList = async (
   const { page, limit } = query;
   const filter = {
     userId: new Types.ObjectId(userId),
+    dismissedAt: null,
   };
   const [notifications, total] = await Promise.all([
     NotificationModel.find(filter)
@@ -317,6 +318,7 @@ export const notificationsMarkAsRead = async (
   const notification = await NotificationModel.findOne({
     _id: new Types.ObjectId(notificationId),
     userId: new Types.ObjectId(userId),
+    dismissedAt: null,
   });
 
   if (!notification) {
@@ -340,12 +342,17 @@ export const notificationsDelete = async (
   notificationId: string,
   userId: string,
 ): Promise<void> => {
-  const result = await NotificationModel.deleteOne({
+  const result = await NotificationModel.updateOne({
     _id: new Types.ObjectId(notificationId),
     userId: new Types.ObjectId(userId),
+    dismissedAt: null,
+  }, {
+    $set: {
+      dismissedAt: new Date(),
+    },
   });
 
-  if (result.deletedCount === 0) {
+  if (result.matchedCount === 0) {
     throw new AppError({
       code: 'NOTIFICATION_NOT_FOUND',
       message: 'Notification not found.',

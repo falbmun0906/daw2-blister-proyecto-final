@@ -20,9 +20,10 @@ describe('NotificationModel', () => {
     expect(notification.createdAt).toBeInstanceOf(Date);
   });
 
-  it('declares the recipient unread index', () => {
+  it('declares the recipient inbox index including hidden notifications filtering', () => {
     const index = findSchemaIndex(NotificationModel.schema.indexes(), {
       userId: 1,
+      dismissedAt: 1,
       isRead: 1,
       createdAt: -1,
     });

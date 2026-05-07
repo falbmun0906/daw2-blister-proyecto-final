@@ -21,5 +21,6 @@ export interface NotificationDocument {
   message: string;
   metadata?: NotificationMetadata | null;
   isRead: boolean;
+  dismissedAt?: Date | null;
   createdAt: Date;
 }

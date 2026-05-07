@@ -147,8 +147,10 @@ describe('notifications.routes', () => {
       .delete(`/api/v1/notifications/${notification._id.toString()}`)
       .set('Authorization', `Bearer ${createAccessToken(owner._id.toString())}`);
 
+    const stored = await NotificationModel.findById(notification._id);
+
     expect(response.status).toBe(204);
-    expect(await NotificationModel.findById(notification._id)).toBeNull();
+    expect(stored?.dismissedAt).toBeInstanceOf(Date);
   });
 
   it('returns 404 when accessing another user notification', async () => {

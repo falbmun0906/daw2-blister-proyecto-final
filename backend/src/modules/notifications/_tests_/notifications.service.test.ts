@@ -161,8 +161,14 @@ describe('notifications.service', () => {
 
     await notificationsDelete(ownerNotification._id.toString(), owner._id.toString());
 
-    expect(await NotificationModel.findById(ownerNotification._id)).toBeNull();
+    const storedOwnerNotification = await NotificationModel.findById(ownerNotification._id);
+    const listed = await notificationsList(owner._id.toString(), { page: 1, limit: 20 });
+
+    expect(storedOwnerNotification).toMatchObject({
+      dismissedAt: expect.any(Date),
+    });
     expect(await NotificationModel.findById(otherNotification._id)).not.toBeNull();
+    expect(listed.notifications).toHaveLength(0);
   });
 
   it('returns not found when trying to mark another user notification as read', async () => {
@@ -297,6 +303,45 @@ describe('notifications.service', () => {
     expect(before?.title).toBe('Cita medica proxima');
     expect(after?.title).toBe('¿Qué tal ha ido la cita?');
     expect(after?.message).toBe('Tras la cita, revisa si hay algun cambio que anotar.');
+  });
+
+  it('does not recreate dismissed appointment reminders while the scheduler window is still open', async () => {
+    const owner = await createUser('notify-dismissed-appointment-owner');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [{ userId: owner._id, role: 'OWNER' }],
+    });
+    const referenceDate = new Date('2030-01-01T12:15:00.000Z');
+    const appointment = await AppointmentModel.create({
+      blisterId: blister._id,
+      patientUserId: owner._id,
+      title: 'Consulta digestivo',
+      date: new Date('2030-01-01T12:00:00.000Z'),
+    });
+
+    await notifyUpcomingAppointmentReminders(referenceDate);
+
+    const created = await NotificationModel.findOne({
+      type: 'appointment_reminder',
+      'metadata.appointmentId': appointment._id.toString(),
+      'metadata.reminderPhase': 'after',
+    });
+
+    expect(created).not.toBeNull();
+
+    await notificationsDelete(created!._id.toString(), owner._id.toString());
+    await notifyUpcomingAppointmentReminders(referenceDate);
+
+    const reminders = await NotificationModel.find({
+      type: 'appointment_reminder',
+      'metadata.appointmentId': appointment._id.toString(),
+      'metadata.reminderPhase': 'after',
+    });
+    const listed = await notificationsList(owner._id.toString(), { page: 1, limit: 20 });
+
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]?.dismissedAt).toBeInstanceOf(Date);
+    expect(listed.notifications).toHaveLength(0);
   });
 
   it('lists and removes push subscriptions for the authenticated user', async () => {

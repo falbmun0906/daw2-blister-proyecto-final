@@ -52,6 +52,11 @@ const notificationSchema = new Schema<NotificationDocument>({
     required: true,
     default: false,
   },
+  dismissedAt: {
+    type: Date,
+    default: null,
+    index: true,
+  },
   createdAt: {
     type: Date,
     required: true,
@@ -59,7 +64,7 @@ const notificationSchema = new Schema<NotificationDocument>({
   },
 });
 
-notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ userId: 1, dismissedAt: 1, isRead: 1, createdAt: -1 });
 notificationSchema.index({ blisterId: 1, type: 1, createdAt: -1 });
 
 export const NotificationModel =
