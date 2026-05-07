@@ -9,6 +9,10 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
 import { BlisterPageSelector } from '../../components/organisms/BlisterPageSelector';
+import {
+  CALENDAR_INITIAL_VISIBLE_ITEMS,
+  CALENDAR_SHOW_MORE_INCREMENT,
+} from '../../constants/calendar';
 import { ROUTES } from '../../constants/routes';
 import { isStockInsufficientError, useAdherence } from '../../hooks/use.adherence';
 import { useAppointments } from '../../hooks/use.appointments';
@@ -50,9 +54,6 @@ const startOfNextMonth = (date: Date): Date =>
 const addDays = (date: Date, days: number): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 
-const isWithinWindow = (date: Date, from: Date, to: Date): boolean =>
-  date >= from && date < to;
-
 const buildWindowDays = (start: Date, visibleDays: number): Date[] =>
   Array.from({ length: visibleDays }, (_, index) => addDays(start, index));
 
@@ -73,9 +74,33 @@ const formatMonthTitle = (date: Date): string =>
 const formatDayLabel = (date: Date): string =>
   capitalizeFirst(longDateFormatter.format(date).replace(',', ''));
 
+interface AppointmentDayGroup {
+  key: string;
+  day: Date;
+  appointments: Appointment[];
+}
+
+const groupAppointmentsByDay = (appointments: Appointment[]): AppointmentDayGroup[] => {
+  const groups = new Map<string, AppointmentDayGroup>();
+
+  for (const appointment of appointments) {
+    const day = startOfDay(new Date(appointment.date));
+    const key = dayKey(day);
+    const group = groups.get(key);
+
+    if (group) {
+      group.appointments.push(appointment);
+    } else {
+      groups.set(key, { key, day, appointments: [appointment] });
+    }
+  }
+
+  return [...groups.values()];
+};
+
 interface MonthCalendarProps {
   cursor: Date;
-  selected: Date;
+  selected: Date | null;
   doseDays: Set<string>;
   appointmentDays: Set<string>;
   onSelect: (date: Date) => void;
@@ -146,7 +171,7 @@ function MonthCalendar({
         {cells.map(({ date, outside }) => {
           const key = dayKey(date);
           const isToday = isSameDay(date, today);
-          const isSelected = isSameDay(date, selected);
+          const isSelected = selected ? isSameDay(date, selected) : false;
           const hasDose = doseDays.has(key);
           const hasAppointment = appointmentDays.has(key);
           const isMarked = hasDose || hasAppointment;
@@ -201,22 +226,31 @@ function CalendarPage() {
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const addToast = useUiStore((state) => state.addToast);
-  const { appointments, isLoading, error, refetch, removeAppointment } = useAppointments(blisterId);
+  const {
+    appointments,
+    isLoading,
+    error,
+    refetch,
+    removeAppointment,
+    addAppointmentComment,
+    updateAppointmentComment,
+    removeAppointmentComment,
+  } = useAppointments(blisterId);
   const { treatments } = useTreatments(blisterId);
   const { logDoseInBlister } = useAdherence(blisterId);
 
   const [view, setView] = useState<CalendarView>('appointments');
   const [cursor, setCursor] = useState(() => new Date());
-  const [selected, setSelected] = useState(() => new Date());
+  const [selected, setSelected] = useState<Date | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Appointment | null>(null);
   const [calendarDoses, setCalendarDoses] = useState<UpcomingDose[]>([]);
   const [monthDoseMarkers, setMonthDoseMarkers] = useState<UpcomingDose[]>([]);
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
-  const [appointmentAnchorDate, setAppointmentAnchorDate] = useState(() => startOfToday());
-  const [appointmentVisibleDays, setAppointmentVisibleDays] = useState(3);
-  const [doseVisibleDays, setDoseVisibleDays] = useState(3);
+  const [upcomingVisibleCount, setUpcomingVisibleCount] = useState(CALENDAR_INITIAL_VISIBLE_ITEMS);
+  const [pastVisibleCount, setPastVisibleCount] = useState(CALENDAR_INITIAL_VISIBLE_ITEMS);
+  const [doseVisibleDays, setDoseVisibleDays] = useState(CALENDAR_INITIAL_VISIBLE_ITEMS);
 
   const currentBlister = useMemo(
     () => blisters.find((blister) => blister._id === blisterId) ?? null,
@@ -309,18 +343,37 @@ function CalendarPage() {
     return days;
   }, [monthDoseMarkers]);
 
-  const appointmentWindowStart = appointmentAnchorDate;
-  const appointmentWindowEnd = addDays(appointmentWindowStart, appointmentVisibleDays);
-  const appointmentWindowDays = useMemo(
-    () => buildWindowDays(appointmentWindowStart, appointmentVisibleDays),
-    [appointmentVisibleDays, appointmentWindowStart],
+  const { upcomingAppointments, pastAppointments } = useMemo(() => {
+    const now = new Date();
+    return {
+      upcomingAppointments: appointments
+        .filter((appointment) => new Date(appointment.date).getTime() >= now.getTime())
+        .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime()),
+      pastAppointments: appointments
+        .filter((appointment) => new Date(appointment.date).getTime() < now.getTime())
+        .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime()),
+    };
+  }, [appointments]);
+
+  const filteredUpcomingAppointments = useMemo(
+    () => selected
+      ? upcomingAppointments.filter((appointment) => isSameDay(new Date(appointment.date), selected))
+      : upcomingAppointments,
+    [selected, upcomingAppointments],
   );
 
-  const visibleAppointments = useMemo(() => {
-    return appointments
-      .filter((appointment) => isWithinWindow(new Date(appointment.date), appointmentWindowStart, appointmentWindowEnd))
-      .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
-  }, [appointmentWindowEnd, appointmentWindowStart, appointments]);
+  const visibleUpcomingAppointments = useMemo(
+    () => filteredUpcomingAppointments.slice(0, upcomingVisibleCount),
+    [filteredUpcomingAppointments, upcomingVisibleCount],
+  );
+  const visiblePastAppointments = useMemo(
+    () => pastAppointments.slice(0, pastVisibleCount),
+    [pastAppointments, pastVisibleCount],
+  );
+  const groupedUpcomingAppointments = useMemo(
+    () => groupAppointmentsByDay(visibleUpcomingAppointments),
+    [visibleUpcomingAppointments],
+  );
 
   const doseWindowDays = useMemo(
     () => buildWindowDays(startOfToday(), doseVisibleDays),
@@ -347,6 +400,49 @@ function CalendarPage() {
     } catch (err) {
       addToast({
         message: isApiError(err) ? err.message : 'No se ha podido eliminar la cita.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleAddComment = async (appointment: Appointment, text: string): Promise<void> => {
+    try {
+      await addAppointmentComment(appointment.id, { text });
+      addToast({ message: 'Comentario añadido.', variant: 'success' });
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido añadir el comentario.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleUpdateComment = async (
+    appointment: Appointment,
+    comment: Appointment['comments'][number],
+    text: string,
+  ): Promise<void> => {
+    try {
+      await updateAppointmentComment(appointment.id, comment.id, { text });
+      addToast({ message: 'Comentario actualizado.', variant: 'success' });
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido actualizar el comentario.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleDeleteComment = async (
+    appointment: Appointment,
+    comment: Appointment['comments'][number],
+  ): Promise<void> => {
+    try {
+      await removeAppointmentComment(appointment.id, comment.id);
+      addToast({ message: 'Comentario eliminado.', variant: 'success' });
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido eliminar el comentario.',
         variant: 'error',
       });
     }
@@ -381,6 +477,22 @@ function CalendarPage() {
       setLoggingDoseKey(null);
     }
   };
+
+  const renderAppointmentCard = (appointment: Appointment) => (
+    <li key={appointment.id} className="c-calendar-page__item">
+      <AppointmentCard
+        appointment={appointment}
+        treatments={treatments}
+        blisterId={blisterId}
+        userRole={role}
+        currentUserId={userId}
+        onDelete={(item) => setConfirmDelete(item)}
+        onAddComment={handleAddComment}
+        onUpdateComment={handleUpdateComment}
+        onDeleteComment={handleDeleteComment}
+      />
+    </li>
+  );
 
   return (
     <section className="c-calendar-page" aria-label="Calendario">
@@ -417,76 +529,98 @@ function CalendarPage() {
             doseDays={doseDays}
             appointmentDays={appointmentDays}
             onSelect={(date) => {
-              setSelected(date);
+              const selectedDay = startOfDay(date);
+              setSelected((current) => (current && isSameDay(current, selectedDay) ? null : selectedDay));
+              setUpcomingVisibleCount(CALENDAR_INITIAL_VISIBLE_ITEMS);
               setCursor(date);
-              setAppointmentAnchorDate(startOfDay(date));
-              setAppointmentVisibleDays(1);
             }}
             onPrevMonth={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
             onNextMonth={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
           />
 
-          <div className="c-calendar-page__day">
-            <h3 className="c-calendar-page__day-title">Próximas citas</h3>
-            {error ? (
-              <ErrorState message={error} onRetry={() => void refetch()} />
-            ) : isLoading ? (
-              <Skeleton height="5rem" />
-            ) : visibleAppointments.length === 0 ? (
-              <EmptyState
-                title="Sin citas próximas"
-                description={
-                  canMutate
-                    ? 'Añade una cita nueva o revisa otro día del calendario.'
-                    : 'Selecciona otro día del calendario para revisar la agenda.'
-                }
-              />
-            ) : (
-              <div className="c-calendar-page__groups">
-                {appointmentWindowDays.map((day) => {
-                  const items = visibleAppointments.filter((appointment) =>
-                    isSameDay(new Date(appointment.date), day),
-                  );
+          {error ? (
+            <ErrorState message={error} onRetry={() => void refetch()} />
+          ) : isLoading ? (
+            <Skeleton height="5rem" />
+          ) : (
+            <div className="c-calendar-page__appointment-sections">
+              <section className="c-calendar-page__day" aria-labelledby="upcoming-appointments-title">
+                <div className="c-calendar-page__section-heading">
+                  <h3 id="upcoming-appointments-title" className="c-calendar-page__day-title">
+                    Próximas citas
+                  </h3>
+                  {selected ? (
+                    <button
+                      type="button"
+                      className="c-calendar-page__clear-filter"
+                      onClick={() => {
+                        setSelected(null);
+                        setUpcomingVisibleCount(CALENDAR_INITIAL_VISIBLE_ITEMS);
+                      }}
+                    >
+                      Ver todas
+                    </button>
+                  ) : null}
+                </div>
+                {filteredUpcomingAppointments.length === 0 ? (
+                  <EmptyState
+                    title="Sin citas próximas"
+                    description={
+                      canMutate
+                        ? 'Añade una cita nueva o revisa otro día del calendario.'
+                        : 'Selecciona otro día del calendario para revisar la agenda.'
+                    }
+                  />
+                ) : (
+                  <div className="c-calendar-page__groups">
+                    {groupedUpcomingAppointments.map((group) => (
+                      <section key={group.key} className="c-calendar-page__group" aria-labelledby={`appointments-${group.key}`}>
+                        <h4 id={`appointments-${group.key}`} className="c-calendar-page__group-title">
+                          {formatDayLabel(group.day)}
+                        </h4>
+                        <ul className="c-calendar-page__list">
+                          {group.appointments.map(renderAppointmentCard)}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
+                )}
 
-                  if (items.length === 0) {
-                    return null;
-                  }
+                {filteredUpcomingAppointments.length > upcomingVisibleCount ? (
+                  <Button
+                    type="button"
+                    variant="primary-outline"
+                    fullWidth
+                    onClick={() => setUpcomingVisibleCount((count) => count + CALENDAR_SHOW_MORE_INCREMENT)}
+                  >
+                    Mostrar más
+                  </Button>
+                ) : null}
+              </section>
 
-                  return (
-                    <section key={dayKey(day)} className="c-calendar-page__group" aria-labelledby={`appointments-${dayKey(day)}`}>
-                      <h4 id={`appointments-${dayKey(day)}`} className="c-calendar-page__group-title">
-                        {formatDayLabel(day)}
-                      </h4>
-                      <ul className="c-calendar-page__list">
-                        {items.map((appointment) => (
-                          <li key={appointment.id} className="c-calendar-page__item">
-                            <AppointmentCard
-                              appointment={appointment}
-                              treatments={treatments}
-                              blisterId={blisterId}
-                              userRole={role}
-                              onDelete={(item) => setConfirmDelete(item)}
-                            />
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  );
-                })}
-              </div>
-            )}
+              <section className="c-calendar-page__day" aria-labelledby="past-appointments-title">
+                <h3 id="past-appointments-title" className="c-calendar-page__day-title">Citas pasadas</h3>
+                {pastAppointments.length === 0 ? (
+                  <EmptyState title="Sin citas pasadas" description="Las citas anteriores aparecerán aquí." />
+                ) : (
+                  <ul className="c-calendar-page__list">
+                    {visiblePastAppointments.map(renderAppointmentCard)}
+                  </ul>
+                )}
 
-            {visibleAppointments.length > 0 ? (
-              <Button
-                type="button"
-                variant="primary-outline"
-                fullWidth
-                onClick={() => setAppointmentVisibleDays((days) => days + 3)}
-              >
-                Mostrar más
-              </Button>
-            ) : null}
-          </div>
+                {pastAppointments.length > pastVisibleCount ? (
+                  <Button
+                    type="button"
+                    variant="primary-outline"
+                    fullWidth
+                    onClick={() => setPastVisibleCount((count) => count + CALENDAR_SHOW_MORE_INCREMENT)}
+                  >
+                    Mostrar más
+                  </Button>
+                ) : null}
+              </section>
+            </div>
+          )}
 
           {canMutate ? (
             <button
@@ -587,7 +721,12 @@ function CalendarPage() {
             </div>
           )}
 
-          <Button type="button" variant="primary-outline" fullWidth onClick={() => setDoseVisibleDays((days) => days + 3)}>
+          <Button
+            type="button"
+            variant="primary-outline"
+            fullWidth
+            onClick={() => setDoseVisibleDays((days) => days + CALENDAR_SHOW_MORE_INCREMENT)}
+          >
             Mostrar más
           </Button>
         </div>

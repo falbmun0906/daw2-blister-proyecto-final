@@ -48,11 +48,49 @@
     gap: var(--space-3);
   }
 
+  &__appointment-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  &__section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
   &__day-title {
     margin: 0;
     font-size: var(--text-md);
     font-weight: 600;
     color: var(--color-text);
+  }
+
+  &__clear-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--space-touch-min);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-primary-border);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-tint);
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
   }
 
   &__list,

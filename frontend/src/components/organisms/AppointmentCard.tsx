@@ -1,70 +1,306 @@
+import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  TbCalendar,
+  TbClock,
+  TbDotsVertical,
+  TbMapPin,
+  TbMessageCircle,
+  TbPencil,
+  TbStethoscope,
+  TbTrash,
+} from 'react-icons/tb';
 
 import { ROUTES } from '../../constants/routes';
 import type { Appointment } from '../../types/appointment.types';
 import type { BlisterRole } from '../../types/blister.types';
 import type { Treatment } from '../../types/treatment.types';
+import { Avatar } from '../atoms/Avatar';
 import { Button } from '../atoms/Button';
+
+type AppointmentComment = Appointment['comments'][number];
 
 interface AppointmentCardProps {
   appointment: Appointment;
   treatments: Treatment[];
   blisterId: string;
   userRole: BlisterRole | null;
+  currentUserId: string | null;
   onDelete: (appointment: Appointment) => void;
+  onAddComment: (appointment: Appointment, text: string) => Promise<void>;
+  onUpdateComment: (
+    appointment: Appointment,
+    comment: AppointmentComment,
+    text: string,
+  ) => Promise<void>;
+  onDeleteComment: (appointment: Appointment, comment: AppointmentComment) => Promise<void>;
+}
+
+interface CommentItemProps {
+  appointment: Appointment;
+  comment: AppointmentComment;
+  editable: boolean;
+  onUpdateComment: AppointmentCardProps['onUpdateComment'];
+  onDeleteComment: AppointmentCardProps['onDeleteComment'];
 }
 
 const canMutate = (role: BlisterRole | null): boolean =>
   role === 'OWNER' || role === 'CAREGIVER';
 
+const canEditComment = (
+  comment: AppointmentComment,
+  currentUserId: string | null,
+  userRole: BlisterRole | null,
+): boolean => currentUserId === comment.userId || userRole === 'OWNER';
+
 const dateFormatter = new Intl.DateTimeFormat('es-ES', {
   weekday: 'long',
   day: '2-digit',
   month: 'long',
+});
+
+const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   hour: '2-digit',
   minute: '2-digit',
 });
 
-/** Tarjeta de cita con título, fecha y tratamiento vinculado opcional. */
+function CommentItem({
+  appointment,
+  comment,
+  editable,
+  onUpdateComment,
+  onDeleteComment,
+}: CommentItemProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.text);
+  const [busy, setBusy] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = draft.trim();
+    if (!text) return;
+    setBusy(true);
+    try {
+      await onUpdateComment(appointment, comment, text);
+      setIsEditing(false);
+      setMenuOpen(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <li className="c-appointment-card__comment">
+      <Avatar name={comment.authorName} avatarKey={comment.authorAvatarKey ?? undefined} size="sm" />
+      <div className="c-appointment-card__comment-body">
+        <p className="c-appointment-card__comment-author">{comment.authorName}</p>
+        {isEditing ? (
+          <form className="c-appointment-card__comment-edit" onSubmit={(event) => void handleSubmit(event)}>
+            <textarea
+              className="c-field__textarea"
+              value={draft}
+              rows={3}
+              maxLength={500}
+              onChange={(event) => setDraft(event.target.value)}
+            />
+            <div className="c-appointment-card__comment-edit-actions">
+              <Button type="button" variant="primary-outline" onClick={() => setIsEditing(false)} disabled={busy}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" loading={busy}>
+                Guardar
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <p className="c-appointment-card__comment-text">{comment.text}</p>
+        )}
+      </div>
+      {editable ? (
+        <div className="c-appointment-card__menu">
+          <button
+            type="button"
+            className="c-appointment-card__menu-toggle"
+            aria-label="Acciones del comentario"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <TbDotsVertical aria-hidden="true" />
+          </button>
+          {menuOpen ? (
+            <div className="c-appointment-card__menu-popover" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setIsEditing(true);
+                  setMenuOpen(false);
+                }}
+              >
+                <TbPencil aria-hidden="true" />
+                <span>Editar</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  void onDeleteComment(appointment, comment);
+                }}
+              >
+                <TbTrash aria-hidden="true" />
+                <span>Eliminar</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+/** Tarjeta de cita con metadatos, acciones y comentarios. */
 export function AppointmentCard({
   appointment,
   treatments,
   blisterId,
   userRole,
+  currentUserId,
   onDelete,
+  onAddComment,
+  onUpdateComment,
+  onDeleteComment,
 }: AppointmentCardProps) {
+  const [cardMenuOpen, setCardMenuOpen] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [commentBusy, setCommentBusy] = useState(false);
   const editable = canMutate(userRole);
   const linkedTreatment = appointment.treatmentId
     ? treatments.find((t) => t.id === appointment.treatmentId)
     : null;
-  const formattedDate = dateFormatter.format(new Date(appointment.date));
+  const appointmentDate = new Date(appointment.date);
+
+  const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = commentText.trim();
+    if (!text) return;
+    setCommentBusy(true);
+    try {
+      await onAddComment(appointment, text);
+      setCommentText('');
+    } finally {
+      setCommentBusy(false);
+    }
+  };
 
   return (
     <article className="c-appointment-card" aria-label={appointment.title}>
       <header className="c-appointment-card__header">
-        <h3 className="c-appointment-card__title">{appointment.title}</h3>
-        <time className="c-appointment-card__date" dateTime={appointment.date}>
-          {formattedDate}
-        </time>
+        <div className="c-appointment-card__heading">
+          <h3 className="c-appointment-card__title">{appointment.title}</h3>
+          {linkedTreatment ? (
+            <p className="c-appointment-card__treatment">
+              <TbStethoscope aria-hidden="true" />
+              <span>{linkedTreatment.title}</span>
+            </p>
+          ) : null}
+        </div>
+        {editable ? (
+          <div className="c-appointment-card__menu">
+            <button
+              type="button"
+              className="c-appointment-card__menu-toggle"
+              aria-label="Acciones de la cita"
+              aria-expanded={cardMenuOpen}
+              onClick={() => setCardMenuOpen((open) => !open)}
+            >
+              <TbDotsVertical aria-hidden="true" />
+            </button>
+            {cardMenuOpen ? (
+              <div className="c-appointment-card__menu-popover" role="menu">
+                <Link
+                  to={ROUTES.editAppointment(blisterId, appointment.id)}
+                  role="menuitem"
+                  onClick={() => setCardMenuOpen(false)}
+                >
+                  <TbPencil aria-hidden="true" />
+                  <span>Editar</span>
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setCardMenuOpen(false);
+                    onDelete(appointment);
+                  }}
+                >
+                  <TbTrash aria-hidden="true" />
+                  <span>Eliminar</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </header>
-      {linkedTreatment ? (
-        <p className="c-appointment-card__treatment">
-          Vinculada a <strong>{linkedTreatment.title}</strong>
-        </p>
+
+      <dl className="c-appointment-card__meta">
+        <div className="c-appointment-card__meta-item">
+          <dt><TbCalendar aria-hidden="true" /><span>Fecha</span></dt>
+          <dd><time dateTime={appointment.date}>{dateFormatter.format(appointmentDate)}</time></dd>
+        </div>
+        <div className="c-appointment-card__meta-item">
+          <dt><TbClock aria-hidden="true" /><span>Hora</span></dt>
+          <dd><time dateTime={appointment.date}>{timeFormatter.format(appointmentDate)}</time></dd>
+        </div>
+        <div className="c-appointment-card__meta-item">
+          <dt><TbMapPin aria-hidden="true" /><span>Lugar</span></dt>
+          <dd>{appointment.location?.trim() || 'Lugar pendiente'}</dd>
+        </div>
+      </dl>
+
+      {appointment.description ? (
+        <section className="c-appointment-card__description" aria-label="Descripción">
+          <h4>Descripción</h4>
+          <p>{appointment.description}</p>
+        </section>
       ) : null}
-      {editable ? (
-        <footer className="c-appointment-card__actions">
-          <Link
-            to={ROUTES.editAppointment(blisterId, appointment.id)}
-            className="c-btn c-btn--primary-outline c-btn--card c-appointment-card__edit-link"
-          >
-            <span>Editar</span>
-          </Link>
-          <Button variant="danger" className="c-btn--card" onClick={() => onDelete(appointment)}>
-            Eliminar
-          </Button>
-        </footer>
-      ) : null}
+
+      <section className="c-appointment-card__comments" aria-label="Comentarios">
+        <h4 className="c-appointment-card__comments-title">
+          <TbMessageCircle aria-hidden="true" />
+          <span>Comentarios</span>
+        </h4>
+        {appointment.comments.length > 0 ? (
+          <ul className="c-appointment-card__comment-list">
+            {appointment.comments.map((comment) => (
+              <CommentItem
+                key={comment.id}
+                appointment={appointment}
+                comment={comment}
+                editable={editable && canEditComment(comment, currentUserId, userRole)}
+                onUpdateComment={onUpdateComment}
+                onDeleteComment={onDeleteComment}
+              />
+            ))}
+          </ul>
+        ) : null}
+        {editable ? (
+          <form className="c-appointment-card__comment-form" onSubmit={(event) => void handleCommentSubmit(event)}>
+            <textarea
+              className="c-field__textarea"
+              value={commentText}
+              rows={3}
+              maxLength={500}
+              placeholder="Añadir comentario"
+              onChange={(event) => setCommentText(event.target.value)}
+            />
+            <Button type="submit" variant="primary-outline" loading={commentBusy}>
+              Comentar
+            </Button>
+          </form>
+        ) : null}
+      </section>
     </article>
   );
 }
