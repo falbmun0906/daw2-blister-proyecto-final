@@ -73,7 +73,7 @@ export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: Ap
       contentSecurityPolicy: {
         useDefaults: true,
         directives: {
-          formAction: ["'self'", "https://blister-backend.onrender.com"],
+          formAction: null,
         },
       },
     }),
