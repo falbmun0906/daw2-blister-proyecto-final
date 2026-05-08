@@ -22,14 +22,14 @@ import { treatmentsRouter } from './modules/treatments/treatments.routes';
 
 export interface AppConfig {
   clientOrigin: string;
-  mcpServerEnabled: boolean;
+  mcpServerEnabled?: boolean;
   nodeEnv: 'development' | 'test' | 'production';
 }
 
 /**
  * Creates the Express application with the mandatory global middleware chain.
  */
-export const createApp = ({ clientOrigin, mcpServerEnabled, nodeEnv }: AppConfig): Express => {
+export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: AppConfig): Express => {
   const app = express();
 
   app.disable('x-powered-by');
