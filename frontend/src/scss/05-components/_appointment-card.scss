@@ -55,12 +55,15 @@
     display: inline-flex;
     align-items: flex-start;
     justify-content: flex-end;
+    justify-self: end;
+    width: var(--space-touch-min);
     gap: var(--space-1);
   }
 
   &__menu {
     position: relative;
     display: inline-flex;
+    width: 100%;
     justify-content: flex-end;
   }
 
