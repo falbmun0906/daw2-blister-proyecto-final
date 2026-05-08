@@ -136,8 +136,8 @@ function McpTokenPage() {
   }, [addToast]);
 
   const configSnippet = useMemo(
-    () => buildConfigSnippet(generatedToken ?? ''),
-    [generatedToken],
+    () => buildConfigSnippet(''),
+    [],
   );
 
   const handleGenerate = async (): Promise<void> => {

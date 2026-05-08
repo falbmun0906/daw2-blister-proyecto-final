@@ -3,6 +3,11 @@ import {
   createAdherenceLogSchema,
 } from '../adherence.schema';
 import {
+  adherenceLoggerInputSchema,
+  appointmentManagerInputSchema,
+  scheduleAssistantInputSchema,
+} from '../mcp.schema';
+import {
   appointmentCommentBodySchema,
   appointmentsListQuerySchema,
   appointmentSchema,
@@ -121,5 +126,42 @@ describe('treatment, appointment and adherence shared schemas', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('parses MCP tool date inputs from ISO strings without exposing Date in the input schema', () => {
+    const adherenceResult = adherenceLoggerInputSchema.safeParse({
+      blisterId: '507f1f77bcf86cd799439011',
+      medicineId: '507f1f77bcf86cd799439012',
+      treatmentId: '507f1f77bcf86cd799439013',
+      timestamp: '2030-04-25T10:00:00.000Z',
+    });
+    const scheduleResult = scheduleAssistantInputSchema.safeParse({
+      from: '2030-04-25T10:00:00.000Z',
+      to: '2030-04-25T18:00:00.000Z',
+    });
+    const appointmentResult = appointmentManagerInputSchema.safeParse({
+      from: '2030-04-25T10:00:00.000Z',
+      to: '2030-04-25T18:00:00.000Z',
+      page: 1,
+      limit: 20,
+    });
+
+    expect(adherenceResult.success).toBe(true);
+    expect(scheduleResult.success).toBe(true);
+    expect(appointmentResult.success).toBe(true);
+
+    if (adherenceResult.success) {
+      expect(adherenceResult.data.timestamp).toBeInstanceOf(Date);
+    }
+
+    if (scheduleResult.success) {
+      expect(scheduleResult.data.from).toBeInstanceOf(Date);
+      expect(scheduleResult.data.to).toBeInstanceOf(Date);
+    }
+
+    if (appointmentResult.success) {
+      expect(appointmentResult.data.from).toBeInstanceOf(Date);
+      expect(appointmentResult.data.to).toBeInstanceOf(Date);
+    }
   });
 });

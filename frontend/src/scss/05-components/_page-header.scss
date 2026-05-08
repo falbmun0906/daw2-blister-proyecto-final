@@ -68,8 +68,16 @@
   }
 
   &--mcp-token &__title {
-    font-size: clamp(0.95rem, 4vw, 1.25rem);
-    max-inline-size: min(100%, 13.5rem);
+    justify-self: stretch;
+    max-inline-size: none;
+    font-size: clamp(0.92rem, 3.3vw, 1.18rem);
+    white-space: nowrap;
+    word-break: normal;
+    hyphens: none;
+  }
+
+  &--mcp-token &__bar {
+    grid-template-columns: var(--space-touch-min) minmax(0, 1fr) var(--space-touch-min);
   }
 
   &__spacer {

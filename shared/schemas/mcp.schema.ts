@@ -1,13 +1,22 @@
 import { z } from 'zod';
 
 import {
-  dateSchema,
   nonNegativeIntegerSchema,
   nonEmptyTrimmedString,
   objectIdSchema,
   optionalTrimmedString,
   positiveIntegerSchema,
 } from './common.schema';
+
+const mcpInputDateSchema = (fieldName: string) =>
+  z
+    .string()
+    .trim()
+    .min(1, `${fieldName} is required.`)
+    .refine((value) => !Number.isNaN(Date.parse(value)), {
+      message: `${fieldName} must be a valid ISO date.`,
+    })
+    .transform((value) => new Date(value));
 
 export const inventoryQueryInputSchema = z.object({
   blisterId: objectIdSchema.optional(),
@@ -24,7 +33,7 @@ export const adherenceLoggerInputSchema = z.object({
   treatmentId: objectIdSchema,
   amount: positiveIntegerSchema('Amount').optional(),
   forced: z.boolean().default(false),
-  timestamp: dateSchema('timestamp').optional(),
+  timestamp: mcpInputDateSchema('timestamp').optional(),
   notes: optionalTrimmedString(500),
 }).superRefine((value, context) => {
   if (value.forced && !value.notes) {
@@ -60,8 +69,8 @@ export const stockModifierInputSchema = z.object({
 });
 
 const fromToRangeSchema = z.object({
-  from: dateSchema('from').optional(),
-  to: dateSchema('to').optional(),
+  from: mcpInputDateSchema('from').optional(),
+  to: mcpInputDateSchema('to').optional(),
 }).superRefine((value, context) => {
   if (value.from && value.to && value.to < value.from) {
     context.addIssue({
