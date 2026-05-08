@@ -5,7 +5,6 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
-import { BlisterPageSelector } from '../../components/organisms/BlisterPageSelector';
 import { MedicineCard } from '../../components/organisms/MedicineCard';
 import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
@@ -68,8 +67,6 @@ function InventoryPage() {
 
   return (
     <section className="c-inventory-page" aria-label="Botiquín">
-      <BlisterPageSelector />
-
       <CimaSearchDropdown
         blisterId={blisterId}
         canMutate={canMutate}

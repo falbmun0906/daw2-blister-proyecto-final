@@ -4,6 +4,7 @@ import { matchPath, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useBlisterStore } from '../../stores/blister.store';
 import { usePageTitleStore } from '../../stores/page-title.store';
+import { BlisterPageSelector } from './BlisterPageSelector';
 import { BlisterHeaderSelector } from './BlisterHeaderSelector';
 
 interface RouteMatchParams {
@@ -74,6 +75,7 @@ const resolveParentRoute = (
     || pathname === ROUTES.changePassword
     || pathname === ROUTES.profileAvatar
     || pathname === ROUTES.accessibility
+    || pathname === ROUTES.notificationSettings
     || pathname === ROUTES.mcpToken
     || pathname === ROUTES.settings
   ) {
@@ -110,28 +112,31 @@ export function PageHeader() {
 
   return (
     <header className="c-page-header" role="banner">
-      <div className="c-page-header__side c-page-header__side--start">
-        {isPrimarySection ? (
-          <span className="c-page-header__spacer" aria-hidden="true" />
-        ) : (
-          <button
-            type="button"
-            className="c-page-header__back"
-            onClick={handleBack}
-            aria-label="Volver atrás"
-          >
-            <FaArrowLeft className="c-icon c-icon--lg" aria-hidden="true" />
-          </button>
-        )}
+      <div className="c-page-header__bar">
+        <div className="c-page-header__side c-page-header__side--start">
+          {isPrimarySection ? (
+            <span className="c-page-header__spacer" aria-hidden="true" />
+          ) : (
+            <button
+              type="button"
+              className="c-page-header__back"
+              onClick={handleBack}
+              aria-label="Volver atrás"
+            >
+              <FaArrowLeft className="c-icon c-icon--lg" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <h1 className="c-page-header__title">{title}</h1>
+        <div className="c-page-header__side c-page-header__side--end">
+          {isPrimarySection ? (
+            <BlisterHeaderSelector />
+          ) : (
+            <span className="c-page-header__spacer" aria-hidden="true" />
+          )}
+        </div>
       </div>
-      <h1 className="c-page-header__title">{title}</h1>
-      <div className="c-page-header__side c-page-header__side--end">
-        {isPrimarySection ? (
-          <BlisterHeaderSelector />
-        ) : (
-          <span className="c-page-header__spacer" aria-hidden="true" />
-        )}
-      </div>
+      {isPrimarySection ? <BlisterPageSelector /> : null}
     </header>
   );
 }
