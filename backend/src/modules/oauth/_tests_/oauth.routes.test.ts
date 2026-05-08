@@ -16,7 +16,7 @@ import {
 
 const codeVerifier = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~';
 const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
-const redirectUri = 'http://localhost:6274/oauth/callback';
+const redirectUri = 'http://localhost:6274/callback';
 
 const createAuthorizePayload = () => ({
   response_type: 'code',
@@ -68,6 +68,7 @@ describe('oauth.routes', () => {
     expect(response.body.issuer).toBe('http://blister.test');
     expect(response.body.authorization_endpoint).toBe('http://blister.test/oauth/authorize');
     expect(response.body.token_endpoint).toBe('http://blister.test/oauth/token');
+    expect(response.body.registration_endpoint).toBe('http://blister.test/oauth/register');
     expect(response.body.response_types_supported).toContain('code');
     expect(response.body.grant_types_supported).toContain('authorization_code');
     expect(response.body.code_challenge_methods_supported).toContain('S256');
@@ -84,6 +85,59 @@ describe('oauth.routes', () => {
     expect(response.body.authorization_servers).toContain('http://blister.test');
     expect(response.body.bearer_methods_supported).toContain('header');
     expect(response.body.scopes_supported).toContain('mcp');
+  });
+
+  it('allows Claude Desktop localhost origins on OAuth discovery responses', async () => {
+    const response = await request(app)
+      .get('/.well-known/oauth-authorization-server')
+      .set('Origin', 'http://localhost:49152');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:49152');
+  });
+
+  it('handles OAuth preflight requests from Claude Desktop localhost origins', async () => {
+    const response = await request(app)
+      .options('/oauth/token')
+      .set('Origin', 'http://127.0.0.1:49153')
+      .set('Access-Control-Request-Method', 'POST');
+
+    expect(response.status).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1:49153');
+  });
+
+  it('registers the Claude Desktop public OAuth client with dynamic localhost redirects', async () => {
+    const dynamicRedirectUri = 'http://localhost:54321/callback';
+    const response = await request(app)
+      .post('/oauth/register')
+      .send({
+        client_name: 'Claude Desktop',
+        redirect_uris: [dynamicRedirectUri],
+        grant_types: ['authorization_code'],
+        response_types: ['code'],
+        token_endpoint_auth_method: 'none',
+        scope: 'mcp',
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.client_id).toBe(OAUTH_CLIENT_ID);
+    expect(response.body.redirect_uris).toContain(dynamicRedirectUri);
+    expect(response.body.token_endpoint_auth_method).toBe('none');
+  });
+
+  it('accepts singular redirect_uri in dynamic client registration requests', async () => {
+    const dynamicRedirectUri = 'http://127.0.0.1:54322/callback';
+    const response = await request(app)
+      .post('/oauth/register')
+      .send({
+        client_name: 'Claude Desktop',
+        redirect_uri: dynamicRedirectUri,
+        scope: 'mcp',
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.client_id).toBe(OAUTH_CLIENT_ID);
+    expect(response.body.redirect_uris).toEqual([dynamicRedirectUri]);
   });
 
   it('advertises OAuth protected resource metadata when MCP auth is missing', async () => {

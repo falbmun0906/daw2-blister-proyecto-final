@@ -6,6 +6,7 @@ import {
   exchangeAuthorizationCode,
   OAUTH_CLIENT_ID,
   OAUTH_SCOPE,
+  registerOAuthClient,
   validateAuthorizeQuery,
 } from './oauth.service';
 
@@ -78,6 +79,7 @@ export const oauthMetadataController = (request: Request, response: Response): v
     issuer,
     authorization_endpoint: `${issuer}/oauth/authorize`,
     token_endpoint: `${issuer}/oauth/token`,
+    registration_endpoint: `${issuer}/oauth/register`,
     response_types_supported: ['code'],
     grant_types_supported: ['authorization_code'],
     token_endpoint_auth_methods_supported: ['none'],
@@ -119,4 +121,9 @@ export const oauthAuthorizeSubmitController = async (request: Request, response:
 export const oauthTokenController = (request: Request, response: Response): void => {
   const result = exchangeAuthorizationCode(request.body as Record<string, unknown>);
   response.status(HTTP_STATUS_OK).json(result);
+};
+
+export const oauthRegisterController = (request: Request, response: Response): void => {
+  const result = registerOAuthClient(request.body as Record<string, unknown>);
+  response.status(201).json(result);
 };

@@ -60,6 +60,24 @@ interface TokenInput {
   code_verifier?: unknown;
 }
 
+interface RegisterClientInput {
+  redirect_uris?: unknown;
+  redirect_uri?: unknown;
+  client_name?: unknown;
+  scope?: unknown;
+}
+
+interface OAuthClientRegistrationResult {
+  client_id: string;
+  client_id_issued_at: number;
+  client_name?: string;
+  redirect_uris: string[];
+  grant_types: ['authorization_code'];
+  response_types: ['code'];
+  token_endpoint_auth_method: 'none';
+  scope: string;
+}
+
 interface OAuthTokenResult {
   access_token: string;
   token_type: 'Bearer';
@@ -159,6 +177,36 @@ const pruneExpiredCodes = (): void => {
 
 export const validateAuthorizeQuery = (input: AuthorizeQuery): AuthorizeInput =>
   normalizeAuthorizeInput(input);
+
+export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegistrationResult => {
+  const redirectUrisInput = input.redirect_uris;
+  const redirectUris = typeof input.redirect_uri === 'string'
+    ? [input.redirect_uri]
+    : Array.isArray(redirectUrisInput)
+    ? redirectUrisInput.filter((value): value is string => typeof value === 'string')
+    : typeof redirectUrisInput === 'string'
+    ? [redirectUrisInput]
+    : [];
+  const clientName = asString(input.client_name);
+  const scope = asString(input.scope) ?? OAUTH_SCOPE;
+
+  assertOAuthError(scope.split(/\s+/).includes(OAUTH_SCOPE), 'OAUTH_SCOPE_INVALID', 'OAuth scope must include mcp.');
+  assertOAuthError(redirectUris.length > 0, 'OAUTH_REDIRECT_URI_MISSING', 'At least one OAuth redirect_uri is required.');
+  redirectUris.forEach((redirectUri) => {
+    assertOAuthError(isAllowedRedirectUri(redirectUri), 'OAUTH_REDIRECT_URI_INVALID', 'OAuth redirect_uri is not allowed.');
+  });
+
+  return {
+    client_id: OAUTH_CLIENT_ID,
+    client_id_issued_at: Math.floor(Date.now() / 1000),
+    client_name: clientName,
+    redirect_uris: redirectUris,
+    grant_types: ['authorization_code'],
+    response_types: ['code'],
+    token_endpoint_auth_method: 'none',
+    scope: OAUTH_SCOPE,
+  };
+};
 
 export const createAuthorizationCode = async (input: LoginConsentInput): Promise<{ redirectUri: string }> => {
   const normalized = normalizeAuthorizeInput(input);

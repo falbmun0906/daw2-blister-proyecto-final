@@ -1,4 +1,4 @@
-import cors from 'cors';
+import cors, { type CorsOptions, type CorsOptionsDelegate } from 'cors';
 import express, { type Express, type Request, type Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -31,6 +31,34 @@ export interface AppConfig {
   nodeEnv: 'development' | 'test' | 'production';
 }
 
+const OAUTH_CORS_PATHS = ['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource', '/oauth'];
+
+const isOAuthCorsPath = (path: string): boolean =>
+  OAUTH_CORS_PATHS.some((oauthPath) => path === oauthPath || path.startsWith(`${oauthPath}/`));
+
+const isLocalhostOrigin = (origin: string): boolean => {
+  try {
+    const url = new URL(origin);
+
+    return url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const createCorsOptionsDelegate = (clientOrigin: string): CorsOptionsDelegate<Request> =>
+  (request, callback) => {
+    const requestOrigin = request.header('Origin');
+    const allowedOrigin = requestOrigin === clientOrigin
+      || (requestOrigin !== undefined && isOAuthCorsPath(request.path) && isLocalhostOrigin(requestOrigin));
+    const options: CorsOptions = {
+      origin: requestOrigin === undefined ? true : allowedOrigin,
+      credentials: true,
+    };
+
+    callback(null, options);
+  };
+
 /**
  * Creates the Express application with the mandatory global middleware chain.
  */
@@ -41,12 +69,7 @@ export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: Ap
   app.set('trust proxy', 1);
 
   app.use(helmet());
-  app.use(
-    cors({
-      origin: clientOrigin,
-      credentials: true,
-    }),
-  );
+  app.use(cors(createCorsOptionsDelegate(clientOrigin)));
 
   if (mcpServerEnabled) {
     // MCP must run before global body parsers so the transport can consume the raw request stream.
