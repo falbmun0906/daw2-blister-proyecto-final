@@ -3,7 +3,6 @@ import { createServer, type Server } from 'node:http';
 import { createApp } from './app';
 import { connectDb, disconnectDb } from './config/db';
 import { env } from './config/env';
-import { createMcpHttpServer, resolveMcpPort } from './mcp/server';
 import {
   notificationsSchedulerStart,
   notificationsSchedulerStop,
@@ -11,11 +10,11 @@ import {
 
 const app = createApp({
   clientOrigin: env.clientOrigin,
+  mcpServerEnabled: env.mcpServerEnabled,
   nodeEnv: env.nodeEnv,
 });
 
 const server = createServer(app);
-const mcpServer = env.mcpServerEnabled ? createMcpHttpServer() : null;
 
 const closeServer = (target: Server | null): Promise<void> =>
   new Promise((resolve) => {
@@ -27,24 +26,6 @@ const closeServer = (target: Server | null): Promise<void> =>
     target.close(() => resolve());
   });
 
-const startMcpServer = (): void => {
-  if (!mcpServer) {
-    return;
-  }
-
-  const mcpPort = resolveMcpPort();
-
-  mcpServer.on('error', (error: Error) => {
-    // eslint-disable-next-line no-console
-    console.error('Failed to start Blister MCP server', error);
-  });
-
-  mcpServer.listen(mcpPort, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Blister MCP server listening on port ${mcpPort}`);
-  });
-};
-
 /**
  * Starts the HTTP server after the database connection is ready.
  */
@@ -55,7 +36,6 @@ const bootstrap = async (): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log(`Blister backend listening on port ${env.port}`);
   });
-  startMcpServer();
   notificationsSchedulerStart();
 };
 
@@ -69,7 +49,7 @@ const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
   // eslint-disable-next-line no-console
   console.log(`Received ${signal}. Shutting down gracefully.`);
 
-  await Promise.all([closeServer(server), closeServer(mcpServer)]);
+  await closeServer(server);
   notificationsSchedulerStop();
   await disconnectDb().catch((error: unknown) => {
     // eslint-disable-next-line no-console

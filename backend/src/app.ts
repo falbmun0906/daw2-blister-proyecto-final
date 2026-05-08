@@ -8,6 +8,7 @@ import { registerSwagger } from './config/swagger';
 import { JSON_BODY_LIMIT, URL_ENCODED_LIMIT } from './constants/security.constants';
 import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundMiddleware } from './middleware/not-found.middleware';
+import { handleMcpExpressRequest } from './mcp/server';
 import { requestSanitizerMiddleware } from './middleware/request-sanitizer.middleware';
 import { adherenceRouter } from './modules/adherence/adherence.routes';
 import { appointmentsRouter } from './modules/appointments/appointments.routes';
@@ -21,13 +22,14 @@ import { treatmentsRouter } from './modules/treatments/treatments.routes';
 
 export interface AppConfig {
   clientOrigin: string;
+  mcpServerEnabled: boolean;
   nodeEnv: 'development' | 'test' | 'production';
 }
 
 /**
  * Creates the Express application with the mandatory global middleware chain.
  */
-export const createApp = ({ clientOrigin, nodeEnv }: AppConfig): Express => {
+export const createApp = ({ clientOrigin, mcpServerEnabled, nodeEnv }: AppConfig): Express => {
   const app = express();
 
   app.disable('x-powered-by');
@@ -40,6 +42,14 @@ export const createApp = ({ clientOrigin, nodeEnv }: AppConfig): Express => {
       credentials: true,
     }),
   );
+
+  if (mcpServerEnabled) {
+    // MCP must run before global body parsers so the transport can consume the raw request stream.
+    app.get('/mcp', handleMcpExpressRequest);
+    app.post('/mcp', handleMcpExpressRequest);
+    app.delete('/mcp', handleMcpExpressRequest);
+  }
+
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
   app.use(express.urlencoded({ extended: true, limit: URL_ENCODED_LIMIT }));
   app.use(requestSanitizerMiddleware);

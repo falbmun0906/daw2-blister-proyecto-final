@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { randomUUID } from 'node:crypto';
 
+import { type NextFunction, type Request, type Response } from 'express';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 
@@ -142,6 +143,18 @@ const handleMcpRequest = async (
   }
 };
 
+export const handleMcpExpressRequest = async (
+  request: Request,
+  response: Response,
+  next?: NextFunction,
+): Promise<void> => {
+  try {
+    await handleMcpRequest(request, response);
+  } catch (error: unknown) {
+    next?.(error);
+  }
+};
+
 export const createMcpHttpServer = (): Server =>
   createServer(async (request, response) => {
     if ((request.url ?? '').startsWith(MCP_PATH)) {
@@ -191,7 +204,7 @@ const bootstrap = async (): Promise<void> => {
 
   server.listen(mcpPort, () => {
     // eslint-disable-next-line no-console
-    console.log(`Blister MCP server listening on port ${mcpPort}`);
+    console.log(`Blister MCP standalone server listening on port ${mcpPort}`);
   });
 
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
@@ -219,6 +232,10 @@ const bootstrap = async (): Promise<void> => {
   });
 };
 
+/**
+ * Deprecated standalone MCP entrypoint kept only for local development.
+ * Production traffic should use the main Express server on /mcp.
+ */
 export const startMcpStandaloneServer = bootstrap;
 
 if (require.main === module) {
