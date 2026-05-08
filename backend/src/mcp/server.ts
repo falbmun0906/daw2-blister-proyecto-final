@@ -34,6 +34,35 @@ const sendJson = (
   response.end(JSON.stringify(payload));
 };
 
+const getRequestOrigin = (request: IncomingMessage): string | null => {
+  const hostHeader = request.headers.host;
+  const forwardedProtoHeader = request.headers['x-forwarded-proto'];
+  const host = Array.isArray(hostHeader) ? hostHeader[0] : hostHeader;
+  const forwardedProto = Array.isArray(forwardedProtoHeader)
+    ? forwardedProtoHeader[0]
+    : forwardedProtoHeader;
+  const protocol = forwardedProto ?? 'http';
+
+  return host ? `${protocol}://${host}` : null;
+};
+
+const setMcpAuthChallenge = (
+  request: IncomingMessage,
+  response: ServerResponse<IncomingMessage>,
+): void => {
+  const origin = getRequestOrigin(request);
+
+  if (!origin) {
+    response.setHeader('WWW-Authenticate', 'Bearer realm="Blister MCP"');
+    return;
+  }
+
+  response.setHeader(
+    'WWW-Authenticate',
+    `Bearer realm="Blister MCP", resource_metadata="${origin}/.well-known/oauth-protected-resource"`,
+  );
+};
+
 const readJsonBody = async (request: IncomingMessage): Promise<unknown> => {
   const chunks: Buffer[] = [];
 
@@ -122,6 +151,10 @@ const handleMcpRequest = async (
     await transport.handleRequest(request, response, body);
   } catch (error: unknown) {
     if (error instanceof AppError) {
+      if (error.statusCode === 401) {
+        setMcpAuthChallenge(request, response);
+      }
+
       sendJson(response, error.statusCode, {
         success: false,
         error: {

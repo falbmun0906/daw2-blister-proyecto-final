@@ -18,6 +18,11 @@ import { externalRouter } from './modules/external/external.routes';
 import { meRouter } from './modules/me/me.routes';
 import { medicinesRouter } from './modules/medicines/medicines.routes';
 import { notificationsRouter } from './modules/notifications/notifications.routes';
+import {
+  oauthMetadataController,
+  oauthProtectedResourceMetadataController,
+} from './modules/oauth/oauth.controller';
+import { oauthRouter } from './modules/oauth/oauth.routes';
 import { treatmentsRouter } from './modules/treatments/treatments.routes';
 
 export interface AppConfig {
@@ -66,6 +71,9 @@ export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: Ap
       },
     });
   });
+  app.get('/.well-known/oauth-authorization-server', oauthMetadataController);
+  app.get('/.well-known/oauth-protected-resource', oauthProtectedResourceMetadataController);
+  app.use('/oauth', oauthRouter);
   registerSwagger(app);
   app.use(`${API_PREFIX}${AUTH_PREFIX}`, authRouter);
   app.use(`${API_PREFIX}/blisters`, blistersRouter);

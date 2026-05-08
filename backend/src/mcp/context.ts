@@ -1,16 +1,33 @@
 import { createHash } from 'node:crypto';
 
+import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
 
+import { env } from '../config/env';
 import { HTTP_STATUS_FORBIDDEN, HTTP_STATUS_UNAUTHORIZED } from '../constants/http.constants';
 import { BlisterModel } from '../models/blister.model';
 import { UserModel } from '../models/user.model';
+import { type JwtMcpOAuthPayload } from '../types/auth.types';
 import { AppError } from '../utils/app-error';
 import { mcpTokenHeaderSchema } from '../../../shared/schemas';
 import { type McpAuthContext, type McpBlisterContext } from './types';
 
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 const MCP_TOKEN_SELECT = '+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt +mcpTokenLastUsedAt';
+
+const resolveMcpOAuthUserId = (token: string): string | null => {
+  try {
+    const payload = jwt.verify(token, env.jwtSecret) as JwtMcpOAuthPayload;
+
+    if (payload.type !== 'mcp_oauth' || payload.aud !== 'mcp' || !payload.scope.split(/\s+/).includes('mcp')) {
+      return null;
+    }
+
+    return payload.sub;
+  } catch {
+    return null;
+  }
+};
 
 const findTokenFromAuthorizationHeader = (authorizationHeader?: string): string | null => {
   if (!authorizationHeader) {
@@ -66,6 +83,25 @@ const toMcpBlisterContext = (blister: {
 };
 
 export const resolveMcpContextFromToken = async (token: string): Promise<McpAuthContext> => {
+  const oauthUserId = resolveMcpOAuthUserId(token);
+
+  if (oauthUserId) {
+    const user = await UserModel.findOne({
+      _id: new Types.ObjectId(oauthUserId),
+      deletedAt: null,
+    }).lean();
+
+    if (!user) {
+      throw new AppError({
+        code: 'MCP_TOKEN_INVALID',
+        message: 'MCP OAuth token is invalid or revoked.',
+        statusCode: HTTP_STATUS_UNAUTHORIZED,
+      });
+    }
+
+    return resolveMcpContextForUser(user._id, user._id.toString());
+  }
+
   const tokenHash = hashToken(token);
   const user = await UserModel.findOne({
     mcpToken: tokenHash,
@@ -109,12 +145,15 @@ export const resolveMcpContextFromToken = async (token: string): Promise<McpAuth
     },
   );
 
-  const userId = user._id.toString();
+  return resolveMcpContextForUser(user._id, user._id.toString());
+};
+
+const resolveMcpContextForUser = async (userObjectId: Types.ObjectId, userId: string): Promise<McpAuthContext> => {
   const blisters = await BlisterModel.find({
     deletedAt: null,
     members: {
       $elemMatch: {
-        userId: user._id,
+        userId: userObjectId,
       },
     },
   }).lean();

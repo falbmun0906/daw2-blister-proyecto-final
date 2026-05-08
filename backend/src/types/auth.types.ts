@@ -13,6 +13,14 @@ export interface JwtAccessPayload {
   type: 'access';
 }
 
+export interface JwtMcpOAuthPayload {
+  sub: string;
+  type: 'mcp_oauth';
+  aud: 'mcp';
+  client_id: string;
+  scope: string;
+}
+
 export interface JwtRefreshPayload {
   sub: string;
   type: 'refresh';
