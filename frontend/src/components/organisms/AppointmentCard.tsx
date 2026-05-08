@@ -67,6 +67,9 @@ const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   minute: '2-digit',
 });
 
+const formatCommentsCount = (count: number): string =>
+  `${count} ${count === 1 ? 'comentario' : 'comentarios'}`;
+
 const hasCommentBeenEdited = (comment: AppointmentComment): boolean => {
   const createdAt = Date.parse(comment.createdAt);
   const updatedAt = Date.parse(comment.updatedAt);
@@ -221,6 +224,7 @@ export function AppointmentCard({
   const appointmentDate = new Date(appointment.date);
   const detailsId = `appointment-card-details-${appointment.id}`;
   const canSubmitComment = commentText.trim().length > 0 && !commentBusy;
+  const commentsCountLabel = formatCommentsCount(appointment.comments.length);
 
   const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -247,51 +251,41 @@ export function AppointmentCard({
         </div>
         <div className="c-appointment-card__actions">
           {editable ? (
-          <div className="c-appointment-card__menu">
-            <button
-              type="button"
-              className="c-appointment-card__menu-toggle"
-              aria-label="Acciones de la cita"
-              aria-expanded={cardMenuOpen}
-              onClick={() => setCardMenuOpen((open) => !open)}
-            >
-              <TbDotsVertical aria-hidden="true" />
-            </button>
-            {cardMenuOpen ? (
-              <div className="c-appointment-card__menu-popover" role="menu">
-                <Link
-                  to={ROUTES.editAppointment(blisterId, appointment.id)}
-                  role="menuitem"
-                  onClick={() => setCardMenuOpen(false)}
-                >
-                  <TbPencil aria-hidden="true" />
-                  <span>Editar</span>
-                </Link>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setCardMenuOpen(false);
-                    onDelete(appointment);
-                  }}
-                >
-                  <TbTrash aria-hidden="true" />
-                  <span>Eliminar</span>
-                </button>
-              </div>
-            ) : null}
-          </div>
+            <div className="c-appointment-card__menu">
+              <button
+                type="button"
+                className="c-appointment-card__menu-toggle"
+                aria-label="Acciones de la cita"
+                aria-expanded={cardMenuOpen}
+                onClick={() => setCardMenuOpen((open) => !open)}
+              >
+                <TbDotsVertical aria-hidden="true" />
+              </button>
+              {cardMenuOpen ? (
+                <div className="c-appointment-card__menu-popover" role="menu">
+                  <Link
+                    to={ROUTES.editAppointment(blisterId, appointment.id)}
+                    role="menuitem"
+                    onClick={() => setCardMenuOpen(false)}
+                  >
+                    <TbPencil aria-hidden="true" />
+                    <span>Editar</span>
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setCardMenuOpen(false);
+                      onDelete(appointment);
+                    }}
+                  >
+                    <TbTrash aria-hidden="true" />
+                    <span>Eliminar</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
           ) : null}
-          <button
-            type="button"
-            className="c-appointment-card__expand-toggle"
-            aria-label={expanded ? 'Plegar detalles de la cita' : 'Desplegar detalles de la cita'}
-            aria-expanded={expanded}
-            aria-controls={detailsId}
-            onClick={() => setExpanded((current) => !current)}
-          >
-            {expanded ? <TbChevronUp aria-hidden="true" /> : <TbChevronDown aria-hidden="true" />}
-          </button>
         </div>
       </header>
 
@@ -347,7 +341,9 @@ export function AppointmentCard({
                   />
                 ))}
               </ul>
-            ) : null}
+            ) : (
+              <p className="c-appointment-card__comments-empty">Aún no hay comentarios</p>
+            )}
             {editable ? (
               <form className="c-appointment-card__comment-form" onSubmit={(event) => void handleCommentSubmit(event)}>
                 <div className="c-appointment-card__comment-input-shell">
@@ -375,6 +371,18 @@ export function AppointmentCard({
           </section>
         </div>
       ) : null}
+
+      <button
+        type="button"
+        className="c-appointment-card__expand-toggle"
+        aria-label={expanded ? 'Plegar comentarios de la cita' : 'Desplegar comentarios de la cita'}
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => setExpanded((current) => !current)}
+      >
+        <span className="c-appointment-card__expand-summary">{commentsCountLabel}</span>
+        {expanded ? <TbChevronUp aria-hidden="true" /> : <TbChevronDown aria-hidden="true" />}
+      </button>
     </article>
   );
 }

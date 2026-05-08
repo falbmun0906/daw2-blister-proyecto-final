@@ -53,7 +53,7 @@
 
   &__actions {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-end;
     gap: var(--space-1);
   }
@@ -72,15 +72,14 @@
     width: var(--space-touch-min);
     min-width: var(--space-touch-min);
     height: var(--space-touch-min);
+    padding: 0;
     border: 0;
-    border-radius: var(--radius-full);
     background-color: transparent;
     color: var(--color-text-muted);
     cursor: pointer;
 
     &:hover,
     &:focus-visible {
-      background-color: var(--color-primary-tint);
       color: var(--color-primary);
     }
 
@@ -93,6 +92,28 @@
       width: 1.25rem;
       height: 1.25rem;
     }
+  }
+
+  &__expand-toggle {
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--space-touch-min);
+    margin-top: var(--space-1);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border-subtle);
+    text-align: left;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__expand-summary {
+    min-width: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
   }
 
   &__menu-popover {
@@ -232,6 +253,12 @@
     gap: var(--space-3);
   }
 
+  &__comments-empty {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
   &__description + &__comments {
     padding-top: var(--space-2);
     border-top: 1px solid var(--color-border-subtle);
@@ -263,6 +290,10 @@
     align-items: start;
     gap: var(--space-3);
     min-width: 0;
+  }
+
+  &__comment > .c-avatar {
+    align-self: start;
   }
 
   &__comment-body,
