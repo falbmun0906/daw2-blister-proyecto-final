@@ -68,7 +68,16 @@ export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: Ap
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          formAction: ["'self'", "https://blister-backend.onrender.com"],
+        },
+      },
+    }),
+  );
   app.use(cors(createCorsOptionsDelegate(clientOrigin)));
 
   if (mcpServerEnabled) {
