@@ -104,6 +104,7 @@ export function PageHeader() {
   const mainTreatments = getMatchParams(location.pathname, ROUTES.blisterTreatments(':blisterId'));
   const mainAppointments = getMatchParams(location.pathname, ROUTES.blisterAppointments(':blisterId'));
   const isPrimarySection = Boolean(mainMedicine || mainTreatments || mainAppointments);
+  const isMcpTokenPage = location.pathname === ROUTES.mcpToken;
 
   const handleBack = (): void => {
     if (backHandler) backHandler();
@@ -111,7 +112,7 @@ export function PageHeader() {
   };
 
   return (
-    <header className="c-page-header" role="banner">
+    <header className={`c-page-header${isMcpTokenPage ? ' c-page-header--mcp-token' : ''}`} role="banner">
       <div className="c-page-header__bar">
         <div className="c-page-header__side c-page-header__side--start">
           {isPrimarySection ? (

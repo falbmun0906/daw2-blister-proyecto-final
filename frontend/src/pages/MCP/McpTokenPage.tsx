@@ -23,6 +23,45 @@ const EMPTY_TOKEN_STATUS: McpTokenStatus = {
 };
 
 const TOKEN_PLACEHOLDER = 'TU_TOKEN_AQUI';
+const MCP_TOKEN_STORAGE_KEY = 'blister:mcp-token';
+
+interface StoredMcpToken {
+  token: string;
+  createdAt: string;
+}
+
+const readStoredMcpToken = (): StoredMcpToken | null => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const rawValue = window.sessionStorage.getItem(MCP_TOKEN_STORAGE_KEY);
+    if (!rawValue) return null;
+
+    const parsed = JSON.parse(rawValue) as Partial<StoredMcpToken>;
+    if (typeof parsed.token !== 'string' || typeof parsed.createdAt !== 'string') {
+      return null;
+    }
+
+    return {
+      token: parsed.token,
+      createdAt: parsed.createdAt,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const writeStoredMcpToken = (token: string, createdAt: string): void => {
+  if (typeof window === 'undefined') return;
+
+  window.sessionStorage.setItem(MCP_TOKEN_STORAGE_KEY, JSON.stringify({ token, createdAt }));
+};
+
+const clearStoredMcpToken = (): void => {
+  if (typeof window === 'undefined') return;
+
+  window.sessionStorage.removeItem(MCP_TOKEN_STORAGE_KEY);
+};
 
 const buildConfigSnippet = (token: string): string =>
   JSON.stringify(
@@ -70,6 +109,15 @@ function McpTokenPage() {
       .then((status) => {
         if (isMounted) {
           setTokenStatus(status);
+
+          const storedToken = readStoredMcpToken();
+          if (status.hasToken && storedToken && storedToken.createdAt === status.createdAt) {
+            setGeneratedToken(storedToken.token);
+          } else {
+            clearStoredMcpToken();
+            setGeneratedToken(null);
+            setShowToken(false);
+          }
         }
       })
       .catch((err: unknown) => {
@@ -97,6 +145,7 @@ function McpTokenPage() {
     try {
       const result = await createMcpToken();
       setGeneratedToken(result.token);
+      writeStoredMcpToken(result.token, result.createdAt);
       setTokenStatus({
         hasToken: result.hasToken,
         createdAt: result.createdAt,
@@ -126,6 +175,7 @@ function McpTokenPage() {
     setIsRevoking(true);
     try {
       await revokeMcpToken();
+      clearStoredMcpToken();
       setGeneratedToken(null);
       setTokenStatus(EMPTY_TOKEN_STATUS);
       setShowToken(false);
@@ -236,7 +286,7 @@ function McpTokenPage() {
           {isGenerating ? 'Generando...' : tokenStatus.hasToken ? 'Regenerar token' : 'Generar token MCP'}
         </button>
         <p className="c-mcp-token-page__hint">
-          El token solo se muestra al generarlo. Si no lo conservas, genera uno nuevo.
+          El token se conserva mientras no cierres la sesión del navegador. Si ya no lo tienes, genera uno nuevo.
         </p>
       </div>
 

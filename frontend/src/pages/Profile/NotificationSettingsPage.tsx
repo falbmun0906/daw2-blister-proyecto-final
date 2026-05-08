@@ -96,8 +96,7 @@ export default function NotificationSettingsPage() {
   };
 
   return (
-    <section className="c-notification-settings" aria-labelledby="notification-settings-title">
-      <h1 id="notification-settings-title" className="c-notification-settings__title">Notificaciones</h1>
+    <section className="c-notification-settings" aria-label="Notificaciones">
       {error ? <ErrorState message={error} /> : null}
 
       <FormSection label="Avisos push" icon={<TbBellRinging aria-hidden="true" />}>

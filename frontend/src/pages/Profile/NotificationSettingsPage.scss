@@ -3,13 +3,6 @@
   flex-direction: column;
   gap: var(--space-4);
 
-  &__title {
-    margin: 0;
-    color: var(--color-text);
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-semibold);
-  }
-
   &__toggle {
     position: relative;
     display: grid;
