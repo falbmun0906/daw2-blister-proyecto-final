@@ -7,7 +7,8 @@ import { createApp } from '../../../app';
 import { env } from '../../../config/env';
 import { resolveMcpContextFromToken } from '../../../mcp/context';
 import { type JwtMcpOAuthPayload } from '../../../types/auth.types';
-import { clearOAuthAuthorizationCodes, OAUTH_CLIENT_ID } from '../oauth.service';
+import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID } from '../oauth.constants';
+import { clearOAuthAuthorizationCodes } from '../oauth.service';
 import {
   clearTestDatabase,
   connectTestDatabase,
@@ -120,7 +121,7 @@ describe('oauth.routes', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.client_id).toBe(OAUTH_CLIENT_ID);
+    expect(response.body.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(response.body.redirect_uris).toContain(dynamicRedirectUri);
     expect(response.body.token_endpoint_auth_method).toBe('none');
   });
@@ -136,7 +137,7 @@ describe('oauth.routes', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.client_id).toBe(OAUTH_CLIENT_ID);
+    expect(response.body.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(response.body.redirect_uris).toEqual([dynamicRedirectUri]);
   });
 

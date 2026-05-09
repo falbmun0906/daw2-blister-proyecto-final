@@ -11,9 +11,7 @@ import {
 import { type JwtMcpOAuthPayload } from '../../types/auth.types';
 import { AppError } from '../../utils/app-error';
 import { authLogin } from '../auth/auth.service';
-
-export const OAUTH_CLIENT_ID = 'claude-desktop';
-export const OAUTH_SCOPE = 'mcp';
+import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID, OAUTH_SCOPE } from './oauth.constants';
 
 const AUTHORIZATION_CODE_TTL_MS = 5 * 60 * 1000;
 const CODE_VERIFIER_PATTERN = /^[A-Za-z0-9._~-]{43,128}$/;
@@ -197,7 +195,7 @@ export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegi
   });
 
   return {
-    client_id: OAUTH_CLIENT_ID,
+    client_id: OAUTH_DEFAULT_CLIENT_ID,
     client_id_issued_at: Math.floor(Date.now() / 1000),
     client_name: clientName,
     redirect_uris: redirectUris,
