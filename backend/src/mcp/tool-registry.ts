@@ -8,6 +8,8 @@ import {
   blisterListInputSchema,
   blisterMembersInputSchema,
   inventoryQueryInputSchema,
+  medicineAddInputSchema,
+  medicineCatalogSearchInputSchema,
   medicineLookupInputSchema,
   officialSourceLinkerInputSchema,
   scheduleAssistantInputSchema,
@@ -21,6 +23,8 @@ import {
   blisterListTool,
   blisterMembersTool,
   inventoryQueryTool,
+  medicineAddTool,
+  medicineCatalogSearchTool,
   medicineLookupTool,
   officialSourceLinkerTool,
   scheduleAssistantTool,
@@ -88,7 +92,9 @@ export const createMcpServerForContext = (context: McpAuthContext): McpServer =>
   registerTool(server, context, blisterListTool, blisterListInputSchema);
   registerTool(server, context, blisterMembersTool, blisterMembersInputSchema);
   registerTool(server, context, inventoryQueryTool, inventoryQueryInputSchema);
+  registerTool(server, context, medicineCatalogSearchTool, medicineCatalogSearchInputSchema);
   registerTool(server, context, medicineLookupTool, medicineLookupInputSchema);
+  registerTool(server, context, medicineAddTool, medicineAddInputSchema);
   registerTool(server, context, adherenceLoggerTool, adherenceLoggerInputSchema);
   registerTool(server, context, stockModifierTool, stockModifierInputSchema);
   registerTool(server, context, scheduleAssistantTool, scheduleAssistantInputSchema);

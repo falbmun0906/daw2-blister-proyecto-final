@@ -6,6 +6,7 @@ import {
   objectIdSchema,
   positiveIntegerSchema,
 } from './common.schema';
+import { stockUnits } from './schema.constants';
 
 const mcpInputDateSchema = (fieldName: string) =>
   z
@@ -83,6 +84,25 @@ export const medicineLookupInputSchema = z.object({
     });
   }
 });
+
+export const medicineCatalogSearchInputSchema = z.object({
+  ...blisterLocatorShape,
+  commercialName: nonEmptyTrimmedString('Commercial medicine name', 100),
+  page: positiveIntegerSchema('Page').max(100).default(1),
+  limit: positiveIntegerSchema('Limit').max(20).default(8),
+}).superRefine(validateSingleBlisterLocator);
+
+export const medicineAddInputSchema = z.object({
+  ...blisterLocatorShape,
+  nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
+  alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
+  stock: nonNegativeIntegerSchema('Stock'),
+  stockUnit: z.enum(stockUnits),
+  threshold: nonNegativeIntegerSchema('Threshold').default(5),
+  expDate: mcpInputDateSchema('expDate').refine((value) => value.getTime() > Date.now(), {
+    message: 'expDate must be in the future.',
+  }),
+}).superRefine(validateRequiredBlisterLocator);
 
 export const adherenceLoggerInputSchema = z.object({
   ...blisterLocatorShape,
@@ -209,6 +229,8 @@ export type InventoryQueryInput = z.infer<typeof inventoryQueryInputSchema>;
 export type BlisterListInput = z.infer<typeof blisterListInputSchema>;
 export type BlisterMembersInput = z.infer<typeof blisterMembersInputSchema>;
 export type MedicineLookupInput = z.infer<typeof medicineLookupInputSchema>;
+export type MedicineCatalogSearchInput = z.infer<typeof medicineCatalogSearchInputSchema>;
+export type MedicineAddInput = z.infer<typeof medicineAddInputSchema>;
 export type AdherenceLoggerInput = z.infer<typeof adherenceLoggerInputSchema>;
 export type StockModifierInput = z.infer<typeof stockModifierInputSchema>;
 export type ScheduleAssistantInput = z.infer<typeof scheduleAssistantInputSchema>;

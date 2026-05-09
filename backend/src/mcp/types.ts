@@ -7,6 +7,8 @@ import {
   type BlisterListInput,
   type BlisterMembersInput,
   type InventoryQueryInput,
+  type MedicineAddInput,
+  type MedicineCatalogSearchInput,
   type MedicineLookupInput,
   type OfficialSourceLinkerInput,
   type ScheduleAssistantInput,
@@ -47,6 +49,17 @@ export interface McpInventoryItem {
     estado: 1 | 2 | 3;
     hasAlerts: boolean;
   };
+}
+
+export interface McpMedicineCatalogItem {
+  nregist: string;
+  nombre: string;
+  pactivos: string;
+  labtitular: string | null;
+  formaOficial: string | null;
+  dosisOficial: string | null;
+  fotoUrl: string | null;
+  existingInTargetBlisters: number;
 }
 
 export interface McpBlisterSummary {
@@ -163,6 +176,20 @@ export type McpMedicineLookupTool = McpToolDefinition<MedicineLookupInput, {
     total: number;
     totalPages: number;
   };
+}>;
+
+export type McpMedicineCatalogSearchTool = McpToolDefinition<MedicineCatalogSearchInput, {
+  items: McpMedicineCatalogItem[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}>;
+
+export type McpMedicineAddTool = McpToolDefinition<MedicineAddInput, {
+  medicine: McpInventoryItem;
 }>;
 
 export type McpAdherenceLoggerTool = McpToolDefinition<AdherenceLoggerInput, {

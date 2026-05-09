@@ -4,6 +4,8 @@ import {
   appointmentCommentManagerInputSchema,
   appointmentManagerInputSchema,
   inventoryQueryInputSchema,
+  medicineAddInputSchema,
+  medicineCatalogSearchInputSchema,
   medicineLookupInputSchema,
 } from '../../../../shared/schemas';
 import { AppointmentModel } from '../../models/appointment.model';
@@ -15,6 +17,7 @@ import {
   connectTestDatabase,
   disconnectTestDatabase,
 } from '../../modules/auth/_tests_/auth-test.utils';
+import * as externalService from '../../modules/external/external.service';
 import { type McpAuthContext } from '../types';
 import {
   appointmentCommentManagerTool,
@@ -22,6 +25,8 @@ import {
   blisterListTool,
   blisterMembersTool,
   inventoryQueryTool,
+  medicineAddTool,
+  medicineCatalogSearchTool,
   medicineLookupTool,
 } from '../tools';
 
@@ -52,10 +57,15 @@ describe('MCP tools', () => {
       },
     });
 
-  const createMedicine = async (blisterId: Types.ObjectId, name: string, stock = 5) =>
+  const createMedicine = async (
+    blisterId: Types.ObjectId,
+    name: string,
+    stock = 5,
+    nregist = `${Math.floor(Math.random() * 900000) + 100000}`,
+  ) =>
     MedicineModel.create({
       blisterId,
-      nregist: `${Math.floor(Math.random() * 900000) + 100000}`,
+      nregist,
       nombre: name,
       alias: null,
       pactivos: 'Principio activo',
@@ -176,6 +186,96 @@ describe('MCP tools', () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0].id).toBe(naproxeno._id.toString());
     expect(result.items[0].blisterName).toBe('El Bosque');
+  });
+
+  it('searches official CIMA candidates by commercial name before adding a medicine', async () => {
+    const { context, bosque } = await createFixture();
+    await createMedicine(bosque._id, 'TRAMADOL CINFA 50 mg CAPSULAS DURAS EFG', 5, '910001');
+    jest.spyOn(externalService, 'externalSearchMedicines').mockResolvedValue([
+      {
+        nregist: '910001',
+        nombre: 'TRAMADOL CINFA 50 mg CAPSULAS DURAS EFG',
+        pactivos: 'Tramadol hidrocloruro',
+        labtitular: 'LABORATORIOS CINFA, S.A.',
+        formaOficial: 'CAPSULA DURA',
+        dosisOficial: '50 mg',
+        fotoUrl: null,
+      },
+    ]);
+    const input = medicineCatalogSearchInputSchema.parse({
+      blisterName: 'El Bosque',
+      commercialName: 'Tramadol',
+    });
+
+    const result = await medicineCatalogSearchTool.run(context, input);
+
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        nregist: '910001',
+        nombre: 'TRAMADOL CINFA 50 mg CAPSULAS DURAS EFG',
+        existingInTargetBlisters: 1,
+      }),
+    ]);
+  });
+
+  it('adds two equal CIMA medicines to the same blister through MCP', async () => {
+    const { context, bosque } = await createFixture();
+    jest.spyOn(externalService, 'externalGetMedicineInfo').mockResolvedValue({
+      nregist: '910002',
+      nombre: 'TRAMADOL CINFA 50 mg CAPSULAS DURAS EFG',
+      pactivos: 'Tramadol hidrocloruro',
+      labtitular: 'LABORATORIOS CINFA, S.A.',
+      formaOficial: 'CAPSULA DURA',
+      formaSimplificada: null,
+      dosisOficial: '50 mg',
+      comerc: true,
+      psum: false,
+      notas: false,
+      materialesInf: false,
+      docs: [],
+      fotos: [],
+      atcs: [],
+      principiosActivos: [],
+      excipientes: [],
+      viasAdministracion: [],
+      cpresc: null,
+      receta: true,
+      fechaAutorizacion: null,
+      conduc: true,
+      triangulo: true,
+      cimaStatus: {
+        estado: 1,
+        psum: false,
+        hasAlerts: false,
+        comerc: true,
+        notas: false,
+        materialesInf: false,
+      },
+    });
+    const firstInput = medicineAddInputSchema.parse({
+      blisterName: 'El Bosque',
+      nregist: '910002',
+      stock: 10,
+      stockUnit: 'pastillas',
+      threshold: 2,
+      expDate: '2031-02-01T00:00:00.000Z',
+    });
+    const secondInput = medicineAddInputSchema.parse({
+      blisterName: 'El Bosque',
+      nregist: '910002',
+      alias: 'Caja nueva',
+      stock: 30,
+      stockUnit: 'pastillas',
+      threshold: 5,
+      expDate: '2031-08-01T00:00:00.000Z',
+    });
+
+    const first = await medicineAddTool.run(context, firstInput);
+    const second = await medicineAddTool.run(context, secondInput);
+
+    expect(first.medicine.id).not.toBe(second.medicine.id);
+    expect(second.medicine.alias).toBe('Caja nueva');
+    await expect(MedicineModel.countDocuments({ blisterId: bosque._id, nregist: '910002' })).resolves.toBe(2);
   });
 
   it('returns appointment comments and blocks observer comment mutations', async () => {
