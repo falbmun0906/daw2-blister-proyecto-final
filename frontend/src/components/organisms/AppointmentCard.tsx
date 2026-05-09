@@ -330,7 +330,7 @@ export function AppointmentCard({
             </h4>
             {appointment.comments.length > 0 ? (
               <ul className="c-appointment-card__comment-list">
-                {appointment.comments.map((comment) => (
+                {appointment.comments.map((comment: AppointmentComment) => (
                   <CommentItem
                     key={comment.id}
                     appointment={appointment}

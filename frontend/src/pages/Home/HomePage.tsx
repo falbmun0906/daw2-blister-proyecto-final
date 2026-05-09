@@ -45,9 +45,9 @@ interface ActiveUndo {
   doseAt: string;
 }
 
-interface HomeMedicine extends Medicine {
+type HomeMedicine = Medicine & {
   blisterName: string;
-}
+};
 
 const EARLY_DOSE_GRACE_MS = 5 * 60 * 1000;
 
@@ -217,7 +217,7 @@ export default function HomePage() {
       const results = await Promise.all(
         blisters.map(async (blister) => {
           const items = await listMedicines(blister._id);
-          return items.map((medicine) => ({
+          return items.map<HomeMedicine>((medicine) => ({
             ...medicine,
             blisterName: blister.name,
           }));
