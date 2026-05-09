@@ -32,10 +32,11 @@ describe('MedicineModel', () => {
     });
   });
 
-  it('declares the unique blister and nregist compound index', () => {
-    const index = findSchemaIndex(MedicineModel.schema.indexes(), { nregist: 1, blisterId: 1 });
+  it('declares a non-unique blister and nregist lookup index', () => {
+    const index = findSchemaIndex(MedicineModel.schema.indexes(), { blisterId: 1, nregist: 1 });
 
-    expect(index?.options.unique).toBe(true);
+    expect(index).toBeDefined();
+    expect(index?.options.unique).toBeUndefined();
   });
 
   it('rejects non numeric AEMPS registry codes', () => {

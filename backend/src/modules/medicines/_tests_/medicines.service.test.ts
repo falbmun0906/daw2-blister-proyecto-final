@@ -151,7 +151,7 @@ describe('medicines.service', () => {
     expect(result.alias).toBe('Antibiotico');
   });
 
-  it('returns a 409-style domain error when the blister already contains the same nregist', async () => {
+  it('creates separate inventory entries for the same nregist in one blister', async () => {
     const user = await createUser('33');
     const blister = await createBlister(user._id);
 
@@ -188,7 +188,7 @@ describe('medicines.service', () => {
       },
     });
 
-    await medicinesCreate(blister._id.toString(), 'OWNER', {
+    const first = await medicinesCreate(blister._id.toString(), 'OWNER', {
       nregist: '777777',
       stock: 10,
       stockUnit: 'pastillas',
@@ -196,17 +196,17 @@ describe('medicines.service', () => {
       expDate: new Date('2030-03-01T00:00:00.000Z'),
     });
 
-    await expect(
-      medicinesCreate(blister._id.toString(), 'OWNER', {
-        nregist: '777777',
-        stock: 15,
-        stockUnit: 'pastillas',
-        threshold: 2,
-        expDate: new Date('2030-03-02T00:00:00.000Z'),
-      }),
-    ).rejects.toMatchObject({
-      code: 'MEDICINE_DUPLICATE',
+    const second = await medicinesCreate(blister._id.toString(), 'OWNER', {
+      nregist: '777777',
+      stock: 15,
+      stockUnit: 'pastillas',
+      threshold: 2,
+      expDate: new Date('2030-03-02T00:00:00.000Z'),
     });
+
+    expect(first.id).not.toBe(second.id);
+    expect(second.stock).toBe(15);
+    await expect(MedicineModel.countDocuments({ blisterId: blister._id, nregist: '777777' })).resolves.toBe(2);
   });
 
   it('updates stock and alias for writer roles', async () => {

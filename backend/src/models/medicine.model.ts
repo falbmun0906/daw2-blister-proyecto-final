@@ -122,6 +122,6 @@ const medicineSchema = new Schema<MedicineDocument>({
   },
 });
 
-medicineSchema.index({ nregist: 1, blisterId: 1 }, { unique: true });
+medicineSchema.index({ blisterId: 1, nregist: 1 });
 
 export const MedicineModel = models.Medicine ?? model<MedicineDocument>('Medicine', medicineSchema);

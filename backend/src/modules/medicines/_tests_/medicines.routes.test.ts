@@ -176,7 +176,7 @@ describe('medicines.routes', () => {
     expect(response.body.data.iconType).toBe('capsule');
   });
 
-  it('returns 409 when the same nregist already exists in the blister', async () => {
+  it('allows adding the same nregist twice in one blister', async () => {
     const user = await createUser('43');
     const blister = await BlisterModel.create({
       name: 'Compartido',
@@ -206,8 +206,9 @@ describe('medicines.routes', () => {
         expDate: '2030-07-03T00:00:00.000Z',
       });
 
-    expect(response.status).toBe(409);
-    expect(response.body.error.code).toBe('MEDICINE_DUPLICATE');
+    expect(response.status).toBe(201);
+    expect(response.body.data.nregist).toBe('300001');
+    await expect(MedicineModel.countDocuments({ blisterId: blister._id, nregist: '300001' })).resolves.toBe(2);
   });
 
   it('blocks observer updates to medicines', async () => {

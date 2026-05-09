@@ -100,8 +100,6 @@ medicinesRouter.use(authenticate);
  *         description: Role does not allow writing in this blister.
  *       404:
  *         description: Blister or CIMA medicine not found.
- *       409:
- *         description: The medicine already exists in the blister.
  */
 medicinesRouter.get(
   '/:blisterId/medicines',

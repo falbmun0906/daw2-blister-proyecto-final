@@ -2,7 +2,6 @@ import { Types } from 'mongoose';
 
 import { type BlisterRole } from '../../types/blister.types';
 import {
-  HTTP_STATUS_CONFLICT,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
@@ -55,6 +54,8 @@ interface MedicinesListResult {
 }
 
 const WRITER_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
+const LEGACY_MEDICINE_UNIQUE_INDEX_NAME = 'nregist_1_blisterId_1';
+type OfficialMedicineInfo = Awaited<ReturnType<typeof externalGetMedicineInfo>>;
 
 const toMedicineView = (medicine: Awaited<ReturnType<typeof MedicineModel.findOne>>): MedicineView => ({
   id: medicine!._id.toString(),
@@ -91,8 +92,26 @@ const getMedicineDocument = async (blisterId: string, medicineId: string) => {
   return medicine;
 };
 
-const isMongoDuplicateError = (error: unknown): error is { code: number } =>
-  typeof error === 'object' && error !== null && 'code' in error && error.code === 11000;
+const hasMongoErrorCode = (error: unknown, code: number): boolean =>
+  typeof error === 'object' && error !== null && 'code' in error && error.code === code;
+
+const hasMongoErrorCodeName = (error: unknown, codeName: string): boolean =>
+  typeof error === 'object' && error !== null && 'codeName' in error && error.codeName === codeName;
+
+const isMongoDuplicateError = (error: unknown): boolean => hasMongoErrorCode(error, 11000);
+
+const isMongoIndexNotFoundError = (error: unknown): boolean =>
+  hasMongoErrorCode(error, 27) || hasMongoErrorCodeName(error, 'IndexNotFound');
+
+const dropLegacyMedicineUniqueIndex = async (): Promise<void> => {
+  try {
+    await MedicineModel.collection.dropIndex(LEGACY_MEDICINE_UNIQUE_INDEX_NAME);
+  } catch (error: unknown) {
+    if (!isMongoIndexNotFoundError(error)) {
+      throw error;
+    }
+  }
+};
 
 const ensureWriterRole = (blisterRole: BlisterRole, allowedRoles: BlisterRole[] = WRITER_ROLES): void => {
   if (!allowedRoles.includes(blisterRole)) {
@@ -103,6 +122,28 @@ const ensureWriterRole = (blisterRole: BlisterRole, allowedRoles: BlisterRole[] 
     });
   }
 };
+
+const createMedicineDocument = async (
+  blisterObjectId: Types.ObjectId,
+  officialMedicine: OfficialMedicineInfo,
+  input: CreateMedicineInput,
+  formaOficial: string,
+) =>
+  MedicineModel.create({
+    blisterId: blisterObjectId,
+    nregist: officialMedicine.nregist,
+    nombre: officialMedicine.nombre,
+    alias: input.alias,
+    pactivos: officialMedicine.pactivos,
+    formaOficial,
+    dosisOficial: officialMedicine.dosisOficial ?? 'No disponible',
+    iconType: normalizeMedicineIconType(formaOficial),
+    stock: input.stock,
+    stockUnit: input.stockUnit,
+    threshold: input.threshold,
+    expDate: input.expDate,
+    cimaStatus: officialMedicine.cimaStatus,
+  });
 
 /**
  * Lists medicines in a blister with standard collection pagination metadata.
@@ -147,47 +188,20 @@ export const medicinesCreate = async (
   const officialMedicine = await externalGetMedicineInfo(input.nregist);
   const formaOficial = officialMedicine.formaOficial ?? officialMedicine.formaSimplificada ?? 'DESCONOCIDA';
   const blisterObjectId = new Types.ObjectId(blisterId);
-  const existingMedicine = await MedicineModel.exists({
-    blisterId: blisterObjectId,
-    nregist: officialMedicine.nregist,
-  });
-
-  if (existingMedicine) {
-    throw new AppError({
-      code: 'MEDICINE_DUPLICATE',
-      message: 'This medicine already exists in the blister inventory.',
-      statusCode: HTTP_STATUS_CONFLICT,
-    });
-  }
 
   try {
-    const medicine = await MedicineModel.create({
-      blisterId: blisterObjectId,
-      nregist: officialMedicine.nregist,
-      nombre: officialMedicine.nombre,
-      alias: input.alias,
-      pactivos: officialMedicine.pactivos,
-      formaOficial,
-      dosisOficial: officialMedicine.dosisOficial ?? 'No disponible',
-      iconType: normalizeMedicineIconType(formaOficial),
-      stock: input.stock,
-      stockUnit: input.stockUnit,
-      threshold: input.threshold,
-      expDate: input.expDate,
-      cimaStatus: officialMedicine.cimaStatus,
-    });
+    const medicine = await createMedicineDocument(blisterObjectId, officialMedicine, input, formaOficial);
 
     return toMedicineView(medicine);
   } catch (error: unknown) {
-    if (isMongoDuplicateError(error)) {
-      throw new AppError({
-        code: 'MEDICINE_DUPLICATE',
-        message: 'This medicine already exists in the blister inventory.',
-        statusCode: HTTP_STATUS_CONFLICT,
-      });
+    if (!isMongoDuplicateError(error)) {
+      throw error;
     }
 
-    throw error;
+    await dropLegacyMedicineUniqueIndex();
+    const medicine = await createMedicineDocument(blisterObjectId, officialMedicine, input, formaOficial);
+
+    return toMedicineView(medicine);
   }
 };
 
