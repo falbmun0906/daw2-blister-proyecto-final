@@ -18,6 +18,7 @@ import {
 const codeVerifier = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~';
 const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
 const redirectUri = 'http://localhost:6274/callback';
+const mcpAudience = `${env.backendUrl}/mcp`;
 
 const createAuthorizePayload = () => ({
   response_type: 'code',
@@ -237,11 +238,11 @@ describe('oauth.routes', () => {
     const refreshPayload = jwt.verify(tokenResponse.body.refresh_token, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
 
     expect(payload.type).toBe('mcp_oauth');
-    expect(payload.aud).toBe('mcp');
+    expect(payload.aud).toBe(mcpAudience);
     expect(payload.client_id).toBe(OAUTH_CLIENT_ID);
     expect(payload.scope).toBe('mcp');
     expect(refreshPayload.type).toBe('mcp_oauth_refresh');
-    expect(refreshPayload.aud).toBe('mcp');
+    expect(refreshPayload.aud).toBe(mcpAudience);
     expect(refreshPayload.sub).toBe(payload.sub);
     expect(refreshPayload.client_id).toBe(OAUTH_CLIENT_ID);
     expect(refreshPayload.scope).toBe('mcp');
@@ -350,8 +351,10 @@ describe('oauth.routes', () => {
     const refreshPayload = jwt.verify(refreshResponse.body.refresh_token, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
 
     expect(accessPayload.type).toBe('mcp_oauth');
+    expect(accessPayload.aud).toBe(mcpAudience);
     expect(accessPayload.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(refreshPayload.type).toBe('mcp_oauth_refresh');
+    expect(refreshPayload.aud).toBe(mcpAudience);
     expect(refreshPayload.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(refreshPayload.sub).toBe(accessPayload.sub);
   });
@@ -361,7 +364,7 @@ describe('oauth.routes', () => {
       {
         sub: '000000000000000000000000',
         type: 'mcp_oauth_refresh',
-        aud: 'mcp',
+        aud: mcpAudience,
         client_id: OAUTH_DEFAULT_CLIENT_ID,
         scope: 'mcp',
         jti: 'expired-refresh-token',

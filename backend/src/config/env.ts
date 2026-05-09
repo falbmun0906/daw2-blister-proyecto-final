@@ -13,6 +13,7 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(DEFAULT_PORT),
+  BACKEND_URL: z.string().trim().url().default('https://blister-backend.onrender.com'),
   MONGODB_URI: z.string().trim().min(1, 'MONGODB_URI is required'),
   CLIENT_ORIGIN: z.string().trim().url().default('http://localhost:5173'),
   CIMA_BASE_URL: z.string().trim().url().default('https://cima.aemps.es/cima/rest'),
@@ -36,6 +37,7 @@ if (!parsedEnv.success) {
 export const env = {
   nodeEnv: parsedEnv.data.NODE_ENV,
   port: parsedEnv.data.PORT,
+  backendUrl: parsedEnv.data.BACKEND_URL.replace(/\/+$/, ''),
   mongodbUri: parsedEnv.data.MONGODB_URI,
   clientOrigin: parsedEnv.data.CLIENT_ORIGIN,
   cimaBaseUrl: parsedEnv.data.CIMA_BASE_URL,

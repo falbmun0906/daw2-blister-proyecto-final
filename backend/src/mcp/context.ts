@@ -14,12 +14,15 @@ import { type McpAuthContext, type McpBlisterContext } from './types';
 
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 const MCP_TOKEN_SELECT = '+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt +mcpTokenLastUsedAt';
+const getMcpResourceAudience = (): string => new URL('/mcp', env.backendUrl).toString();
 
 const resolveMcpOAuthUserId = (token: string): string | null => {
   try {
-    const payload = jwt.verify(token, env.jwtSecret) as JwtMcpOAuthPayload;
+    const payload = jwt.verify(token, env.jwtSecret, {
+      audience: getMcpResourceAudience(),
+    }) as JwtMcpOAuthPayload;
 
-    if (payload.type !== 'mcp_oauth' || payload.aud !== 'mcp' || !payload.scope.split(/\s+/).includes('mcp')) {
+    if (payload.type !== 'mcp_oauth' || !payload.scope.split(/\s+/).includes('mcp')) {
       return null;
     }
 

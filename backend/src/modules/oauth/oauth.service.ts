@@ -94,6 +94,8 @@ const asString = (value: unknown): string | undefined =>
 
 const hashValue = (value: string): string => createHash('sha256').update(value).digest('hex');
 
+const getMcpResourceAudience = (): string => new URL('/mcp', env.backendUrl).toString();
+
 const assertOAuthError = (condition: boolean, code: string, message: string): void => {
   if (!condition) {
     throw new AppError({
@@ -155,7 +157,7 @@ const buildPkceChallenge = (codeVerifier: string): string =>
 const buildMcpOAuthPayload = (userId: string, clientId: string): JwtMcpOAuthPayload => ({
   sub: userId,
   type: 'mcp_oauth',
-  aud: 'mcp',
+  aud: getMcpResourceAudience(),
   client_id: clientId,
   scope: OAUTH_SCOPE,
 });
@@ -163,7 +165,7 @@ const buildMcpOAuthPayload = (userId: string, clientId: string): JwtMcpOAuthPayl
 const buildMcpOAuthRefreshPayload = (userId: string, clientId: string): JwtMcpOAuthRefreshPayload => ({
   sub: userId,
   type: 'mcp_oauth_refresh',
-  aud: 'mcp',
+  aud: getMcpResourceAudience(),
   client_id: clientId,
   scope: OAUTH_SCOPE,
   jti: randomBytes(16).toString('hex'),
@@ -204,11 +206,12 @@ const pruneExpiredCodes = (): void => {
 
 const verifyMcpRefreshToken = (refreshToken: string): JwtMcpOAuthRefreshPayload => {
   try {
-    const payload = jwt.verify(refreshToken, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
+    const payload = jwt.verify(refreshToken, env.jwtSecret, {
+      audience: getMcpResourceAudience(),
+    }) as JwtMcpOAuthRefreshPayload;
 
     if (
       payload.type !== 'mcp_oauth_refresh' ||
-      payload.aud !== 'mcp' ||
       !payload.scope.split(/\s+/).includes(OAUTH_SCOPE) ||
       !payload.jti
     ) {

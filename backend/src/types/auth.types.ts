@@ -16,7 +16,7 @@ export interface JwtAccessPayload {
 export interface JwtMcpOAuthPayload {
   sub: string;
   type: 'mcp_oauth';
-  aud: 'mcp';
+  aud: string;
   client_id: string;
   scope: string;
 }
@@ -24,7 +24,7 @@ export interface JwtMcpOAuthPayload {
 export interface JwtMcpOAuthRefreshPayload {
   sub: string;
   type: 'mcp_oauth_refresh';
-  aud: 'mcp';
+  aud: string;
   client_id: string;
   scope: string;
   jti: string;
