@@ -8,9 +8,8 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.constants';
-import { UserModel } from '../../models/user.model';
+import { OAuthTokenModel } from '../../models/oauthToken.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../types/auth.types';
-import { type UserMcpOAuthRefreshToken } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
 import { authLogin } from '../auth/auth.service';
 import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID, OAUTH_SCOPE } from './oauth.constants';
@@ -232,34 +231,19 @@ const verifyMcpRefreshToken = (refreshToken: string): JwtMcpOAuthRefreshPayload 
   }
 };
 
-const pruneStoredRefreshTokens = async (userId: string): Promise<void> => {
-  await UserModel.updateOne(
-    { _id: userId },
-    {
-      $pull: {
-        mcpOAuthRefreshTokens: {
-          expiresAt: { $lte: new Date() },
-        },
-      },
-    },
-  );
-};
-
 const persistMcpRefreshToken = async (userId: string, clientId: string, refreshToken: string): Promise<void> => {
-  await pruneStoredRefreshTokens(userId);
-  await UserModel.updateOne(
-    { _id: userId },
-    {
-      $push: {
-        mcpOAuthRefreshTokens: {
-          tokenHash: hashValue(refreshToken),
-          clientId,
-          expiresAt: new Date(getTokenExpiresAt(refreshToken)),
-          createdAt: new Date(),
-        },
-      },
-    },
-  );
+  await OAuthTokenModel.deleteMany({
+    userId,
+    expiresAt: { $lte: new Date() },
+  });
+  await OAuthTokenModel.create({
+    refreshToken: hashValue(refreshToken),
+    clientId,
+    userId,
+    scope: OAUTH_SCOPE,
+    expiresAt: new Date(getTokenExpiresAt(refreshToken)),
+    createdAt: new Date(),
+  });
 };
 
 const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuthTokenResult> => {
@@ -387,12 +371,15 @@ const exchangeRefreshToken = async (input: TokenInput): Promise<OAuthTokenResult
 
   const payload = verifyMcpRefreshToken(refreshToken!);
   const tokenHash = hashValue(refreshToken!);
-  const user = await UserModel.findOne({
-    _id: payload.sub,
-    deletedAt: null,
-    'mcpOAuthRefreshTokens.tokenHash': tokenHash,
-  }).select('+mcpOAuthRefreshTokens');
-  const record = user?.mcpOAuthRefreshTokens?.find((entry: UserMcpOAuthRefreshToken) => entry.tokenHash === tokenHash) ?? null;
+
+  assertOAuthError(payload.client_id === clientId, 'OAUTH_CLIENT_INVALID', 'OAuth client_id does not match this refresh token.');
+
+  const record = await OAuthTokenModel.findOne({
+    refreshToken: tokenHash,
+    clientId: payload.client_id,
+    userId: payload.sub,
+    scope: OAUTH_SCOPE,
+  });
 
   if (
     !record ||
@@ -406,20 +393,15 @@ const exchangeRefreshToken = async (input: TokenInput): Promise<OAuthTokenResult
     });
   }
 
-  await UserModel.updateOne(
-    { _id: payload.sub },
-    {
-      $pull: {
-        mcpOAuthRefreshTokens: {
-          tokenHash,
-        },
-      },
-    },
-  );
-
-  assertOAuthError(payload.client_id === clientId, 'OAUTH_CLIENT_INVALID', 'OAuth client_id does not match this refresh token.');
+  await OAuthTokenModel.deleteOne({ _id: record._id });
 
   return issueOAuthTokens(payload.sub, record.clientId);
+};
+
+export const revokeOAuthRefreshToken = async (refreshToken: string): Promise<void> => {
+  await OAuthTokenModel.deleteOne({
+    refreshToken: hashValue(refreshToken),
+  });
 };
 
 export const exchangeOAuthToken = (input: TokenInput): Promise<OAuthTokenResult> => {

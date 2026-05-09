@@ -3,6 +3,7 @@ export interface SchemaIndexDefinition {
   options: {
     unique?: boolean;
     sparse?: boolean;
+    expireAfterSeconds?: number;
   };
 }
 

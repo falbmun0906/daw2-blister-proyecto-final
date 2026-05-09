@@ -6,6 +6,7 @@ import request from 'supertest';
 import { createApp } from '../../../app';
 import { env } from '../../../config/env';
 import { resolveMcpContextFromToken } from '../../../mcp/context';
+import { OAuthTokenModel } from '../../../models/oauthToken.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../../types/auth.types';
 import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID } from '../oauth.constants';
 import { clearOAuthAuthorizationCodes } from '../oauth.service';
@@ -19,6 +20,7 @@ const codeVerifier = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345
 const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
 const redirectUri = 'http://localhost:6274/callback';
 const mcpAudience = `${env.backendUrl}/mcp`;
+const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
 const createAuthorizePayload = () => ({
   response_type: 'code',
@@ -236,6 +238,10 @@ describe('oauth.routes', () => {
 
     const payload = jwt.verify(tokenResponse.body.access_token, env.jwtSecret) as JwtMcpOAuthPayload;
     const refreshPayload = jwt.verify(tokenResponse.body.refresh_token, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
+    const storedRefreshToken = await OAuthTokenModel.findOne({
+      userId: payload.sub,
+      clientId: OAUTH_CLIENT_ID,
+    }).select('+refreshToken');
 
     expect(payload.type).toBe('mcp_oauth');
     expect(payload.aud).toBe(mcpAudience);
@@ -247,6 +253,9 @@ describe('oauth.routes', () => {
     expect(refreshPayload.client_id).toBe(OAUTH_CLIENT_ID);
     expect(refreshPayload.scope).toBe('mcp');
     expect(refreshPayload.jti).toBeTruthy();
+    expect(storedRefreshToken?.refreshToken).toBe(hashToken(tokenResponse.body.refresh_token));
+    expect(storedRefreshToken?.refreshToken).not.toBe(tokenResponse.body.refresh_token);
+    expect(storedRefreshToken?.scope).toBe('mcp');
 
     const mcpContext = await resolveMcpContextFromToken(tokenResponse.body.access_token);
 
@@ -330,6 +339,7 @@ describe('oauth.routes', () => {
       })
       .expect(200);
     const originalRefreshToken = tokenResponse.body.refresh_token as string;
+    const originalHash = hashToken(originalRefreshToken);
 
     const refreshResponse = await request(app)
       .post('/oauth/token')
@@ -347,6 +357,11 @@ describe('oauth.routes', () => {
     expect(refreshResponse.body.refresh_token).toBeTruthy();
     expect(refreshResponse.body.refresh_token).not.toBe(originalRefreshToken);
 
+    const storedTokens = await OAuthTokenModel.find({
+      userId: (jwt.decode(refreshResponse.body.access_token) as JwtMcpOAuthPayload).sub,
+      clientId: OAUTH_DEFAULT_CLIENT_ID,
+    }).select('+refreshToken');
+
     const accessPayload = jwt.verify(refreshResponse.body.access_token, env.jwtSecret) as JwtMcpOAuthPayload;
     const refreshPayload = jwt.verify(refreshResponse.body.refresh_token, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
 
@@ -357,6 +372,9 @@ describe('oauth.routes', () => {
     expect(refreshPayload.aud).toBe(mcpAudience);
     expect(refreshPayload.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(refreshPayload.sub).toBe(accessPayload.sub);
+    expect(storedTokens).toHaveLength(1);
+    expect(storedTokens[0].refreshToken).toBe(hashToken(refreshResponse.body.refresh_token));
+    expect(storedTokens[0].refreshToken).not.toBe(originalHash);
   });
 
   it('rejects invalid and expired MCP OAuth refresh tokens', async () => {
