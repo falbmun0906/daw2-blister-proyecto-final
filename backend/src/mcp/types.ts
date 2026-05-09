@@ -2,8 +2,12 @@ import { type BlisterRole } from '../types/blister.types';
 
 import {
   type AdherenceLoggerInput,
+  type AppointmentCommentManagerInput,
   type AppointmentManagerInput,
+  type BlisterListInput,
+  type BlisterMembersInput,
   type InventoryQueryInput,
+  type MedicineLookupInput,
   type OfficialSourceLinkerInput,
   type ScheduleAssistantInput,
   type StockModifierInput,
@@ -45,6 +49,26 @@ export interface McpInventoryItem {
   };
 }
 
+export interface McpBlisterSummary {
+  blisterId: string;
+  blisterName: string;
+  role: BlisterRole;
+  avatarKey: string | null;
+  memberCount: number;
+  medicinesCount: number;
+  treatmentsCount: number;
+  members?: McpBlisterMember[];
+}
+
+export interface McpBlisterMember {
+  userId: string;
+  role: BlisterRole;
+  fullName: string;
+  username: string;
+  avatarKey: string | null;
+  isCurrentUser: boolean;
+}
+
 export interface McpScheduleItem {
   blisterId: string;
   blisterName: string;
@@ -60,9 +84,23 @@ export interface McpAppointmentItem {
   id: string;
   blisterId: string;
   blisterName: string;
+  patientUserId: string;
   title: string;
+  location: string | null;
+  description: string | null;
   date: Date;
   treatmentId: string | null;
+  comments: McpAppointmentComment[];
+}
+
+export interface McpAppointmentComment {
+  id: string;
+  userId: string;
+  authorName: string;
+  authorAvatarKey: string | null;
+  text: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface McpOfficialSourceResult {
@@ -103,6 +141,30 @@ export type McpInventoryQueryTool = McpToolDefinition<InventoryQueryInput, {
   };
 }>;
 
+export type McpBlisterListTool = McpToolDefinition<BlisterListInput, {
+  items: McpBlisterSummary[];
+}>;
+
+export type McpBlisterMembersTool = McpToolDefinition<BlisterMembersInput, {
+  blister: {
+    blisterId: string;
+    blisterName: string;
+    role: BlisterRole;
+    memberCount: number;
+  };
+  members: McpBlisterMember[];
+}>;
+
+export type McpMedicineLookupTool = McpToolDefinition<MedicineLookupInput, {
+  items: McpInventoryItem[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}>;
+
 export type McpAdherenceLoggerTool = McpToolDefinition<AdherenceLoggerInput, {
   logId: string;
   blisterId: string;
@@ -128,6 +190,10 @@ export type McpAppointmentManagerTool = McpToolDefinition<AppointmentManagerInpu
     total: number;
     totalPages: number;
   };
+}>;
+
+export type McpAppointmentCommentManagerTool = McpToolDefinition<AppointmentCommentManagerInput, {
+  appointment: McpAppointmentItem;
 }>;
 
 export type McpOfficialSourceLinkerTool = McpToolDefinition<OfficialSourceLinkerInput, McpOfficialSourceResult>;

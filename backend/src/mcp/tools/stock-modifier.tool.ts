@@ -3,7 +3,8 @@ import { medicinesUpdate } from '../../modules/medicines/medicines.service';
 import { HTTP_STATUS_BAD_REQUEST } from '../../constants/http.constants';
 import { AppError } from '../../utils/app-error';
 import { type McpStockModifierTool } from '../types';
-import { assertMcpBlisterAccess, assertMcpWriterRole } from '../context';
+import { assertMcpWriterRole } from '../context';
+import { resolveMcpBlister } from '../blister-resolver';
 
 const getStockStatus = (stock: number, threshold: number): 'ok' | 'low' | 'out' => {
   if (stock === 0) {
@@ -20,14 +21,14 @@ const getStockStatus = (stock: number, threshold: number): 'ok' | 'low' | 'out' 
 export const stockModifierTool: McpStockModifierTool = {
   name: 'stock_modifier',
   description:
-    'Ajusta stock de un medicamento existente con modo set o delta y devuelve el estado final.',
+    'Ajusta stock de un medicamento existente con modo set o delta y devuelve el estado final. Acepta blisterId o blisterName para evitar modificaciones en otro botiquin.',
   run: async (context, input) => {
-    const blister = assertMcpBlisterAccess(context, input.blisterId);
+    const blister = resolveMcpBlister(context, input);
     assertMcpWriterRole(blister);
 
     const medicine = await MedicineModel.findOne({
       _id: input.medicineId,
-      blisterId: input.blisterId,
+      blisterId: blister.blisterId,
     });
 
     if (!medicine) {
@@ -49,7 +50,7 @@ export const stockModifierTool: McpStockModifierTool = {
       });
     }
 
-    const updated = await medicinesUpdate(input.blisterId, input.medicineId, blister.role, {
+    const updated = await medicinesUpdate(blister.blisterId, input.medicineId, blister.role, {
       stock: nextStock,
     });
 

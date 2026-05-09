@@ -2,20 +2,18 @@ import { treatmentsList } from '../../modules/treatments/treatments.service';
 import { medicinesList } from '../../modules/medicines/medicines.service';
 import { computeNextDose } from '../../utils/dose-schedule';
 import { type McpScheduleAssistantTool } from '../types';
-import { assertMcpBlisterAccess } from '../context';
+import { resolveMcpBlisterTargets } from '../blister-resolver';
 
 export const scheduleAssistantTool: McpScheduleAssistantTool = {
   name: 'schedule_assistant',
   description:
-    'Calcula proximas dosis por tratamiento activo, con posibilidad de filtrar por blister y rango temporal.',
+    'Calcula proximas dosis por tratamiento activo, con posibilidad de filtrar por blisterId o blisterName y rango temporal.',
   run: async (context, input) => {
     const now = new Date();
     const from = input.from ?? now;
     const to = input.to ?? new Date(from.getTime() + input.lookAheadHours * 60 * 60 * 1000);
 
-    const targetBlisters = input.blisterId
-      ? [assertMcpBlisterAccess(context, input.blisterId)]
-      : context.blisters;
+    const targetBlisters = resolveMcpBlisterTargets(context, input);
 
     const items = await Promise.all(
       targetBlisters.map(async (blister) => {

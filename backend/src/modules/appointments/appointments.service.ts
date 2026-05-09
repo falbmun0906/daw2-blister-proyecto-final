@@ -290,6 +290,17 @@ export const appointmentsList = async (
 };
 
 /**
+ * Gets one appointment in a blister, including comment author metadata.
+ */
+export const appointmentsGet = async (
+  blisterId: string,
+  appointmentId: string,
+): Promise<AppointmentView> => {
+  const appointment = await getAppointmentDocument(blisterId, appointmentId);
+  return toAppointmentViewWithAuthors(appointment);
+};
+
+/**
  * Creates an appointment in the target blister and optionally links it to a treatment in the same blister.
  */
 export const appointmentsCreate = async (

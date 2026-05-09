@@ -1,28 +1,37 @@
 import { appointmentsList } from '../../modules/appointments/appointments.service';
-import { type McpAppointmentManagerTool } from '../types';
-import { assertMcpBlisterAccess } from '../context';
+import { resolveMcpBlisterTargets } from '../blister-resolver';
+import { type McpAppointmentItem, type McpAppointmentManagerTool, type McpBlisterContext } from '../types';
+
+type AppointmentView = Awaited<ReturnType<typeof appointmentsList>>['appointments'][number];
+
+export const toMcpAppointmentItem = (
+  appointment: AppointmentView,
+  blister: McpBlisterContext,
+): McpAppointmentItem => ({
+  id: appointment.id,
+  blisterId: appointment.blisterId,
+  blisterName: blister.blisterName,
+  patientUserId: appointment.patientUserId,
+  title: appointment.title,
+  location: appointment.location,
+  description: appointment.description,
+  date: appointment.date,
+  treatmentId: appointment.treatmentId,
+  comments: appointment.comments,
+});
 
 export const appointmentManagerTool: McpAppointmentManagerTool = {
   name: 'appointment_manager',
   description:
-    'Recupera citas medicas de blisters accesibles por el usuario MCP con filtro por rango de fechas.',
+    'Recupera citas medicas de blisters accesibles por el usuario MCP con filtro por blisterId, blisterName y rango de fechas, incluyendo comentarios.',
   run: async (context, input) => {
-    const targetBlisters = input.blisterId
-      ? [assertMcpBlisterAccess(context, input.blisterId)]
-      : context.blisters;
+    const targetBlisters = resolveMcpBlisterTargets(context, input);
 
     const appointmentsByBlister = await Promise.all(
       targetBlisters.map(async (blister) => {
         const result = await appointmentsList(blister.blisterId, { page: 1, limit: 100 });
 
-        return result.appointments.map((appointment) => ({
-          id: appointment.id,
-          blisterId: appointment.blisterId,
-          blisterName: blister.blisterName,
-          title: appointment.title,
-          date: appointment.date,
-          treatmentId: appointment.treatmentId,
-        }));
+        return result.appointments.map((appointment) => toMcpAppointmentItem(appointment, blister));
       }),
     );
 

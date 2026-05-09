@@ -3,7 +3,7 @@ import { externalGetMedicineInfo } from '../../modules/external/external.service
 import { HTTP_STATUS_NOT_FOUND } from '../../constants/http.constants';
 import { AppError } from '../../utils/app-error';
 import { type McpOfficialSourceLinkerTool } from '../types';
-import { assertMcpBlisterAccess } from '../context';
+import { resolveMcpBlister } from '../blister-resolver';
 
 const resolveDocByTipo = (
   docs: Array<{ tipo?: number; url?: string }>,
@@ -23,9 +23,10 @@ const resolveDocByTipo = (
 export const officialSourceLinkerTool: McpOfficialSourceLinkerTool = {
   name: 'official_source_linker',
   description:
-    'Resuelve enlaces oficiales AEMPS/CIMA (prospecto y ficha tecnica) desde medicineId o nregist ya registrado.',
+    'Resuelve enlaces oficiales AEMPS/CIMA (prospecto y ficha tecnica) desde medicineId o nregist ya registrado, opcionalmente acotado por blisterId o blisterName.',
   run: async (context, input) => {
     const accessibleBlisterIds = new Set(context.blisters.map((entry) => entry.blisterId));
+    const targetBlister = input.blisterId || input.blisterName ? resolveMcpBlister(context, input) : null;
 
     let medicine = null as Awaited<ReturnType<typeof MedicineModel.findOne>> | null;
 
@@ -40,8 +41,12 @@ export const officialSourceLinkerTool: McpOfficialSourceLinkerTool = {
         });
       }
 
-      if (input.blisterId) {
-        assertMcpBlisterAccess(context, input.blisterId);
+      if (targetBlister && medicine.blisterId.toString() !== targetBlister.blisterId) {
+        throw new AppError({
+          code: 'MEDICINE_NOT_FOUND',
+          message: 'Medicine not found in the requested blister.',
+          statusCode: HTTP_STATUS_NOT_FOUND,
+        });
       }
 
       if (!accessibleBlisterIds.has(medicine.blisterId.toString())) {
@@ -54,6 +59,7 @@ export const officialSourceLinkerTool: McpOfficialSourceLinkerTool = {
     } else if (input.nregist) {
       const candidates = await MedicineModel.find({
         nregist: input.nregist,
+        ...(targetBlister ? { blisterId: targetBlister.blisterId } : {}),
       }).lean();
 
       medicine = candidates.find((candidate) => accessibleBlisterIds.has(candidate.blisterId.toString())) ?? null;

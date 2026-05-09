@@ -1,7 +1,7 @@
 import { type InventoryQueryInput } from '../../../../shared/schemas';
 import { medicinesList } from '../../modules/medicines/medicines.service';
 import { type McpAuthContext, type McpInventoryItem, type McpInventoryQueryTool } from '../types';
-import { assertMcpBlisterAccess } from '../context';
+import { resolveMcpBlisterTargets } from '../blister-resolver';
 
 const isExpired = (expDate: Date): boolean => expDate.getTime() < Date.now();
 
@@ -22,9 +22,6 @@ const normalizeText = (text?: string): string | null => {
 
   return normalized;
 };
-
-const mapBlisterContext = (context: McpAuthContext, blisterId: string) =>
-  context.blisters.find((entry) => entry.blisterId === blisterId) ?? null;
 
 const withFilters = (input: InventoryQueryInput, items: McpInventoryItem[]): McpInventoryItem[] => {
   const normalizedText = normalizeText(input.text);
@@ -61,11 +58,9 @@ const withFilters = (input: InventoryQueryInput, items: McpInventoryItem[]): Mcp
 export const inventoryQueryTool: McpInventoryQueryTool = {
   name: 'inventory_query',
   description:
-    'Consulta inventario de medicamentos visibles para el usuario MCP, incluyendo stock, umbral y caducidad.',
+    'Consulta inventario de medicamentos visibles para el usuario MCP, incluyendo stock, umbral y caducidad. Usa blisterId o blisterName cuando el usuario mencione un blister concreto.',
   run: async (context, input) => {
-    const targetBlisters = input.blisterId
-      ? [assertMcpBlisterAccess(context, input.blisterId)]
-      : context.blisters;
+    const targetBlisters = resolveMcpBlisterTargets(context, input);
 
     const blisterLists = await Promise.all(
       targetBlisters.map(async (blister) => {

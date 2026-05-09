@@ -3,8 +3,12 @@ import { z } from 'zod';
 
 import {
   adherenceLoggerInputSchema,
+  appointmentCommentManagerInputSchema,
   appointmentManagerInputSchema,
+  blisterListInputSchema,
+  blisterMembersInputSchema,
   inventoryQueryInputSchema,
+  medicineLookupInputSchema,
   officialSourceLinkerInputSchema,
   scheduleAssistantInputSchema,
   stockModifierInputSchema,
@@ -12,8 +16,12 @@ import {
 import { AppError } from '../utils/app-error';
 import {
   adherenceLoggerTool,
+  appointmentCommentManagerTool,
   appointmentManagerTool,
+  blisterListTool,
+  blisterMembersTool,
   inventoryQueryTool,
+  medicineLookupTool,
   officialSourceLinkerTool,
   scheduleAssistantTool,
   stockModifierTool,
@@ -77,11 +85,15 @@ export const createMcpServerForContext = (context: McpAuthContext): McpServer =>
     version: '1.0.0',
   });
 
+  registerTool(server, context, blisterListTool, blisterListInputSchema);
+  registerTool(server, context, blisterMembersTool, blisterMembersInputSchema);
   registerTool(server, context, inventoryQueryTool, inventoryQueryInputSchema);
+  registerTool(server, context, medicineLookupTool, medicineLookupInputSchema);
   registerTool(server, context, adherenceLoggerTool, adherenceLoggerInputSchema);
   registerTool(server, context, stockModifierTool, stockModifierInputSchema);
   registerTool(server, context, scheduleAssistantTool, scheduleAssistantInputSchema);
   registerTool(server, context, appointmentManagerTool, appointmentManagerInputSchema);
+  registerTool(server, context, appointmentCommentManagerTool, appointmentCommentManagerInputSchema);
   registerTool(server, context, officialSourceLinkerTool, officialSourceLinkerInputSchema);
 
   return server;
