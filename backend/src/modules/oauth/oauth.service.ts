@@ -112,6 +112,9 @@ const isAllowedRedirectUri = (redirectUri: string): boolean => {
   }
 };
 
+const isSupportedClientId = (clientId: string | undefined): boolean =>
+  clientId === OAUTH_CLIENT_ID || clientId === OAUTH_DEFAULT_CLIENT_ID;
+
 const normalizeAuthorizeInput = (input: AuthorizeQuery): AuthorizeInput => {
   const responseType = asString(input.response_type);
   const clientId = asString(input.client_id);
@@ -122,7 +125,7 @@ const normalizeAuthorizeInput = (input: AuthorizeQuery): AuthorizeInput => {
   const scope = asString(input.scope) ?? OAUTH_SCOPE;
 
   assertOAuthError(responseType === 'code', 'OAUTH_RESPONSE_TYPE_INVALID', 'Only response_type=code is supported.');
-  assertOAuthError(clientId === OAUTH_CLIENT_ID, 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
+  assertOAuthError(isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
   assertOAuthError(Boolean(redirectUri), 'OAUTH_REDIRECT_URI_MISSING', 'OAuth redirect_uri is required.');
   assertOAuthError(isAllowedRedirectUri(redirectUri!), 'OAUTH_REDIRECT_URI_INVALID', 'OAuth redirect_uri is not allowed.');
   assertOAuthError(Boolean(codeChallenge), 'OAUTH_PKCE_MISSING', 'OAuth code_challenge is required.');
@@ -250,7 +253,7 @@ export const exchangeAuthorizationCode = (input: TokenInput): OAuthTokenResult =
   const codeVerifier = asString(input.code_verifier);
 
   assertOAuthError(grantType === 'authorization_code', 'OAUTH_GRANT_INVALID', 'Only authorization_code grant is supported.');
-  assertOAuthError(clientId === OAUTH_CLIENT_ID, 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
+  assertOAuthError(isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
   assertOAuthError(Boolean(code), 'OAUTH_CODE_MISSING', 'OAuth authorization code is required.');
   assertOAuthError(Boolean(redirectUri), 'OAUTH_REDIRECT_URI_MISSING', 'OAuth redirect_uri is required.');
   assertOAuthError(Boolean(codeVerifier), 'OAUTH_PKCE_MISSING', 'OAuth code_verifier is required.');

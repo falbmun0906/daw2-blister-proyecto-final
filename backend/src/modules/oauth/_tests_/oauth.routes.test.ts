@@ -29,6 +29,16 @@ const createAuthorizePayload = () => ({
   scope: 'mcp',
 });
 
+const createDynamicAuthorizePayload = () => ({
+  response_type: 'code',
+  client_id: OAUTH_DEFAULT_CLIENT_ID,
+  redirect_uri: redirectUri,
+  state: 'state-456',
+  code_challenge: codeChallenge,
+  code_challenge_method: 'S256',
+  scope: 'mcp',
+});
+
 const registerUser = async (app: ReturnType<typeof createApp>) => {
   await request(app).post('/api/v1/auth/register').send({
     name: 'Ana Lopez',
@@ -214,6 +224,57 @@ describe('oauth.routes', () => {
 
     expect(mcpContext.userId).toBe(payload.sub);
     expect(mcpContext.blisters).toHaveLength(1);
+  });
+
+  it('accepts the generic dynamically registered client_id in authorize and token exchange', async () => {
+    await registerUser(app);
+
+    await request(app)
+      .post('/oauth/register')
+      .send({
+        client_name: 'ChatGPT',
+        redirect_uris: [redirectUri],
+        scope: 'mcp',
+      })
+      .expect(201);
+
+    const authorizeResponse = await request(app)
+      .post('/oauth/authorize')
+      .type('form')
+      .send({
+        ...createDynamicAuthorizePayload(),
+        identifier: 'ana@example.com',
+        password: 'Password1!',
+        consent: 'on',
+      });
+
+    expect(authorizeResponse.status).toBe(302);
+    const location = authorizeResponse.headers.location as string;
+    const callbackUrl = new URL(location);
+    const code = callbackUrl.searchParams.get('code');
+
+    expect(callbackUrl.origin + callbackUrl.pathname).toBe(redirectUri);
+    expect(callbackUrl.searchParams.get('state')).toBe('state-456');
+    expect(code).toBeTruthy();
+
+    const tokenResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        redirect_uri: redirectUri,
+        code,
+        code_verifier: codeVerifier,
+      });
+
+    expect(tokenResponse.status).toBe(200);
+    expect(tokenResponse.body.token_type).toBe('Bearer');
+
+    const payload = jwt.verify(tokenResponse.body.access_token, env.jwtSecret) as JwtMcpOAuthPayload;
+
+    expect(payload.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
+    expect(payload.scope).toBe('mcp');
   });
 
   it('rejects reused authorization codes', async () => {
