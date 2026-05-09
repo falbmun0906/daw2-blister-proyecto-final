@@ -8,7 +8,9 @@ import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.constants';
-import { type JwtMcpOAuthPayload } from '../../types/auth.types';
+import { UserModel } from '../../models/user.model';
+import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../types/auth.types';
+import { type UserMcpOAuthRefreshToken } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
 import { authLogin } from '../auth/auth.service';
 import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID, OAUTH_SCOPE } from './oauth.constants';
@@ -56,6 +58,7 @@ interface TokenInput {
   code?: unknown;
   redirect_uri?: unknown;
   code_verifier?: unknown;
+  refresh_token?: unknown;
 }
 
 interface RegisterClientInput {
@@ -70,7 +73,7 @@ interface OAuthClientRegistrationResult {
   client_id_issued_at: number;
   client_name?: string;
   redirect_uris: string[];
-  grant_types: ['authorization_code'];
+  grant_types: ['authorization_code', 'refresh_token'];
   response_types: ['code'];
   token_endpoint_auth_method: 'none';
   scope: string;
@@ -81,12 +84,15 @@ interface OAuthTokenResult {
   token_type: 'Bearer';
   expires_in: number;
   scope: string;
+  refresh_token: string;
 }
 
 const authorizationCodes = new Map<string, AuthorizationCodeRecord>();
 
 const asString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+
+const hashValue = (value: string): string => createHash('sha256').update(value).digest('hex');
 
 const assertOAuthError = (condition: boolean, code: string, message: string): void => {
   if (!condition) {
@@ -154,9 +160,23 @@ const buildMcpOAuthPayload = (userId: string, clientId: string): JwtMcpOAuthPayl
   scope: OAUTH_SCOPE,
 });
 
+const buildMcpOAuthRefreshPayload = (userId: string, clientId: string): JwtMcpOAuthRefreshPayload => ({
+  sub: userId,
+  type: 'mcp_oauth_refresh',
+  aud: 'mcp',
+  client_id: clientId,
+  scope: OAUTH_SCOPE,
+  jti: randomBytes(16).toString('hex'),
+});
+
 const signMcpAccessToken = (userId: string, clientId: string): string =>
   jwt.sign(buildMcpOAuthPayload(userId, clientId), env.jwtSecret, {
     expiresIn: env.jwtAccessExpiresIn as StringValue,
+  });
+
+const signMcpRefreshToken = (userId: string, clientId: string): string =>
+  jwt.sign(buildMcpOAuthRefreshPayload(userId, clientId), env.jwtSecret, {
+    expiresIn: env.jwtRefreshExpiresIn as StringValue,
   });
 
 const getTokenExpiresIn = (token: string): number => {
@@ -164,6 +184,12 @@ const getTokenExpiresIn = (token: string): number => {
   const expiresAt = decoded?.exp ? decoded.exp * 1000 : Date.now();
 
   return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+};
+
+const getTokenExpiresAt = (token: string): number => {
+  const decoded = jwt.decode(token) as { exp?: number } | null;
+
+  return decoded?.exp ? decoded.exp * 1000 : Date.now();
 };
 
 const pruneExpiredCodes = (): void => {
@@ -174,6 +200,78 @@ const pruneExpiredCodes = (): void => {
       authorizationCodes.delete(code);
     }
   }
+};
+
+const verifyMcpRefreshToken = (refreshToken: string): JwtMcpOAuthRefreshPayload => {
+  try {
+    const payload = jwt.verify(refreshToken, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
+
+    if (
+      payload.type !== 'mcp_oauth_refresh' ||
+      payload.aud !== 'mcp' ||
+      !payload.scope.split(/\s+/).includes(OAUTH_SCOPE) ||
+      !payload.jti
+    ) {
+      throw new AppError({
+        code: 'OAUTH_REFRESH_INVALID',
+        message: 'OAuth refresh token is invalid or expired.',
+        statusCode: HTTP_STATUS_UNAUTHORIZED,
+      });
+    }
+
+    return payload;
+  } catch {
+    throw new AppError({
+      code: 'OAUTH_REFRESH_INVALID',
+      message: 'OAuth refresh token is invalid or expired.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+};
+
+const pruneStoredRefreshTokens = async (userId: string): Promise<void> => {
+  await UserModel.updateOne(
+    { _id: userId },
+    {
+      $pull: {
+        mcpOAuthRefreshTokens: {
+          expiresAt: { $lte: new Date() },
+        },
+      },
+    },
+  );
+};
+
+const persistMcpRefreshToken = async (userId: string, clientId: string, refreshToken: string): Promise<void> => {
+  await pruneStoredRefreshTokens(userId);
+  await UserModel.updateOne(
+    { _id: userId },
+    {
+      $push: {
+        mcpOAuthRefreshTokens: {
+          tokenHash: hashValue(refreshToken),
+          clientId,
+          expiresAt: new Date(getTokenExpiresAt(refreshToken)),
+          createdAt: new Date(),
+        },
+      },
+    },
+  );
+};
+
+const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuthTokenResult> => {
+  const accessToken = signMcpAccessToken(userId, clientId);
+  const refreshToken = signMcpRefreshToken(userId, clientId);
+
+  await persistMcpRefreshToken(userId, clientId, refreshToken);
+
+  return {
+    access_token: accessToken,
+    token_type: 'Bearer',
+    expires_in: getTokenExpiresIn(accessToken),
+    scope: OAUTH_SCOPE,
+    refresh_token: refreshToken,
+  };
 };
 
 export const validateAuthorizeQuery = (input: AuthorizeQuery): AuthorizeInput =>
@@ -202,7 +300,7 @@ export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegi
     client_id_issued_at: Math.floor(Date.now() / 1000),
     client_name: clientName,
     redirect_uris: redirectUris,
-    grant_types: ['authorization_code'],
+    grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
     token_endpoint_auth_method: 'none',
     scope: OAUTH_SCOPE,
@@ -245,14 +343,12 @@ export const createAuthorizationCode = async (input: LoginConsentInput): Promise
   };
 };
 
-export const exchangeAuthorizationCode = (input: TokenInput): OAuthTokenResult => {
-  const grantType = asString(input.grant_type);
+const exchangeAuthorizationCode = async (input: TokenInput): Promise<OAuthTokenResult> => {
   const clientId = asString(input.client_id);
   const code = asString(input.code);
   const redirectUri = asString(input.redirect_uri);
   const codeVerifier = asString(input.code_verifier);
 
-  assertOAuthError(grantType === 'authorization_code', 'OAUTH_GRANT_INVALID', 'Only authorization_code grant is supported.');
   assertOAuthError(isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
   assertOAuthError(Boolean(code), 'OAUTH_CODE_MISSING', 'OAuth authorization code is required.');
   assertOAuthError(Boolean(redirectUri), 'OAUTH_REDIRECT_URI_MISSING', 'OAuth redirect_uri is required.');
@@ -276,14 +372,69 @@ export const exchangeAuthorizationCode = (input: TokenInput): OAuthTokenResult =
   assertOAuthError(record.redirectUri === redirectUri, 'OAUTH_REDIRECT_URI_INVALID', 'OAuth redirect_uri does not match this code.');
   assertOAuthError(buildPkceChallenge(codeVerifier!) === record.codeChallenge, 'OAUTH_PKCE_INVALID', 'OAuth code_verifier does not match this code.');
 
-  const accessToken = signMcpAccessToken(record.userId, record.clientId);
+  return issueOAuthTokens(record.userId, record.clientId);
+};
 
-  return {
-    access_token: accessToken,
-    token_type: 'Bearer',
-    expires_in: getTokenExpiresIn(accessToken),
-    scope: OAUTH_SCOPE,
-  };
+const exchangeRefreshToken = async (input: TokenInput): Promise<OAuthTokenResult> => {
+  const clientId = asString(input.client_id);
+  const refreshToken = asString(input.refresh_token);
+
+  assertOAuthError(isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
+  assertOAuthError(Boolean(refreshToken), 'OAUTH_REFRESH_MISSING', 'OAuth refresh_token is required.');
+
+  const payload = verifyMcpRefreshToken(refreshToken!);
+  const tokenHash = hashValue(refreshToken!);
+  const user = await UserModel.findOne({
+    _id: payload.sub,
+    deletedAt: null,
+    'mcpOAuthRefreshTokens.tokenHash': tokenHash,
+  }).select('+mcpOAuthRefreshTokens');
+  const record = user?.mcpOAuthRefreshTokens?.find((entry: UserMcpOAuthRefreshToken) => entry.tokenHash === tokenHash) ?? null;
+
+  if (
+    !record ||
+    record.expiresAt.getTime() <= Date.now() ||
+    record.clientId !== payload.client_id
+  ) {
+    throw new AppError({
+      code: 'OAUTH_REFRESH_INVALID',
+      message: 'OAuth refresh token is invalid or expired.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+
+  await UserModel.updateOne(
+    { _id: payload.sub },
+    {
+      $pull: {
+        mcpOAuthRefreshTokens: {
+          tokenHash,
+        },
+      },
+    },
+  );
+
+  assertOAuthError(payload.client_id === clientId, 'OAUTH_CLIENT_INVALID', 'OAuth client_id does not match this refresh token.');
+
+  return issueOAuthTokens(payload.sub, record.clientId);
+};
+
+export const exchangeOAuthToken = (input: TokenInput): Promise<OAuthTokenResult> => {
+  const grantType = asString(input.grant_type);
+
+  if (grantType === 'authorization_code') {
+    return exchangeAuthorizationCode(input);
+  }
+
+  if (grantType === 'refresh_token') {
+    return exchangeRefreshToken(input);
+  }
+
+  throw new AppError({
+    code: 'OAUTH_GRANT_INVALID',
+    message: 'Only authorization_code and refresh_token grants are supported.',
+    statusCode: HTTP_STATUS_BAD_REQUEST,
+  });
 };
 
 export const clearOAuthAuthorizationCodes = (): void => {

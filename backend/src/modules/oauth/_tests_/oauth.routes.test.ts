@@ -6,7 +6,7 @@ import request from 'supertest';
 import { createApp } from '../../../app';
 import { env } from '../../../config/env';
 import { resolveMcpContextFromToken } from '../../../mcp/context';
-import { type JwtMcpOAuthPayload } from '../../../types/auth.types';
+import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../../types/auth.types';
 import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID } from '../oauth.constants';
 import { clearOAuthAuthorizationCodes } from '../oauth.service';
 import {
@@ -82,6 +82,7 @@ describe('oauth.routes', () => {
     expect(response.body.registration_endpoint).toBe('http://blister.test/oauth/register');
     expect(response.body.response_types_supported).toContain('code');
     expect(response.body.grant_types_supported).toContain('authorization_code');
+    expect(response.body.grant_types_supported).toContain('refresh_token');
     expect(response.body.code_challenge_methods_supported).toContain('S256');
     expect(response.body.token_endpoint_auth_methods_supported).toContain('none');
   });
@@ -98,6 +99,7 @@ describe('oauth.routes', () => {
     expect(response.body.registration_endpoint).toBe('http://blister.test/oauth/register');
     expect(response.body.response_types_supported).toContain('code');
     expect(response.body.grant_types_supported).toContain('authorization_code');
+    expect(response.body.grant_types_supported).toContain('refresh_token');
     expect(response.body.code_challenge_methods_supported).toContain('S256');
     expect(response.body.scopes_supported).toContain('mcp');
   });
@@ -148,6 +150,7 @@ describe('oauth.routes', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
+    expect(response.body.grant_types).toContain('refresh_token');
     expect(response.body.redirect_uris).toContain(dynamicRedirectUri);
     expect(response.body.token_endpoint_auth_method).toBe('none');
   });
@@ -228,13 +231,21 @@ describe('oauth.routes', () => {
     expect(tokenResponse.body.token_type).toBe('Bearer');
     expect(tokenResponse.body.scope).toBe('mcp');
     expect(tokenResponse.body.expires_in).toBeGreaterThan(0);
+    expect(tokenResponse.body.refresh_token).toBeTruthy();
 
     const payload = jwt.verify(tokenResponse.body.access_token, env.jwtSecret) as JwtMcpOAuthPayload;
+    const refreshPayload = jwt.verify(tokenResponse.body.refresh_token, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
 
     expect(payload.type).toBe('mcp_oauth');
     expect(payload.aud).toBe('mcp');
     expect(payload.client_id).toBe(OAUTH_CLIENT_ID);
     expect(payload.scope).toBe('mcp');
+    expect(refreshPayload.type).toBe('mcp_oauth_refresh');
+    expect(refreshPayload.aud).toBe('mcp');
+    expect(refreshPayload.sub).toBe(payload.sub);
+    expect(refreshPayload.client_id).toBe(OAUTH_CLIENT_ID);
+    expect(refreshPayload.scope).toBe('mcp');
+    expect(refreshPayload.jti).toBeTruthy();
 
     const mcpContext = await resolveMcpContextFromToken(tokenResponse.body.access_token);
 
@@ -291,6 +302,144 @@ describe('oauth.routes', () => {
 
     expect(payload.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(payload.scope).toBe('mcp');
+  });
+
+  it('rotates MCP OAuth refresh tokens and returns a fresh access token pair', async () => {
+    await registerUser(app);
+
+    const authorizeResponse = await request(app)
+      .post('/oauth/authorize')
+      .type('form')
+      .send({
+        ...createDynamicAuthorizePayload(),
+        identifier: 'ana@example.com',
+        password: 'Password1!',
+        consent: 'on',
+      });
+    const code = new URL(authorizeResponse.headers.location as string).searchParams.get('code');
+    const tokenResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        redirect_uri: redirectUri,
+        code,
+        code_verifier: codeVerifier,
+      })
+      .expect(200);
+    const originalRefreshToken = tokenResponse.body.refresh_token as string;
+
+    const refreshResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        refresh_token: originalRefreshToken,
+      });
+
+    expect(refreshResponse.status).toBe(200);
+    expect(refreshResponse.body.token_type).toBe('Bearer');
+    expect(refreshResponse.body.expires_in).toBeGreaterThan(0);
+    expect(refreshResponse.body.scope).toBe('mcp');
+    expect(refreshResponse.body.refresh_token).toBeTruthy();
+    expect(refreshResponse.body.refresh_token).not.toBe(originalRefreshToken);
+
+    const accessPayload = jwt.verify(refreshResponse.body.access_token, env.jwtSecret) as JwtMcpOAuthPayload;
+    const refreshPayload = jwt.verify(refreshResponse.body.refresh_token, env.jwtSecret) as JwtMcpOAuthRefreshPayload;
+
+    expect(accessPayload.type).toBe('mcp_oauth');
+    expect(accessPayload.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
+    expect(refreshPayload.type).toBe('mcp_oauth_refresh');
+    expect(refreshPayload.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
+    expect(refreshPayload.sub).toBe(accessPayload.sub);
+  });
+
+  it('rejects invalid and expired MCP OAuth refresh tokens', async () => {
+    const expiredRefreshToken = jwt.sign(
+      {
+        sub: '000000000000000000000000',
+        type: 'mcp_oauth_refresh',
+        aud: 'mcp',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        scope: 'mcp',
+        jti: 'expired-refresh-token',
+      },
+      env.jwtSecret,
+      { expiresIn: -1 },
+    );
+
+    const invalidResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        refresh_token: 'not-a-refresh-token',
+      });
+    const expiredResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        refresh_token: expiredRefreshToken,
+      });
+
+    expect(invalidResponse.status).toBe(401);
+    expect(invalidResponse.body.error.code).toBe('OAUTH_REFRESH_INVALID');
+    expect(expiredResponse.status).toBe(401);
+    expect(expiredResponse.body.error.code).toBe('OAUTH_REFRESH_INVALID');
+  });
+
+  it('rejects reused MCP OAuth refresh tokens after rotation', async () => {
+    await registerUser(app);
+
+    const authorizeResponse = await request(app)
+      .post('/oauth/authorize')
+      .type('form')
+      .send({
+        ...createDynamicAuthorizePayload(),
+        identifier: 'ana@example.com',
+        password: 'Password1!',
+        consent: 'on',
+      });
+    const code = new URL(authorizeResponse.headers.location as string).searchParams.get('code');
+    const tokenResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        redirect_uri: redirectUri,
+        code,
+        code_verifier: codeVerifier,
+      })
+      .expect(200);
+    const originalRefreshToken = tokenResponse.body.refresh_token as string;
+
+    await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        refresh_token: originalRefreshToken,
+      })
+      .expect(200);
+
+    const reusedResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        refresh_token: originalRefreshToken,
+      });
+
+    expect(reusedResponse.status).toBe(401);
+    expect(reusedResponse.body.error.code).toBe('OAUTH_REFRESH_INVALID');
   });
 
   it('rejects reused authorization codes', async () => {

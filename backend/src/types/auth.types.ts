@@ -21,6 +21,15 @@ export interface JwtMcpOAuthPayload {
   scope: string;
 }
 
+export interface JwtMcpOAuthRefreshPayload {
+  sub: string;
+  type: 'mcp_oauth_refresh';
+  aud: 'mcp';
+  client_id: string;
+  scope: string;
+  jti: string;
+}
+
 export interface JwtRefreshPayload {
   sub: string;
   type: 'refresh';

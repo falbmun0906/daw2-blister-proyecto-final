@@ -4,7 +4,7 @@ import { HTTP_STATUS_OK } from '../../constants/http.constants';
 import { OAUTH_SCOPE } from './oauth.constants';
 import {
   createAuthorizationCode,
-  exchangeAuthorizationCode,
+  exchangeOAuthToken,
   registerOAuthClient,
   validateAuthorizeQuery,
 } from './oauth.service';
@@ -80,7 +80,7 @@ export const oauthMetadataController = (request: Request, response: Response): v
     token_endpoint: `${issuer}/oauth/token`,
     registration_endpoint: `${issuer}/oauth/register`,
     response_types_supported: ['code'],
-    grant_types_supported: ['authorization_code'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
     token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
     code_challenge_methods_supported: ['S256'],
     scopes_supported: [OAUTH_SCOPE],
@@ -116,8 +116,8 @@ export const oauthAuthorizeSubmitController = async (request: Request, response:
   }
 };
 
-export const oauthTokenController = (request: Request, response: Response): void => {
-  const result = exchangeAuthorizationCode(request.body as Record<string, unknown>);
+export const oauthTokenController = async (request: Request, response: Response): Promise<void> => {
+  const result = await exchangeOAuthToken(request.body as Record<string, unknown>);
   response.status(HTTP_STATUS_OK).json(result);
 };
 

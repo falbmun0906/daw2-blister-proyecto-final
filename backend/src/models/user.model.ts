@@ -5,7 +5,7 @@ import {
   FONT_SIZE_OPTIONS,
   THEME_OPTIONS,
 } from '../constants/domain.constants';
-import { type UserDocument } from '../types/user.types';
+import { type UserDocument, type UserMcpOAuthRefreshToken } from '../types/user.types';
 
 const userSettingsSchema = new Schema<UserDocument['settings']>(
   {
@@ -51,6 +51,33 @@ const userSettingsSchema = new Schema<UserDocument['settings']>(
         default: '3h',
       },
       customAppointmentReminderHours: { type: Number, required: true, min: 1, max: 168, default: 3 },
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+const mcpOAuthRefreshTokenSchema = new Schema<UserMcpOAuthRefreshToken>(
+  {
+    tokenHash: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    clientId: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
+    createdAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
     },
   },
   {
@@ -111,6 +138,11 @@ const userSchema = new Schema<UserDocument>({
   mcpTokenLastUsedAt: {
     type: Date,
     default: null,
+    select: false,
+  },
+  mcpOAuthRefreshTokens: {
+    type: [mcpOAuthRefreshTokenSchema],
+    default: [],
     select: false,
   },
   refreshTokenHash: {

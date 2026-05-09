@@ -27,6 +27,13 @@ export interface UserSettings {
   };
 }
 
+export interface UserMcpOAuthRefreshToken {
+  tokenHash: string;
+  clientId: string;
+  expiresAt: Date;
+  createdAt: Date;
+}
+
 export interface UserDocument {
   _id: Types.ObjectId;
   name: string;
@@ -37,6 +44,7 @@ export interface UserDocument {
   mcpTokenCreatedAt?: Date | null;
   mcpTokenExpiresAt?: Date | null;
   mcpTokenLastUsedAt?: Date | null;
+  mcpOAuthRefreshTokens?: UserMcpOAuthRefreshToken[];
   refreshTokenHash?: string | null;
   refreshTokenExpiresAt?: Date | null;
   settings: UserSettings;
