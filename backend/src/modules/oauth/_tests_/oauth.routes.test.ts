@@ -86,6 +86,22 @@ describe('oauth.routes', () => {
     expect(response.body.token_endpoint_auth_methods_supported).toContain('none');
   });
 
+  it('exposes minimal OpenID configuration metadata', async () => {
+    const response = await request(app)
+      .get('/.well-known/openid-configuration')
+      .set('Host', 'blister.test');
+
+    expect(response.status).toBe(200);
+    expect(response.body.issuer).toBe('http://blister.test');
+    expect(response.body.authorization_endpoint).toBe('http://blister.test/oauth/authorize');
+    expect(response.body.token_endpoint).toBe('http://blister.test/oauth/token');
+    expect(response.body.registration_endpoint).toBe('http://blister.test/oauth/register');
+    expect(response.body.response_types_supported).toContain('code');
+    expect(response.body.grant_types_supported).toContain('authorization_code');
+    expect(response.body.code_challenge_methods_supported).toContain('S256');
+    expect(response.body.scopes_supported).toContain('mcp');
+  });
+
   it('exposes OAuth protected resource metadata for the MCP endpoint', async () => {
     const response = await request(app)
       .get('/.well-known/oauth-protected-resource')

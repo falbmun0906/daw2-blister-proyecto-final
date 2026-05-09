@@ -7,6 +7,7 @@ import { TbCalendar, TbClock, TbPill, TbStethoscope, TbToggleRight, TbUserHeart 
 import {
   createTreatmentSchema,
   type CreateTreatmentInput,
+  type Treatment,
 } from '../../../../shared/schemas/treatment.schema';
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
@@ -80,7 +81,7 @@ function toFormValues(
     startDate: start.date,
     endDate: treatment.endDate ? treatment.endDate.slice(0, 10) : '',
     active: treatment.active,
-    medicines: treatment.medicines.map((entry) => ({
+    medicines: treatment.medicines.map((entry: Treatment['medicines'][number]) => ({
       medicineId: entry.medicineId,
       amount: entry.amount,
       firstDoseTime: toLocalParts(new Date(entry.firstDoseAt)).time,

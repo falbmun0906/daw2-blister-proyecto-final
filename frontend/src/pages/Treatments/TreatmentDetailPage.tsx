@@ -29,9 +29,12 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Appointment } from '../../types/appointment.types';
-import type { Medicine } from '../../types/medicine.types';
+import type { ExternalMedicineInfo, Medicine } from '../../types/medicine.types';
 import type { Treatment } from '../../types/treatment.types';
 import './TreatmentDetailPage.scss';
+
+type TreatmentMedicineEntry = Treatment['medicines'][number];
+type CimaPhoto = ExternalMedicineInfo['fotos'][number];
 
 const dateFormatter = new Intl.DateTimeFormat('es-ES', {
   day: '2-digit',
@@ -256,7 +259,7 @@ function TreatmentDetailPage() {
   useEffect(() => {
     if (!treatment) return;
     const timeoutId = window.setTimeout(() => {
-      setNotes(Object.fromEntries(treatment.medicines.map((entry) => [entry.medicineId, entry.note ?? ''])));
+      setNotes(Object.fromEntries(treatment.medicines.map((entry: TreatmentMedicineEntry) => [entry.medicineId, entry.note ?? ''])));
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [treatment]);
@@ -266,12 +269,12 @@ function TreatmentDetailPage() {
     let cancelled = false;
     const loadImages = async () => {
       const entries = await Promise.all(
-        treatment.medicines.map(async (entry) => {
+        treatment.medicines.map(async (entry: TreatmentMedicineEntry) => {
           const medicine = medicineById.get(entry.medicineId);
           if (!medicine?.nregist) return [entry.medicineId, null] as const;
           try {
             const info = await getCimaDetail(medicine.nregist);
-            return [entry.medicineId, info.fotos.find((foto) => foto.url)?.url ?? null] as const;
+            return [entry.medicineId, info.fotos.find((foto: CimaPhoto) => foto.url)?.url ?? null] as const;
           } catch {
             return [entry.medicineId, null] as const;
           }
@@ -293,13 +296,13 @@ function TreatmentDetailPage() {
     async (medicineId: string) => {
       if (!treatment || !canMutate) return;
       const nextNote = notes[medicineId] ?? '';
-      const entry = treatment.medicines.find((item) => item.medicineId === medicineId);
+      const entry = treatment.medicines.find((item: TreatmentMedicineEntry) => item.medicineId === medicineId);
       if (!entry || (entry.note ?? '') === nextNote) return;
 
       setSavingNoteId(medicineId);
       try {
         await updateTreatment(treatment.id, {
-          medicines: treatment.medicines.map((item) => ({
+          medicines: treatment.medicines.map((item: TreatmentMedicineEntry) => ({
             medicineId: item.medicineId,
             amount: item.amount,
             firstDoseAt: new Date(item.firstDoseAt),
@@ -474,7 +477,7 @@ function TreatmentDetailPage() {
           <Skeleton height="7rem" />
         ) : (
           <div className="c-treatment-detail__medicine-list">
-            {treatment.medicines.map((entry) => (
+            {treatment.medicines.map((entry: TreatmentMedicineEntry) => (
               <TreatmentMedicineCard
                 key={entry.medicineId}
                 treatment={treatment}

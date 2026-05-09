@@ -31,7 +31,12 @@ export interface AppConfig {
   nodeEnv: 'development' | 'test' | 'production';
 }
 
-const OAUTH_CORS_PATHS = ['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource', '/oauth'];
+const OAUTH_CORS_PATHS = [
+  '/.well-known/oauth-authorization-server',
+  '/.well-known/oauth-protected-resource',
+  '/.well-known/openid-configuration',
+  '/oauth',
+];
 
 const isOAuthCorsPath = (path: string): boolean =>
   OAUTH_CORS_PATHS.some((oauthPath) => path === oauthPath || path.startsWith(`${oauthPath}/`));
@@ -104,6 +109,7 @@ export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: Ap
     });
   });
   app.get('/.well-known/oauth-authorization-server', oauthMetadataController);
+  app.get('/.well-known/openid-configuration', oauthMetadataController);
   app.get('/.well-known/oauth-protected-resource', oauthProtectedResourceMetadataController);
   app.use('/oauth', oauthRouter);
   registerSwagger(app);

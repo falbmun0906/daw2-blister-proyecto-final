@@ -60,7 +60,7 @@ export default function NotificationSettingsPage() {
   if (!user) return null;
 
   const setFlag = (key: keyof NotificationSettings, value: boolean | number | string): void => {
-    setSettings((current) => ({ ...current, [key]: value }));
+    setSettings((current: NotificationSettings) => ({ ...current, [key]: value }));
   };
 
   const handleSave = async (): Promise<void> => {
@@ -70,7 +70,7 @@ export default function NotificationSettingsPage() {
       if (settings.pushEnabled) {
         const result = await subscribeToServerPush();
         if (!result.enabled) {
-          setSettings((current) => ({ ...current, pushEnabled: false }));
+          setSettings((current: NotificationSettings) => ({ ...current, pushEnabled: false }));
           throw new Error(result.reason ?? 'No se ha podido activar Web Push.');
         }
       }
