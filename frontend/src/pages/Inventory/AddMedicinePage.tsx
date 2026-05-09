@@ -22,7 +22,7 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import type { ExternalSearchItem } from '../../types/medicine.types';
+import type { ExternalMedicineInfo, ExternalSearchItem } from '../../types/medicine.types';
 import './AddMedicinePage.scss';
 
 const formSchema = z.object({
@@ -89,7 +89,7 @@ function AddMedicinePage() {
             labtitular: info.labtitular,
             formaOficial: info.formaOficial,
             dosisOficial: info.dosisOficial,
-            fotoUrl: info.fotos.find((foto) => foto.url)?.url ?? null,
+            fotoUrl: info.fotos.find((foto: ExternalMedicineInfo['fotos'][number]) => foto.url)?.url ?? null,
           });
         })
         .catch((err) => {

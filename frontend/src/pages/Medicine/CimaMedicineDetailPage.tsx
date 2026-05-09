@@ -38,6 +38,12 @@ interface BlisterUsage {
   members: BlisterMemberDetail[];
 }
 
+type CimaDoc = ExternalMedicineInfo['docs'][number];
+type CimaPhoto = ExternalMedicineInfo['fotos'][number];
+type CimaExcipient = ExternalMedicineInfo['excipientes'][number];
+type CimaAtc = ExternalMedicineInfo['atcs'][number];
+type CimaAdministrationRoute = ExternalMedicineInfo['viasAdministracion'][number];
+
 function formatAuth(iso: string | null): string {
   if (!iso) return '—';
   const date = new Date(iso);
@@ -137,9 +143,9 @@ function CimaMedicineDetailPage() {
     };
   }, [nregist, blisters]);
 
-  const fichaTecnica = info?.docs.find((d) => d.tipo === CIMA_DOC_TYPE_FICHA_TECNICA && d.url);
-  const prospecto = info?.docs.find((d) => d.tipo === CIMA_DOC_TYPE_PROSPECTO && d.url);
-  const fotos = info?.fotos.filter((f) => f.url) ?? [];
+  const fichaTecnica = info?.docs.find((d: CimaDoc) => d.tipo === CIMA_DOC_TYPE_FICHA_TECNICA && d.url);
+  const prospecto = info?.docs.find((d: CimaDoc) => d.tipo === CIMA_DOC_TYPE_PROSPECTO && d.url);
+  const fotos = info?.fotos.filter((f: CimaPhoto) => f.url) ?? [];
 
   const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
 
@@ -256,7 +262,7 @@ function CimaMedicineDetailPage() {
               {info.viasAdministracion.length > 0 ? (
                 <div className="c-cima-detail__fact">
                   <dt>Vías de administración</dt>
-                  <dd>{info.viasAdministracion.map((v) => v.nombre).join(', ')}</dd>
+                  <dd>{info.viasAdministracion.map((v: CimaAdministrationRoute) => v.nombre).join(', ')}</dd>
                 </div>
               ) : null}
               {info.dosisOficial ? (
@@ -286,7 +292,7 @@ function CimaMedicineDetailPage() {
                   <dt>Excipientes</dt>
                   <dd>
                     <ul className="c-cima-detail__bullets">
-                      {info.excipientes.map((e, i) => (
+                      {info.excipientes.map((e: CimaExcipient, i: number) => (
                         <li key={`${e.nombre}-${i}`}>{e.nombre}</li>
                       ))}
                     </ul>
@@ -315,7 +321,7 @@ function CimaMedicineDetailPage() {
                   <dt>Códigos ATC</dt>
                   <dd>
                     <ul className="c-cima-detail__bullets">
-                      {info.atcs.map((a, i) => (
+                      {info.atcs.map((a: CimaAtc, i: number) => (
                         <li key={`${a.codigo ?? 'atc'}-${i}`}>
                           {a.codigo ? <strong>{a.codigo}</strong> : null}
                           {a.codigo && a.nombre ? ' — ' : null}
@@ -356,7 +362,7 @@ function CimaMedicineDetailPage() {
                 Imágenes
               </h2>
               <div className="c-cima-detail__photos">
-                {fotos.map((f, i) => (
+                {fotos.map((f: CimaPhoto, i: number) => (
                   <a
                     key={`${f.url}-${i}`}
                     href={f.url}

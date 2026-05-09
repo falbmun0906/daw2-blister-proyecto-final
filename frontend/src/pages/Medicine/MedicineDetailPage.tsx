@@ -91,7 +91,7 @@ function MedicineDetailPage() {
   const role = routeRole ?? activeRole;
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';
   const { medicine, cima, error, isLoading } = state;
-  const medicineImage = cima?.fotos.find((foto) => foto.url)?.url ?? null;
+  const medicineImage = cima?.fotos.find((foto: ExternalMedicineInfo['fotos'][number]) => foto.url)?.url ?? null;
 
   const handleDelete = async () => {
     if (!medicine || !blisterId) return;
