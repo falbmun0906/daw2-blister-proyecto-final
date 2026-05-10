@@ -49,9 +49,37 @@ const dateTimeFormatter = new Intl.DateTimeFormat('es-ES', {
   minute: '2-digit',
 });
 
+const timeFormatter = new Intl.DateTimeFormat('es-ES', {
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+const quantityFormatter = new Intl.NumberFormat('es-ES', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
 function getMedicineName(medicine: Medicine | null): string {
   if (!medicine) return 'Medicamento';
   return medicine.alias?.trim() || medicine.nombre;
+}
+
+function formatQuantity(amount: number): string {
+  return `${quantityFormatter.format(amount)} ${amount === 1 ? 'unidad' : 'unidades'}`;
+}
+
+function formatMedicineSchedule(entry: TreatmentMedicineEntry): string {
+  const firstDoseTime = timeFormatter.format(new Date(entry.firstDoseAt));
+
+  if (!entry.isRecurring) {
+    return `toma única a las ${firstDoseTime}`;
+  }
+
+  if (entry.scheduleType === 'daily_times' && entry.dailyDoseTimes.length > 0) {
+    return `a las ${entry.dailyDoseTimes.join(', ')} cada día`;
+  }
+
+  return `cada ${entry.frequencyHours ?? 0} h desde las ${firstDoseTime}`;
 }
 
 function getProgress(treatment: Treatment): { percent: number; label: string; range: string } {
@@ -110,7 +138,7 @@ function TreatmentMedicineCard({
         <header className="c-treatment-detail__medicine-header">
           <h3 className="c-treatment-detail__medicine-name">{name}</h3>
           <span className="c-treatment-detail__medicine-dose">
-            {entry.amount} unidad(es) · {entry.isRecurring ? `cada ${entry.frequencyHours} h` : 'toma única'}
+            {formatQuantity(entry.amount)} · {formatMedicineSchedule(entry)}
           </span>
         </header>
 
@@ -306,7 +334,9 @@ function TreatmentDetailPage() {
             medicineId: item.medicineId,
             amount: item.amount,
             firstDoseAt: new Date(item.firstDoseAt),
+            scheduleType: item.scheduleType,
             frequencyHours: item.frequencyHours,
+            dailyDoseTimes: item.dailyDoseTimes,
             isRecurring: item.isRecurring,
             note: item.medicineId === medicineId ? nextNote || undefined : item.note ?? undefined,
           })),

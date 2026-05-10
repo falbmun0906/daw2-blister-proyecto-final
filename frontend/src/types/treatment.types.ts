@@ -6,11 +6,4 @@ import type {
 
 export type { CreateTreatmentInput, Treatment, UpdateTreatmentInput };
 
-export interface TreatmentMedicineEntry {
-  medicineId: string;
-  amount: number;
-  firstDoseAt: string;
-  frequencyHours: number;
-  isRecurring: boolean;
-  note?: string | null;
-}
+export type TreatmentMedicineEntry = Treatment['medicines'][number];

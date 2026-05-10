@@ -4,7 +4,8 @@ import {
   collectionPaginationQuerySchema,
   dateSchema,
   nonEmptyTrimmedString,
-  nonNegativeIntegerSchema,
+  nonNegativeQuantitySchema,
+  nonNegativeQuantityValueSchema,
   objectIdSchema,
 } from './common.schema';
 import {
@@ -35,9 +36,9 @@ export const externalSearchQuerySchema = z.object({
 export const createMedicineSchema = z.object({
   nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
   alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
-  stock: nonNegativeIntegerSchema('Stock'),
+  stock: nonNegativeQuantitySchema('Stock'),
   stockUnit: z.enum(stockUnits),
-  threshold: nonNegativeIntegerSchema('Threshold').default(5),
+  threshold: nonNegativeQuantitySchema('Threshold').default(5),
   expDate: dateSchema('expDate').refine((value) => value.getTime() > Date.now(), {
     message: 'expDate must be in the future.',
   }),
@@ -46,8 +47,8 @@ export const createMedicineSchema = z.object({
 export const updateMedicineSchema = z
   .object({
     alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
-    stock: nonNegativeIntegerSchema('Stock').optional(),
-    threshold: nonNegativeIntegerSchema('Threshold').optional(),
+    stock: nonNegativeQuantitySchema('Stock').optional(),
+    threshold: nonNegativeQuantitySchema('Threshold').optional(),
     expDate: dateSchema('expDate')
       .refine((value) => value.getTime() > Date.now(), {
         message: 'expDate must be in the future.',
@@ -79,9 +80,9 @@ export const medicineSchema = z.object({
   formaOficial: z.string(),
   dosisOficial: z.string(),
   iconType: z.enum(iconTypes),
-  stock: z.number().int().min(0),
+  stock: nonNegativeQuantityValueSchema,
   stockUnit: z.enum(stockUnits),
-  threshold: z.number().int().min(0),
+  threshold: nonNegativeQuantityValueSchema,
   expDate: z.string(), // ISO
   cimaStatus: medicineCimaStatusSchema,
 });

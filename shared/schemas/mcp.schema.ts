@@ -1,10 +1,12 @@
 import { z } from 'zod';
 
 import {
-  nonNegativeIntegerSchema,
+  nonNegativeQuantityValueSchema,
+  nonNegativeQuantitySchema,
   nonEmptyTrimmedString,
   objectIdSchema,
   positiveIntegerSchema,
+  positiveQuantitySchema,
 } from './common.schema';
 import { stockUnits } from './schema.constants';
 
@@ -96,9 +98,9 @@ export const medicineAddInputSchema = z.object({
   ...blisterLocatorShape,
   nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
   alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
-  stock: nonNegativeIntegerSchema('Stock'),
+  stock: nonNegativeQuantitySchema('Stock'),
   stockUnit: z.enum(stockUnits),
-  threshold: nonNegativeIntegerSchema('Threshold').default(5),
+  threshold: nonNegativeQuantitySchema('Threshold').default(5),
   expDate: mcpInputDateSchema('expDate').refine((value) => value.getTime() > Date.now(), {
     message: 'expDate must be in the future.',
   }),
@@ -108,7 +110,7 @@ export const adherenceLoggerInputSchema = z.object({
   ...blisterLocatorShape,
   medicineId: objectIdSchema,
   treatmentId: objectIdSchema,
-  amount: positiveIntegerSchema('Amount').optional(),
+  amount: positiveQuantitySchema('Amount').optional(),
   forced: z.boolean().default(false),
   timestamp: mcpInputDateSchema('timestamp').optional(),
   notes: optionalSearchTextSchema('Notes', 500),
@@ -128,7 +130,11 @@ export const stockModifierInputSchema = z.object({
   ...blisterLocatorShape,
   medicineId: objectIdSchema,
   mode: z.enum(['set', 'delta']),
-  value: z.coerce.number().int(),
+  value: z.coerce.number().refine((amount) => Number.isFinite(amount), {
+    message: 'value must be a valid number.',
+  }).refine((amount) => Number.isInteger(amount * 2), {
+    message: 'value must use increments of 0.5.',
+  }),
 }).superRefine((value, context) => {
   validateRequiredBlisterLocator(value, context);
 
@@ -220,8 +226,8 @@ export const mcpTokenHeaderSchema = z.object({
 });
 
 export const stockModifierResultSchema = z.object({
-  stockBefore: nonNegativeIntegerSchema('stockBefore'),
-  stockAfter: nonNegativeIntegerSchema('stockAfter'),
+  stockBefore: nonNegativeQuantityValueSchema,
+  stockAfter: nonNegativeQuantityValueSchema,
   stockStatus: z.enum(['ok', 'low', 'out']),
 });
 

@@ -30,11 +30,20 @@ export const scheduleAssistantTool: McpScheduleAssistantTool = {
           .filter((treatment) => treatment.active)
           .flatMap((treatment) =>
             treatment.medicines
-              .filter((entry) => entry.frequencyHours > 0)
               .map((entry) => {
-                const nextDoseAt = computeNextDose(entry.firstDoseAt, entry.frequencyHours, from);
+                const nextDoseAt = computeNextDose({
+                  startDate: entry.firstDoseAt,
+                  endDate: treatment.endDate,
+                  active: treatment.active,
+                }, {
+                  firstDoseAt: entry.firstDoseAt,
+                  scheduleType: entry.scheduleType,
+                  frequencyHours: entry.frequencyHours,
+                  dailyDoseTimes: entry.dailyDoseTimes,
+                  isRecurring: entry.isRecurring,
+                }, from);
 
-                if (nextDoseAt < from || nextDoseAt > to) {
+                if (!nextDoseAt || nextDoseAt < from || nextDoseAt > to) {
                   return null;
                 }
 

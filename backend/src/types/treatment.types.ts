@@ -4,7 +4,9 @@ export interface TreatmentMedicineEntry {
   medicineId: Types.ObjectId;
   amount: number;
   firstDoseAt: Date;
-  frequencyHours: number;
+  scheduleType: 'interval' | 'daily_times';
+  frequencyHours?: number | null;
+  dailyDoseTimes: string[];
   isRecurring: boolean;
   note?: string | null;
 }

@@ -1,4 +1,5 @@
 .c-treatment-row {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -89,22 +90,101 @@
   }
 
   &__actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-2);
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
 
     .c-btn {
-      width: 100%;
+      width: auto;
     }
   }
 
   &__primary-link {
-    grid-column: 1 / -1;
+    flex: 1 1 auto;
     text-decoration: none;
+
+    &, &:visited, &:hover, &:focus-visible {
+      color: var(--color-text-on-primary);
+      text-decoration: none;
+    }
   }
 
-  &__edit-link {
+  &__menu {
+    position: relative;
+    display: inline-flex;
+    justify-content: flex-end;
+  }
+
+  &__menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-touch-min);
+    min-width: var(--space-touch-min);
+    height: var(--space-touch-min);
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  &__menu-popover {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    z-index: var(--z-dropdown);
+    display: flex;
+    min-width: 10rem;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-md);
+  }
+
+  &__menu-popover button,
+  &__menu-popover a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--space-touch-min);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    background-color: transparent;
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
     text-decoration: none;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-tint);
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
   }
 }

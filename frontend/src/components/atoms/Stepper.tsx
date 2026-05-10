@@ -56,14 +56,14 @@ export const Stepper = forwardRef<HTMLInputElement, StepperProps>(function Stepp
           id={inputId}
           name={name}
           type="number"
-          inputMode="numeric"
+          inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
           className="c-stepper__input"
           value={Number.isFinite(value) ? value : 0}
           min={min}
           max={max}
           step={step}
           onChange={(e) => {
-            const parsed = Number.parseInt(e.target.value, 10);
+            const parsed = Number.parseFloat(e.target.value);
             onChange(clamp(Number.isNaN(parsed) ? min : parsed));
           }}
           aria-invalid={error ? true : undefined}

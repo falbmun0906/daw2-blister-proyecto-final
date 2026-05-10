@@ -12,16 +12,26 @@ const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number
     amount: {
       type: Number,
       required: true,
-      min: 1,
+      min: 0.5,
     },
     firstDoseAt: {
       type: Date,
       required: true,
     },
+    scheduleType: {
+      type: String,
+      enum: ['interval', 'daily_times'],
+      required: true,
+      default: 'interval',
+    },
     frequencyHours: {
       type: Number,
-      required: true,
       min: 1,
+      default: null,
+    },
+    dailyDoseTimes: {
+      type: [String],
+      default: [],
     },
     isRecurring: {
       type: Boolean,
@@ -38,6 +48,32 @@ const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number
     _id: false,
   },
 );
+
+treatmentMedicineSchema.path('dailyDoseTimes').validate(function validateDailyDoseTimes(this: TreatmentDocument['medicines'][number], value: string[] | undefined) {
+  const times = value ?? [];
+
+  if (!times.every((time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time))) {
+    return false;
+  }
+
+  if (new Set(times).size !== times.length) {
+    return false;
+  }
+
+  if (this.isRecurring && this.scheduleType === 'daily_times') {
+    return times.length > 0;
+  }
+
+  return true;
+}, 'dailyDoseTimes must contain unique HH:mm values and at least one time for recurring daily schedules.');
+
+treatmentMedicineSchema.path('frequencyHours').validate(function validateFrequencyHours(this: TreatmentDocument['medicines'][number], value: number | null | undefined) {
+  if (this.isRecurring && this.scheduleType === 'interval') {
+    return typeof value === 'number' && value > 0;
+  }
+
+  return value == null;
+}, 'frequencyHours is required for recurring interval schedules and must be empty for other schedules.');
 
 const treatmentSchema = new Schema<TreatmentDocument>({
   blisterId: {

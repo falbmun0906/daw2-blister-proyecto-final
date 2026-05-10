@@ -39,6 +39,27 @@ describe('TreatmentModel', () => {
     expect(treatment.active).toBe(true);
   });
 
+  it('accepts recurring schedules with exact daily times', () => {
+    const treatment = new TreatmentModel({
+      blisterId: new Types.ObjectId(),
+      patientUserId: new Types.ObjectId(),
+      title: 'Tratamiento de mantenimiento',
+      medicines: [
+        {
+          medicineId: new Types.ObjectId(),
+          amount: 0.5,
+          firstDoseAt: new Date('2026-04-24T08:00:00.000Z'),
+          scheduleType: 'daily_times',
+          dailyDoseTimes: ['08:00', '20:00'],
+          isRecurring: true,
+        },
+      ],
+      startDate: new Date('2026-04-24T00:00:00.000Z'),
+    });
+
+    expect(treatment.validateSync()).toBeUndefined();
+  });
+
   it('rejects end dates earlier than the start date', () => {
     const treatment = new TreatmentModel({
       blisterId: new Types.ObjectId(),

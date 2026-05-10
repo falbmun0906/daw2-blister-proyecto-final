@@ -3,9 +3,10 @@ import { z } from 'zod';
 import {
   collectionPaginationQuerySchema,
   dateSchema,
+  nonNegativeQuantityValueSchema,
   objectIdSchema,
   optionalTrimmedString,
-  positiveIntegerSchema,
+  positiveQuantitySchema,
 } from './common.schema';
 
 export const blisterLogParamsSchema = z.object({
@@ -26,7 +27,7 @@ export const createAdherenceLogSchema = z
     force: z.boolean().optional(),
     timestamp: dateSchema('timestamp').optional(),
     notes: optionalTrimmedString(500),
-    amount: positiveIntegerSchema('Amount').optional(),
+    amount: positiveQuantitySchema('Amount').optional(),
   })
   .superRefine((value, context) => {
     if (value.force === true && !value.notes) {
@@ -48,7 +49,7 @@ export const adherenceLogSchema = z.object({
   medicineId: objectIdSchema,
   treatmentId: objectIdSchema,
   userId: objectIdSchema,
-  amount: z.number().int().min(0),
+  amount: nonNegativeQuantityValueSchema,
   timestamp: z.string(),
   isForced: z.boolean(),
   notes: z.string().nullable(),

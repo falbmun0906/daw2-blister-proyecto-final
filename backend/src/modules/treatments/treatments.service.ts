@@ -22,7 +22,9 @@ interface TreatmentMedicineView {
   medicineId: string;
   amount: number;
   firstDoseAt: Date;
-  frequencyHours: number;
+  scheduleType: 'interval' | 'daily_times';
+  frequencyHours: number | null;
+  dailyDoseTimes: string[];
   isRecurring: boolean;
   note: string | null;
 }
@@ -51,6 +53,17 @@ interface TreatmentsListResult {
 
 const WRITER_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
 
+const toTreatmentMedicineDocument = (entry: CreateTreatmentInput['medicines'][number]) => ({
+  medicineId: new Types.ObjectId(entry.medicineId),
+  amount: entry.amount,
+  firstDoseAt: entry.firstDoseAt,
+  scheduleType: entry.scheduleType,
+  frequencyHours: entry.frequencyHours ?? null,
+  dailyDoseTimes: entry.dailyDoseTimes,
+  isRecurring: entry.isRecurring,
+  note: entry.note ?? null,
+});
+
 const toTreatmentView = (treatment: Awaited<ReturnType<typeof TreatmentModel.findOne>>): TreatmentView => ({
   id: treatment!._id.toString(),
   blisterId: treatment!.blisterId.toString(),
@@ -61,7 +74,9 @@ const toTreatmentView = (treatment: Awaited<ReturnType<typeof TreatmentModel.fin
     medicineId: entry.medicineId.toString(),
     amount: entry.amount,
     firstDoseAt: entry.firstDoseAt,
-    frequencyHours: entry.frequencyHours,
+    scheduleType: entry.scheduleType ?? 'interval',
+    frequencyHours: entry.frequencyHours ?? null,
+    dailyDoseTimes: entry.dailyDoseTimes ?? [],
     isRecurring: entry.isRecurring,
     note: entry.note ?? null,
   })),
@@ -202,14 +217,7 @@ export const treatmentsCreate = async (
     patientUserId: new Types.ObjectId(input.patientUserId),
     title: input.title,
     description: input.description ?? null,
-    medicines: input.medicines.map((entry) => ({
-      medicineId: new Types.ObjectId(entry.medicineId),
-      amount: entry.amount,
-      firstDoseAt: entry.firstDoseAt,
-      frequencyHours: entry.frequencyHours,
-      isRecurring: entry.isRecurring,
-      note: entry.note ?? null,
-    })),
+    medicines: input.medicines.map((entry) => toTreatmentMedicineDocument(entry)),
     startDate: input.startDate,
     endDate: input.endDate ?? null,
     active: input.active ?? true,
@@ -230,6 +238,7 @@ export const treatmentsUpdate = async (
   ensureWriterRole(blisterRole);
 
   const treatment = await getTreatmentDocument(blisterId, treatmentId);
+  const hasEndDate = Object.prototype.hasOwnProperty.call(input, 'endDate');
 
   if (input.patientUserId !== undefined) {
     await ensurePatientIsBlisterMember(blisterId, input.patientUserId);
@@ -238,18 +247,11 @@ export const treatmentsUpdate = async (
 
   if (input.medicines) {
     await ensureMedicinesBelongToBlister(blisterId, input.medicines);
-    treatment.medicines = input.medicines.map((entry) => ({
-      medicineId: new Types.ObjectId(entry.medicineId),
-      amount: entry.amount,
-      firstDoseAt: entry.firstDoseAt,
-      frequencyHours: entry.frequencyHours,
-      isRecurring: entry.isRecurring,
-      note: entry.note ?? null,
-    }));
+    treatment.medicines = input.medicines.map((entry) => toTreatmentMedicineDocument(entry));
   }
 
   const nextStartDate = input.startDate ?? treatment.startDate;
-  const nextEndDate = input.endDate ?? treatment.endDate ?? null;
+  const nextEndDate = hasEndDate ? input.endDate ?? null : treatment.endDate ?? null;
   ensureValidDateRange(nextStartDate, nextEndDate);
 
   if (input.title !== undefined) {
@@ -264,8 +266,8 @@ export const treatmentsUpdate = async (
     treatment.startDate = input.startDate;
   }
 
-  if (input.endDate !== undefined) {
-    treatment.endDate = input.endDate;
+  if (hasEndDate) {
+    treatment.endDate = input.endDate ?? null;
   }
 
   if (input.active !== undefined) {

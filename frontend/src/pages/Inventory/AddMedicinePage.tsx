@@ -27,9 +27,15 @@ import './AddMedicinePage.scss';
 
 const formSchema = z.object({
   alias: z.string().trim().max(100).optional(),
-  stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
+  stock: z.coerce.number().min(0, 'El stock no puede ser negativo.').refine(
+    (value) => Number.isInteger(value * 2),
+    'El stock debe ir en incrementos de 0,5.',
+  ),
   stockUnit: z.enum(stockUnits),
-  threshold: z.coerce.number().int().min(0, 'El umbral no puede ser negativo.'),
+  threshold: z.coerce.number().min(0, 'El umbral no puede ser negativo.').refine(
+    (value) => Number.isInteger(value * 2),
+    'El umbral debe ir en incrementos de 0,5.',
+  ),
   expDate: z.string().min(1, 'La fecha de caducidad es obligatoria.'),
 });
 type FormValues = z.infer<typeof formSchema>;
@@ -203,6 +209,7 @@ function AddMedicinePage() {
                   label="Stock inicial"
                   value={Number(field.value) || 0}
                   onChange={field.onChange}
+                  step={0.5}
                   min={0}
                   max={9999}
                   unit={stockUnit}
@@ -237,6 +244,7 @@ function AddMedicinePage() {
                   label="Umbral de aviso"
                   value={Number(field.value) || 0}
                   onChange={field.onChange}
+                  step={0.5}
                   min={0}
                   max={9999}
                   unit={stockUnit}

@@ -7,6 +7,9 @@ import {
   objectIdSchema,
   optionalTrimmedString,
   positiveIntegerSchema,
+  positiveQuantitySchema,
+  positiveQuantityValueSchema,
+  timeOfDaySchema,
 } from './common.schema';
 
 export const blisterTreatmentParamsSchema = z.object({
@@ -20,14 +23,52 @@ export const treatmentIdParamsSchema = z.object({
 
 export const treatmentsListQuerySchema = collectionPaginationQuerySchema;
 
-export const treatmentMedicineSchema = z.object({
-  medicineId: objectIdSchema,
-  amount: positiveIntegerSchema('Amount'),
-  firstDoseAt: dateSchema('firstDoseAt'),
-  frequencyHours: positiveIntegerSchema('Frequency in hours'),
-  isRecurring: z.boolean(),
-  note: optionalTrimmedString(300),
-});
+export const treatmentScheduleTypeSchema = z.enum(['interval', 'daily_times']);
+
+const dailyDoseTimesSchema = z.array(timeOfDaySchema).max(12, 'A medicine can include at most 12 exact daily times.');
+
+export const treatmentMedicineSchema = z
+  .object({
+    medicineId: objectIdSchema,
+    amount: positiveQuantitySchema('Amount'),
+    firstDoseAt: dateSchema('firstDoseAt'),
+    scheduleType: treatmentScheduleTypeSchema.default('interval'),
+    frequencyHours: positiveIntegerSchema('Frequency in hours').nullable().optional(),
+    dailyDoseTimes: dailyDoseTimesSchema.default([]),
+    isRecurring: z.boolean(),
+    note: optionalTrimmedString(300),
+  })
+  .superRefine((value, context) => {
+    const uniqueDailyTimes = new Set(value.dailyDoseTimes);
+
+    if (uniqueDailyTimes.size !== value.dailyDoseTimes.length) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['dailyDoseTimes'],
+        message: 'Exact daily times must be unique.',
+      });
+    }
+
+    if (!value.isRecurring) {
+      return;
+    }
+
+    if (value.scheduleType === 'interval' && value.frequencyHours == null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['frequencyHours'],
+        message: 'frequencyHours is required for recurring interval schedules.',
+      });
+    }
+
+    if (value.scheduleType === 'daily_times' && value.dailyDoseTimes.length === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['dailyDoseTimes'],
+        message: 'At least one exact daily time is required for recurring daily schedules.',
+      });
+    }
+  });
 
 const treatmentFields = {
   patientUserId: objectIdSchema,
@@ -40,6 +81,8 @@ const treatmentFields = {
   endDate: dateSchema('endDate').optional(),
   active: z.boolean().optional(),
 };
+
+const clearableEndDateSchema = z.union([dateSchema('endDate'), z.null()]).optional();
 
 const treatmentBaseSchema = z
   .object(treatmentFields)
@@ -62,7 +105,7 @@ export const updateTreatmentSchema = z
     description: treatmentFields.description,
     medicines: treatmentFields.medicines.optional(),
     startDate: treatmentFields.startDate.optional(),
-    endDate: treatmentFields.endDate,
+    endDate: clearableEndDateSchema,
     active: treatmentFields.active,
   })
   .superRefine((value, context) => {
@@ -97,9 +140,11 @@ export const treatmentSchema = z.object({
   medicines: z.array(
     z.object({
       medicineId: objectIdSchema,
-      amount: z.number().int().positive(),
+      amount: positiveQuantityValueSchema,
       firstDoseAt: z.string(),
-      frequencyHours: z.number().int().positive(),
+      scheduleType: treatmentScheduleTypeSchema,
+      frequencyHours: z.number().int().positive().nullable(),
+      dailyDoseTimes: z.array(timeOfDaySchema),
       isRecurring: z.boolean(),
       note: z.string().nullable(),
     }),

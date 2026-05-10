@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { objectIdSchema } from '../../../shared/schemas/common.schema';
+import {
+  objectIdSchema,
+  positiveQuantityValueSchema,
+} from '../../../shared/schemas/common.schema';
 import { apiClient, normalizeApiResponse } from './api.client';
 
 const callerRoleSchema = z.enum(['OWNER', 'CAREGIVER', 'OBSERVER']);
@@ -17,7 +20,7 @@ export const upcomingDoseSchema = z.object({
   treatmentTitle: z.string(),
   medicineId: objectIdSchema,
   medicineName: z.string(),
-  amount: z.number().int().positive(),
+  amount: positiveQuantityValueSchema,
   callerRole: callerRoleSchema,
 });
 

@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { AppointmentModel } from '../../../models/appointment.model';
 import { BlisterModel } from '../../../models/blister.model';
 import { MedicineModel } from '../../../models/medicine.model';
+import { TreatmentModel } from '../../../models/treatment.model';
 import { UserModel } from '../../../models/user.model';
 import {
   clearTestDatabase,
@@ -66,6 +67,16 @@ describe('treatments.service', () => {
     return { user, blister, medicine };
   };
 
+  const createIntervalMedicineEntry = (medicineId: string, firstDoseAt: string, frequencyHours: number) => ({
+    medicineId,
+    amount: 1,
+    firstDoseAt: new Date(firstDoseAt),
+    scheduleType: 'interval' as const,
+    frequencyHours,
+    dailyDoseTimes: [],
+    isRecurring: true,
+  });
+
   it('lists treatments with pagination metadata', async () => {
     const { user, blister, medicine } = await createBlisterWithMedicine();
 
@@ -73,13 +84,7 @@ describe('treatments.service', () => {
       title: 'Tratamiento A',
       patientUserId: user._id.toString(),
       medicines: [
-        {
-          medicineId: medicine._id.toString(),
-          amount: 1,
-          firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
-          frequencyHours: 8,
-          isRecurring: true,
-        },
+        createIntervalMedicineEntry(medicine._id.toString(), '2030-10-02T08:00:00.000Z', 8),
       ],
       startDate: new Date('2030-10-02T00:00:00.000Z'),
     });
@@ -87,13 +92,7 @@ describe('treatments.service', () => {
       title: 'Tratamiento B',
       patientUserId: user._id.toString(),
       medicines: [
-        {
-          medicineId: medicine._id.toString(),
-          amount: 1,
-          firstDoseAt: new Date('2030-10-03T08:00:00.000Z'),
-          frequencyHours: 12,
-          isRecurring: true,
-        },
+        createIntervalMedicineEntry(medicine._id.toString(), '2030-10-03T08:00:00.000Z', 12),
       ],
       startDate: new Date('2030-10-03T00:00:00.000Z'),
     });
@@ -116,13 +115,7 @@ describe('treatments.service', () => {
       title: 'Hipertension',
       patientUserId: user._id.toString(),
       medicines: [
-        {
-          medicineId: medicine._id.toString(),
-          amount: 1,
-          firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
-          frequencyHours: 8,
-          isRecurring: true,
-        },
+        createIntervalMedicineEntry(medicine._id.toString(), '2030-10-02T08:00:00.000Z', 8),
       ],
       startDate: new Date('2030-10-02T00:00:00.000Z'),
     });
@@ -142,6 +135,62 @@ describe('treatments.service', () => {
     expect(updated.active).toBe(false);
   });
 
+  it('supports half doses and exact daily schedules', async () => {
+    const { user, blister, medicine } = await createBlisterWithMedicine('OWNER');
+
+    const created = await treatmentsCreate(blister._id.toString(), 'OWNER', {
+      title: 'Mantenimiento',
+      patientUserId: user._id.toString(),
+      medicines: [
+        {
+          medicineId: medicine._id.toString(),
+          amount: 0.5,
+          firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes: ['08:00', '20:30'],
+          isRecurring: true,
+        },
+      ],
+      startDate: new Date('2030-10-02T00:00:00.000Z'),
+    });
+
+    expect(created.medicines[0]).toMatchObject({
+      amount: 0.5,
+      scheduleType: 'daily_times',
+      frequencyHours: null,
+      dailyDoseTimes: ['08:00', '20:30'],
+    });
+  });
+
+  it('clears the end date when the patch explicitly sends null', async () => {
+    const { user, blister, medicine } = await createBlisterWithMedicine('CAREGIVER');
+
+    const created = await treatmentsCreate(blister._id.toString(), 'CAREGIVER', {
+      title: 'Tratamiento temporal',
+      patientUserId: user._id.toString(),
+      medicines: [
+        createIntervalMedicineEntry(medicine._id.toString(), '2030-10-02T08:00:00.000Z', 8),
+      ],
+      startDate: new Date('2030-10-02T00:00:00.000Z'),
+      endDate: new Date('2030-10-08T00:00:00.000Z'),
+    });
+
+    const updated = await treatmentsUpdate(
+      blister._id.toString(),
+      created.id,
+      'CAREGIVER',
+      {
+        endDate: null,
+      },
+    );
+
+    const storedTreatment = await TreatmentModel.findById(created.id);
+
+    expect(updated.endDate).toBeNull();
+    expect(storedTreatment?.endDate).toBeNull();
+  });
+
   it('rejects medicines that do not belong to the blister', async () => {
     const { user, blister } = await createBlisterWithMedicine();
     const foreignMedicineId = new Types.ObjectId().toString();
@@ -151,13 +200,7 @@ describe('treatments.service', () => {
         title: 'Invalido',
         patientUserId: user._id.toString(),
         medicines: [
-          {
-            medicineId: foreignMedicineId,
-            amount: 1,
-            firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
-            frequencyHours: 8,
-            isRecurring: true,
-          },
+          createIntervalMedicineEntry(foreignMedicineId, '2030-10-02T08:00:00.000Z', 8),
         ],
         startDate: new Date('2030-10-02T00:00:00.000Z'),
       }),
@@ -174,13 +217,7 @@ describe('treatments.service', () => {
         title: 'No permitido',
         patientUserId: user._id.toString(),
         medicines: [
-          {
-            medicineId: medicine._id.toString(),
-            amount: 1,
-            firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
-            frequencyHours: 8,
-            isRecurring: true,
-          },
+          createIntervalMedicineEntry(medicine._id.toString(), '2030-10-02T08:00:00.000Z', 8),
         ],
         startDate: new Date('2030-10-02T00:00:00.000Z'),
       }),
@@ -195,13 +232,7 @@ describe('treatments.service', () => {
       title: 'Temporal',
       patientUserId: user._id.toString(),
       medicines: [
-        {
-          medicineId: medicine._id.toString(),
-          amount: 1,
-          firstDoseAt: new Date('2030-10-02T08:00:00.000Z'),
-          frequencyHours: 8,
-          isRecurring: true,
-        },
+        createIntervalMedicineEntry(medicine._id.toString(), '2030-10-02T08:00:00.000Z', 8),
       ],
       startDate: new Date('2030-10-02T00:00:00.000Z'),
     });

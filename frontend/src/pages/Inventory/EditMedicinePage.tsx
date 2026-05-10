@@ -25,8 +25,14 @@ import './AddMedicinePage.scss';
 
 const formSchema = z.object({
   alias: z.string().trim().max(100).optional(),
-  stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
-  threshold: z.coerce.number().int().min(0, 'El umbral no puede ser negativo.'),
+  stock: z.coerce.number().min(0, 'El stock no puede ser negativo.').refine(
+    (value) => Number.isInteger(value * 2),
+    'El stock debe ir en incrementos de 0,5.',
+  ),
+  threshold: z.coerce.number().min(0, 'El umbral no puede ser negativo.').refine(
+    (value) => Number.isInteger(value * 2),
+    'El umbral debe ir en incrementos de 0,5.',
+  ),
   expDate: z.string().optional(),
 });
 type FormValues = z.infer<typeof formSchema>;
@@ -189,6 +195,7 @@ function EditMedicinePage() {
                   label="Stock"
                   value={Number(field.value) || 0}
                   onChange={field.onChange}
+                  step={0.5}
                   error={fieldState.error?.message}
                 />
               )}
@@ -201,6 +208,7 @@ function EditMedicinePage() {
                   label="Umbral de aviso"
                   value={Number(field.value) || 0}
                   onChange={field.onChange}
+                  step={0.5}
                   error={fieldState.error?.message}
                 />
               )}

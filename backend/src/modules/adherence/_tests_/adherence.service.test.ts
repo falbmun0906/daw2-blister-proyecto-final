@@ -129,6 +129,26 @@ describe('adherence.service', () => {
     expect(storedMedicine?.stock).toBe(8);
   });
 
+  it('supports half-dose adherence logs and fractional stock', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('CAREGIVER', 10.5);
+
+    const result = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'CAREGIVER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        amount: 0.5,
+      },
+    );
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+
+    expect(result.amount).toBe(0.5);
+    expect(storedMedicine?.stock).toBe(10);
+  });
+
   it('creates stock-low notifications for owner and caregiver when stock reaches threshold', async () => {
     const owner = await createUser(`o${Math.random().toString(16).slice(2, 8)}`);
     const caregiver = await createUser(`cg${Math.random().toString(16).slice(2, 8)}`);

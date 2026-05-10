@@ -169,19 +169,13 @@ export const meUpcomingDoses = async (
         endDate: (treatment.endDate as Date | null | undefined) ?? null,
         active: Boolean(treatment.active),
       };
-      const singleDoseInRange =
-        source.active &&
-        source.startDate >= query.from &&
-        source.startDate <= query.to &&
-        (!source.endDate || source.startDate <= source.endDate);
-      const occurrences = entry.isRecurring === false
-        ? (singleDoseInRange ? [source.startDate] : [])
-        : computeDosesInRange(
-            source,
-            entry.frequencyHours,
-            query.from,
-            query.to,
-          );
+      const occurrences = computeDosesInRange(source, {
+        firstDoseAt: entry.firstDoseAt as Date,
+        scheduleType: (entry.scheduleType as 'interval' | 'daily_times' | undefined) ?? 'interval',
+        frequencyHours: (entry.frequencyHours as number | null | undefined) ?? null,
+        dailyDoseTimes: (entry.dailyDoseTimes as string[] | undefined) ?? [],
+        isRecurring: Boolean(entry.isRecurring),
+      }, query.from, query.to);
 
       for (const doseAt of occurrences) {
         const doseKey = [

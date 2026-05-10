@@ -23,11 +23,16 @@ describe('treatment, appointment and adherence shared schemas', () => {
   it('rejects treatment end dates earlier than start dates', () => {
     const result = createTreatmentSchema.safeParse({
       title: 'Tratamiento hipertension',
+      patientUserId: '507f1f77bcf86cd799439015',
       medicines: [
         {
           medicineId: '507f1f77bcf86cd799439011',
-          amount: 1,
-          frequency: 8,
+          amount: 0.5,
+          firstDoseAt: '2030-04-25T08:00:00.000Z',
+          scheduleType: 'interval',
+          frequencyHours: 8,
+          dailyDoseTimes: [],
+          isRecurring: true,
         },
       ],
       startDate: '2030-04-25T10:00:00.000Z',
@@ -126,6 +131,39 @@ describe('treatment, appointment and adherence shared schemas', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('accepts exact daily treatment schedules and half-dose adherence amounts', () => {
+    const treatmentResult = createTreatmentSchema.safeParse({
+      patientUserId: '507f1f77bcf86cd799439015',
+      title: 'Tratamiento exacto',
+      medicines: [
+        {
+          medicineId: '507f1f77bcf86cd799439011',
+          amount: 0.5,
+          firstDoseAt: '2030-04-25T08:00:00.000Z',
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes: ['08:00', '20:00'],
+          isRecurring: true,
+        },
+      ],
+      startDate: '2030-04-25T00:00:00.000Z',
+    });
+    const adherenceResult = createAdherenceLogSchema.safeParse({
+      medicineId: '507f1f77bcf86cd799439011',
+      treatmentId: '507f1f77bcf86cd799439012',
+      amount: 0.5,
+    });
+
+    expect(treatmentResult.success).toBe(true);
+    expect(adherenceResult.success).toBe(true);
+  });
+
+  it('allows clearing treatment end dates in patch payloads', () => {
+    const result = updateTreatmentSchema.safeParse({ endDate: null });
+
+    expect(result.success).toBe(true);
   });
 
   it('parses MCP tool date inputs from ISO strings without exposing Date in the input schema', () => {

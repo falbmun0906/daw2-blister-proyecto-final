@@ -1,5 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import {
+  useFieldArray,
+  useForm,
+  useWatch,
+  type Control,
+  type FieldErrors,
+  type UseFormRegister,
+  type UseFormSetValue,
+} from 'react-hook-form';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
 import { TbCalendar, TbClock, TbPill, TbStethoscope, TbToggleRight, TbUserHeart } from 'react-icons/tb';
@@ -8,6 +16,8 @@ import {
   createTreatmentSchema,
   type CreateTreatmentInput,
   type Treatment,
+  updateTreatmentSchema,
+  type UpdateTreatmentInput,
 } from '../../../../shared/schemas/treatment.schema';
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
@@ -32,7 +42,27 @@ interface FormValues {
   startDate: string;
   endDate: string;
   active: boolean;
-  medicines: { medicineId: string; amount: number; firstDoseTime: string; frequencyHours: number; isRecurring: boolean; note: string }[];
+  medicines: Array<{
+    medicineId: string;
+    amount: number;
+    firstDoseTime: string;
+    frequencyHours: number;
+    scheduleType: 'interval' | 'daily_times';
+    dailyDoseTimes: Array<{ time: string }>;
+    isRecurring: boolean;
+    note: string;
+  }>;
+}
+
+interface TreatmentMedicineFieldsProps {
+  index: number;
+  medicines: ReturnType<typeof useMedicines>['medicines'];
+  fieldCount: number;
+  register: UseFormRegister<FormValues>;
+  control: Control<FormValues>;
+  setValue: UseFormSetValue<FormValues>;
+  errors: FieldErrors<FormValues>;
+  onRemove: (index: number) => void;
 }
 
 function toLocalParts(value: Date): { date: string; time: string } {
@@ -53,9 +83,257 @@ const createTreatmentMedicine = (firstDoseTime = '08:00'): FormValues['medicines
   amount: 1,
   firstDoseTime,
   frequencyHours: 8,
+  scheduleType: 'interval',
+  dailyDoseTimes: [{ time: firstDoseTime }],
   isRecurring: true,
   note: '',
 });
+
+function normalizeDailyDoseTimes(entry: FormValues['medicines'][number]): string[] {
+  return entry.dailyDoseTimes
+    .map((item) => item.time.trim())
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function buildTreatmentMedicinePayload(
+  entry: FormValues['medicines'][number],
+  startDate: string,
+) {
+  const exactDailyTimes = normalizeDailyDoseTimes(entry);
+  const firstDoseTime = entry.isRecurring && entry.scheduleType === 'daily_times'
+    ? (exactDailyTimes[0] || entry.firstDoseTime || '08:00')
+    : entry.firstDoseTime || exactDailyTimes[0] || '08:00';
+
+  return {
+    medicineId: entry.medicineId,
+    amount: entry.amount,
+    firstDoseAt: `${startDate}T${firstDoseTime}`,
+    scheduleType: entry.isRecurring ? entry.scheduleType : 'interval',
+    frequencyHours: entry.isRecurring && entry.scheduleType === 'interval' ? entry.frequencyHours : null,
+    dailyDoseTimes: entry.isRecurring && entry.scheduleType === 'daily_times' ? exactDailyTimes : [],
+    isRecurring: entry.isRecurring,
+    note: entry.note || undefined,
+  };
+}
+
+function buildCreatePayload(values: FormValues): CreateTreatmentInput {
+  return createTreatmentSchema.parse({
+    patientUserId: values.patientUserId,
+    title: values.title,
+    description: values.description || undefined,
+    startDate: `${values.startDate}T00:00`,
+    endDate: values.endDate ? `${values.endDate}T23:59` : undefined,
+    active: values.active,
+    medicines: values.medicines.map((entry) => buildTreatmentMedicinePayload(entry, values.startDate)),
+  });
+}
+
+function buildUpdatePayload(values: FormValues): UpdateTreatmentInput {
+  return updateTreatmentSchema.parse({
+    patientUserId: values.patientUserId,
+    title: values.title,
+    description: values.description || undefined,
+    startDate: `${values.startDate}T00:00`,
+    endDate: values.endDate ? `${values.endDate}T23:59` : null,
+    active: values.active,
+    medicines: values.medicines.map((entry) => buildTreatmentMedicinePayload(entry, values.startDate)),
+  });
+}
+
+function getMedicineSectionError(errors: FieldErrors<FormValues>): string | null {
+  const rootMessage = (errors.medicines as { message?: string } | undefined)?.message;
+  if (typeof rootMessage === 'string') {
+    return rootMessage;
+  }
+
+  if (Array.isArray(errors.medicines) && errors.medicines.some((entry) => entry?.medicineId)) {
+    return 'Selecciona al menos un medicamento antes de guardar el tratamiento.';
+  }
+
+  return null;
+}
+
+function TreatmentMedicineFields({
+  index,
+  medicines,
+  fieldCount,
+  register,
+  control,
+  setValue,
+  errors,
+  onRemove,
+}: TreatmentMedicineFieldsProps) {
+  const isRecurring = useWatch({ control, name: `medicines.${index}.isRecurring` as const }) ?? true;
+  const scheduleType = useWatch({ control, name: `medicines.${index}.scheduleType` as const }) ?? 'interval';
+  const firstDoseTime = useWatch({ control, name: `medicines.${index}.firstDoseTime` as const }) ?? '08:00';
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: `medicines.${index}.dailyDoseTimes` as const,
+  });
+  const medicineErrors = errors.medicines?.[index];
+  const dailyDoseTimesError = (medicineErrors?.dailyDoseTimes as { message?: string } | undefined)?.message;
+  const dailyDoseTimeEntryErrors = medicineErrors?.dailyDoseTimes as Array<{ time?: { message?: string } }> | undefined;
+  const showExactTimes = isRecurring && scheduleType === 'daily_times';
+
+  return (
+    <div className="c-treatment-form-page__med-row">
+      <div className="c-treatment-form-page__med-row-header">
+        <div>
+          <p className="c-treatment-form-page__med-row-title">Medicamento {index + 1}</p>
+          <p className="c-treatment-form-page__med-row-caption">Cada medicamento mantiene su propia pauta.</p>
+        </div>
+        {fieldCount > 1 ? (
+          <Button
+            variant="danger"
+            type="button"
+            className="c-btn--sm"
+            onClick={() => onRemove(index)}
+          >
+            Quitar
+          </Button>
+        ) : null}
+      </div>
+
+      <label className="c-field">
+        <span className="c-field__label">
+          <span className="c-field__label-text">Medicamento</span>
+        </span>
+        <select className="c-field__select" {...register(`medicines.${index}.medicineId` as const)}>
+          <option value="">Selecciona…</option>
+          {medicines.map((medicine) => (
+            <option key={medicine._id} value={medicine._id}>
+              {medicine.alias?.trim() || medicine.nombre}
+            </option>
+          ))}
+        </select>
+        {medicineErrors?.medicineId?.message ? (
+          <span className="c-field__error">{medicineErrors.medicineId.message}</span>
+        ) : null}
+      </label>
+
+      <div className="c-treatment-form-page__med-grid">
+        <div>
+          <Input
+            type="number"
+            label="Cantidad por toma"
+            min={0.5}
+            step={0.5}
+            error={medicineErrors?.amount?.message}
+            {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
+          />
+          <p className="c-treatment-form-page__helper">Puedes usar medias unidades, por ejemplo 0,5.</p>
+        </div>
+        {!showExactTimes ? (
+          <Input
+            type="time"
+            label={isRecurring ? 'Hora de la primera toma' : 'Hora de la toma'}
+            icon={<TbClock aria-hidden="true" />}
+            wrapperClassName="c-treatment-form-page__time-field"
+            error={medicineErrors?.firstDoseTime?.message}
+            {...register(`medicines.${index}.firstDoseTime` as const)}
+          />
+        ) : null}
+      </div>
+
+      <label className="c-treatment-form-page__active c-treatment-form-page__active--compact">
+        <input type="checkbox" {...register(`medicines.${index}.isRecurring` as const)} />
+        <span className="c-treatment-form-page__active-control" aria-hidden="true" />
+        <span className="c-treatment-form-page__active-copy">
+          <span>Toma recurrente</span>
+          <small>{isRecurring ? 'La pauta se repetirá según la configuración elegida.' : 'Solo se registrará una toma en la fecha de inicio.'}</small>
+        </span>
+      </label>
+
+      {isRecurring ? (
+        <div className="c-treatment-form-page__schedule-box">
+          <p className="c-treatment-form-page__schedule-title">Tipo de pauta</p>
+          <div className="c-treatment-form-page__schedule-toggle" role="tablist" aria-label={`Tipo de pauta del medicamento ${index + 1}`}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={scheduleType === 'interval'}
+              className={['c-treatment-form-page__schedule-option', scheduleType === 'interval' && 'is-active'].filter(Boolean).join(' ')}
+              onClick={() => setValue(`medicines.${index}.scheduleType`, 'interval', { shouldDirty: true })}
+            >
+              Intervalo
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={scheduleType === 'daily_times'}
+              className={['c-treatment-form-page__schedule-option', scheduleType === 'daily_times' && 'is-active'].filter(Boolean).join(' ')}
+              onClick={() => {
+                setValue(`medicines.${index}.scheduleType`, 'daily_times', { shouldDirty: true });
+                if (fields.length === 0) {
+                  append({ time: firstDoseTime || '08:00' });
+                }
+              }}
+            >
+              Horas exactas
+            </button>
+          </div>
+
+          {scheduleType === 'interval' ? (
+            <Input
+              type="number"
+              label="Frecuencia (h)"
+              min={1}
+              step={1}
+              error={medicineErrors?.frequencyHours?.message}
+              {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
+            />
+          ) : (
+            <div className="c-treatment-form-page__time-list">
+              {fields.map((field, timeIndex) => (
+                <div key={field.id} className="c-treatment-form-page__time-row">
+                  <Input
+                    type="time"
+                    label={`Hora ${timeIndex + 1}`}
+                    icon={<TbClock aria-hidden="true" />}
+                    wrapperClassName="c-treatment-form-page__time-field"
+                    error={dailyDoseTimeEntryErrors?.[timeIndex]?.time?.message}
+                    {...register(`medicines.${index}.dailyDoseTimes.${timeIndex}.time` as const)}
+                  />
+                  <Button
+                    type="button"
+                    variant="primary-outline"
+                    className="c-btn--sm"
+                    onClick={() => remove(timeIndex)}
+                    disabled={fields.length <= 1}
+                  >
+                    Quitar hora
+                  </Button>
+                </div>
+              ))}
+              {typeof dailyDoseTimesError === 'string' ? <span className="c-field__error">{dailyDoseTimesError}</span> : null}
+              <Button
+                type="button"
+                variant="primary-outline"
+                onClick={() => append({ time: fields[fields.length - 1]?.time || firstDoseTime || '08:00' })}
+              >
+                Añadir otra hora
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      <label className="c-field c-treatment-form-page__med-note">
+        <span className="c-field__label">
+          <span className="c-field__label-text">Nota</span>
+        </span>
+        <textarea
+          className="c-field__textarea"
+          maxLength={300}
+          rows={3}
+          placeholder="Ej. Tomar con comida"
+          {...register(`medicines.${index}.note` as const)}
+        />
+      </label>
+    </div>
+  );
+}
 
 function toFormValues(
   treatment: ReturnType<typeof useTreatments>['treatments'][number] | null,
@@ -85,30 +363,15 @@ function toFormValues(
       medicineId: entry.medicineId,
       amount: entry.amount,
       firstDoseTime: toLocalParts(new Date(entry.firstDoseAt)).time,
-      frequencyHours: entry.frequencyHours,
+      frequencyHours: entry.frequencyHours ?? 8,
+      scheduleType: entry.scheduleType,
+      dailyDoseTimes: (entry.dailyDoseTimes.length > 0
+        ? entry.dailyDoseTimes
+        : [toLocalParts(new Date(entry.firstDoseAt)).time]).map((time) => ({ time })),
       isRecurring: entry.isRecurring,
       note: entry.note ?? '',
     })),
   };
-}
-
-function buildPayload(values: FormValues): CreateTreatmentInput {
-  return createTreatmentSchema.parse({
-    patientUserId: values.patientUserId,
-    title: values.title,
-    description: values.description || undefined,
-    startDate: `${values.startDate}T00:00`,
-    endDate: values.endDate ? `${values.endDate}T23:59` : undefined,
-    active: values.active,
-    medicines: values.medicines.map((entry) => ({
-      medicineId: entry.medicineId,
-      amount: entry.amount,
-      firstDoseAt: `${values.startDate}T${entry.firstDoseTime || '08:00'}`,
-      frequencyHours: entry.frequencyHours,
-      isRecurring: entry.isRecurring,
-      note: entry.note || undefined,
-    })),
-  });
 }
 
 function TreatmentFormPage() {
@@ -151,9 +414,9 @@ function TreatmentFormPage() {
   const form = useForm<FormValues>({
     defaultValues: toFormValues(null, defaultPatientUserId),
   });
-  const { register, handleSubmit, control, reset, setError, formState } = form;
+  const { register, handleSubmit, control, reset, setError, setValue, formState } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'medicines' });
-  const watchedMedicines = useWatch({ control, name: 'medicines' });
+  const medicineSectionError = getMedicineSectionError(formState.errors);
 
   useEffect(() => {
     if (target) reset(toFormValues(target, defaultPatientUserId));
@@ -180,9 +443,17 @@ function TreatmentFormPage() {
   }
 
   const onSubmit = handleSubmit(async (values) => {
-    let payload: CreateTreatmentInput;
     try {
-      payload = buildPayload(values);
+      if (isEditing && treatmentId) {
+        const payload = buildUpdatePayload(values);
+        await updateTreatment(treatmentId, payload);
+        addToast({ message: 'Tratamiento actualizado.', variant: 'success' });
+      } else {
+        const payload = buildCreatePayload(values);
+        await createTreatment(payload);
+        addToast({ message: 'Tratamiento creado.', variant: 'success' });
+      }
+      navigate(ROUTES.blisterTreatments(blisterId));
     } catch (err) {
       if (err instanceof ZodError) {
         for (const issue of err.issues) {
@@ -191,18 +462,7 @@ function TreatmentFormPage() {
         }
         return;
       }
-      throw err;
-    }
-    try {
-      if (isEditing && treatmentId) {
-        await updateTreatment(treatmentId, payload);
-        addToast({ message: 'Tratamiento actualizado.', variant: 'success' });
-      } else {
-        await createTreatment(payload);
-        addToast({ message: 'Tratamiento creado.', variant: 'success' });
-      }
-      navigate(ROUTES.blisterTreatments(blisterId));
-    } catch (err) {
+
       const message = isApiError(err) ? err.message : 'No se ha podido guardar el tratamiento.';
       addToast({ message, variant: 'error' });
     }
@@ -287,99 +547,34 @@ function TreatmentFormPage() {
 
         <FormSection
           label="Medicamentos"
-          hint="Configura cantidad y frecuencia de cada toma."
+          hint="Configura cada pauta por separado: cantidad, horario y notas."
           icon={<TbPill />}
         >
           {medsLoading ? <Skeleton height="2rem" /> : null}
-          {fields.map((field, index) => {
-            const isRecurring = watchedMedicines?.[index]?.isRecurring ?? true;
-            return (
-              <div key={field.id} className="c-treatment-form-page__med-row">
-                <div className="c-treatment-form-page__med-row-header">
-                  <p className="c-treatment-form-page__med-row-title">Medicamento {index + 1}</p>
-                  {fields.length > 1 ? (
-                    <Button
-                      variant="danger"
-                      type="button"
-                      className="c-btn--sm"
-                      onClick={() => remove(index)}
-                    >
-                      Quitar
-                    </Button>
-                  ) : null}
-                </div>
-                <label className="c-field">
-                  <span className="c-field__label">
-                    <span className="c-field__label-text">Medicamento</span>
-                  </span>
-                  <select
-                    className="c-field__select"
-                    {...register(`medicines.${index}.medicineId` as const)}
-                  >
-                    <option value="">Selecciona…</option>
-                    {medicines.map((m) => (
-                      <option key={m._id} value={m._id}>
-                        {m.alias?.trim() || m.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <Input
-                  type="number"
-                  label="Cantidad"
-                  min={1}
-                  {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
-                />
-                <Input
-                  type="time"
-                  label="Hora primera toma"
-                  icon={<TbClock aria-hidden="true" />}
-                  wrapperClassName="c-treatment-form-page__time-field"
-                  error={formState.errors.medicines?.[index]?.firstDoseTime?.message}
-                  {...register(`medicines.${index}.firstDoseTime` as const)}
-                />
-                <label className="c-treatment-form-page__active c-treatment-form-page__active--compact">
-                  <input type="checkbox" {...register(`medicines.${index}.isRecurring` as const)} />
-                  <span className="c-treatment-form-page__active-control" aria-hidden="true" />
-                  <span className="c-treatment-form-page__active-copy">
-                    <span>Toma recurrente</span>
-                    <small>{isRecurring ? 'Se repetirá según la frecuencia.' : 'Solo se registrará la primera toma.'}</small>
-                  </span>
-                </label>
-                {isRecurring ? (
-                  <Input
-                    type="number"
-                    label="Frecuencia (h)"
-                    min={1}
-                    {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
-                  />
-                ) : (
-                  <input
-                    type="hidden"
-                    {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
-                  />
-                )}
-                <label className="c-field c-treatment-form-page__med-note">
-                  <span className="c-field__label">
-                    <span className="c-field__label-text">Nota</span>
-                  </span>
-                  <textarea
-                    className="c-field__textarea"
-                    maxLength={300}
-                    rows={3}
-                    placeholder="Ej. Tomar con comida"
-                    {...register(`medicines.${index}.note` as const)}
-                  />
-                </label>
-              </div>
-            );
-          })}
+          {medicineSectionError ? (
+            <p className="c-treatment-form-page__section-error" role="status" aria-live="polite">
+              {medicineSectionError}
+            </p>
+          ) : null}
+          {fields.map((field, index) => (
+            <TreatmentMedicineFields
+              key={field.id}
+              index={index}
+              medicines={medicines}
+              fieldCount={fields.length}
+              register={register}
+              control={control}
+              setValue={setValue}
+              errors={formState.errors}
+              onRemove={remove}
+            />
+          ))}
           <Button
             variant="primary-outline"
             type="button"
             onClick={() => append(createTreatmentMedicine())}
           >
-            Añadir medicamento
+            Añadir otro medicamento
           </Button>
         </FormSection>
 

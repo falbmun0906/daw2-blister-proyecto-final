@@ -1,12 +1,12 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TbBuildingHospital, TbPill, TbUser } from 'react-icons/tb';
+import { TbBuildingHospital, TbDotsVertical, TbPencil, TbPill, TbTrash, TbUser } from 'react-icons/tb';
 
 import { Avatar } from '../atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
 import type { BlisterRole } from '../../types/blister.types';
 import type { Medicine } from '../../types/medicine.types';
 import type { Treatment } from '../../types/treatment.types';
-import { Button } from '../atoms/Button';
 
 interface TreatmentRowProps {
   treatment: Treatment;
@@ -69,9 +69,35 @@ export function TreatmentRow({
 }: TreatmentRowProps) {
   const editable = canMutate(userRole);
   const progress = getProgress(treatment);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const firstMedicine = treatment.medicines[0]
     ? resolveMedicineName(medicines, treatment.medicines[0].medicineId)
     : null;
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (menuRef.current && event.target instanceof Node && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [menuOpen]);
 
   return (
     <article className="c-treatment-row" aria-label={treatment.title}>
@@ -107,14 +133,40 @@ export function TreatmentRow({
           <span>Ver tratamiento</span>
         </Link>
         {editable ? (
-          <>
-            <Link to={ROUTES.editTreatment(blisterId, treatment.id)} className="c-btn c-btn--primary-outline c-btn--card c-treatment-row__edit-link">
-              <span>Editar</span>
-            </Link>
-            <Button variant="danger" className="c-btn--card" onClick={() => onDelete(treatment)}>
-              Eliminar
-            </Button>
-          </>
+          <div className="c-treatment-row__menu" ref={menuRef}>
+            <button
+              type="button"
+              className="c-treatment-row__menu-toggle"
+              aria-label="Acciones del tratamiento"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <TbDotsVertical aria-hidden="true" />
+            </button>
+            {menuOpen ? (
+              <div className="c-treatment-row__menu-popover" role="menu">
+                <Link
+                  to={ROUTES.editTreatment(blisterId, treatment.id)}
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <TbPencil aria-hidden="true" />
+                  <span>Editar</span>
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDelete(treatment);
+                  }}
+                >
+                  <TbTrash aria-hidden="true" />
+                  <span>Eliminar</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
         ) : null}
       </footer>
     </article>
