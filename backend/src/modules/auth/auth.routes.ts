@@ -3,8 +3,10 @@ import rateLimit from 'express-rate-limit';
 
 import {
   registerSchema,
+  forgotPasswordSchema,
   loginSchema,
   refreshTokenSchema,
+  resetPasswordSchema,
   updateProfileSchema,
   mcpTokenSchema,
   revokeMcpTokenSchema,
@@ -19,10 +21,12 @@ import { authenticate } from '../../middleware/authenticate';
 import { validate } from '../../middleware/validate';
 import {
   authCreateMcpTokenController,
+  authForgotPasswordController,
   authGetMcpTokenStatusController,
   authLoginController,
   authRefreshController,
   authRegisterController,
+  authResetPasswordController,
   authRevokeMcpTokenController,
   authUpdateProfileController,
 } from './auth.controller';
@@ -76,6 +80,18 @@ authRouter.post('/register', registerLimiter, validate({ body: registerSchema })
  *         description: Invalid credentials.
  */
 authRouter.post('/login', loginLimiter, validate({ body: loginSchema }), authLoginController);
+
+authRouter.post(
+  '/forgot-password',
+  validate({ body: forgotPasswordSchema }),
+  authForgotPasswordController,
+);
+
+authRouter.post(
+  '/reset-password',
+  validate({ body: resetPasswordSchema }),
+  authResetPasswordController,
+);
 
 /**
  * @openapi

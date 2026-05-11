@@ -97,6 +97,26 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().trim().min(1, 'Refresh token is required.'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Email must be valid.'),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().trim().min(32, 'Reset token is required.').max(256, 'Reset token is too long.'),
+    password: passwordSchema,
+    confirmPassword: z.string().trim(),
+  })
+  .superRefine((value, context) => {
+    if (value.password !== value.confirmPassword) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['confirmPassword'],
+        message: 'Passwords do not match.',
+      });
+    }
+  });
+
 export const authUserParamsSchema = z.object({
   userId: objectIdSchema,
 });
@@ -144,6 +164,8 @@ export const revokeMcpTokenSchema = z.object({});
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type McpTokenInput = z.infer<typeof mcpTokenSchema>;
 export type UserInput = z.infer<typeof userSchema>;

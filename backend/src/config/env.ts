@@ -26,6 +26,7 @@ const envSchema = z.object({
   WEB_PUSH_VAPID_PRIVATE_KEY: z.string().trim().optional(),
   WEB_PUSH_VAPID_SUBJECT: z.string().trim().default('mailto:admin@example.com'),
   PUSH_REMINDER_SCAN_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
+  RESEND_API_KEY: z.string().trim().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -50,6 +51,7 @@ export const env = {
   webPushVapidPrivateKey: parsedEnv.data.WEB_PUSH_VAPID_PRIVATE_KEY,
   webPushVapidSubject: parsedEnv.data.WEB_PUSH_VAPID_SUBJECT,
   pushReminderScanIntervalMs: parsedEnv.data.PUSH_REMINDER_SCAN_INTERVAL_MS,
+  resendApiKey: parsedEnv.data.RESEND_API_KEY,
 } as const;
 
 export type Env = typeof env;

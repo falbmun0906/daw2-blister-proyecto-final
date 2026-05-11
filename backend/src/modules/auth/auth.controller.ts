@@ -6,10 +6,12 @@ import {
 } from '../../constants/http.constants';
 import {
   authCreateMcpToken,
+  authForgotPassword,
   authGetMcpTokenStatus,
   authLogin,
   authRefresh,
   authRegister,
+  authResetPassword,
   authRevokeMcpToken,
   authUpdateProfile,
 } from './auth.service';
@@ -19,8 +21,10 @@ import {
 import {
   type LoginInput,
   type McpTokenInput,
+  type ForgotPasswordInput,
   type RefreshTokenInput,
   type RegisterInput,
+  type ResetPasswordInput,
   type UpdateProfileInput,
 } from '../../../../shared/schemas/index';
 
@@ -57,6 +61,36 @@ export const authRefreshController = async (request: Request, response: Response
   response.status(HTTP_STATUS_OK).json({
     success: true,
     data: result,
+  });
+};
+
+/**
+ * Starts the password reset flow without revealing whether the email exists.
+ */
+export const authForgotPasswordController = async (
+  request: Request,
+  response: Response,
+): Promise<void> => {
+  await authForgotPassword(request.body as ForgotPasswordInput);
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: null,
+  });
+};
+
+/**
+ * Consumes a valid reset token and stores a new password.
+ */
+export const authResetPasswordController = async (
+  request: Request,
+  response: Response,
+): Promise<void> => {
+  await authResetPassword(request.body as ResetPasswordInput);
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: null,
   });
 };
 

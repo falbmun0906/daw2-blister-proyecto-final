@@ -1,9 +1,14 @@
+import { createHash } from 'node:crypto';
+
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 
 import { createApp } from '../../../app';
 import { env } from '../../../config/env';
+import { PasswordResetTokenModel } from '../../../models/passwordResetToken.model';
 import { UserModel } from '../../../models/user.model';
+import * as authEmailService from '../auth-email.service';
 import {
   clearTestDatabase,
   connectTestDatabase,
@@ -21,6 +26,7 @@ describe('auth.routes', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await clearTestDatabase();
   });
 
@@ -45,14 +51,17 @@ describe('auth.routes', () => {
   });
 
   it('rejects duplicated email registration', async () => {
-    await request(app).post('/api/v1/auth/register').send({
+    await UserModel.create({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
-      password: 'Password1!',
-      confirmPassword: 'Password1!',
-      privacyConsent: true,
-      ageConfirmed: true,
+      password:
+        '$2b$12$123456789012345678901uY7LwQ3xVw2Cl5EKeosFVJeFt3PcTJS.',
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
     });
 
     const response = await request(app).post('/api/v1/auth/register').send({
@@ -105,14 +114,16 @@ describe('auth.routes', () => {
   });
 
   it('rejects incorrect passwords on login', async () => {
-    await request(app).post('/api/v1/auth/register').send({
+    await UserModel.create({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
-      password: 'Password1!',
-      confirmPassword: 'Password1!',
-      privacyConsent: true,
-      ageConfirmed: true,
+      password: await bcrypt.hash('Password1!', 12),
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
     });
 
     const response = await request(app).post('/api/v1/auth/login').send({
@@ -132,6 +143,122 @@ describe('auth.routes', () => {
 
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe('AUTH_INVALID_CREDENTIALS');
+  });
+
+  it('returns the same response for existing and missing password reset emails', async () => {
+    const sendEmailSpy = jest
+      .spyOn(authEmailService, 'sendPasswordResetEmail')
+      .mockResolvedValue(undefined);
+
+    await UserModel.create({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: await bcrypt.hash('Password1!', 12),
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
+
+    const existingResponse = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'ana@example.com',
+    });
+    const missingResponse = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'missing@example.com',
+    });
+
+    expect(existingResponse.status).toBe(200);
+    expect(existingResponse.body).toEqual({ success: true, data: null });
+    expect(missingResponse.status).toBe(200);
+    expect(missingResponse.body).toEqual(existingResponse.body);
+    expect(sendEmailSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets a password with a valid token and consumes it', async () => {
+    const sendEmailSpy = jest
+      .spyOn(authEmailService, 'sendPasswordResetEmail')
+      .mockResolvedValue(undefined);
+
+    await request(app).post('/api/v1/auth/register').send({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      privacyConsent: true,
+      ageConfirmed: true,
+    });
+
+    await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'ana@example.com',
+    });
+
+    const resetUrl = sendEmailSpy.mock.calls[0]?.[0].resetUrl;
+    const token = resetUrl ? new URL(resetUrl).searchParams.get('token') : null;
+    expect(token).toBeTruthy();
+
+    const resetResponse = await request(app).post('/api/v1/auth/reset-password').send({
+      token,
+      password: 'NewPassword1!',
+      confirmPassword: 'NewPassword1!',
+    });
+    const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      identifier: 'ana@example.com',
+      password: 'NewPassword1!',
+    });
+    const reusedResponse = await request(app).post('/api/v1/auth/reset-password').send({
+      token,
+      password: 'OtherPassword1!',
+      confirmPassword: 'OtherPassword1!',
+    });
+
+    expect(resetResponse.status).toBe(200);
+    expect(loginResponse.status).toBe(200);
+    expect(reusedResponse.status).toBe(400);
+    expect(reusedResponse.body.error.code).toBe('AUTH_PASSWORD_RESET_TOKEN_INVALID');
+  });
+
+  it('rejects expired reset tokens', async () => {
+    const user = await UserModel.create({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password:
+        '$2b$12$123456789012345678901uY7LwQ3xVw2Cl5EKeosFVJeFt3PcTJS.',
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
+    const token = 'expired-reset-token-with-enough-length';
+    await PasswordResetTokenModel.create({
+      tokenHash: createHash('sha256').update(token).digest('hex'),
+      userId: user._id.toString(),
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+
+    const response = await request(app).post('/api/v1/auth/reset-password').send({
+      token,
+      password: 'NewPassword1!',
+      confirmPassword: 'NewPassword1!',
+    });
+
+    expect(response.status).toBe(410);
+    expect(response.body.error.code).toBe('AUTH_PASSWORD_RESET_TOKEN_EXPIRED');
+  });
+
+  it('rejects invalid reset passwords before consuming a token', async () => {
+    const response = await request(app).post('/api/v1/auth/reset-password').send({
+      token: 'valid-looking-token-with-enough-length',
+      password: 'short',
+      confirmPassword: 'short',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('rejects protected routes without token', async () => {

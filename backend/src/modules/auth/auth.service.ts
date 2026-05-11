@@ -17,21 +17,31 @@ import {
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_CONFLICT,
+  HTTP_STATUS_GONE,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.constants';
-import { BCRYPT_SALT_ROUNDS, MCP_TOKEN_DAY_MS } from '../../constants/security.constants';
+import {
+  BCRYPT_SALT_ROUNDS,
+  MCP_TOKEN_DAY_MS,
+  PASSWORD_RESET_TOKEN_BYTES,
+  PASSWORD_RESET_TOKEN_TTL_MS,
+} from '../../constants/security.constants';
 import { BlisterModel } from '../../models/blister.model';
+import { PasswordResetTokenModel } from '../../models/passwordResetToken.model';
 import { UserModel } from '../../models/user.model';
 import { type AuthTokens, type JwtAccessPayload, type JwtRefreshPayload } from '../../types/auth.types';
 import { type UserDocument, type UserSettings } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
 import {
+  type ForgotPasswordInput,
   type LoginInput,
   type McpTokenInput,
   type RefreshTokenInput,
   type RegisterInput,
+  type ResetPasswordInput,
   type UpdateProfileInput,
 } from '../../../../shared/schemas/index';
+import * as authEmailService from './auth-email.service';
 
 interface PublicUser {
   id: string;
@@ -143,6 +153,13 @@ const createTokens = async (userId: string): Promise<AuthTokens & { refreshToken
     refreshToken,
     refreshTokenExpiresAt: parseJwtExpiration(refreshToken),
   };
+};
+
+const buildPasswordResetUrl = (token: string): string => {
+  const resetUrl = new URL('/reset-password', env.clientOrigin);
+  resetUrl.searchParams.set('token', token);
+
+  return resetUrl.toString();
 };
 
 const ensureUniqueCredentials = async (
@@ -341,6 +358,77 @@ export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
     accessToken,
     refreshToken,
   };
+};
+
+/**
+ * Creates a short-lived password reset token and emails it when the account exists.
+ */
+export const authForgotPassword = async (input: ForgotPasswordInput): Promise<void> => {
+  const user = await UserModel.findOne({ email: input.email, deletedAt: null });
+
+  if (!user) {
+    return;
+  }
+
+  const token = randomBytes(PASSWORD_RESET_TOKEN_BYTES).toString('base64url');
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS);
+
+  await PasswordResetTokenModel.deleteMany({ userId: user._id.toString() });
+  await PasswordResetTokenModel.create({
+    tokenHash: hashValue(token),
+    userId: user._id.toString(),
+    expiresAt,
+    createdAt: now,
+  });
+
+  await authEmailService.sendPasswordResetEmail({
+    to: user.email,
+    resetUrl: buildPasswordResetUrl(token),
+  });
+};
+
+/**
+ * Validates a reset token, replaces the user's password and consumes the token.
+ */
+export const authResetPassword = async (input: ResetPasswordInput): Promise<void> => {
+  const tokenHash = hashValue(input.token);
+  const resetToken = await PasswordResetTokenModel.findOne({ tokenHash }).select('+tokenHash');
+
+  if (!resetToken) {
+    throw new AppError({
+      code: 'AUTH_PASSWORD_RESET_TOKEN_INVALID',
+      message: 'Password reset token is invalid or has already been used.',
+      statusCode: HTTP_STATUS_BAD_REQUEST,
+    });
+  }
+
+  if (resetToken.expiresAt.getTime() <= Date.now()) {
+    await PasswordResetTokenModel.deleteOne({ _id: resetToken._id });
+    throw new AppError({
+      code: 'AUTH_PASSWORD_RESET_TOKEN_EXPIRED',
+      message: 'Password reset token has expired.',
+      statusCode: HTTP_STATUS_GONE,
+    });
+  }
+
+  const user = await UserModel.findOne({ _id: resetToken.userId, deletedAt: null });
+
+  if (!user) {
+    await PasswordResetTokenModel.deleteOne({ _id: resetToken._id });
+    throw new AppError({
+      code: 'AUTH_PASSWORD_RESET_TOKEN_INVALID',
+      message: 'Password reset token is invalid or has already been used.',
+      statusCode: HTTP_STATUS_BAD_REQUEST,
+    });
+  }
+
+  user.password = await bcrypt.hash(input.password, BCRYPT_SALT_ROUNDS);
+  user.refreshTokenHash = null;
+  user.refreshTokenExpiresAt = null;
+
+  await user.save();
+  await PasswordResetTokenModel.deleteOne({ _id: resetToken._id });
 };
 
 const verifyRefreshToken = (refreshToken: string): JwtRefreshPayload => {

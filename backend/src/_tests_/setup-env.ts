@@ -2,3 +2,4 @@ process.env.MONGODB_URI ??= 'mongodb://localhost:27017/blister-test';
 process.env.CLIENT_ORIGIN ??= 'http://localhost:5173';
 process.env.CIMA_BASE_URL ??= 'https://cima.aemps.es/cima/rest';
 process.env.JWT_SECRET ??= 'test-jwt-secret-with-at-least-32-characters';
+process.env.RESEND_API_KEY ??= 'test-resend-api-key';
