@@ -1,14 +1,18 @@
 import {
   authSessionSchema,
   authTokensSchema,
+  forgotPasswordSchema,
   loginSchema,
   refreshTokenSchema,
   registerSchema,
+  resetPasswordSchema,
   updateProfileSchema,
   userSchema,
+  type ForgotPasswordInput,
   type LoginInput,
   type RefreshTokenInput,
   type RegisterInput,
+  type ResetPasswordInput,
   type UpdateProfileInput,
 } from '../../../shared/schemas/auth.schema';
 
@@ -44,6 +48,22 @@ export async function refresh(input: RefreshTokenInput): Promise<AuthTokens> {
   const payload = refreshTokenSchema.parse(input);
   const response = await apiClient.post('/auth/refresh', payload);
   return authTokensSchema.parse(normalizeApiResponse(response));
+}
+
+/**
+ * Requests password reset instructions without revealing if the account exists.
+ */
+export async function forgotPassword(input: ForgotPasswordInput): Promise<void> {
+  const payload = forgotPasswordSchema.parse(input);
+  await apiClient.post('/auth/forgot-password', payload);
+}
+
+/**
+ * Stores a new password using a one-time reset token.
+ */
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  const payload = resetPasswordSchema.parse(input);
+  await apiClient.post('/auth/reset-password', payload);
 }
 
 /**

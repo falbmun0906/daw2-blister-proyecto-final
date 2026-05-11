@@ -12,6 +12,7 @@ import OnboardingPage from './pages/Onboarding/OnboardingPage'
 import LoginPage from './pages/Login/LoginPage'
 import RegisterPage from './pages/Register/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPassword/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPassword/ResetPasswordPage'
 import HomePage from './pages/Home/HomePage'
 import BlisterListPage from './pages/Blisters/BlisterListPage'
 import BlisterCreatePage from './pages/Blisters/BlisterCreatePage'
@@ -62,6 +63,7 @@ function App() {
         <Route element={<GuestRoute />}>
           <Route path={ROUTES.register} element={<RegisterPage />} />
           <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+          <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
         </Route>
 
         {/* Shell autenticado: AppHeader + BottomNav envuelven todas las rutas privadas */}

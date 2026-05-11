@@ -32,7 +32,13 @@ export const apiClient = axios.create({
 let refreshPromise: Promise<AuthTokens> | null = null;
 
 const isAuthEndpoint = (url: string | undefined): boolean =>
-  Boolean(url && (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/refresh')));
+  Boolean(url && (
+    url.includes('/auth/login')
+    || url.includes('/auth/register')
+    || url.includes('/auth/refresh')
+    || url.includes('/auth/forgot-password')
+    || url.includes('/auth/reset-password')
+  ));
 
 const isApiErrorResponse = (value: unknown): value is ApiErrorResponse => {
   if (typeof value !== 'object' || value === null) {

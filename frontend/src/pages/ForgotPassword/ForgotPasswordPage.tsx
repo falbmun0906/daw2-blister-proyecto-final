@@ -6,24 +6,25 @@ import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
 import { TbMail } from 'react-icons/tb';
 
+import { forgotPasswordSchema } from '../../../../shared/schemas/auth.schema';
 import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
+import { forgotPassword } from '../../services/auth.service';
 import { useUiStore } from '../../stores/ui.store';
+import { isApiError } from '../../types/api.types';
 import './ForgotPasswordPage.scss';
-
-const forgotPasswordSchema = z.object({
-  identifier: z.string().trim().min(1, 'El email o usuario es obligatorio.'),
-});
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 function ForgotPasswordPage() {
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
-  const [showNotAvailable, setShowNotAvailable] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
   const {
     register,
@@ -32,16 +33,30 @@ function ForgotPasswordPage() {
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      identifier: '',
+      email: '',
     },
   });
 
-  const onSubmit = () => {
-    addToast({
-      message: 'La recuperación de contraseña estará disponible próximamente.',
-      variant: 'info',
-    });
-    setShowNotAvailable(true);
+  const onSubmit = async (data: ForgotPasswordFormData) => {
+    setIsLoading(true);
+    setGlobalError(null);
+
+    try {
+      await forgotPassword(data);
+      addToast({
+        message: 'Si el correo existe, te enviaremos un enlace de recuperación.',
+        variant: 'success',
+      });
+      setIsSubmitted(true);
+    } catch (error) {
+      if (isApiError(error) && error.code === 'VALIDATION_ERROR') {
+        setGlobalError('Introduce un correo electrónico válido.');
+      } else {
+        setGlobalError('No hemos podido enviar las instrucciones. Inténtalo de nuevo.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -58,13 +73,15 @@ function ForgotPasswordPage() {
         <span className="c-forgot-password-page__spacer" aria-hidden="true" />
       </header>
 
-      <h1 className="c-forgot-password-page__title">He olvidado mi contraseña</h1>
+      <h1 className="c-forgot-password-page__title">
+        <span className="c-forgot-password-page__title-accent">Recuperar</span> contraseña
+      </h1>
 
-      {showNotAvailable ? (
+      {isSubmitted ? (
         <div className="c-forgot-password-page__state">
           <EmptyState
-            title="Próximamente"
-            description="La recuperación de contraseña estará disponible en las próximas actualizaciones."
+            title="Revisa tu correo"
+            description="Si existe una cuenta asociada, recibirás un enlace para crear una contraseña nueva."
           />
           <Link to={ROUTES.login} className="c-forgot-password-page__return-link">
             Volver a iniciar sesión
@@ -73,20 +90,29 @@ function ForgotPasswordPage() {
       ) : (
         <>
           <p className="c-forgot-password-page__intro">
-            Introduce tu correo electrónico o identificador para recibir instrucciones de recuperación.
+            Introduce tu correo electrónico y te enviaremos un enlace temporal para crear una nueva.
           </p>
 
           <form className="c-forgot-password-page__form" onSubmit={handleSubmit(onSubmit)}>
+            {globalError ? <p className="c-forgot-password-page__error">{globalError}</p> : null}
+
             <Input
-              label="Correo electrónico o usuario"
-              placeholder="tu@correo.com o tu usuario"
-              type="text"
-              {...register('identifier')}
-              error={errors.identifier?.message}
+              label="Correo electrónico"
+              placeholder="tu@correo.com"
+              type="email"
+              autoComplete="email"
+              {...register('email')}
+              error={errors.email?.message}
               icon={<TbMail className="c-icon c-icon--md" aria-hidden="true" />}
             />
 
-            <Button type="submit" variant="primary" fullWidth className="c-forgot-password-page__submit">
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              loading={isLoading}
+              className="c-forgot-password-page__submit"
+            >
               Enviar
             </Button>
           </form>
