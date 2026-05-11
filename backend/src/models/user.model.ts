@@ -43,6 +43,7 @@ const userSettingsSchema = new Schema<UserDocument['settings']>(
       expiration: { type: Boolean, required: true, default: true },
       cima: { type: Boolean, required: true, default: true },
       adherence: { type: Boolean, required: true, default: true },
+      doses: { type: Boolean, required: true, default: true },
       appointments: { type: Boolean, required: true, default: true },
       appointmentReminderPreset: {
         type: String,

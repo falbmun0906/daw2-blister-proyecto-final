@@ -90,6 +90,8 @@ const allowsPushForType = (
       return settings.notifications.cima;
     case 'adherence_forced':
       return settings.notifications.adherence;
+    case 'dose_reminder':
+      return settings.notifications.doses !== false;
     case 'appointment_reminder':
       return settings.notifications.appointments;
     case 'system':
@@ -131,6 +133,11 @@ const getNotificationTargetUrl = (notification: NotificationDocument): string =>
 
   if (notification.type === 'appointment_reminder' && blisterId) {
     return `/blisters/${blisterId}/appointments`;
+  }
+
+  if (notification.type === 'dose_reminder' && blisterId) {
+    const treatmentId = getStringMetadata(notification, 'treatmentId');
+    if (treatmentId) return `/blisters/${blisterId}/treatments/${treatmentId}`;
   }
 
   return '/notifications';

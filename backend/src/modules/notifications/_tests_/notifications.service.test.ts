@@ -1,8 +1,10 @@
 import { BlisterModel } from '../../../models/blister.model';
+import { AdherenceLogModel } from '../../../models/adherenceLog.model';
 import { AppointmentModel } from '../../../models/appointment.model';
 import { MedicineModel } from '../../../models/medicine.model';
 import { NotificationModel } from '../../../models/notification.model';
 import { PushSubscriptionModel } from '../../../models/pushSubscription.model';
+import { TreatmentModel } from '../../../models/treatment.model';
 import { UserModel } from '../../../models/user.model';
 import {
   clearTestDatabase,
@@ -13,6 +15,7 @@ import {
   notificationsDelete,
   notificationsList,
   notificationsMarkAsRead,
+  notifyDueDoseReminders,
   notifyExpirationWarningsForMedicines,
   notifyUpcomingAppointmentReminders,
 } from '../notifications.service';
@@ -342,6 +345,122 @@ describe('notifications.service', () => {
     expect(reminders).toHaveLength(1);
     expect(reminders[0]?.dismissedAt).toBeInstanceOf(Date);
     expect(listed.notifications).toHaveLength(0);
+  });
+
+  it('creates due dose reminders for owners and caregivers once per scheduled dose', async () => {
+    const owner = await createUser('notify-dose-owner');
+    const caregiver = await createUser('notify-dose-caregiver');
+    const observer = await createUser('notify-dose-observer');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+        { userId: observer._id, role: 'OBSERVER' },
+      ],
+    });
+    const referenceDate = new Date('2030-01-01T12:00:00.000Z');
+    const doseTime = `${referenceDate.getHours().toString().padStart(2, '0')}:${referenceDate.getMinutes().toString().padStart(2, '0')}`;
+    const treatmentStart = new Date(referenceDate.getTime());
+    treatmentStart.setHours(0, 0, 0, 0);
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: '920001',
+      nombre: 'Metformina',
+      pactivos: 'Metformina',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '850 mg',
+      iconType: 'pill',
+      stock: 20,
+      stockUnit: 'pastillas',
+      threshold: 3,
+      expDate: new Date('2031-01-01T00:00:00.000Z'),
+    });
+    await TreatmentModel.create({
+      blisterId: blister._id,
+      patientUserId: owner._id,
+      title: 'Control glucosa',
+      startDate: treatmentStart,
+      active: true,
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 0.5,
+          firstDoseAt: referenceDate,
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes: [doseTime],
+          isRecurring: true,
+        },
+      ],
+    });
+
+    await notifyDueDoseReminders(referenceDate);
+    await notifyDueDoseReminders(referenceDate);
+
+    const notifications = await NotificationModel.find({ type: 'dose_reminder' });
+    const recipientIds = notifications.map((notification) => notification.userId.toString()).sort();
+
+    expect(notifications).toHaveLength(2);
+    expect(recipientIds).toEqual([caregiver._id.toString(), owner._id.toString()].sort());
+    expect(notifications[0]?.message).toContain('Control glucosa');
+    expect(notifications[0]?.message).toContain('Metformina');
+    expect(notifications[0]?.metadata?.amount).toBe(0.5);
+  });
+
+  it('does not create dose reminders for already logged scheduled doses', async () => {
+    const owner = await createUser('notify-dose-taken-owner');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [{ userId: owner._id, role: 'OWNER' }],
+    });
+    const referenceDate = new Date('2030-01-01T12:00:00.000Z');
+    const doseTime = `${referenceDate.getHours().toString().padStart(2, '0')}:${referenceDate.getMinutes().toString().padStart(2, '0')}`;
+    const treatmentStart = new Date(referenceDate.getTime());
+    treatmentStart.setHours(0, 0, 0, 0);
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: '920002',
+      nombre: 'Enalapril',
+      pactivos: 'Enalapril',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '20 mg',
+      iconType: 'pill',
+      stock: 20,
+      stockUnit: 'pastillas',
+      threshold: 3,
+      expDate: new Date('2031-01-01T00:00:00.000Z'),
+    });
+    const treatment = await TreatmentModel.create({
+      blisterId: blister._id,
+      patientUserId: owner._id,
+      title: 'Tension',
+      startDate: treatmentStart,
+      active: true,
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 1,
+          firstDoseAt: referenceDate,
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes: [doseTime],
+          isRecurring: true,
+        },
+      ],
+    });
+    await AdherenceLogModel.create({
+      blisterId: blister._id,
+      medicineId: medicine._id,
+      treatmentId: treatment._id,
+      userId: owner._id,
+      amount: 1,
+      timestamp: referenceDate,
+    });
+
+    await notifyDueDoseReminders(referenceDate);
+
+    expect(await NotificationModel.find({ type: 'dose_reminder' })).toHaveLength(0);
   });
 
   it('lists and removes push subscriptions for the authenticated user', async () => {

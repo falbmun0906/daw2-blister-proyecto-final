@@ -229,6 +229,7 @@ const createDefaultSettings = (): UserSettings => ({
     expiration: true,
     cima: true,
     adherence: true,
+    doses: true,
     appointments: true,
     appointmentReminderPreset: '3h',
     customAppointmentReminderHours: 3,

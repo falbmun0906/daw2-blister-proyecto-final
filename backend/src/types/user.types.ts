@@ -21,6 +21,7 @@ export interface UserSettings {
     expiration: boolean;
     cima: boolean;
     adherence: boolean;
+    doses: boolean;
     appointments: boolean;
     appointmentReminderPreset: '3h' | '12h' | '1d' | 'custom';
     customAppointmentReminderHours: number;

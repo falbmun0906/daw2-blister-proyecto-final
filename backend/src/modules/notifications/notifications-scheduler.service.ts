@@ -1,10 +1,11 @@
 import { env } from '../../config/env';
-import { notifyUpcomingAppointmentReminders } from './notifications.service';
+import { notifyDueDoseReminders, notifyUpcomingAppointmentReminders } from './notifications.service';
 
 let reminderTimer: NodeJS.Timeout | null = null;
 
 const runReminderScan = (): void => {
   void notifyUpcomingAppointmentReminders().catch(() => undefined);
+  void notifyDueDoseReminders().catch(() => undefined);
 };
 
 /**

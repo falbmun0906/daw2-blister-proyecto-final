@@ -12,6 +12,7 @@ export const notificationSettingsSchema = z.object({
   expiration: z.boolean(),
   cima: z.boolean(),
   adherence: z.boolean(),
+  doses: z.boolean().default(true),
   appointments: z.boolean(),
   appointmentReminderPreset: z.enum(['3h', '12h', '1d', 'custom']),
   customAppointmentReminderHours: z.number().int().positive().max(168),

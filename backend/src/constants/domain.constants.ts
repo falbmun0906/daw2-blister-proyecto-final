@@ -10,6 +10,7 @@ export const NOTIFICATION_TYPES = [
   'expiration_warning',
   'adherence_forced',
   'cima_change',
+  'dose_reminder',
   'appointment_reminder',
   'system',
 ] as const;
@@ -35,6 +36,7 @@ export const DEFAULT_CIMA_SYNC_LOOKBACK_DAYS = 30;
 export const APPOINTMENT_REMINDER_LOOKAHEAD_HOURS = 168;
 export const APPOINTMENT_REMINDER_FOLLOW_UP_DELAY_MS = 15 * 60 * 1000;
 export const APPOINTMENT_REMINDER_FOLLOW_UP_LOOKBACK_MS = 24 * 60 * 60 * 1000;
+export const DOSE_REMINDER_SCAN_LOOKBACK_MS = 5 * 60 * 1000;
 export const PUSH_NOTIFICATION_TTL_SECONDS = 24 * 60 * 60;
 
 export const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi blíster';

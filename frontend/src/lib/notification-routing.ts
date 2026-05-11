@@ -28,5 +28,10 @@ export const getNotificationTargetRoute = (notification: NotificationView): stri
     return ROUTES.blisterAppointments(blisterId);
   }
 
+  if (notification.type === 'dose_reminder' && blisterId) {
+    const treatmentId = getStringMetadata(notification, 'treatmentId');
+    if (treatmentId) return ROUTES.treatmentDetail(blisterId, treatmentId);
+  }
+
   return null;
 };

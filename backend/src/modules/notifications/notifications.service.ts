@@ -4,12 +4,16 @@ import {
   APPOINTMENT_REMINDER_FOLLOW_UP_DELAY_MS,
   APPOINTMENT_REMINDER_FOLLOW_UP_LOOKBACK_MS,
   APPOINTMENT_REMINDER_LOOKAHEAD_HOURS,
+  DOSE_REMINDER_SCAN_LOOKBACK_MS,
   NOTIFICATION_DEDUPLICATION_WINDOW_MS,
 } from '../../constants/domain.constants';
 import { HTTP_STATUS_NOT_FOUND } from '../../constants/http.constants';
+import { AdherenceLogModel } from '../../models/adherenceLog.model';
 import { NotificationModel } from '../../models/notification.model';
 import { AppointmentModel } from '../../models/appointment.model';
 import { BlisterModel } from '../../models/blister.model';
+import { MedicineModel } from '../../models/medicine.model';
+import { TreatmentModel } from '../../models/treatment.model';
 import { UserModel } from '../../models/user.model';
 import { type AdherenceLogDocument } from '../../types/adherence-log.types';
 import {
@@ -25,8 +29,10 @@ import {
   type NotificationType,
 } from '../../types/notification.types';
 import { type AppointmentDocument } from '../../types/appointment.types';
+import { type TreatmentMedicineEntry } from '../../types/treatment.types';
 import { type UserSettings } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
+import { computeDosesInRange } from '../../utils/dose-schedule';
 import { type NotificationsListQuery } from '../../../../shared/schemas';
 import { type CimaChangeLogDocument } from '../../types/cima-change-log.types';
 import { sendPushForNotifications } from './notifications-push.service';
@@ -276,6 +282,66 @@ const buildAppointmentReminderNotification = ({
     reminderKey: buildAppointmentReminderKey(appointment, userId, phase, targetAt),
   },
 });
+
+const buildDoseReminderKey = (
+  treatmentId: Types.ObjectId,
+  medicineId: Types.ObjectId,
+  userId: Types.ObjectId,
+  doseAt: Date,
+): string => [
+  treatmentId.toString(),
+  medicineId.toString(),
+  userId.toString(),
+  doseAt.toISOString(),
+].join(':');
+
+const buildDoseReminderNotification = ({
+  userId,
+  blisterId,
+  treatmentId,
+  medicineId,
+  treatmentTitle,
+  patientUserId,
+  patientName,
+  medicineName,
+  amount,
+  doseAt,
+}: {
+  userId: Types.ObjectId;
+  blisterId: Types.ObjectId;
+  treatmentId: Types.ObjectId;
+  medicineId: Types.ObjectId;
+  treatmentTitle: string;
+  patientUserId: Types.ObjectId;
+  patientName: string;
+  medicineName: string;
+  amount: number;
+  doseAt: Date;
+}): DomainNotificationInput => ({
+  userId,
+  blisterId,
+  type: 'dose_reminder',
+  severity: 'info',
+  title: 'Hora de la toma',
+  message: `Tratamiento: ${treatmentTitle}. Paciente: ${patientName}. Medicacion: ${medicineName}. Dosis: ${amount} unidad(es).`,
+  metadata: {
+    treatmentId: treatmentId.toString(),
+    medicineId: medicineId.toString(),
+    patientUserId: patientUserId.toString(),
+    doseAt: doseAt.toISOString(),
+    amount,
+    reminderKey: buildDoseReminderKey(treatmentId, medicineId, userId, doseAt),
+  },
+});
+
+const buildDoseLogKey = (
+  treatmentId: Types.ObjectId,
+  medicineId: Types.ObjectId,
+  doseAt: Date,
+): string => [treatmentId.toString(), medicineId.toString(), doseAt.getTime().toString()].join(':');
+
+const shouldNotifyDoseRecipient = (settings: UserSettings | undefined): boolean =>
+  Boolean(settings && settings.notifications.doses !== false);
 
 /**
  * Lists inbox notifications for the authenticated user with standard pagination metadata.
@@ -626,6 +692,156 @@ export const notifyUpcomingAppointmentReminders = async (
 
   const existing = await NotificationModel.find({
     type: 'appointment_reminder',
+    'metadata.reminderKey': { $in: candidates.map((candidate) => candidate.key) },
+  }).select('metadata.reminderKey');
+  const existingKeys = new Set(
+    existing
+      .map((notification) => notification.metadata?.reminderKey)
+      .filter((key): key is string => typeof key === 'string'),
+  );
+
+  await createNotifications(
+    candidates
+      .filter((candidate) => !existingKeys.has(candidate.key))
+      .map((candidate) => candidate.input),
+  );
+};
+
+/**
+ * Scans active treatments whose dose time has just arrived and creates one reminder per owner/caregiver.
+ */
+export const notifyDueDoseReminders = async (
+  referenceDate = new Date(),
+): Promise<void> => {
+  const from = new Date(referenceDate.getTime() - DOSE_REMINDER_SCAN_LOOKBACK_MS);
+  const to = referenceDate;
+  const treatments = await TreatmentModel.find({
+    active: true,
+    startDate: { $lte: to },
+    $or: [{ endDate: null }, { endDate: { $exists: false } }, { endDate: { $gte: from } }],
+  });
+
+  if (treatments.length === 0) {
+    return;
+  }
+
+  const blisterIds = [...new Set(treatments.map((treatment) => treatment.blisterId.toString()))];
+  const treatmentIds = treatments.map((treatment) => treatment._id as Types.ObjectId);
+  const medicineIds = [
+    ...new Set(
+      treatments.flatMap((treatment) =>
+        (treatment.medicines as TreatmentMedicineEntry[]).map((entry) => entry.medicineId.toString()),
+      ),
+    ),
+  ];
+
+  const [blisters, medicines, adherenceLogs] = await Promise.all([
+    BlisterModel.find({
+      _id: { $in: blisterIds.map((id) => new Types.ObjectId(id)) },
+      deletedAt: null,
+    }),
+    MedicineModel.find({ _id: { $in: medicineIds.map((id) => new Types.ObjectId(id)) } }),
+    AdherenceLogModel.find({
+      treatmentId: { $in: treatmentIds },
+      timestamp: { $gte: from, $lte: to },
+    }).lean(),
+  ]);
+
+  const blisterById = new Map(blisters.map((blister) => [blister._id.toString(), blister]));
+  const medicineNameById = new Map(
+    medicines.map((medicine) => [
+      medicine._id.toString(),
+      (medicine.alias as string | undefined)?.trim() || medicine.nombre,
+    ]),
+  );
+  const patientIds = treatments.map((treatment) => treatment.patientUserId.toString());
+  const recipientIds = [
+    ...new Set(
+      blisters.flatMap((blister) =>
+        getRecipientIdsByRoles(blister, STOCK_ALERT_ROLES).map((userId) => userId.toString()),
+      ),
+    ),
+  ];
+  const users = await UserModel.find({
+    _id: { $in: [...new Set([...patientIds, ...recipientIds])].map((id) => new Types.ObjectId(id)) },
+    deletedAt: null,
+  }).select('name settings');
+  const usersById = new Map(users.map((user) => [user._id.toString(), user]));
+  const takenDoseKeys = new Set(
+    adherenceLogs.map((log) => buildDoseLogKey(
+      log.treatmentId as Types.ObjectId,
+      log.medicineId as Types.ObjectId,
+      log.timestamp as Date,
+    )),
+  );
+  const candidates: Array<{ key: string; input: DomainNotificationInput }> = [];
+
+  for (const treatment of treatments) {
+    const blister = blisterById.get(treatment.blisterId.toString());
+    if (!blister) continue;
+
+    const patientUserId = treatment.patientUserId as Types.ObjectId;
+    const patientName = usersById.get(patientUserId.toString())?.name ?? 'Paciente';
+
+    for (const entry of treatment.medicines as TreatmentMedicineEntry[]) {
+      const source = {
+        startDate: entry.firstDoseAt,
+        endDate: treatment.endDate ?? null,
+        active: Boolean(treatment.active),
+      };
+      const occurrences = computeDosesInRange(source, {
+        firstDoseAt: entry.firstDoseAt,
+        scheduleType: entry.scheduleType,
+        frequencyHours: entry.frequencyHours ?? null,
+        dailyDoseTimes: entry.dailyDoseTimes ?? [],
+        isRecurring: Boolean(entry.isRecurring),
+      }, from, to);
+
+      for (const doseAt of occurrences) {
+        const doseLogKey = buildDoseLogKey(
+          treatment._id as Types.ObjectId,
+          entry.medicineId,
+          doseAt,
+        );
+        if (takenDoseKeys.has(doseLogKey)) continue;
+
+        for (const member of blister.members) {
+          if (!STOCK_ALERT_ROLES.includes(member.role)) continue;
+          const settings = usersById.get(member.userId.toString())?.settings as UserSettings | undefined;
+          if (!shouldNotifyDoseRecipient(settings)) continue;
+
+          const key = buildDoseReminderKey(
+            treatment._id as Types.ObjectId,
+            entry.medicineId,
+            member.userId,
+            doseAt,
+          );
+          candidates.push({
+            key,
+            input: buildDoseReminderNotification({
+              userId: member.userId,
+              blisterId: blister._id,
+              treatmentId: treatment._id as Types.ObjectId,
+              medicineId: entry.medicineId,
+              treatmentTitle: treatment.title,
+              patientUserId,
+              patientName,
+              medicineName: medicineNameById.get(entry.medicineId.toString()) ?? 'Medicamento',
+              amount: entry.amount,
+              doseAt,
+            }),
+          });
+        }
+      }
+    }
+  }
+
+  if (candidates.length === 0) {
+    return;
+  }
+
+  const existing = await NotificationModel.find({
+    type: 'dose_reminder',
     'metadata.reminderKey': { $in: candidates.map((candidate) => candidate.key) },
   }).select('metadata.reminderKey');
   const existingKeys = new Set(

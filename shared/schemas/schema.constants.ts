@@ -4,12 +4,14 @@ export const fontOptions = ['standard', 'dyslexic'] as const;
 export const fontSizeOptions = ['normal', 'large', 'xlarge'] as const;
 export const stockUnits = ['pastillas', 'ml', 'gotas', 'dosis', 'sobres', 'g'] as const;
 export const iconTypes = ['pill', 'capsule', 'liquid', 'cream', 'inhaler', 'syringe', 'generic'] as const;
+export const adherenceLogStatuses = ['taken', 'skipped'] as const;
 export const notificationTypes = [
   'stock_low',
   'stock_depleted',
   'expiration_warning',
   'adherence_forced',
   'cima_change',
+  'dose_reminder',
   'appointment_reminder',
   'system',
 ] as const;

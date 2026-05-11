@@ -24,6 +24,7 @@ const DEFAULT_NOTIFICATIONS: NotificationSettings = {
   expiration: true,
   cima: true,
   adherence: true,
+  doses: true,
   appointments: true,
   appointmentReminderPreset: '3h',
   customAppointmentReminderHours: 3,
@@ -105,6 +106,7 @@ export default function NotificationSettingsPage() {
         <ToggleRow label="Caducidad de medicamentos" checked={settings.expiration} onChange={(value) => setFlag('expiration', value)} />
         <ToggleRow label="Cambios oficiales CIMA" checked={settings.cima} onChange={(value) => setFlag('cima', value)} />
         <ToggleRow label="Tomas registradas en modo forzado" checked={settings.adherence} onChange={(value) => setFlag('adherence', value)} />
+        <ToggleRow label="Hora de las tomas programadas" checked={settings.doses} onChange={(value) => setFlag('doses', value)} />
       </FormSection>
 
       <FormSection label="Citas médicas" icon={<TbCalendarTime aria-hidden="true" />}>
