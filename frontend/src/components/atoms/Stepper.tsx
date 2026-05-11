@@ -7,8 +7,10 @@ interface StepperProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type
   value: number;
   /** Notifica el nuevo valor (siempre acotado entre `min` y `max`). */
   onChange: (next: number) => void;
-  /** Incremento por click en los botones ± (por defecto 1). */
+  /** Incremento aceptado por el input manual. */
   step?: number;
+  /** Incremento por click en los botones ± (por defecto 1). */
+  buttonStep?: number;
   min?: number;
   max?: number;
   /** Texto opcional mostrado a la derecha (ej. "pastillas"). */
@@ -22,7 +24,7 @@ interface StepperProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type
  * `[min, max]` y permite también edición manual del input subyacente.
  */
 export const Stepper = forwardRef<HTMLInputElement, StepperProps>(function Stepper(
-  { label, value, onChange, step = 1, min = 0, max = 9999, unit, error, id, name, ...rest },
+  { label, value, onChange, step = 1, buttonStep = 1, min = 0, max = 9999, unit, error, id, name, ...rest },
   ref,
 ) {
   const generatedId = useId();
@@ -30,8 +32,8 @@ export const Stepper = forwardRef<HTMLInputElement, StepperProps>(function Stepp
   const errorId = error ? `${inputId}-error` : undefined;
 
   const clamp = (n: number): number => Math.min(max, Math.max(min, n));
-  const dec = () => onChange(clamp(value - step));
-  const inc = () => onChange(clamp(value + step));
+  const dec = () => onChange(clamp(value - buttonStep));
+  const inc = () => onChange(clamp(value + buttonStep));
 
   return (
     <div className={['c-stepper', error && 'c-stepper--error'].filter(Boolean).join(' ')}>
