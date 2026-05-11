@@ -21,6 +21,11 @@ export const upcomingDoseSchema = z.object({
   medicineId: objectIdSchema,
   medicineName: z.string(),
   amount: positiveQuantityValueSchema,
+  isTaken: z.boolean().default(false),
+  isSkipped: z.boolean().default(false),
+  takenAt: z.string().nullable().default(null),
+  skippedAt: z.string().nullable().default(null),
+  adherenceLogId: objectIdSchema.nullable().default(null),
   callerRole: callerRoleSchema,
 });
 
@@ -50,16 +55,18 @@ interface RangeQuery {
   from: Date;
   to: Date;
   blisterId?: string | null;
+  includeTaken?: boolean;
 }
 
 interface CalendarQuery extends RangeQuery {
   kinds?: Array<'appointments' | 'doses'>;
 }
 
-const toRangeParams = ({ from, to, blisterId }: RangeQuery): Record<string, string> => ({
+const toRangeParams = ({ from, to, blisterId, includeTaken }: RangeQuery): Record<string, string> => ({
   from: from.toISOString(),
   to: to.toISOString(),
   ...(blisterId ? { blisterId } : {}),
+  ...(includeTaken ? { includeTaken: 'true' } : {}),
 });
 
 export async function getUpcomingDoses(query: RangeQuery): Promise<UpcomingDose[]> {

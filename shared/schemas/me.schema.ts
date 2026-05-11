@@ -8,6 +8,11 @@ const calendarRangeFields = {
   blisterId: objectIdSchema.optional(),
 };
 
+const optionalBooleanQuerySchema = z
+  .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+  .optional()
+  .transform((value) => value === true || value === 'true' || value === '1');
+
 const refineRange = (value: { from: Date; to: Date }, ctx: z.RefinementCtx): void => {
   if (value.to <= value.from) {
     ctx.addIssue({
@@ -19,7 +24,10 @@ const refineRange = (value: { from: Date; to: Date }, ctx: z.RefinementCtx): voi
 };
 
 export const upcomingDosesQuerySchema = z
-  .object(calendarRangeFields)
+  .object({
+    ...calendarRangeFields,
+    includeTaken: optionalBooleanQuerySchema,
+  })
   .superRefine(refineRange);
 
 export const calendarQuerySchema = z

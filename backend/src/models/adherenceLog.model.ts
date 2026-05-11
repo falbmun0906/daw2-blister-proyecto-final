@@ -24,6 +24,12 @@ const adherenceLogSchema = new Schema<AdherenceLogDocument>({
     ref: 'Treatment',
     required: true,
   },
+  status: {
+    type: String,
+    enum: ['taken', 'skipped'],
+    required: true,
+    default: 'taken',
+  },
   amount: {
     type: Number,
     required: true,
@@ -46,6 +52,8 @@ const adherenceLogSchema = new Schema<AdherenceLogDocument>({
     maxlength: 500,
     default: null,
   },
+}, {
+  timestamps: true,
 });
 
 adherenceLogSchema.index({ blisterId: 1, timestamp: -1 });

@@ -29,6 +29,7 @@ interface AdherenceLogView {
   medicineId: string;
   userId: string;
   treatmentId: string;
+  status: 'taken' | 'skipped';
   amount: number;
   timestamp: Date;
   isForced: boolean;
@@ -55,6 +56,7 @@ const toAdherenceLogView = (
   medicineId: adherenceLog!.medicineId.toString(),
   userId: adherenceLog!.userId.toString(),
   treatmentId: adherenceLog!.treatmentId.toString(),
+  status: adherenceLog!.status ?? 'taken',
   amount: adherenceLog!.amount,
   timestamp: adherenceLog!.timestamp,
   isForced: adherenceLog!.isForced,
@@ -216,10 +218,13 @@ export const adherenceLogsCreate = async (
   const medicine = await getMedicineDocument(blisterId, input.medicineId);
   const treatment = await getTreatmentDocument(blisterId, input.treatmentId);
   const treatmentAmount = getTreatmentMedicineAmount(treatment.medicines, input.medicineId);
-  const requestedAmount = resolveRequestedAmount(input.amount, treatmentAmount);
+  const status = input.status ?? 'taken';
+  const requestedAmount = status === 'skipped'
+    ? 0
+    : resolveRequestedAmount(input.amount, treatmentAmount);
 
   const remainingStock = medicine.stock - requestedAmount;
-  if (remainingStock < 0 && !input.force) {
+  if (status === 'taken' && remainingStock < 0 && !input.force) {
     throw new AppError({
       code: 'ADHERENCE_STOCK_INSUFFICIENT',
       message: 'Insufficient stock. Retry with force: true to confirm a forced log.',
@@ -227,16 +232,19 @@ export const adherenceLogsCreate = async (
     });
   }
 
-  const isForced = remainingStock < 0;
+  const isForced = status === 'taken' && remainingStock < 0;
   const deductedAmount = isForced ? medicine.stock : requestedAmount;
-  medicine.stock = isForced ? 0 : remainingStock;
-  await medicine.save();
+  if (status === 'taken') {
+    medicine.stock = isForced ? 0 : remainingStock;
+    await medicine.save();
+  }
 
   const adherenceLog = await AdherenceLogModel.create({
     blisterId: new Types.ObjectId(blisterId),
     medicineId: new Types.ObjectId(input.medicineId),
     userId: new Types.ObjectId(userId),
     treatmentId: new Types.ObjectId(input.treatmentId),
+    status,
     amount: deductedAmount,
     isForced,
     notes: input.notes ?? null,
@@ -245,7 +253,7 @@ export const adherenceLogsCreate = async (
 
   const blister = await getBlisterDocument(blisterId);
 
-  if (medicine.stock <= medicine.threshold) {
+  if (status === 'taken' && medicine.stock <= medicine.threshold) {
     await notifyStockLow(medicine, blister);
   }
 
@@ -274,7 +282,9 @@ export const adherenceLogsDelete = async (
     });
   }
 
-  if (Date.now() - adherenceLog.timestamp.getTime() > ADHERENCE_LOG_UNDO_WINDOW_MS) {
+  const undoReferenceTime = adherenceLog.createdAt ?? adherenceLog.timestamp;
+
+  if (Date.now() - undoReferenceTime.getTime() > ADHERENCE_LOG_UNDO_WINDOW_MS) {
     throw new AppError({
       code: 'ADHERENCE_LOG_UNDO_WINDOW_EXPIRED',
       message: 'This adherence log can no longer be undone.',

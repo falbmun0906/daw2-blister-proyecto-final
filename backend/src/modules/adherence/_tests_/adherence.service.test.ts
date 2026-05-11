@@ -149,6 +149,31 @@ describe('adherence.service', () => {
     expect(storedMedicine?.stock).toBe(10);
   });
 
+  it('creates skipped adherence logs without decrementing stock', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('CAREGIVER', 3);
+
+    const result = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'CAREGIVER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        status: 'skipped',
+        timestamp: new Date('2030-11-02T08:00:00.000Z'),
+      },
+    );
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    const notifications = await NotificationModel.find({});
+
+    expect(result.status).toBe('skipped');
+    expect(result.amount).toBe(0);
+    expect(result.isForced).toBe(false);
+    expect(storedMedicine?.stock).toBe(3);
+    expect(notifications).toHaveLength(0);
+  });
+
   it('creates stock-low notifications for owner and caregiver when stock reaches threshold', async () => {
     const owner = await createUser(`o${Math.random().toString(16).slice(2, 8)}`);
     const caregiver = await createUser(`cg${Math.random().toString(16).slice(2, 8)}`);
@@ -380,9 +405,15 @@ describe('adherence.service', () => {
       },
     );
 
-    await AdherenceLogModel.findByIdAndUpdate(created.id, {
-      timestamp: new Date(Date.now() - (11 * 60 * 1000)),
-    });
+    await AdherenceLogModel.collection.updateOne(
+      { _id: new Types.ObjectId(created.id) },
+      {
+        $set: {
+          timestamp: new Date(Date.now() - (11 * 60 * 1000)),
+          createdAt: new Date(Date.now() - (11 * 60 * 1000)),
+        },
+      },
+    );
 
     await expect(
       adherenceLogsDelete(blister._id.toString(), created.id, user._id.toString()),

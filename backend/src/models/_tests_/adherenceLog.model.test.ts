@@ -13,8 +13,10 @@ describe('AdherenceLogModel', () => {
     });
 
     expect(log.validateSync()).toBeUndefined();
+    expect(log.status).toBe('taken');
     expect(log.amount).toBe(0);
     expect(log.timestamp).toBeInstanceOf(Date);
+    expect(AdherenceLogModel.schema.get('timestamps')).toBe(true);
     expect(log.isForced).toBe(false);
     expect(log.notes).toBeNull();
   });

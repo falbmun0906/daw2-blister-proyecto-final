@@ -26,6 +26,11 @@ export interface UpcomingDoseItem {
   medicineId: string;
   medicineName: string;
   amount: number;
+  isTaken: boolean;
+  isSkipped: boolean;
+  takenAt: Date | null;
+  skippedAt: Date | null;
+  adherenceLogId: string | null;
   /** Rol del usuario autenticado en el blíster, para que el frontend decida si mostrar acciones de escritura. */
   callerRole: BlisterRole;
 }
@@ -150,12 +155,15 @@ export const meUpcomingDoses = async (
   const patients = await buildPatientMap(
     treatments.map((treatment) => treatment.patientUserId as Types.ObjectId),
   );
-  const takenDoseKeys = new Set(
+  const adherenceLogByDoseKey = new Map(
     adherenceLogs.map((log) => [
-      (log.treatmentId as Types.ObjectId).toString(),
-      (log.medicineId as Types.ObjectId).toString(),
-      (log.timestamp as Date).getTime().toString(),
-    ].join(':')),
+      [
+        (log.treatmentId as Types.ObjectId).toString(),
+        (log.medicineId as Types.ObjectId).toString(),
+        (log.timestamp as Date).getTime().toString(),
+      ].join(':'),
+      log,
+    ]),
   );
 
   const items: UpcomingDoseItem[] = [];
@@ -183,7 +191,9 @@ export const meUpcomingDoses = async (
           (entry.medicineId as Types.ObjectId).toString(),
           doseAt.getTime().toString(),
         ].join(':');
-        if (takenDoseKeys.has(doseKey)) continue;
+        const adherenceLog = adherenceLogByDoseKey.get(doseKey);
+        if (adherenceLog && !query.includeTaken) continue;
+        const adherenceStatus = adherenceLog ? (adherenceLog.status ?? 'taken') : null;
 
         items.push({
           doseAt,
@@ -200,6 +210,11 @@ export const meUpcomingDoses = async (
           medicineId: (entry.medicineId as Types.ObjectId).toString(),
           medicineName: medicineById.get((entry.medicineId as Types.ObjectId).toString()) ?? 'Medicamento',
           amount: entry.amount,
+          isTaken: adherenceStatus === 'taken',
+          isSkipped: adherenceStatus === 'skipped',
+          takenAt: adherenceStatus === 'taken' ? (adherenceLog?.timestamp as Date) : null,
+          skippedAt: adherenceStatus === 'skipped' ? (adherenceLog?.timestamp as Date) : null,
+          adherenceLogId: adherenceLog ? (adherenceLog._id as Types.ObjectId).toString() : null,
           callerRole: blister.role,
         });
       }
@@ -238,7 +253,7 @@ export const meCalendar = async (
     : Promise.resolve([]);
 
   const dosesPromise = wantsDoses
-    ? meUpcomingDoses(userId, { from: query.from, to: query.to, blisterId: query.blisterId })
+    ? meUpcomingDoses(userId, { from: query.from, to: query.to, blisterId: query.blisterId, includeTaken: false })
     : Promise.resolve([] as UpcomingDoseItem[]);
 
   const [appointmentDocs, doses] = await Promise.all([appointmentsPromise, dosesPromise]);
