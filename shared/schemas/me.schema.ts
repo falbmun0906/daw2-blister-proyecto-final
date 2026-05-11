@@ -33,6 +33,7 @@ export const upcomingDosesQuerySchema = z
 export const calendarQuerySchema = z
   .object({
     ...calendarRangeFields,
+    includeTaken: optionalBooleanQuerySchema,
     kinds: z
       .string()
       .optional()

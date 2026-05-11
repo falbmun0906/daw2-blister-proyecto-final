@@ -39,7 +39,6 @@ export function BlisterPageSelector() {
 
   const handleSelect = (blister: Blister): void => {
     setActiveBlister(blister._id, resolveUserRole(blister, userId));
-    closeSelector();
     navigate(resolveCurrentRoute(location.pathname, blister._id));
   };
 

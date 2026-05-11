@@ -380,13 +380,14 @@
     height: calc(var(--space-touch-min) - var(--space-2));
     border: 0;
     border-radius: var(--radius-md);
-    background-color: var(--color-primary-mid);
-    color: var(--color-text-on-primary);
+    background-color: transparent;
+    color: var(--color-primary-mid);
     cursor: pointer;
 
     &:hover:not(:disabled),
     &:focus-visible:not(:disabled) {
-      background-color: var(--color-primary-hover);
+      background-color: var(--color-primary-tint);
+      color: var(--color-primary);
     }
 
     &:focus-visible {

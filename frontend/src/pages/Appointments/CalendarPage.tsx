@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { TbCalendar, TbCheck, TbChevronLeft, TbChevronRight, TbPill, TbPlus } from 'react-icons/tb';
+import { TbCalendar, TbCheck, TbChevronLeft, TbChevronRight, TbDotsVertical, TbPill, TbPlus } from 'react-icons/tb';
 
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
@@ -13,6 +13,7 @@ import {
   CALENDAR_SHOW_MORE_INCREMENT,
 } from '../../constants/calendar';
 import { ROUTES } from '../../constants/routes';
+import { ADHERENCE_UNDO_WINDOW_MS } from '../../constants/ui.constants';
 import { isStockInsufficientError, useAdherence } from '../../hooks/use.adherence';
 import { useAppointments } from '../../hooks/use.appointments';
 import { useBlisters } from '../../hooks/use.blisters';
@@ -67,6 +68,16 @@ const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   minute: '2-digit',
 });
 
+const getDoseKey = (dose: Pick<UpcomingDose, 'treatmentId' | 'medicineId' | 'doseAt'>): string =>
+  `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`;
+
+function formatRemaining(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 const formatMonthTitle = (date: Date): string =>
   capitalizeFirst(monthFormatter.format(date));
 
@@ -77,6 +88,42 @@ interface AppointmentDayGroup {
   key: string;
   day: Date;
   appointments: Appointment[];
+}
+
+interface DoseUndoButtonProps {
+  logId: string;
+  createdAt: number;
+  onUndo: (logId: string) => void;
+  onExpire: (logId: string) => void;
+}
+
+function DoseUndoButton({ logId, createdAt, onUndo, onExpire }: DoseUndoButtonProps) {
+  const expiresAt = createdAt + ADHERENCE_UNDO_WINDOW_MS;
+  const [remaining, setRemaining] = useState(() => Math.max(0, expiresAt - Date.now()));
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      const next = Math.max(0, expiresAt - Date.now());
+      setRemaining(next);
+      if (next <= 0) {
+        window.clearInterval(intervalId);
+        onExpire(logId);
+      }
+    }, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [expiresAt, logId, onExpire]);
+
+  if (remaining <= 0) return null;
+
+  return (
+    <button
+      type="button"
+      className="c-dose-row__btn c-dose-row__btn--undo"
+      onClick={() => onUndo(logId)}
+    >
+      Deshacer ({formatRemaining(remaining)})
+    </button>
+  );
 }
 
 const groupAppointmentsByDay = (appointments: Appointment[]): AppointmentDayGroup[] => {
@@ -236,7 +283,8 @@ function CalendarPage() {
     removeAppointmentComment,
   } = useAppointments(blisterId);
   const { treatments } = useTreatments(blisterId);
-  const { logDoseInBlister } = useAdherence(blisterId);
+  const { logDoseInBlister, undoLogInBlister } = useAdherence(blisterId);
+  const doseMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [view, setView] = useState<CalendarView>('appointments');
   const [cursor, setCursor] = useState(() => new Date());
@@ -247,6 +295,11 @@ function CalendarPage() {
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
+  const [skippingDoseKey, setSkippingDoseKey] = useState<string | null>(null);
+  const [skipDoseCandidate, setSkipDoseCandidate] = useState<UpcomingDose | null>(null);
+  const [openDoseMenuKey, setOpenDoseMenuKey] = useState<string | null>(null);
+  const [expiredUndoIds, setExpiredUndoIds] = useState<Set<string>>(() => new Set());
+  const [undoNow, setUndoNow] = useState(() => Date.now());
   const [upcomingVisibleCount, setUpcomingVisibleCount] = useState(CALENDAR_INITIAL_VISIBLE_ITEMS);
   const [pastVisibleCount, setPastVisibleCount] = useState(CALENDAR_INITIAL_VISIBLE_ITEMS);
   const [doseVisibleDays, setDoseVisibleDays] = useState(CALENDAR_INITIAL_VISIBLE_ITEMS);
@@ -274,7 +327,7 @@ function CalendarPage() {
     setCalendarError(null);
 
     try {
-      const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'] });
+      const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'], includeTaken: true });
       setCalendarDoses(payload.doses);
     } catch (err) {
       setCalendarError(isApiError(err) ? err.message : 'No se ha podido cargar el pastillero.');
@@ -299,7 +352,7 @@ function CalendarPage() {
     }
 
     try {
-      const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'] });
+      const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'], includeTaken: true });
       setMonthDoseMarkers(payload.doses);
     } catch {
       setMonthDoseMarkers([]);
@@ -319,6 +372,22 @@ function CalendarPage() {
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [refreshMonthDoseMarkers]);
+
+  useEffect(() => {
+    if (!openDoseMenuKey) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!doseMenuRef.current?.contains(event.target as Node)) {
+        setOpenDoseMenuKey(null);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [openDoseMenuKey]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setUndoNow(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const appointmentDays = useMemo(() => {
     const today = startOfToday();
@@ -378,6 +447,10 @@ function CalendarPage() {
     () => buildWindowDays(startOfToday(), doseVisibleDays),
     [doseVisibleDays],
   );
+
+  const expireUndo = useCallback((logId: string): void => {
+    setExpiredUndoIds((current) => new Set(current).add(logId));
+  }, []);
 
   if (!blisterId) {
     return <Navigate to={ROUTES.blisters} replace />;
@@ -448,7 +521,7 @@ function CalendarPage() {
   };
 
   const handleLogDose = async (dose: UpcomingDose): Promise<void> => {
-    const key = `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`;
+    const key = getDoseKey(dose);
     setLoggingDoseKey(key);
 
     try {
@@ -458,12 +531,7 @@ function CalendarPage() {
         amount: dose.amount,
         timestamp: new Date(dose.doseAt),
       });
-      setCalendarDoses((previous) =>
-        previous.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key),
-      );
-      setMonthDoseMarkers((previous) =>
-        previous.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key),
-      );
+      await Promise.all([refreshCalendarDoses(), refreshMonthDoseMarkers()]);
       addToast({ message: 'Toma marcada como tomada.', variant: 'success' });
     } catch (err) {
       const message = isStockInsufficientError(err)
@@ -474,6 +542,46 @@ function CalendarPage() {
       addToast({ message, variant: 'error' });
     } finally {
       setLoggingDoseKey(null);
+    }
+  };
+
+  const handleSkipDose = async (dose: UpcomingDose): Promise<void> => {
+    const key = getDoseKey(dose);
+    setSkippingDoseKey(key);
+
+    try {
+      await logDoseInBlister(dose.blisterId, {
+        treatmentId: dose.treatmentId,
+        medicineId: dose.medicineId,
+        status: 'skipped',
+        timestamp: new Date(dose.doseAt),
+        notes: 'Toma omitida desde Pastillero.',
+      });
+      setSkipDoseCandidate(null);
+      await Promise.all([refreshCalendarDoses(), refreshMonthDoseMarkers()]);
+      addToast({ message: 'Toma marcada como omitida.', variant: 'success' });
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido omitir la toma.',
+        variant: 'error',
+      });
+    } finally {
+      setSkippingDoseKey(null);
+    }
+  };
+
+  const handleUndoDose = async (dose: UpcomingDose): Promise<void> => {
+    if (!dose.adherenceLogId) return;
+
+    try {
+      await undoLogInBlister(dose.blisterId, dose.adherenceLogId);
+      await Promise.all([refreshCalendarDoses(), refreshMonthDoseMarkers()]);
+      addToast({ message: 'Toma deshecha.', variant: 'success' });
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido deshacer la toma.',
+        variant: 'error',
+      });
     }
   };
 
@@ -661,9 +769,19 @@ function CalendarPage() {
                     <ul className="c-calendar-page__doses">
                       {items.map((dose) => {
                         const time = new Date(dose.doseAt);
+                        const doseKey = getDoseKey(dose);
+                        const logged = dose.isTaken || dose.isSkipped;
+                        const createdAt = dose.adherenceCreatedAt ? Date.parse(dose.adherenceCreatedAt) : null;
+                        const canUndoDose = Boolean(
+                          dose.adherenceLogId &&
+                          createdAt &&
+                          Number.isFinite(createdAt) &&
+                          undoNow - createdAt < ADHERENCE_UNDO_WINDOW_MS &&
+                          !expiredUndoIds.has(dose.adherenceLogId),
+                        );
 
                         return (
-                          <li key={`${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`} className="c-dose-row">
+                          <li key={doseKey} className={`c-dose-row${dose.isTaken ? ' c-dose-row--taken' : ''}${dose.isSkipped ? ' c-dose-row--skipped' : ''}`}>
                             <time className="c-dose-row__time" dateTime={time.toISOString()}>
                               {timeFormatter.format(time)}
                             </time>
@@ -683,28 +801,75 @@ function CalendarPage() {
                                   />
                                 </span>
                               </header>
-                              {dose.callerRole === 'OWNER' || dose.callerRole === 'CAREGIVER' ? (
+                              {logged ? (
+                                <div className="c-dose-row__actions">
+                                  <span className={`c-dose-row__status c-dose-row__status--${dose.isSkipped ? 'skipped' : 'taken'}`}>
+                                    {dose.isSkipped ? 'Omitida' : 'Tomada'}
+                                  </span>
+                                  {canUndoDose && dose.adherenceLogId && createdAt ? (
+                                    <DoseUndoButton
+                                      logId={dose.adherenceLogId}
+                                      createdAt={createdAt}
+                                      onUndo={() => void handleUndoDose(dose)}
+                                      onExpire={expireUndo}
+                                    />
+                                  ) : null}
+                                </div>
+                              ) : dose.callerRole === 'OWNER' || dose.callerRole === 'CAREGIVER' ? (
                                 <div className="c-dose-row__actions">
                                   <button
                                     type="button"
                                     className="c-dose-row__btn c-dose-row__btn--solid"
-                                    disabled={loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`}
+                                    disabled={loggingDoseKey === doseKey}
                                     onClick={() => void handleLogDose(dose)}
                                   >
                                     <TbCheck aria-hidden="true" />
                                     <span>
-                                      {loggingDoseKey === `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`
+                                      {loggingDoseKey === doseKey
                                         ? 'Marcando...'
                                         : 'Marcar toma'}
                                     </span>
                                   </button>
-                                  <button
-                                    type="button"
-                                    className="c-dose-row__btn c-dose-row__btn--ghost"
-                                    onClick={() => navigate(ROUTES.editTreatment(dose.blisterId, dose.treatmentId))}
+                                  <div
+                                    className="c-dose-row__action-menu"
+                                    ref={openDoseMenuKey === doseKey ? doseMenuRef : undefined}
                                   >
-                                    Editar dosis
-                                  </button>
+                                    <button
+                                      type="button"
+                                      className="c-dose-row__menu-toggle"
+                                      aria-label="Acciones de la toma"
+                                      aria-haspopup="menu"
+                                      aria-expanded={openDoseMenuKey === doseKey}
+                                      onClick={() => setOpenDoseMenuKey((current) => current === doseKey ? null : doseKey)}
+                                    >
+                                      <TbDotsVertical aria-hidden="true" />
+                                    </button>
+                                    {openDoseMenuKey === doseKey ? (
+                                      <div className="c-dose-row__menu-popover" role="menu">
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          onClick={() => {
+                                            setOpenDoseMenuKey(null);
+                                            navigate(ROUTES.treatmentDetail(dose.blisterId, dose.treatmentId));
+                                          }}
+                                        >
+                                          Ver tratamiento
+                                        </button>
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          disabled={skippingDoseKey === doseKey}
+                                          onClick={() => {
+                                            setOpenDoseMenuKey(null);
+                                            setSkipDoseCandidate(dose);
+                                          }}
+                                        >
+                                          {skippingDoseKey === doseKey ? 'Omitiendo...' : 'Omitir'}
+                                        </button>
+                                      </div>
+                                    ) : null}
+                                  </div>
                                 </div>
                               ) : null}
                             </div>
@@ -739,6 +904,18 @@ function CalendarPage() {
           }}
         />
       ) : null}
+
+      {skipDoseCandidate ? (
+        <ConfirmDialog
+          message="¿Seguro que quieres omitir esta toma? Quedará registrada como omitida y no se descontará stock."
+          cancelLabel="Cancelar"
+          confirmLabel="Omitir toma"
+          onCancel={() => setSkipDoseCandidate(null)}
+          onConfirm={async () => {
+            await handleSkipDose(skipDoseCandidate);
+          }}
+        />
+      ) : null}
     </section>
   );
 }
@@ -747,9 +924,17 @@ interface ConfirmDialogProps {
   message: string;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
+  cancelLabel?: string;
+  confirmLabel?: string;
 }
 
-function ConfirmDialog({ message, onCancel, onConfirm }: ConfirmDialogProps) {
+function ConfirmDialog({
+  message,
+  onCancel,
+  onConfirm,
+  cancelLabel = 'Conservar',
+  confirmLabel = 'Sí, eliminar',
+}: ConfirmDialogProps) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="c-modal" role="dialog" aria-modal="true">
@@ -759,7 +944,7 @@ function ConfirmDialog({ message, onCancel, onConfirm }: ConfirmDialogProps) {
           <p className="c-confirm-modal__message">{message}</p>
           <div className="c-confirm-modal__actions">
             <Button type="button" variant="primary-outline" onClick={onCancel} disabled={busy}>
-              Conservar
+              {cancelLabel}
             </Button>
             <Button
               type="button"
@@ -774,7 +959,7 @@ function ConfirmDialog({ message, onCancel, onConfirm }: ConfirmDialogProps) {
                 }
               }}
             >
-              Sí, eliminar
+              {confirmLabel}
             </Button>
           </div>
         </div>

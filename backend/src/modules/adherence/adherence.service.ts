@@ -32,6 +32,7 @@ interface AdherenceLogView {
   status: 'taken' | 'skipped';
   amount: number;
   timestamp: Date;
+  createdAt: Date;
   isForced: boolean;
   notes: string | null;
 }
@@ -59,6 +60,7 @@ const toAdherenceLogView = (
   status: adherenceLog!.status ?? 'taken',
   amount: adherenceLog!.amount,
   timestamp: adherenceLog!.timestamp,
+  createdAt: adherenceLog!.createdAt ?? adherenceLog!.timestamp,
   isForced: adherenceLog!.isForced,
   notes: adherenceLog!.notes ?? null,
 });

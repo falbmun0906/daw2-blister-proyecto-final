@@ -30,6 +30,7 @@ export interface UpcomingDoseItem {
   isSkipped: boolean;
   takenAt: Date | null;
   skippedAt: Date | null;
+  adherenceCreatedAt: Date | null;
   adherenceLogId: string | null;
   /** Rol del usuario autenticado en el blíster, para que el frontend decida si mostrar acciones de escritura. */
   callerRole: BlisterRole;
@@ -214,6 +215,7 @@ export const meUpcomingDoses = async (
           isSkipped: adherenceStatus === 'skipped',
           takenAt: adherenceStatus === 'taken' ? (adherenceLog?.timestamp as Date) : null,
           skippedAt: adherenceStatus === 'skipped' ? (adherenceLog?.timestamp as Date) : null,
+          adherenceCreatedAt: adherenceLog ? (adherenceLog.createdAt ?? adherenceLog.timestamp as Date) : null,
           adherenceLogId: adherenceLog ? (adherenceLog._id as Types.ObjectId).toString() : null,
           callerRole: blister.role,
         });
@@ -253,7 +255,7 @@ export const meCalendar = async (
     : Promise.resolve([]);
 
   const dosesPromise = wantsDoses
-    ? meUpcomingDoses(userId, { from: query.from, to: query.to, blisterId: query.blisterId, includeTaken: false })
+    ? meUpcomingDoses(userId, { from: query.from, to: query.to, blisterId: query.blisterId, includeTaken: query.includeTaken })
     : Promise.resolve([] as UpcomingDoseItem[]);
 
   const [appointmentDocs, doses] = await Promise.all([appointmentsPromise, dosesPromise]);

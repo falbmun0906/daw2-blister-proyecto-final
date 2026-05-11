@@ -57,6 +57,7 @@ export const adherenceLogSchema = z.object({
   status: z.enum(adherenceLogStatuses).default('taken'),
   amount: nonNegativeQuantityValueSchema,
   timestamp: z.string(),
+  createdAt: z.string(),
   isForced: z.boolean(),
   notes: z.string().nullable(),
 });

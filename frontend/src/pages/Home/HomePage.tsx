@@ -256,6 +256,7 @@ export default function HomePage() {
   const [timelineNow, setTimelineNow] = useState(() => Date.now());
   const [timelineFocusKey, setTimelineFocusKey] = useState<string | null>(null);
   const [dismissedAlertKeys, setDismissedAlertKeys] = useState<Set<string>>(() => new Set());
+  const [expiredUndoIds, setExpiredUndoIds] = useState<Set<string>>(() => new Set());
   const [alertDismissCandidateKey, setAlertDismissCandidateKey] = useState<string | null>(null);
   const [openAlertMenuKey, setOpenAlertMenuKey] = useState<string | null>(null);
   const [openDoseMenu, setOpenDoseMenu] = useState<DoseActionMenu | null>(null);
@@ -308,9 +309,42 @@ export default function HomePage() {
   const openAlertMenu = openAlertMenuKey
     ? alertItems.find((item) => item.key === openAlertMenuKey) ?? null
     : null;
-  const activeUndoByDoseKey = useMemo(
-    () => new Map(activeUndos.map((undo) => [getDoseKey(undo), undo])),
-    [activeUndos],
+  const activeUndoByDoseKey = useMemo(() => {
+    const byDoseKey = new Map<string, ActiveUndo>();
+    const addUndo = (undo: ActiveUndo): void => {
+      if (expiredUndoIds.has(undo.logId)) return;
+      if (timelineNow - undo.createdAt >= ADHERENCE_UNDO_WINDOW_MS) return;
+      byDoseKey.set(getDoseKey(undo), undo);
+    };
+
+    for (const dose of upcomingDoses) {
+      if ((!dose.isTaken && !dose.isSkipped) || !dose.adherenceLogId || !dose.adherenceCreatedAt) continue;
+      const createdAt = Date.parse(dose.adherenceCreatedAt);
+      if (!Number.isFinite(createdAt)) continue;
+      addUndo({
+        logId: dose.adherenceLogId,
+        blisterId: dose.blisterId,
+        treatmentId: dose.treatmentId,
+        medicineId: dose.medicineId,
+        status: dose.isSkipped ? 'skipped' : 'taken',
+        createdAt,
+        medicineName: dose.medicineName,
+        treatmentTitle: dose.treatmentTitle,
+        patientName: dose.patientName || dose.blisterName,
+        patientAvatarKey: dose.patientAvatarKey,
+        doseAt: dose.doseAt,
+      });
+    }
+
+    for (const undo of activeUndos) {
+      addUndo(undo);
+    }
+
+    return byDoseKey;
+  }, [activeUndos, expiredUndoIds, timelineNow, upcomingDoses]);
+  const activeUndoByLogId = useMemo(
+    () => new Map([...activeUndoByDoseKey.values()].map((undo) => [undo.logId, undo])),
+    [activeUndoByDoseKey],
   );
 
   const timelineItems = useMemo<HomeTimelineItem[]>(() => {
@@ -453,6 +487,7 @@ export default function HomePage() {
   }, [nextTimelineItemKey, timelineFocusKey, upcomingLoading]);
 
   const dismissUndoToast = useCallback((logId: string) => {
+    setExpiredUndoIds((current) => new Set(current).add(logId));
     setActiveUndos((prev) => prev.filter((undo) => undo.logId !== logId));
   }, []);
 
@@ -473,7 +508,7 @@ export default function HomePage() {
           treatmentId: dose.treatmentId,
           medicineId: dose.medicineId,
           status: 'taken',
-          createdAt: Date.now(),
+          createdAt: Date.parse(log.createdAt),
           medicineName: dose.medicineName,
           treatmentTitle: dose.treatmentTitle,
           patientName: dose.patientName || dose.blisterName,
@@ -521,7 +556,7 @@ export default function HomePage() {
           treatmentId: dose.treatmentId,
           medicineId: dose.medicineId,
           status: 'skipped',
-          createdAt: Date.now(),
+          createdAt: Date.parse(log.createdAt),
           medicineName: dose.medicineName,
           treatmentTitle: dose.treatmentTitle,
           patientName: dose.patientName || dose.blisterName,
@@ -545,7 +580,7 @@ export default function HomePage() {
   };
 
   const handleUndo = async (logId: string): Promise<void> => {
-    const undo = activeUndos.find((item) => item.logId === logId);
+    const undo = activeUndoByLogId.get(logId);
     if (!undo) return;
     dismissUndoToast(logId);
     try {

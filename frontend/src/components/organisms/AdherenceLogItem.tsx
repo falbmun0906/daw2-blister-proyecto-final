@@ -18,7 +18,7 @@ const dateFormatter = new Intl.DateTimeFormat('es-ES', {
 });
 
 function isWithinUndoWindow(log: AdherenceLog): boolean {
-  const elapsed = Date.now() - new Date(log.timestamp).getTime();
+  const elapsed = Date.now() - new Date(log.createdAt).getTime();
   return elapsed >= 0 && elapsed < ADHERENCE_UNDO_WINDOW_MS;
 }
 

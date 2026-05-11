@@ -25,6 +25,7 @@ export const upcomingDoseSchema = z.object({
   isSkipped: z.boolean().default(false),
   takenAt: z.string().nullable().default(null),
   skippedAt: z.string().nullable().default(null),
+  adherenceCreatedAt: z.string().nullable().default(null),
   adherenceLogId: objectIdSchema.nullable().default(null),
   callerRole: callerRoleSchema,
 });

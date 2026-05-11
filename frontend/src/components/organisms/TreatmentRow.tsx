@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TbBuildingHospital, TbDotsVertical, TbPencil, TbPill, TbTrash, TbUser } from 'react-icons/tb';
+import { TbChevronRight, TbDotsVertical, TbPencil, TbTrash } from 'react-icons/tb';
 
 import { Avatar } from '../atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
@@ -102,36 +102,10 @@ export function TreatmentRow({
   return (
     <article className="c-treatment-row" aria-label={treatment.title}>
       <header className="c-treatment-row__header">
-        <span className="c-treatment-row__icon" aria-hidden="true">
-          <TbBuildingHospital />
-        </span>
+        <Avatar name={patientName || treatment.title} avatarKey={patientAvatarKey ?? undefined} size="md" />
         <div className="c-treatment-row__heading">
           <h3 className="c-treatment-row__title">{treatment.title}</h3>
-          <p className="c-treatment-row__meta">
-            <TbUser aria-hidden="true" /> {patientName || 'Paciente'}
-          </p>
-          <p className="c-treatment-row__meta">
-            <TbPill aria-hidden="true" /> {firstMedicine ?? `${treatment.medicines.length} medicamento${treatment.medicines.length === 1 ? '' : 's'}`} · {blisterName}
-          </p>
         </div>
-        <Avatar name={patientName || treatment.title} avatarKey={patientAvatarKey ?? undefined} size="md" />
-      </header>
-
-      <div className="c-treatment-row__progress" aria-label={`Progreso del tratamiento: ${progress.label}`}>
-        <span style={{ width: `${progress.percent}%` }} />
-      </div>
-      <p className="c-treatment-row__range">
-        <span>{progress.range}</span>
-        <span>{progress.label}</span>
-      </p>
-
-      <footer className="c-treatment-row__actions">
-        <Link
-          to={ROUTES.treatmentDetail(blisterId, treatment.id)}
-          className="c-btn c-btn--primary c-btn--card c-btn--full c-treatment-row__primary-link"
-        >
-          <span>Ver tratamiento</span>
-        </Link>
         {editable ? (
           <div className="c-treatment-row__menu" ref={menuRef}>
             <button
@@ -168,7 +142,30 @@ export function TreatmentRow({
             ) : null}
           </div>
         ) : null}
-      </footer>
+      </header>
+
+      <Link
+        to={ROUTES.treatmentDetail(blisterId, treatment.id)}
+        className="c-treatment-row__summary-link"
+        aria-label={`Ver tratamiento ${treatment.title}`}
+      >
+        <span className="c-treatment-row__meta-stack">
+          <span className="c-treatment-row__meta">{patientName || 'Paciente'}</span>
+          <span className="c-treatment-row__meta">
+            {firstMedicine ?? `${treatment.medicines.length} medicamento${treatment.medicines.length === 1 ? '' : 's'}`}
+            <span className="c-treatment-row__meta-context"> · {blisterName}</span>
+          </span>
+        </span>
+        <TbChevronRight className="c-treatment-row__summary-icon" aria-hidden="true" />
+      </Link>
+
+      <div className="c-treatment-row__progress" aria-label={`Progreso del tratamiento: ${progress.label}`}>
+        <span style={{ width: `${progress.percent}%` }} />
+      </div>
+      <p className="c-treatment-row__range">
+        <span>{progress.range}</span>
+        <span>{progress.label}</span>
+      </p>
     </article>
   );
 }
