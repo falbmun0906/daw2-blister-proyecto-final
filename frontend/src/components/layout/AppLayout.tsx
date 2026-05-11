@@ -25,7 +25,7 @@ export function AppLayout() {
     <div className="c-app-layout">
       {header}
       <main
-        className={['c-app-layout__main', showBottomNav && 'c-app-layout__main--with-bottom-nav'].filter(Boolean).join(' ')}
+        className={['c-app-layout__main', showBottomNav && 'c-app-layout__main--with-bottom-nav', isHome && 'c-app-layout__main--home'].filter(Boolean).join(' ')}
         id="contenido-principal"
       >
         <Outlet />

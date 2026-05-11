@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TbAlertTriangle, TbCheck } from 'react-icons/tb';
+import { TbAlertTriangle, TbCheck, TbDotsVertical } from 'react-icons/tb';
 
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
@@ -11,9 +11,10 @@ import { Skeleton } from '../../components/atoms/Skeleton';
 import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
 import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
 import { useBlisters } from '../../hooks/use.blisters';
-import { useRefreshNotifications } from '../../hooks/use.notifications';
+import { useNotifications, useRefreshNotifications } from '../../hooks/use.notifications';
 import { ADHERENCE_UNDO_WINDOW_MS } from '../../constants/ui.constants';
 import { ROUTES } from '../../constants/routes';
+import { getNotificationTargetRoute } from '../../lib/notification-routing';
 import { listMedicines } from '../../services/medicines.service';
 import { getUpcomingDoses, type UpcomingDose } from '../../services/me.service';
 import { useAuthStore } from '../../stores/auth.store';
@@ -21,10 +22,11 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Medicine } from '../../types/medicine.types';
+import type { NotificationView } from '../../types/notification.types';
 
 interface HomeTimelineItem {
   key: string;
-  status: 'taken' | 'next' | 'pending';
+  status: 'taken' | 'skipped' | 'missed' | 'next' | 'pending';
   date: Date;
   medicineName: string;
   detail: string;
@@ -37,6 +39,9 @@ interface HomeTimelineItem {
 interface ActiveUndo {
   logId: string;
   blisterId: string;
+  treatmentId: string;
+  medicineId: string;
+  status: 'taken' | 'skipped';
   createdAt: number;
   medicineName: string;
   treatmentTitle: string;
@@ -49,7 +54,28 @@ type HomeMedicine = Medicine & {
   blisterName: string;
 };
 
+interface HomeAlertItem {
+  key: string;
+  title: string;
+  detail: string;
+  context: string;
+  actionLabel: string;
+  actionRoute: string;
+  notification?: NotificationView;
+}
+
+interface DoseActionMenu {
+  key: string;
+  dose: UpcomingDose;
+}
+
 const EARLY_DOSE_GRACE_MS = 5 * 60 * 1000;
+const HOME_ALERT_NOTIFICATION_TYPES = new Set<string>([
+  'expiration_warning',
+  'cima_change',
+  'appointment_reminder',
+  'system',
+]);
 
 const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   hour: '2-digit',
@@ -69,9 +95,59 @@ function HomeSkeleton() {
 
 function formatTodayLabel(): string {
   const formatter = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' });
-  const from = new Date();
-  const to = new Date(from.getTime() + 3 * 24 * 60 * 60 * 1000);
-  return `${formatter.format(from)} - ${formatter.format(to)}`;
+  return formatter.format(new Date());
+}
+
+function getStartOfToday(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function getEndOfToday(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+}
+
+function getDoseKey(entry: { treatmentId: string; medicineId: string; doseAt: string }): string {
+  return `${entry.treatmentId}-${entry.medicineId}-${entry.doseAt}`;
+}
+
+function getNotificationContext(notification: NotificationView): string {
+  switch (notification.type) {
+    case 'stock_low':
+    case 'stock_depleted':
+    case 'expiration_warning':
+      return 'Botiquín';
+    case 'cima_change':
+      return 'CIMA';
+    case 'appointment_reminder':
+      return 'Citas médicas';
+    case 'system':
+    default:
+      return 'Aviso';
+  }
+}
+
+function getNotificationActionLabel(notification: NotificationView): string {
+  switch (notification.type) {
+    case 'stock_low':
+    case 'stock_depleted':
+      return 'Añadir más unidades';
+    case 'expiration_warning':
+      return 'Revisar medicamento';
+    case 'cima_change':
+      return 'Ver en CIMA';
+    case 'appointment_reminder':
+      return 'Ver citas';
+    case 'system':
+    default:
+      return 'Ver aviso';
+  }
+}
+
+function getStringMetadata(notification: NotificationView, key: string): string | null {
+  const value = notification.metadata?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
 function formatRemaining(ms: number): string {
@@ -89,9 +165,10 @@ interface InlineUndoDoseProps {
   undo: ActiveUndo;
   onUndo: (logId: string) => void;
   onExpire: (logId: string) => void;
+  itemRef?: React.Ref<HTMLLIElement>;
 }
 
-function InlineUndoDose({ undo, onUndo, onExpire }: InlineUndoDoseProps) {
+function InlineUndoDose({ undo, onUndo, onExpire, itemRef }: InlineUndoDoseProps) {
   const expiresAt = undo.createdAt + ADHERENCE_UNDO_WINDOW_MS;
   const [remaining, setRemaining] = useState(() => Math.max(0, expiresAt - Date.now()));
   const date = new Date(undo.doseAt);
@@ -111,10 +188,14 @@ function InlineUndoDose({ undo, onUndo, onExpire }: InlineUndoDoseProps) {
   if (remaining <= 0) return null;
 
   return (
-    <li className="c-home-next__item c-home-next__item--taken c-home-next__item--undo">
+    <li ref={itemRef} className={`c-home-next__item c-home-next__item--${undo.status} c-home-next__item--undo`}>
       <span className="c-home-next__time">{timeFormatter.format(date)}</span>
       <span className="c-home-next__marker" aria-hidden="true">
-        <TbCheck className="c-icon c-icon--sm" aria-hidden="true" />
+        {undo.status === 'taken' ? (
+          <TbCheck className="c-icon c-icon--sm" aria-hidden="true" />
+        ) : (
+          <span className="c-home-next__marker-dot" />
+        )}
       </span>
       <article className="c-home-next__card c-home-next__card--undo">
         <header className="c-home-next__card-header">
@@ -128,18 +209,15 @@ function InlineUndoDose({ undo, onUndo, onExpire }: InlineUndoDoseProps) {
           </span>
         </header>
         <p className="c-home-next__card-detail">
-          Registrada ahora · {undo.treatmentTitle}
+          {undo.status === 'taken' ? 'Registrada ahora' : 'Omitida ahora'} · {undo.treatmentTitle}
         </p>
         <div className="c-home-next__undo-actions">
-          <span className="c-home-next__undo-timer" aria-label="Tiempo restante para deshacer">
-            {formatRemaining(remaining)}
-          </span>
           <button
             type="button"
-            className="c-home-next__btn c-home-next__btn--ghost"
+            className="c-home-next__btn c-home-next__btn--undo"
             onClick={() => onUndo(undo.logId)}
           >
-            Deshacer
+            Deshacer ({formatRemaining(remaining)})
           </button>
         </div>
       </article>
@@ -158,26 +236,31 @@ export default function HomePage() {
   const addToast = useUiStore((s) => s.addToast);
   const { logDoseInBlister, undoLogInBlister } = useAdherence(activeBlisterId);
   const refreshNotifications = useRefreshNotifications();
+  const { notifications, dismiss: dismissNotification } = useNotifications({ limit: 12 });
+  const alertMenuRef = useRef<HTMLElement | null>(null);
+  const doseMenuRef = useRef<HTMLDivElement | null>(null);
+  const timelineAnchorRef = useRef<HTMLLIElement | null>(null);
+  const nextTimelineItemRef = useRef<HTMLLIElement | null>(null);
+  const hasInitialTimelinePositionedRef = useRef(false);
+  const appliedTimelineFocusKeyRef = useRef<string | null>(null);
   const [homeMedicines, setHomeMedicines] = useState<HomeMedicine[]>([]);
   const [homeMedicinesLoading, setHomeMedicinesLoading] = useState(false);
   const [upcomingDoses, setUpcomingDoses] = useState<UpcomingDose[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [upcomingError, setUpcomingError] = useState<string | null>(null);
   const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
+  const [skippingDoseKey, setSkippingDoseKey] = useState<string | null>(null);
   const [earlyDose, setEarlyDose] = useState<UpcomingDose | null>(null);
+  const [skipDoseCandidate, setSkipDoseCandidate] = useState<UpcomingDose | null>(null);
   const [activeUndos, setActiveUndos] = useState<ActiveUndo[]>([]);
-  const [dismissedLowStockAlertKey, setDismissedLowStockAlertKey] = useState<string | null>(null);
-  const [lowStockDismissCandidate, setLowStockDismissCandidate] = useState<string | null>(null);
+  const [timelineNow, setTimelineNow] = useState(() => Date.now());
+  const [timelineFocusKey, setTimelineFocusKey] = useState<string | null>(null);
+  const [dismissedAlertKeys, setDismissedAlertKeys] = useState<Set<string>>(() => new Set());
+  const [alertDismissCandidateKey, setAlertDismissCandidateKey] = useState<string | null>(null);
+  const [openAlertMenuKey, setOpenAlertMenuKey] = useState<string | null>(null);
+  const [openDoseMenu, setOpenDoseMenu] = useState<DoseActionMenu | null>(null);
 
   const todayLabel = useMemo(() => formatTodayLabel(), []);
-  const lowStockMedicine = useMemo(
-    () => homeMedicines.find((medicine) => medicine.stock <= medicine.threshold) ?? null,
-    [homeMedicines],
-  );
-  const lowStockAlertKey = lowStockMedicine
-    ? `${lowStockMedicine._id}-${lowStockMedicine.stock}-${lowStockMedicine.threshold}`
-    : null;
-  const showLowStockAlert = !homeMedicinesLoading && Boolean(lowStockMedicine && lowStockAlertKey !== dismissedLowStockAlertKey);
   const searchBlister = useMemo(
     () => blisters.find((blister) => blister._id === activeBlisterId) ?? blisters[0] ?? null,
     [activeBlisterId, blisters],
@@ -190,10 +273,69 @@ export default function HomePage() {
   );
   const canSearchBlisterMutate = searchRole === 'OWNER' || searchRole === 'CAREGIVER';
 
+  const alertItems = useMemo<HomeAlertItem[]>(() => {
+    const notificationAlerts = notifications
+      .filter((notification) => HOME_ALERT_NOTIFICATION_TYPES.has(notification.type))
+      .map<HomeAlertItem>((notification) => ({
+        key: `notification:${notification.id}`,
+        title: notification.title,
+        detail: getStringMetadata(notification, 'medicineName')
+          ? `${getStringMetadata(notification, 'medicineName')} · ${notification.message}`
+          : notification.message,
+        context: getNotificationContext(notification),
+        actionLabel: getNotificationActionLabel(notification),
+        actionRoute: getNotificationTargetRoute(notification) ?? ROUTES.notifications,
+        notification,
+      }));
+    const stockAlerts = homeMedicines
+      .filter((medicine) => medicine.stock <= medicine.threshold)
+      .map<HomeAlertItem>((medicine) => ({
+        key: `stock:${medicine._id}:${medicine.stock}:${medicine.threshold}`,
+        title: 'Stock bajo',
+        detail: `Quedan ${medicine.stock} ${medicine.stockUnit} de ${medicine.alias?.trim() || medicine.nombre}`,
+        context: medicine.blisterName,
+        actionLabel: 'Añadir más unidades',
+        actionRoute: ROUTES.editMedicine(medicine.blisterId, medicine._id),
+      }));
+
+    return [...notificationAlerts, ...stockAlerts]
+      .filter((item) => !dismissedAlertKeys.has(item.key));
+  }, [dismissedAlertKeys, homeMedicines, notifications]);
+  const showAlertZone = !homeMedicinesLoading && alertItems.length > 0;
+  const alertDismissCandidate = alertDismissCandidateKey
+    ? alertItems.find((item) => item.key === alertDismissCandidateKey) ?? null
+    : null;
+  const openAlertMenu = openAlertMenuKey
+    ? alertItems.find((item) => item.key === openAlertMenuKey) ?? null
+    : null;
+  const activeUndoByDoseKey = useMemo(
+    () => new Map(activeUndos.map((undo) => [getDoseKey(undo), undo])),
+    [activeUndos],
+  );
+
   const timelineItems = useMemo<HomeTimelineItem[]>(() => {
-    const items = upcomingDoses.map<HomeTimelineItem>((dose, index) => ({
-        key: `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`,
-        status: index === 0 ? 'next' : 'pending',
+    const sortedDoses = [...upcomingDoses]
+      .sort((left, right) => new Date(left.doseAt).getTime() - new Date(right.doseAt).getTime());
+    const now = timelineNow;
+    const nextDoseKey = sortedDoses
+      .find((dose) => !dose.isTaken && !dose.isSkipped && new Date(dose.doseAt).getTime() >= now);
+
+    const items = sortedDoses.map<HomeTimelineItem>((dose) => {
+      const key = getDoseKey(dose);
+      const doseTime = new Date(dose.doseAt).getTime();
+      const status = dose.isTaken
+        ? 'taken'
+        : dose.isSkipped
+          ? 'skipped'
+          : nextDoseKey && key === getDoseKey(nextDoseKey)
+            ? 'next'
+            : doseTime < now
+              ? 'missed'
+              : 'pending';
+
+      return {
+        key,
+        status,
         date: new Date(dose.doseAt),
         medicineName: dose.medicineName,
         detail: `${dose.amount} unidad(es) · ${dose.treatmentTitle} · ${dose.blisterName}`,
@@ -201,10 +343,12 @@ export default function HomePage() {
         avatarKey: dose.patientAvatarKey,
         avatarTooltip: dose.patientName || dose.blisterName,
         dose,
-      }));
+      };
+    });
 
     return items;
-  }, [upcomingDoses]);
+  }, [timelineNow, upcomingDoses]);
+  const nextTimelineItemKey = timelineItems.find((item) => item.status === 'next')?.key ?? null;
 
   const refreshHomeMedicines = useCallback(async () => {
     if (blisters.length === 0) {
@@ -247,12 +391,12 @@ export default function HomePage() {
       return;
     }
 
-    const from = new Date();
-    const to = new Date(from.getTime() + 72 * 60 * 60 * 1000);
+    const from = getStartOfToday();
+    const to = getEndOfToday();
     setUpcomingLoading(true);
     setUpcomingError(null);
     try {
-      const list = await getUpcomingDoses({ from, to });
+      const list = await getUpcomingDoses({ from, to, includeTaken: true });
       setUpcomingDoses(list);
     } catch (err) {
       setUpcomingError(isApiError(err) ? err.message : 'No se han podido cargar las próximas tomas.');
@@ -268,12 +412,52 @@ export default function HomePage() {
     return () => window.clearTimeout(timeoutId);
   }, [refreshUpcoming]);
 
+  useEffect(() => {
+    const updateCurrentTime = () => setTimelineNow(Date.now());
+    updateCurrentTime();
+    const intervalId = window.setInterval(updateCurrentTime, 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (!openAlertMenuKey) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!alertMenuRef.current?.contains(event.target as Node)) {
+        setOpenAlertMenuKey(null);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [openAlertMenuKey]);
+
+  useEffect(() => {
+    if (!openDoseMenu) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!doseMenuRef.current?.contains(event.target as Node)) {
+        setOpenDoseMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [openDoseMenu]);
+
+  useLayoutEffect(() => {
+    if (timelineFocusKey && appliedTimelineFocusKeyRef.current !== timelineFocusKey) {
+      timelineAnchorRef.current?.scrollIntoView({ block: 'nearest' });
+      appliedTimelineFocusKeyRef.current = timelineFocusKey;
+      return;
+    }
+    if (upcomingLoading || hasInitialTimelinePositionedRef.current || !nextTimelineItemKey) return;
+    nextTimelineItemRef.current?.scrollIntoView({ block: 'start' });
+    hasInitialTimelinePositionedRef.current = true;
+  }, [nextTimelineItemKey, timelineFocusKey, upcomingLoading]);
+
   const dismissUndoToast = useCallback((logId: string) => {
     setActiveUndos((prev) => prev.filter((undo) => undo.logId !== logId));
   }, []);
 
   const performLogDose = async (dose: UpcomingDose): Promise<void> => {
-    const key = `${dose.treatmentId}-${dose.medicineId}-${dose.doseAt}`;
+    const key = getDoseKey(dose);
     setLoggingDoseKey(key);
     try {
       const log = await logDoseInBlister(dose.blisterId, {
@@ -282,12 +466,13 @@ export default function HomePage() {
         amount: dose.amount,
         timestamp: new Date(dose.doseAt),
       });
-      setUpcomingDoses((prev) => prev.filter((item) => `${item.treatmentId}-${item.medicineId}-${item.doseAt}` !== key));
-      await Promise.all([refreshHomeMedicines(), refreshUpcoming(), refreshNotifications()]);
       setActiveUndos((prev) => [
         {
           logId: log.id,
           blisterId: dose.blisterId,
+          treatmentId: dose.treatmentId,
+          medicineId: dose.medicineId,
+          status: 'taken',
           createdAt: Date.now(),
           medicineName: dose.medicineName,
           treatmentTitle: dose.treatmentTitle,
@@ -295,8 +480,11 @@ export default function HomePage() {
           patientAvatarKey: dose.patientAvatarKey,
           doseAt: dose.doseAt,
         },
-        ...prev,
+        ...prev.filter((undo) => getDoseKey(undo) !== key),
       ]);
+      appliedTimelineFocusKeyRef.current = null;
+      setTimelineFocusKey(key);
+      await Promise.all([refreshHomeMedicines(), refreshUpcoming(), refreshNotifications()]);
     } catch (err) {
       const message = isStockInsufficientError(err)
         ? 'No hay stock suficiente para registrar esta toma desde Home.'
@@ -315,6 +503,47 @@ export default function HomePage() {
     await performLogDose(dose);
   };
 
+  const performSkipDose = async (dose: UpcomingDose): Promise<void> => {
+    const key = getDoseKey(dose);
+    setSkippingDoseKey(key);
+    try {
+      const log = await logDoseInBlister(dose.blisterId, {
+        treatmentId: dose.treatmentId,
+        medicineId: dose.medicineId,
+        status: 'skipped',
+        timestamp: new Date(dose.doseAt),
+        notes: 'Toma omitida desde Home.',
+      });
+      setActiveUndos((prev) => [
+        {
+          logId: log.id,
+          blisterId: dose.blisterId,
+          treatmentId: dose.treatmentId,
+          medicineId: dose.medicineId,
+          status: 'skipped',
+          createdAt: Date.now(),
+          medicineName: dose.medicineName,
+          treatmentTitle: dose.treatmentTitle,
+          patientName: dose.patientName || dose.blisterName,
+          patientAvatarKey: dose.patientAvatarKey,
+          doseAt: dose.doseAt,
+        },
+        ...prev.filter((undo) => getDoseKey(undo) !== key),
+      ]);
+      appliedTimelineFocusKeyRef.current = null;
+      setTimelineFocusKey(key);
+      setSkipDoseCandidate(null);
+      await Promise.all([refreshUpcoming(), refreshNotifications()]);
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido omitir la toma.',
+        variant: 'error',
+      });
+    } finally {
+      setSkippingDoseKey(null);
+    }
+  };
+
   const handleUndo = async (logId: string): Promise<void> => {
     const undo = activeUndos.find((item) => item.logId === logId);
     if (!undo) return;
@@ -326,6 +555,26 @@ export default function HomePage() {
     } catch (err) {
       addToast({
         message: isApiError(err) ? err.message : 'No se ha podido deshacer la toma.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleConfirmDismissAlert = async (): Promise<void> => {
+    if (!alertDismissCandidate) {
+      setAlertDismissCandidateKey(null);
+      return;
+    }
+
+    try {
+      if (alertDismissCandidate.notification) {
+        await dismissNotification(alertDismissCandidate.notification);
+      }
+      setDismissedAlertKeys((current) => new Set(current).add(alertDismissCandidate.key));
+      setAlertDismissCandidateKey(null);
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido descartar el aviso.',
         variant: 'error',
       });
     }
@@ -358,34 +607,65 @@ export default function HomePage() {
         />
       ) : null}
 
-      {showLowStockAlert && lowStockMedicine && lowStockAlertKey ? (
-        <article className="c-home-alert" role="alert">
-          <span className="c-home-alert__icon" aria-hidden="true">
-            <TbAlertTriangle className="c-icon c-icon--md" aria-hidden="true" />
-          </span>
-          <div className="c-home-alert__body">
-            <p className="c-home-alert__text">
-              Quedan {lowStockMedicine.stock} {lowStockMedicine.stockUnit} de {lowStockMedicine.alias?.trim() || lowStockMedicine.nombre}
-              <span className="c-home-alert__context"> {lowStockMedicine.blisterName}</span>
-            </p>
-            <div className="c-home-alert__actions">
+      {showAlertZone ? (
+        <section ref={alertMenuRef} className="c-home-alert" aria-label="Avisos">
+          <div className="c-home-alert__viewport">
+            {alertItems.map((alert) => (
+              <div key={alert.key} className="c-home-alert__slide">
+                <header className="c-home-alert__card-header">
+                  <span className="c-home-alert__icon" aria-hidden="true">
+                    <TbAlertTriangle className="c-icon c-icon--sm" aria-hidden="true" />
+                  </span>
+                  <div className="c-home-alert__header-copy">
+                    <span className="c-home-alert__title">
+                      {alert.title}
+                      <span className="c-home-alert__context"> · {alert.context}</span>
+                    </span>
+                  </div>
+                  <div className="c-home-alert__menu">
+                    <button
+                      type="button"
+                      className="c-home-alert__menu-toggle"
+                      aria-label="Acciones del aviso"
+                      aria-haspopup="menu"
+                      aria-expanded={openAlertMenuKey === alert.key}
+                      onClick={() => setOpenAlertMenuKey((current) => current === alert.key ? null : alert.key)}
+                    >
+                      <TbDotsVertical aria-hidden="true" />
+                    </button>
+                  </div>
+                </header>
+                <div className="c-home-alert__body">
+                  <p className="c-home-alert__detail">{alert.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {openAlertMenu ? (
+            <div className="c-home-alert__menu-popover" role="menu">
               <button
                 type="button"
-                className="c-home-alert__btn c-home-alert__btn--ghost"
-                onClick={() => setLowStockDismissCandidate(lowStockAlertKey)}
+                role="menuitem"
+                onClick={() => {
+                  setOpenAlertMenuKey(null);
+                  void navigate(openAlertMenu.actionRoute);
+                }}
               >
-                Descartar
+                <span>{openAlertMenu.actionLabel}</span>
               </button>
               <button
                 type="button"
-                className="c-home-alert__btn c-home-alert__btn--solid"
-                onClick={() => navigate(ROUTES.editMedicine(lowStockMedicine.blisterId, lowStockMedicine._id))}
+                role="menuitem"
+                onClick={() => {
+                  setOpenAlertMenuKey(null);
+                  setAlertDismissCandidateKey(openAlertMenu.key);
+                }}
               >
-                Añadir más unidades
+                <span>Descartar</span>
               </button>
             </div>
-          </div>
-        </article>
+          ) : null}
+        </section>
       ) : null}
 
       <section className="c-home-next" aria-labelledby="home-next-title">
@@ -396,7 +676,7 @@ export default function HomePage() {
 
         {upcomingError ? (
           <ErrorState message={upcomingError} onRetry={() => void refreshUpcoming()} />
-        ) : upcomingLoading ? (
+        ) : upcomingLoading && timelineItems.length === 0 && activeUndos.length === 0 ? (
           <div aria-busy="true">
             <Skeleton height="5rem" />
             <Skeleton height="5rem" />
@@ -408,18 +688,24 @@ export default function HomePage() {
           />
         ) : (
           <ol className="c-home-next__timeline">
-            {activeUndos.map((undo) => (
-              <InlineUndoDose
-                key={undo.logId}
-                undo={undo}
-                onUndo={(id) => void handleUndo(id)}
-                onExpire={dismissUndoToast}
-              />
-            ))}
             {timelineItems.map((item) => {
+              const activeUndo = activeUndoByDoseKey.get(item.key);
+              if (activeUndo) {
+                return (
+                  <InlineUndoDose
+                    key={activeUndo.logId}
+                    undo={activeUndo}
+                    onUndo={(id) => void handleUndo(id)}
+                    onExpire={dismissUndoToast}
+                    itemRef={item.key === timelineFocusKey ? timelineAnchorRef : undefined}
+                  />
+                );
+              }
+
               return (
                 <li
                   key={item.key}
+                  ref={item.key === timelineFocusKey ? timelineAnchorRef : item.key === nextTimelineItemKey ? nextTimelineItemRef : undefined}
                   className={`c-home-next__item c-home-next__item--${item.status}`}
                 >
                   <span className="c-home-next__time">
@@ -452,7 +738,9 @@ export default function HomePage() {
 
                     {item.status === 'taken' ? (
                       <span className="c-home-next__pill c-home-next__pill--taken">Tomado</span>
-                    ) : item.status === 'next' && item.dose && (item.dose.callerRole === 'OWNER' || item.dose.callerRole === 'CAREGIVER') ? (
+                    ) : item.status === 'skipped' ? (
+                      <span className="c-home-next__pill c-home-next__pill--skipped">Omitida</span>
+                    ) : item.dose && (item.status === 'next' || item.status === 'missed') && (item.dose.callerRole === 'OWNER' || item.dose.callerRole === 'CAREGIVER') ? (
                       <div className="c-home-next__card-actions">
                         <button
                           type="button"
@@ -460,15 +748,56 @@ export default function HomePage() {
                           disabled={loggingDoseKey === item.key}
                           onClick={() => item.dose ? void handleLogDose(item.dose) : undefined}
                         >
-                          {loggingDoseKey === item.key ? 'Registrando...' : 'Marcar como tomado'}
+                          {loggingDoseKey === item.key ? 'Registrando...' : 'Marcar toma'}
                         </button>
-                        <button
-                          type="button"
-                          className="c-home-next__btn c-home-next__btn--ghost"
-                          onClick={() => item.dose ? navigate(ROUTES.editTreatment(item.dose.blisterId, item.dose.treatmentId)) : undefined}
+                        <div
+                          className="c-home-next__action-menu"
+                          ref={openDoseMenu?.key === item.key ? doseMenuRef : undefined}
                         >
-                          Editar dosis
-                        </button>
+                          <button
+                            type="button"
+                            className="c-home-next__menu-toggle"
+                            aria-label="Acciones de la toma"
+                            aria-haspopup="menu"
+                            aria-expanded={openDoseMenu?.key === item.key}
+                            onClick={() => {
+                              const dose = item.dose;
+                              if (!dose) return;
+                              setOpenDoseMenu((current) => current?.key === item.key ? null : { key: item.key, dose });
+                            }}
+                          >
+                            <TbDotsVertical aria-hidden="true" />
+                          </button>
+                          {openDoseMenu?.key === item.key ? (
+                            <div className="c-home-next__menu-popover" role="menu">
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  const dose = item.dose;
+                                  if (!dose) return;
+                                  setOpenDoseMenu(null);
+                                  navigate(ROUTES.treatmentDetail(dose.blisterId, dose.treatmentId));
+                                }}
+                              >
+                                Ver tratamiento
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                disabled={skippingDoseKey === item.key}
+                                onClick={() => {
+                                  const dose = item.dose;
+                                  if (!dose) return;
+                                  setOpenDoseMenu(null);
+                                  setSkipDoseCandidate(dose);
+                                }}
+                              >
+                                {skippingDoseKey === item.key ? 'Omitiendo...' : 'Omitir'}
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     ) : null}
                   </article>
@@ -508,24 +837,48 @@ export default function HomePage() {
       </Modal>
 
       <Modal
-        open={lowStockDismissCandidate !== null}
-        title="Descartar aviso de stock"
-        onClose={() => setLowStockDismissCandidate(null)}
+        open={skipDoseCandidate !== null}
+        title="Omitir toma"
+        hideCloseButton
+        onClose={() => setSkipDoseCandidate(null)}
       >
         <p className="c-home__modal-text">
-          Este aviso puede pertenecer a un tratamiento activo. Si lo descartas, dejará de mostrarse en Inicio hasta que cambie el stock o el umbral.
+          ¿Seguro que quieres omitir esta toma? Quedará registrada como omitida y no se descontará stock.
         </p>
         <div className="c-home__modal-actions">
-          <Button type="button" variant="primary-outline" onClick={() => setLowStockDismissCandidate(null)}>
+          <Button type="button" variant="primary-outline" onClick={() => setSkipDoseCandidate(null)}>
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            disabled={skipDoseCandidate ? skippingDoseKey === getDoseKey(skipDoseCandidate) : false}
+            onClick={() => {
+              if (!skipDoseCandidate) return;
+              void performSkipDose(skipDoseCandidate);
+            }}
+          >
+            {skipDoseCandidate && skippingDoseKey === getDoseKey(skipDoseCandidate) ? 'Omitiendo...' : 'Omitir toma'}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={alertDismissCandidateKey !== null}
+        title="Descartar aviso"
+        onClose={() => setAlertDismissCandidateKey(null)}
+      >
+        <p className="c-home__modal-text">
+          Este aviso dejará de mostrarse en Inicio. Podrás seguir revisando los avisos activos desde Notificaciones cuando corresponda.
+        </p>
+        <div className="c-home__modal-actions">
+          <Button type="button" variant="primary-outline" onClick={() => setAlertDismissCandidateKey(null)}>
             Seguir avisando
           </Button>
           <Button
             type="button"
             variant="danger"
-            onClick={() => {
-              if (lowStockDismissCandidate) setDismissedLowStockAlertKey(lowStockDismissCandidate);
-              setLowStockDismissCandidate(null);
-            }}
+            onClick={() => void handleConfirmDismissAlert()}
           >
             Descartar aviso
           </Button>

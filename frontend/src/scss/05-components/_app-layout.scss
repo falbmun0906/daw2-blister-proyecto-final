@@ -19,5 +19,16 @@
         var(--space-bottom-nav-height) + var(--space-safe-bottom) + var(--space-6)
       );
     }
+
+    // Home page: flex column, timeline handles its own bottom padding
+    &--home {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      min-height: 0;
+      overflow: clip;
+      overflow-clip-margin: var(--space-3);
+      padding-bottom: 0;
+    }
   }
 }
