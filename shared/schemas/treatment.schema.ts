@@ -82,7 +82,7 @@ const treatmentFields = {
   active: z.boolean().optional(),
 };
 
-const clearableEndDateSchema = z.union([dateSchema('endDate'), z.null()]).optional();
+const clearableEndDateSchema = z.union([z.null(), dateSchema('endDate')]).optional();
 
 const treatmentBaseSchema = z
   .object(treatmentFields)

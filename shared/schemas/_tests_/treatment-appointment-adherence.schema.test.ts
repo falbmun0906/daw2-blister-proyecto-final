@@ -161,7 +161,10 @@ describe('treatment, appointment and adherence shared schemas', () => {
   });
 
   it('allows clearing treatment end dates in patch payloads', () => {
-    const result = updateTreatmentSchema.safeParse({ endDate: null });
+    const result = updateTreatmentSchema.safeParse({
+      startDate: '2030-04-25T00:00:00.000Z',
+      endDate: null,
+    });
 
     expect(result.success).toBe(true);
   });
