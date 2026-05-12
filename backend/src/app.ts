@@ -26,7 +26,7 @@ import { oauthRouter } from './modules/oauth/oauth.routes';
 import { treatmentsRouter } from './modules/treatments/treatments.routes';
 
 export interface AppConfig {
-  clientOrigin: string;
+  clientOrigins: readonly string[];
   mcpServerEnabled?: boolean;
   nodeEnv: 'development' | 'test' | 'production';
 }
@@ -41,6 +41,8 @@ const OAUTH_CORS_PATHS = [
 const isOAuthCorsPath = (path: string): boolean =>
   OAUTH_CORS_PATHS.some((oauthPath) => path === oauthPath || path.startsWith(`${oauthPath}/`));
 
+const normalizeOrigin = (origin: string): string => origin.replace(/\/+$/, '');
+
 const isLocalhostOrigin = (origin: string): boolean => {
   try {
     const url = new URL(origin);
@@ -51,11 +53,14 @@ const isLocalhostOrigin = (origin: string): boolean => {
   }
 };
 
-const createCorsOptionsDelegate = (clientOrigin: string): CorsOptionsDelegate<Request> =>
+const createCorsOptionsDelegate = (clientOrigins: readonly string[]): CorsOptionsDelegate<Request> =>
   (request, callback) => {
     const requestOrigin = request.header('Origin');
-    const allowedOrigin = requestOrigin === clientOrigin
-      || (requestOrigin !== undefined && isOAuthCorsPath(request.path) && isLocalhostOrigin(requestOrigin));
+    const allowedOrigins = new Set(clientOrigins.map(normalizeOrigin));
+    const allowedOrigin = requestOrigin !== undefined && (
+      allowedOrigins.has(normalizeOrigin(requestOrigin))
+      || (isOAuthCorsPath(request.path) && isLocalhostOrigin(requestOrigin))
+    );
     const options: CorsOptions = {
       origin: requestOrigin === undefined ? true : allowedOrigin,
       credentials: true,
@@ -67,7 +72,7 @@ const createCorsOptionsDelegate = (clientOrigin: string): CorsOptionsDelegate<Re
 /**
  * Creates the Express application with the mandatory global middleware chain.
  */
-export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: AppConfig): Express => {
+export const createApp = ({ clientOrigins, mcpServerEnabled = true, nodeEnv }: AppConfig): Express => {
   const app = express();
 
   app.disable('x-powered-by');
@@ -83,7 +88,7 @@ export const createApp = ({ clientOrigin, mcpServerEnabled = true, nodeEnv }: Ap
       },
     }),
   );
-  app.use(cors(createCorsOptionsDelegate(clientOrigin)));
+  app.use(cors(createCorsOptionsDelegate(clientOrigins)));
 
   if (mcpServerEnabled) {
     // MCP must run before global body parsers so the transport can consume the raw request stream.

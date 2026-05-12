@@ -4,7 +4,7 @@ import { createApp } from '../app';
 
 describe('app infrastructure', () => {
   const app = createApp({
-    clientOrigin: 'http://localhost:5173',
+    clientOrigins: ['http://localhost:5173', 'https://miblister.es'],
     nodeEnv: 'test',
   });
 
@@ -31,6 +31,17 @@ describe('app infrastructure', () => {
         message: 'Route GET /api/v1/missing-route was not found.',
       },
     });
+  });
+
+  it('allows configured origins during CORS preflight requests', async () => {
+    const response = await request(app)
+      .options('/api/v1/auth/register')
+      .set('Origin', 'https://miblister.es')
+      .set('Access-Control-Request-Method', 'POST');
+
+    expect(response.status).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('https://miblister.es');
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
   it('exposes the generated OpenAPI specification', async () => {

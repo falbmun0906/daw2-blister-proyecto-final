@@ -13,7 +13,7 @@ import {
 } from './modules/privacy/privacy-purge.service';
 
 const app = createApp({
-  clientOrigin: env.clientOrigin,
+  clientOrigins: env.clientOrigins,
   mcpServerEnabled: env.mcpServerEnabled,
   nodeEnv: env.nodeEnv,
 });
