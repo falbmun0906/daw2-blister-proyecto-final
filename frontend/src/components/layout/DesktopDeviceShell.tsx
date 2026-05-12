@@ -37,6 +37,8 @@ export function DesktopDeviceShell({ children }: DesktopDeviceShellProps) {
   }, []);
 
   const isLanding = location.pathname === ROUTES.landing || location.pathname === ROUTES.root;
+  const isEmailEntryRoute = location.pathname === ROUTES.resetPassword
+    || location.pathname === ROUTES.confirmEmail;
 
   if (!isDesktop || isLanding) {
     return <>{children}</>;
@@ -48,7 +50,7 @@ export function DesktopDeviceShell({ children }: DesktopDeviceShellProps) {
     navigate(hasSeenOnboarding ? ROUTES.login : ROUTES.onboarding, { replace: true });
   };
 
-  if (!accepted) {
+  if (!accepted && !isEmailEntryRoute) {
     return (
       <main className="c-desktop-device-shell c-desktop-device-shell--gate" aria-labelledby="desktop-device-title">
         <section className="c-desktop-device-shell__gate-content">
