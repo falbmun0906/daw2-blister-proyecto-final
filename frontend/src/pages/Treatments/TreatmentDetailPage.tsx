@@ -130,50 +130,50 @@ function TreatmentMedicineCard({
 
   return (
     <article className="c-treatment-detail__medicine-card">
-      <div className="c-treatment-detail__medicine-media" aria-hidden="true">
-        {imageUrl ? <img src={imageUrl} alt="" loading="lazy" /> : <TbPill />}
-      </div>
-      <div className="c-treatment-detail__medicine-body">
-        <header className="c-treatment-detail__medicine-header">
+      <header className="c-treatment-detail__medicine-header">
+        <div className="c-treatment-detail__medicine-media" aria-hidden="true">
+          {imageUrl ? <img src={imageUrl} alt="" loading="lazy" /> : <TbPill />}
+        </div>
+        <div className="c-treatment-detail__medicine-summary">
           <h3 className="c-treatment-detail__medicine-name">{name}</h3>
           <span className="c-treatment-detail__medicine-dose">
             {formatQuantity(entry.amount)} · {formatMedicineSchedule(entry)}
           </span>
-        </header>
-
-        <label className="c-treatment-detail__note-field">
-          <span>Nota</span>
-          <textarea
-            value={note}
-            rows={3}
-            maxLength={300}
-            readOnly={!canMutate || isSaving}
-            placeholder="Sin nota"
-            onChange={(event) => onNoteChange(entry.medicineId, event.target.value)}
-            onBlur={() => onNoteBlur(entry.medicineId)}
-          />
-        </label>
-
-        <div className="c-treatment-detail__medicine-actions">
-          {canMutate ? (
-            <Button
-              type="button"
-              variant="primary"
-              className="c-btn--card"
-              disabled={isSaving}
-              onClick={() => onLogDose(entry)}
-            >
-              {isSaving ? 'Registrando' : 'Registrar toma'}
-            </Button>
-          ) : null}
-          <Link
-            to={medicine ? ROUTES.medicineDetail(blisterId, medicine._id) : ROUTES.blisterTreatments(blisterId)}
-            className="c-btn c-btn--primary-outline c-btn--card c-treatment-detail__more-link"
-            state={{ parentRoute: ROUTES.treatmentDetail(blisterId, treatment.id) }}
-          >
-            <TbInfoCircle aria-hidden="true" /> Más información
-          </Link>
         </div>
+      </header>
+
+      <label className="c-treatment-detail__note-field">
+        <span>Nota</span>
+        <textarea
+          value={note}
+          rows={3}
+          maxLength={300}
+          readOnly={!canMutate || isSaving}
+          placeholder="Sin nota"
+          onChange={(event) => onNoteChange(entry.medicineId, event.target.value)}
+          onBlur={() => onNoteBlur(entry.medicineId)}
+        />
+      </label>
+
+      <div className="c-treatment-detail__medicine-actions">
+        {canMutate ? (
+          <Button
+            type="button"
+            variant="primary"
+            className="c-btn--card"
+            disabled={isSaving}
+            onClick={() => onLogDose(entry)}
+          >
+            {isSaving ? 'Registrando' : 'Registrar toma'}
+          </Button>
+        ) : null}
+        <Link
+          to={medicine ? ROUTES.medicineDetail(blisterId, medicine._id) : ROUTES.blisterTreatments(blisterId)}
+          className="c-btn c-btn--primary-outline c-btn--card c-treatment-detail__more-link"
+          state={{ parentRoute: ROUTES.treatmentDetail(blisterId, treatment.id) }}
+        >
+          <TbInfoCircle aria-hidden="true" /> Más información
+        </Link>
       </div>
     </article>
   );
@@ -483,14 +483,16 @@ function TreatmentDetailPage() {
         </div>
       </header>
 
-      <div className="c-treatment-detail__progress" aria-label={`Progreso del tratamiento: ${progress?.label ?? ''}`}>
-        <span style={{ width: `${progress?.percent ?? 0}%` }} />
-      </div>
       {progress ? (
-        <p className="c-treatment-detail__range">
-          <span>{progress.range}</span>
-          <span>{progress.label}</span>
-        </p>
+        <section className="c-treatment-detail__progress-section" aria-label={`Progreso del tratamiento: ${progress.label}`}>
+          <div className="c-treatment-detail__progress">
+            <span style={{ width: `${progress.percent}%` }} />
+          </div>
+          <p className="c-treatment-detail__range">
+            <span>{progress.range}</span>
+            <span>{progress.label}</span>
+          </p>
+        </section>
       ) : null}
 
       {treatment.description ? (

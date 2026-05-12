@@ -1,21 +1,21 @@
 .c-treatment-detail {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
 
   &__hero {
     display: grid;
     grid-template-columns: auto 1fr;
     align-items: start;
     gap: var(--space-3);
-    padding: var(--space-1) 0 var(--space-2);
+    padding: var(--space-1) 0 0;
   }
 
   &__hero-body {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   &__title {
@@ -33,10 +33,6 @@
     align-items: center;
     gap: var(--space-1);
     width: fit-content;
-    padding: 0.2rem 0.5rem;
-    border: 0.0625rem solid var(--color-border-subtle);
-    border-radius: var(--radius-full);
-    background-color: var(--color-surface);
     color: var(--color-text-muted);
     font-size: var(--text-sm);
 
@@ -45,6 +41,12 @@
       height: 1rem;
       stroke-width: 1.7;
     }
+  }
+
+  &__progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
   }
 
   &__progress {
@@ -64,20 +66,15 @@
   }
 
   &__range {
-    margin: calc(var(--space-3) * -1) 0 0;
+    margin: 0;
     display: flex;
     justify-content: space-between;
     gap: var(--space-2);
-    color: var(--color-text);
+    color: var(--color-text-muted);
     font-size: var(--text-sm);
 
     span {
-      width: fit-content;
-      padding: 0.2rem 0.5rem;
-      border: 0.0625rem solid var(--color-border-subtle);
-      border-radius: var(--radius-full);
-      background-color: var(--color-surface);
-      color: var(--color-text-muted);
+      min-width: 0;
     }
   }
 
@@ -104,10 +101,6 @@
 
   &__description {
     margin: 0;
-    padding: var(--space-4);
-    border-radius: 1.25rem;
-    background-color: var(--color-surface);
-    box-shadow: var(--shadow-sm);
     color: var(--color-text);
     line-height: var(--leading-normal);
   }
@@ -120,13 +113,20 @@
   }
 
   &__medicine-card {
-    display: grid;
-    grid-template-columns: 4.5rem 1fr;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-3);
     padding: var(--space-4);
-    border-radius: 1.5rem;
+    border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-card-soft);
+  }
+
+  &__medicine-header {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
   }
 
   &__medicine-media {
@@ -135,7 +135,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1.25rem;
+    border-radius: var(--radius-md);
     background-color: var(--color-primary-tint);
     color: var(--color-primary-mid);
     overflow: hidden;
@@ -143,7 +143,8 @@
     img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      background-color: var(--color-surface);
     }
 
     svg {
@@ -153,14 +154,8 @@
     }
   }
 
-  &__medicine-body {
+  &__medicine-summary {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  &__medicine-header {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
@@ -168,14 +163,18 @@
 
   &__medicine-name {
     margin: 0;
+    overflow: hidden;
+    color: var(--color-text);
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__medicine-dose {
     color: var(--color-text-muted);
     font-size: var(--text-sm);
+    line-height: var(--leading-snug);
   }
 
   &__note-field {
@@ -217,8 +216,10 @@
     .c-btn {
       width: 100%;
       min-width: 0;
-      min-height: 2.125rem;
-      padding: 0.4rem var(--space-2);
+      min-height: var(--space-touch-min);
+      max-height: var(--space-touch-min);
+      padding: 0 var(--space-3);
+      white-space: nowrap;
     }
   }
 
@@ -242,7 +243,10 @@
     gap: var(--space-2);
     padding: 0 var(--space-screen-x);
 
-    > * { width: 100%; max-width: 28rem; }
+    > * {
+      width: 100%;
+      max-width: 28rem;
+    }
   }
 
   &__appointment {
@@ -250,7 +254,7 @@
     grid-template-columns: auto 1fr;
     gap: var(--space-3);
     padding: var(--space-4);
-    border-radius: 1.5rem;
+    border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
   }
@@ -306,10 +310,6 @@
 
 @media (max-width: 25rem) {
   .c-treatment-detail {
-    &__medicine-card {
-      grid-template-columns: 1fr;
-    }
-
     &__medicine-actions {
       grid-template-columns: 1fr;
     }
