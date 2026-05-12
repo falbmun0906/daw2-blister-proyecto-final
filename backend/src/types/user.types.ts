@@ -33,6 +33,8 @@ export interface UserDocument {
   name: string;
   username: string;
   email: string;
+  emailVerified: boolean;
+  pendingEmail?: string | null;
   password: string;
   mcpToken?: string | null;
   mcpTokenCreatedAt?: Date | null;

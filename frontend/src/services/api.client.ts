@@ -38,6 +38,7 @@ const isAuthEndpoint = (url: string | undefined): boolean =>
     || url.includes('/auth/refresh')
     || url.includes('/auth/forgot-password')
     || url.includes('/auth/reset-password')
+    || url.includes('/auth/confirm-email')
   ));
 
 const isApiErrorResponse = (value: unknown): value is ApiErrorResponse => {

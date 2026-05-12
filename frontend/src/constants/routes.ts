@@ -7,6 +7,7 @@ export const ROUTES = {
   register: '/register',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  confirmEmail: '/confirm-email',
   home: '/home',
   blisters: '/blisters',
   createBlister: '/blisters/new',

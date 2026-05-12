@@ -13,6 +13,7 @@ import LoginPage from './pages/Login/LoginPage'
 import RegisterPage from './pages/Register/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPassword/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPassword/ResetPasswordPage'
+import ConfirmEmailPage from './pages/ConfirmEmail/ConfirmEmailPage'
 import HomePage from './pages/Home/HomePage'
 import BlisterListPage from './pages/Blisters/BlisterListPage'
 import BlisterCreatePage from './pages/Blisters/BlisterCreatePage'
@@ -65,6 +66,8 @@ function App() {
           <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
           <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
         </Route>
+
+        <Route path={ROUTES.confirmEmail} element={<ConfirmEmailPage />} />
 
         {/* Shell autenticado: AppHeader + BottomNav envuelven todas las rutas privadas */}
         <Route element={<PrivateRoute />}>

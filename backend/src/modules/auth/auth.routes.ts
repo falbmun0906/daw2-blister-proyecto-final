@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 
 import {
   registerSchema,
+  confirmEmailSchema,
   forgotPasswordSchema,
   loginSchema,
   refreshTokenSchema,
@@ -21,6 +22,8 @@ import { authenticate } from '../../middleware/authenticate';
 import { validate } from '../../middleware/validate';
 import {
   authCreateMcpTokenController,
+  authConfirmEmailController,
+  authDeleteAccountController,
   authForgotPasswordController,
   authGetMcpTokenStatusController,
   authLoginController,
@@ -93,6 +96,12 @@ authRouter.post(
   authResetPasswordController,
 );
 
+authRouter.post(
+  '/confirm-email',
+  validate({ body: confirmEmailSchema }),
+  authConfirmEmailController,
+);
+
 /**
  * @openapi
  * /auth/refresh:
@@ -133,6 +142,8 @@ authRouter.patch(
   validate({ body: updateProfileSchema }),
   authUpdateProfileController,
 );
+
+authRouter.delete('/account', authenticate, authDeleteAccountController);
 
 /**
  * @openapi

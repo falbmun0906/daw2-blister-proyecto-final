@@ -25,6 +25,10 @@ describe('auth.routes', () => {
     await connectTestDatabase();
   });
 
+  beforeEach(() => {
+    jest.spyOn(authEmailService, 'sendEmailVerificationEmail').mockResolvedValue(undefined);
+  });
+
   afterEach(async () => {
     jest.restoreAllMocks();
     await clearTestDatabase();
@@ -48,6 +52,38 @@ describe('auth.routes', () => {
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
     expect(response.body.data.user.email).toBe('ana@example.com');
+    expect(response.body.data.user.emailVerified).toBe(false);
+  });
+
+  it('sends and consumes email confirmation tokens after registration', async () => {
+    const sendVerificationEmailSpy = jest.mocked(authEmailService.sendEmailVerificationEmail);
+
+    const registerResponse = await request(app).post('/api/v1/auth/register').send({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      privacyConsent: true,
+      ageConfirmed: true,
+    });
+
+    const confirmUrl = sendVerificationEmailSpy.mock.calls[0]?.[0].confirmUrl;
+    const token = confirmUrl ? new URL(confirmUrl).searchParams.get('token') : null;
+    const confirmResponse = await request(app).post('/api/v1/auth/confirm-email').send({ token });
+    const storedUser = await UserModel.findOne({ email: 'ana@example.com' });
+
+    expect(registerResponse.status).toBe(201);
+    expect(sendVerificationEmailSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'ana@example.com',
+        name: 'Ana Lopez',
+      }),
+    );
+    expect(token).toBeTruthy();
+    expect(confirmResponse.status).toBe(200);
+    expect(confirmResponse.body.data.emailVerified).toBe(true);
+    expect(storedUser?.emailVerified).toBe(true);
   });
 
   it('rejects duplicated email registration', async () => {
@@ -94,14 +130,17 @@ describe('auth.routes', () => {
   });
 
   it('logs in with valid credentials', async () => {
-    await request(app).post('/api/v1/auth/register').send({
+    await UserModel.create({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
-      password: 'Password1!',
-      confirmPassword: 'Password1!',
-      privacyConsent: true,
-      ageConfirmed: true,
+      password: await bcrypt.hash('Password1!', 12),
+      emailVerified: true,
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
     });
 
     const response = await request(app).post('/api/v1/auth/login').send({
@@ -268,6 +307,56 @@ describe('auth.routes', () => {
 
     expect(response.status).toBe(401);
     expect(response.body.error.code).toBe('AUTH_TOKEN_MISSING');
+  });
+
+  it('keeps profile email pending until the new address is confirmed', async () => {
+    const sendVerificationEmailSpy = jest.mocked(authEmailService.sendEmailVerificationEmail);
+
+    const user = await UserModel.create({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: await bcrypt.hash('Password1!', 12),
+      emailVerified: true,
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
+    const accessToken = jwt.sign(
+      {
+        sub: user._id.toString(),
+        type: 'access',
+      },
+      env.jwtSecret,
+      {
+        expiresIn: '15m',
+      },
+    );
+    sendVerificationEmailSpy.mockClear();
+
+    const updateResponse = await request(app)
+      .patch('/api/v1/auth/profile')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ email: 'ana.new@example.com' });
+    const confirmUrl = sendVerificationEmailSpy.mock.calls[0]?.[0].confirmUrl;
+    const token = confirmUrl ? new URL(confirmUrl).searchParams.get('token') : null;
+    const confirmResponse = await request(app).post('/api/v1/auth/confirm-email').send({ token });
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.body.data.email).toBe('ana@example.com');
+    expect(updateResponse.body.data.pendingEmail).toBe('ana.new@example.com');
+    expect(sendVerificationEmailSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'ana.new@example.com',
+        name: 'Ana Lopez',
+      }),
+    );
+    expect(confirmResponse.status).toBe(200);
+    expect(confirmResponse.body.data.email).toBe('ana.new@example.com');
+    expect(confirmResponse.body.data.pendingEmail).toBeNull();
+    expect(confirmResponse.body.data.emailVerified).toBe(true);
   });
 
   it('rejects protected routes with expired token', async () => {

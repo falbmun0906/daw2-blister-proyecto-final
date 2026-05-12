@@ -1,6 +1,7 @@
 import {
   authSessionSchema,
   authTokensSchema,
+  confirmEmailSchema,
   forgotPasswordSchema,
   loginSchema,
   refreshTokenSchema,
@@ -8,6 +9,7 @@ import {
   resetPasswordSchema,
   updateProfileSchema,
   userSchema,
+  type ConfirmEmailInput,
   type ForgotPasswordInput,
   type LoginInput,
   type RefreshTokenInput,
@@ -64,6 +66,15 @@ export async function forgotPassword(input: ForgotPasswordInput): Promise<void> 
 export async function resetPassword(input: ResetPasswordInput): Promise<void> {
   const payload = resetPasswordSchema.parse(input);
   await apiClient.post('/auth/reset-password', payload);
+}
+
+/**
+ * Confirms an account email using the one-time token from the email link.
+ */
+export async function confirmEmail(input: ConfirmEmailInput): Promise<User> {
+  const payload = confirmEmailSchema.parse(input);
+  const response = await apiClient.post('/auth/confirm-email', payload);
+  return userSchema.parse(normalizeApiResponse(response));
 }
 
 /**

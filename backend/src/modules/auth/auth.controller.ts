@@ -5,7 +5,9 @@ import {
   HTTP_STATUS_OK,
 } from '../../constants/http.constants';
 import {
+  authConfirmEmail,
   authCreateMcpToken,
+  authDeleteAccount,
   authForgotPassword,
   authGetMcpTokenStatus,
   authLogin,
@@ -19,6 +21,7 @@ import {
   type AuthenticatedRequest,
 } from '../../types/auth.types';
 import {
+  type ConfirmEmailInput,
   type LoginInput,
   type McpTokenInput,
   type ForgotPasswordInput,
@@ -95,6 +98,21 @@ export const authResetPasswordController = async (
 };
 
 /**
+ * Confirms the email address linked to a one-time token.
+ */
+export const authConfirmEmailController = async (
+  request: Request,
+  response: Response,
+): Promise<void> => {
+  const result = await authConfirmEmail(request.body as ConfirmEmailInput);
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: result,
+  });
+};
+
+/**
  * Updates the authenticated user profile.
  */
 export const authUpdateProfileController = async (
@@ -110,6 +128,22 @@ export const authUpdateProfileController = async (
   response.status(HTTP_STATUS_OK).json({
     success: true,
     data: result,
+  });
+};
+
+/**
+ * Soft deletes the authenticated account and invalidates stored credentials.
+ */
+export const authDeleteAccountController = async (
+  request: Request,
+  response: Response,
+): Promise<void> => {
+  const authenticatedRequest = request as AuthenticatedRequest;
+  await authDeleteAccount(authenticatedRequest.auth.userId);
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: null,
   });
 };
 

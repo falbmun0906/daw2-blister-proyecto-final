@@ -85,6 +85,19 @@ const userSchema = new Schema<UserDocument>({
     unique: true,
     match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   },
+  emailVerified: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  pendingEmail: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    maxlength: 150,
+    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    default: null,
+  },
   password: {
     type: String,
     required: true,

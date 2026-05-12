@@ -19,6 +19,8 @@ export const userSchema = z.object({
     .max(50, 'Username must be 50 characters or fewer.')
     .regex(/^[a-z0-9._-]+$/, 'Username contains invalid characters.'),
   email: z.string().trim().toLowerCase().email('Email must be valid.'),
+  emailVerified: z.boolean().default(false),
+  pendingEmail: z.string().trim().toLowerCase().email('Email must be valid.').nullable().optional(),
   settings: settingsSchema,
 });
 
@@ -117,6 +119,10 @@ export const resetPasswordSchema = z
     }
   });
 
+export const confirmEmailSchema = z.object({
+  token: z.string().trim().min(32, 'Email confirmation token is required.').max(256, 'Email confirmation token is too long.'),
+});
+
 export const authUserParamsSchema = z.object({
   userId: objectIdSchema,
 });
@@ -166,6 +172,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type McpTokenInput = z.infer<typeof mcpTokenSchema>;
 export type UserInput = z.infer<typeof userSchema>;

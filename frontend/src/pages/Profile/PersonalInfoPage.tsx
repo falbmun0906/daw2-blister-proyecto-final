@@ -15,7 +15,6 @@ import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './PersonalInfoPage.scss';
 
 const personalInfoSchema = z.object({
   name: z.string().trim().min(1, 'El nombre es obligatorio.').max(100),
@@ -42,6 +41,7 @@ function PersonalInfoPage() {
   const navigate = useNavigate();
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+  const editableEmail = user?.pendingEmail ?? user?.email ?? '';
 
   const {
     register,
@@ -53,7 +53,7 @@ function PersonalInfoPage() {
     defaultValues: {
       name: user?.name ?? '',
       username: user?.username ?? '',
-      email: user?.email ?? '',
+      email: editableEmail,
     },
   });
 
@@ -82,7 +82,7 @@ function PersonalInfoPage() {
     const payload: Partial<PersonalInfoFormValues> = {};
     if (values.name !== user.name) payload.name = values.name;
     if (values.username !== user.username) payload.username = values.username;
-    if (values.email !== user.email) payload.email = values.email;
+    if (values.email !== editableEmail) payload.email = values.email;
 
     if (Object.keys(payload).length === 0) {
       addToast({ message: 'No has cambiado ningún dato.', variant: 'info' });
@@ -92,7 +92,12 @@ function PersonalInfoPage() {
     try {
       const updated = await updateProfile(payload);
       updateUser(updated);
-      addToast({ message: 'Perfil actualizado correctamente.', variant: 'success' });
+      addToast({
+        message: payload.email
+          ? 'Te hemos enviado un correo para confirmar la nueva dirección.'
+          : 'Perfil actualizado correctamente.',
+        variant: 'success',
+      });
       navigate(ROUTES.editProfile);
     } catch (err) {
       if (isApiError(err)) {
@@ -162,6 +167,11 @@ function PersonalInfoPage() {
           wrapperClassName="c-field--pill"
           {...register('email')}
         />
+        {user.pendingEmail && (
+          <p className="c-personal-info-page__pending-email">
+            Pendiente de confirmar: {user.pendingEmail}
+          </p>
+        )}
 
         <Button
           type="submit"

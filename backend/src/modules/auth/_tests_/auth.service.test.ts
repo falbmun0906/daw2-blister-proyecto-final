@@ -11,6 +11,7 @@ import {
   authRefresh,
   authRegister,
 } from '../auth.service';
+import * as authEmailService from '../auth-email.service';
 import {
   clearTestDatabase,
   connectTestDatabase,
@@ -22,7 +23,12 @@ describe('auth.service', () => {
     await connectTestDatabase();
   });
 
+  beforeEach(() => {
+    jest.spyOn(authEmailService, 'sendEmailVerificationEmail').mockResolvedValue(undefined);
+  });
+
   afterEach(async () => {
+    jest.restoreAllMocks();
     await clearTestDatabase();
   });
 

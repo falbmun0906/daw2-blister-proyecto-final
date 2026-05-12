@@ -22,17 +22,23 @@ import {
 } from '../../constants/http.constants';
 import {
   BCRYPT_SALT_ROUNDS,
+  EMAIL_VERIFICATION_TOKEN_BYTES,
+  EMAIL_VERIFICATION_TOKEN_TTL_MS,
   MCP_TOKEN_DAY_MS,
   PASSWORD_RESET_TOKEN_BYTES,
   PASSWORD_RESET_TOKEN_TTL_MS,
 } from '../../constants/security.constants';
 import { BlisterModel } from '../../models/blister.model';
+import { EmailVerificationTokenModel } from '../../models/emailVerificationToken.model';
+import { OAuthTokenModel } from '../../models/oauthToken.model';
 import { PasswordResetTokenModel } from '../../models/passwordResetToken.model';
+import { PushSubscriptionModel } from '../../models/pushSubscription.model';
 import { UserModel } from '../../models/user.model';
 import { type AuthTokens, type JwtAccessPayload, type JwtRefreshPayload } from '../../types/auth.types';
 import { type UserDocument, type UserSettings } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
 import {
+  type ConfirmEmailInput,
   type ForgotPasswordInput,
   type LoginInput,
   type McpTokenInput,
@@ -48,6 +54,8 @@ interface PublicUser {
   name: string;
   username: string;
   email: string;
+  emailVerified: boolean;
+  pendingEmail?: string | null;
   settings: UserSettings;
 }
 
@@ -106,6 +114,8 @@ const sanitizeUser = (user: UserDocument): PublicUser => ({
   name: user.name,
   username: user.username,
   email: user.email,
+  emailVerified: user.emailVerified === true,
+  pendingEmail: user.pendingEmail ?? null,
   settings: user.settings,
 });
 
@@ -160,6 +170,13 @@ const buildPasswordResetUrl = (token: string): string => {
   resetUrl.searchParams.set('token', token);
 
   return resetUrl.toString();
+};
+
+const buildEmailConfirmationUrl = (token: string): string => {
+  const confirmUrl = new URL('/confirm-email', env.clientOrigin);
+  confirmUrl.searchParams.set('token', token);
+
+  return confirmUrl.toString();
 };
 
 const ensureUniqueCredentials = async (
@@ -253,6 +270,33 @@ const createDefaultSettings = (): UserSettings => ({
   },
 });
 
+const sendEmailConfirmation = async (
+  user: Pick<UserDocument, '_id' | 'name'>,
+  email: string,
+): Promise<void> => {
+  const token = randomBytes(EMAIL_VERIFICATION_TOKEN_BYTES).toString('base64url');
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + EMAIL_VERIFICATION_TOKEN_TTL_MS);
+
+  await EmailVerificationTokenModel.deleteMany({
+    userId: user._id.toString(),
+    email,
+  });
+  await EmailVerificationTokenModel.create({
+    tokenHash: hashValue(token),
+    userId: user._id.toString(),
+    email,
+    expiresAt,
+    createdAt: now,
+  });
+
+  await authEmailService.sendEmailVerificationEmail({
+    to: email,
+    confirmUrl: buildEmailConfirmationUrl(token),
+    name: user.name,
+  });
+};
+
 /**
  * Registers a new user and either joins them to the invited blister or creates a personal one.
  */
@@ -265,6 +309,8 @@ export const authRegister = async (input: RegisterInput): Promise<AuthResult> =>
     name: input.name,
     username: input.username,
     email: input.email,
+    emailVerified: false,
+    pendingEmail: null,
     password: passwordHash,
     settings: createDefaultSettings(),
   });
@@ -290,6 +336,7 @@ export const authRegister = async (input: RegisterInput): Promise<AuthResult> =>
 
   const { accessToken, refreshToken, refreshTokenExpiresAt } = await createTokens(user._id.toString());
   await persistRefreshToken(user._id.toString(), refreshToken, refreshTokenExpiresAt);
+  await sendEmailConfirmation(user, user.email);
 
   return {
     user: sanitizeUser(user),
@@ -431,6 +478,69 @@ export const authResetPassword = async (input: ResetPasswordInput): Promise<void
   await PasswordResetTokenModel.deleteOne({ _id: resetToken._id });
 };
 
+/**
+ * Confirms a registered or pending email address using a one-time token.
+ */
+export const authConfirmEmail = async (input: ConfirmEmailInput): Promise<PublicUser> => {
+  const tokenHash = hashValue(input.token);
+  const verificationToken = await EmailVerificationTokenModel.findOne({ tokenHash }).select('+tokenHash');
+
+  if (!verificationToken) {
+    throw new AppError({
+      code: 'AUTH_EMAIL_CONFIRMATION_TOKEN_INVALID',
+      message: 'Email confirmation token is invalid or has already been used.',
+      statusCode: HTTP_STATUS_BAD_REQUEST,
+    });
+  }
+
+  if (verificationToken.expiresAt.getTime() <= Date.now()) {
+    await EmailVerificationTokenModel.deleteOne({ _id: verificationToken._id });
+    throw new AppError({
+      code: 'AUTH_EMAIL_CONFIRMATION_TOKEN_EXPIRED',
+      message: 'Email confirmation token has expired.',
+      statusCode: HTTP_STATUS_GONE,
+    });
+  }
+
+  const user = await UserModel.findOne({ _id: verificationToken.userId, deletedAt: null });
+
+  if (!user) {
+    await EmailVerificationTokenModel.deleteOne({ _id: verificationToken._id });
+    throw new AppError({
+      code: 'AUTH_EMAIL_CONFIRMATION_TOKEN_INVALID',
+      message: 'Email confirmation token is invalid or has already been used.',
+      statusCode: HTTP_STATUS_BAD_REQUEST,
+    });
+  }
+
+  const confirmsCurrentEmail = user.email === verificationToken.email;
+  const confirmsPendingEmail = user.pendingEmail === verificationToken.email;
+
+  if (!confirmsCurrentEmail && !confirmsPendingEmail) {
+    await EmailVerificationTokenModel.deleteOne({ _id: verificationToken._id });
+    throw new AppError({
+      code: 'AUTH_EMAIL_CONFIRMATION_TOKEN_INVALID',
+      message: 'Email confirmation token is invalid or has already been used.',
+      statusCode: HTTP_STATUS_BAD_REQUEST,
+    });
+  }
+
+  if (confirmsPendingEmail) {
+    await ensureUniqueCredentials(verificationToken.email, undefined, user._id.toString());
+    user.email = verificationToken.email;
+    user.pendingEmail = null;
+  }
+
+  user.emailVerified = true;
+  await user.save();
+  await EmailVerificationTokenModel.deleteMany({
+    userId: user._id.toString(),
+    email: verificationToken.email,
+  });
+
+  return sanitizeUser(user);
+};
+
 const verifyRefreshToken = (refreshToken: string): JwtRefreshPayload => {
   try {
     const payload = jwt.verify(refreshToken, env.jwtSecret) as JwtRefreshPayload;
@@ -505,8 +615,9 @@ export const authUpdateProfile = async (
   input: UpdateProfileInput,
 ): Promise<PublicUser> => {
   const user = await getUserById(userId);
+  const requestedEmail = input.email && input.email !== user.email ? input.email : undefined;
 
-  await ensureUniqueCredentials(input.email, input.username, userId);
+  await ensureUniqueCredentials(requestedEmail, input.username, userId);
 
   if (input.newPassword) {
     const hasCurrentPassword = await bcrypt.compare(input.currentPassword ?? '', user.password);
@@ -530,8 +641,8 @@ export const authUpdateProfile = async (
     user.username = input.username;
   }
 
-  if (input.email) {
-    user.email = input.email;
+  if (requestedEmail) {
+    user.pendingEmail = requestedEmail;
   }
 
   if (input.settings) {
@@ -543,7 +654,38 @@ export const authUpdateProfile = async (
 
   await user.save();
 
+  if (requestedEmail) {
+    await sendEmailConfirmation(user, requestedEmail);
+  }
+
   return sanitizeUser(user);
+};
+
+/**
+ * Marks a user account as deleted and revokes session, MCP and reset credentials.
+ */
+export const authDeleteAccount = async (userId: string): Promise<void> => {
+  await UserModel.updateOne(
+    { _id: userId, deletedAt: null },
+    {
+      $set: {
+        deletedAt: new Date(),
+        refreshTokenHash: null,
+        refreshTokenExpiresAt: null,
+        mcpToken: null,
+        mcpTokenCreatedAt: null,
+        mcpTokenExpiresAt: null,
+        mcpTokenLastUsedAt: null,
+      },
+    },
+  );
+
+  await Promise.all([
+    EmailVerificationTokenModel.deleteMany({ userId }),
+    OAuthTokenModel.deleteMany({ userId }),
+    PasswordResetTokenModel.deleteMany({ userId }),
+    PushSubscriptionModel.deleteMany({ userId: new Types.ObjectId(userId) }),
+  ]);
 };
 
 /**

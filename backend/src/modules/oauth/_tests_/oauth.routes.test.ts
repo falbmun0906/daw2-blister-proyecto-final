@@ -8,6 +8,7 @@ import { env } from '../../../config/env';
 import { resolveMcpContextFromToken } from '../../../mcp/context';
 import { OAuthTokenModel } from '../../../models/oauthToken.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../../types/auth.types';
+import * as authEmailService from '../../auth/auth-email.service';
 import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID } from '../oauth.constants';
 import { clearOAuthAuthorizationCodes } from '../oauth.service';
 import {
@@ -64,7 +65,12 @@ describe('oauth.routes', () => {
     await connectTestDatabase();
   });
 
+  beforeEach(() => {
+    jest.spyOn(authEmailService, 'sendEmailVerificationEmail').mockResolvedValue(undefined);
+  });
+
   afterEach(async () => {
+    jest.restoreAllMocks();
     clearOAuthAuthorizationCodes();
     await clearTestDatabase();
   });

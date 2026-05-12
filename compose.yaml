@@ -23,8 +23,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      BACKEND_URL: http://localhost:8080
       MONGODB_URI: mongodb://mongo:27017/blister
       CLIENT_ORIGIN: http://localhost:8080
+      EMAIL_ASSET_ORIGIN: https://blister-app.onrender.com
       MCP_SERVER_ENABLED: "true"
     expose:
       - "3000"
