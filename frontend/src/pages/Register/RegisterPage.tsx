@@ -75,7 +75,7 @@ const translateValidationMessage = (message: string): string => {
     'Username contains invalid characters.': 'Solo minusculas, numeros y . _ -.',
     'Invite code must contain 6 to 8 alphanumeric characters.': 'El codigo de invitacion debe tener entre 6 y 8 caracteres alfanumericos.',
     'Privacy consent is required.': 'Debes aceptar la politica de privacidad.',
-    'Age confirmation is required.': 'Debes confirmar que tienes 18 anos o mas.',
+    'Age confirmation is required.': 'Debes confirmar que tienes 18 años o mas.',
   };
   return translations[message] ?? message;
 };
