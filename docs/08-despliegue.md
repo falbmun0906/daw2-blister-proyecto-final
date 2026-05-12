@@ -1,5 +1,7 @@
 # 08 - Despliegue
 
+El despliegue de Blíster combina publicación en Render, validación local con Docker Compose e integración continua con GitHub Actions. Este capítulo recoge la arquitectura de servicios, la configuración necesaria y el proceso de verificación para que la aplicación pueda ejecutarse fuera del entorno de desarrollo.
+
 ## Índice
 1. [Visión general del despliegue](#1-visión-general-del-despliegue)
 	- 1.1 [Objetivo del despliegue](#11-objetivo-del-despliegue)
@@ -177,23 +179,32 @@ Los ficheros relacionados con Docker son:
 | `backend/Dockerfile` | Construye el backend TypeScript y ejecuta Node en producción |
 | `frontend/Dockerfile` | Compila la PWA y la sirve con Nginx |
 | `frontend/nginx/default.conf` | Configura estáticos, SPA fallback y proxy a `/api/v1` y `/mcp` |
-| `.env.example` | Plantilla de variables para Compose |
+| `.env.example` | Plantilla raíz de variables de producción/Compose |
+| `backend/.env.example` | Plantilla específica de variables del backend |
 | `.dockerignore` | Reduce el contexto de build y evita copiar dependencias locales |
 
 La red interna `blister-internal` permite que `frontend`, `backend` y `mongo` se comuniquen por nombre de servicio. Solo se publica al host el puerto `8080` del frontend. MongoDB y backend quedan en la red interna, lo que evita exponer puertos innecesarios.
 
 ### 4.2 Variables de entorno
 
-Antes de levantar Compose se copia la plantilla:
+Antes de levantar Compose se preparan las variables del backend:
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
 ```
 
-Las variables más importantes son:
+También debe existir un archivo `frontend/.env` con los orígenes usados por Vite:
+
+```text
+VITE_API_URL=http://localhost:8080
+VITE_MCP_URL=http://localhost:8080
+```
+
+Las variables más importantes del backend son:
 
 | Variable | Uso |
 | :--- | :--- |
+| `BACKEND_URL` | Origen público del backend para generar enlaces absolutos |
 | `MONGODB_URI` | Cadena de conexión de MongoDB |
 | `JWT_SECRET` | Secreto para firmar tokens JWT |
 | `CLIENT_ORIGIN` | Origen permitido por CORS |
@@ -201,6 +212,7 @@ Las variables más importantes son:
 | `MCP_SERVER_ENABLED` | Activa o desactiva el endpoint `/mcp` |
 | `WEB_PUSH_VAPID_PUBLIC_KEY` | Clave pública de notificaciones push |
 | `WEB_PUSH_VAPID_PRIVATE_KEY` | Clave privada de notificaciones push |
+| `RESEND_API_KEY` | Clave de Resend para correos de recuperación de contraseña |
 
 En producción, estas variables se configuran en el panel de Render. Los secretos no deben subirse al repositorio.
 
@@ -326,7 +338,7 @@ Las rutas principales son:
 | Ruta | Descripción |
 | :--- | :--- |
 | `GET /api/v1/health` | Comprobación de salud |
-| `/api/v1/auth` | Registro, login, refresh y tokens MCP |
+| `/api/v1/auth` | Registro, login, refresh, perfil, borrado de cuenta y tokens MCP |
 | `/api/v1/blisters` | Gestión de blísters, medicamentos, tratamientos, citas y adherencia |
 | `/api/v1/me` | Vistas agregadas del usuario |
 | `/api/v1/notifications` | Notificaciones del usuario |
@@ -396,16 +408,17 @@ Esta práctica facilita revisar el avance del proyecto y localizar cambios concr
 
 ### 7.2 Integración continua con GitHub Actions
 
-El workflow `.github/workflows/ci.yml` ejecuta dos jobs principales:
+El workflow `.github/workflows/ci.yml` ejecuta los jobs principales de validación:
 
 | Job | Comandos |
 | :--- | :--- |
-| Backend | `npm ci`, `npm test`, `npm run build` |
-| Frontend | `npm ci`, `npm run lint`, `npm run build` |
+| Backend | `npm ci`, `npm run lint`, `npm run test:coverage`, subida de cobertura y `npm run build` |
+| Frontend | `npm ci`, `npm run lint`, `npm test -- --run`, `npm run build` |
+| Frontend E2E | En PRs a `main`: instalación de Chromium, build y `npm run test:e2e` |
 
-El workflow se ejecuta en pushes y pull requests hacia `main` y `dev`. Las variables sensibles se deben configurar como secrets o variables del repositorio si en el futuro se añaden pasos de despliegue con credenciales.
+El workflow se ejecuta en pushes y pull requests hacia `main` y `dev`. Las pruebas E2E de navegador se limitan a pull requests contra `main` para mantener los pushes de desarrollo más ligeros. Las variables sensibles se deben configurar como secrets o variables del repositorio si en el futuro se añaden pasos de despliegue con credenciales.
 
-La evidencia esperada para la entrega es una captura del run en verde, donde se vean ambos jobs completados correctamente.
+La evidencia esperada para la entrega es una captura del run en verde, donde se vean los jobs completados correctamente y el artefacto de cobertura backend publicado.
 
 ### 7.3 Despliegue continuo en Render
 
@@ -454,7 +467,7 @@ npm run build
 También se puede validar con Docker Compose:
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
 docker compose up -d --build
 curl http://localhost:8080/api/v1/health
 ```
@@ -477,6 +490,7 @@ Variables de entorno necesarias:
 NODE_ENV=production
 PORT=<asignado por Render>
 MONGODB_URI=<cadena de MongoDB Atlas>
+BACKEND_URL=https://<backend-render-url>
 CLIENT_ORIGIN=https://blister-app.onrender.com
 CIMA_BASE_URL=https://cima.aemps.es/cima/rest
 JWT_SECRET=<secreto largo y privado>
@@ -488,6 +502,7 @@ WEB_PUSH_VAPID_PUBLIC_KEY=<clave pública VAPID>
 WEB_PUSH_VAPID_PRIVATE_KEY=<clave privada VAPID>
 WEB_PUSH_VAPID_SUBJECT=mailto:<correo-contacto>
 PUSH_REMINDER_SCAN_INTERVAL_MS=60000
+RESEND_API_KEY=<clave privada de Resend>
 ```
 
 Render asigna `PORT` automáticamente. La aplicación lo lee desde `process.env.PORT`, por lo que no hay que fijar un puerto público manual.
