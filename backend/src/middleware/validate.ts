@@ -28,8 +28,12 @@ export const validate = ({ body, params, query }: ValidationSchemas): RequestHan
       }
 
       if (query) {
-        const parsedQuery = query.parse(request.query) as Record<string, unknown>;
-        Object.assign(request.query as Record<string, unknown>, parsedQuery);
+        Object.defineProperty(request, 'query', {
+          value: query.parse(request.query) as Request['query'],
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
       }
 
       next();
