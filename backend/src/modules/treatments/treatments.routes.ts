@@ -8,6 +8,7 @@ import {
   updateTreatmentSchema,
 } from '../../../../shared/schemas';
 import { authenticate } from '../../middleware/authenticate';
+import { authorize } from '../../middleware/authorize';
 import { checkBlisterAccess } from '../../middleware/checkBlisterAccess';
 import { validate } from '../../middleware/validate';
 import {
@@ -84,6 +85,7 @@ treatmentsRouter.post(
   '/:blisterId/treatments',
   validate({ params: blisterTreatmentParamsSchema, body: createTreatmentSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   treatmentsCreateController,
 );
 
@@ -143,11 +145,13 @@ treatmentsRouter.patch(
   '/:blisterId/treatments/:id',
   validate({ params: treatmentIdParamsSchema, body: updateTreatmentSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   treatmentsUpdateController,
 );
 treatmentsRouter.delete(
   '/:blisterId/treatments/:id',
   validate({ params: treatmentIdParamsSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   treatmentsDeleteController,
 );

@@ -7,6 +7,7 @@ import {
   logIdParamsSchema,
 } from '../../../../shared/schemas';
 import { authenticate } from '../../middleware/authenticate';
+import { authorize } from '../../middleware/authorize';
 import { checkBlisterAccess } from '../../middleware/checkBlisterAccess';
 import { validate } from '../../middleware/validate';
 import {
@@ -84,6 +85,7 @@ adherenceRouter.post(
   '/:blisterId/logs',
   validate({ params: blisterLogParamsSchema, body: createAdherenceLogSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   adherenceLogsCreateController,
 );
 
@@ -123,5 +125,6 @@ adherenceRouter.delete(
   '/:blisterId/logs/:id',
   validate({ params: logIdParamsSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   adherenceLogsDeleteController,
 );

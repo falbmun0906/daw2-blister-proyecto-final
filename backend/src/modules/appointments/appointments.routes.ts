@@ -10,6 +10,7 @@ import {
   updateAppointmentSchema,
 } from '../../../../shared/schemas';
 import { authenticate } from '../../middleware/authenticate';
+import { authorize } from '../../middleware/authorize';
 import { checkBlisterAccess } from '../../middleware/checkBlisterAccess';
 import { validate } from '../../middleware/validate';
 import {
@@ -89,6 +90,7 @@ appointmentsRouter.post(
   '/:blisterId/appointments',
   validate({ params: blisterAppointmentParamsSchema, body: createAppointmentSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   appointmentsCreateController,
 );
 
@@ -148,29 +150,34 @@ appointmentsRouter.patch(
   '/:blisterId/appointments/:id',
   validate({ params: appointmentIdParamsSchema, body: updateAppointmentSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   appointmentsUpdateController,
 );
 appointmentsRouter.post(
   '/:blisterId/appointments/:id/comments',
   validate({ params: appointmentIdParamsSchema, body: appointmentCommentBodySchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   appointmentsAddCommentController,
 );
 appointmentsRouter.patch(
   '/:blisterId/appointments/:id/comments/:commentId',
   validate({ params: appointmentCommentParamsSchema, body: appointmentCommentBodySchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   appointmentsUpdateCommentController,
 );
 appointmentsRouter.delete(
   '/:blisterId/appointments/:id/comments/:commentId',
   validate({ params: appointmentCommentParamsSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   appointmentsDeleteCommentController,
 );
 appointmentsRouter.delete(
   '/:blisterId/appointments/:id',
   validate({ params: appointmentIdParamsSchema }),
   checkBlisterAccess,
+  authorize(['OWNER', 'CAREGIVER']),
   appointmentsDeleteController,
 );

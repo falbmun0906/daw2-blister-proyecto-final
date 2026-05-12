@@ -13,16 +13,23 @@ import {
 } from '../types/blister.types';
 import { AppError } from '../utils/app-error';
 
+interface CheckBlisterAccessOptions {
+  includeDeleted?: boolean;
+}
+
+const getBlisterParam = (request: Request): string | undefined =>
+  (request.params.blisterId ?? request.params.id) as string | undefined;
+
 /**
  * Verifies authenticated membership in the target blister and exposes the caller role in response locals.
  */
-export const checkBlisterAccess = async (
+export const createCheckBlisterAccess = ({ includeDeleted = false }: CheckBlisterAccessOptions = {}) => async (
   request: Request,
   response: Response<unknown, BlisterAccessLocals>,
   next: NextFunction,
 ): Promise<void> => {
   const authenticatedRequest = request as AuthenticatedRequest;
-  const blisterId = request.params.blisterId as string | undefined;
+  const blisterId = getBlisterParam(request);
 
   if (!blisterId) {
     next();
@@ -31,7 +38,7 @@ export const checkBlisterAccess = async (
 
   const blister = await BlisterModel.findOne({
     _id: new Types.ObjectId(blisterId),
-    deletedAt: null,
+    ...(includeDeleted ? {} : { deletedAt: null }),
   });
 
   if (!blister) {
@@ -63,3 +70,6 @@ export const checkBlisterAccess = async (
   response.locals.blisterRole = membership.role;
   next();
 };
+
+export const checkBlisterAccess = createCheckBlisterAccess();
+export const checkBlisterAccessIncludingDeleted = createCheckBlisterAccess({ includeDeleted: true });

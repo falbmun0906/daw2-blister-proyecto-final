@@ -9,7 +9,12 @@ import {
   updateMemberRoleSchema,
   updateBlisterSchema,
 } from '../../../../shared/schemas/index';
+import { authorize } from '../../middleware/authorize';
 import { authenticate } from '../../middleware/authenticate';
+import {
+  checkBlisterAccess,
+  checkBlisterAccessIncludingDeleted,
+} from '../../middleware/checkBlisterAccess';
 import { validate } from '../../middleware/validate';
 import {
   blistersCreateController,
@@ -27,6 +32,11 @@ import {
 export const blistersRouter = Router();
 
 blistersRouter.use(authenticate);
+
+const authorizeOwner = authorize(['OWNER'], {
+  code: 'BLISTER_OWNER_REQUIRED',
+  message: 'Owner role is required for this action.',
+});
 
 /**
  * @openapi
@@ -97,8 +107,20 @@ blistersRouter.post('/', validate({ body: createBlisterSchema }), blistersCreate
  *       403:
  *         description: Owner role required.
  */
-blistersRouter.patch('/:id', validate({ params: blisterParamsSchema, body: updateBlisterSchema }), blistersUpdateController);
-blistersRouter.delete('/:id', validate({ params: blisterParamsSchema }), blistersDeleteController);
+blistersRouter.patch(
+  '/:id',
+  validate({ params: blisterParamsSchema, body: updateBlisterSchema }),
+  checkBlisterAccess,
+  authorizeOwner,
+  blistersUpdateController,
+);
+blistersRouter.delete(
+  '/:id',
+  validate({ params: blisterParamsSchema }),
+  checkBlisterAccess,
+  authorizeOwner,
+  blistersDeleteController,
+);
 
 /**
  * @openapi
@@ -122,6 +144,8 @@ blistersRouter.delete('/:id', validate({ params: blisterParamsSchema }), blister
 blistersRouter.post(
   '/:id/restore',
   validate({ params: blisterParamsSchema }),
+  checkBlisterAccessIncludingDeleted,
+  authorizeOwner,
   blistersRestoreController,
 );
 
@@ -149,6 +173,8 @@ blistersRouter.post(
 blistersRouter.post(
   '/:id/invite',
   validate({ params: blisterParamsSchema, body: createInviteSchema }),
+  checkBlisterAccess,
+  authorizeOwner,
   blistersCreateInviteController,
 );
 
@@ -192,7 +218,12 @@ blistersRouter.post('/join', validate({ body: joinBlisterSchema }), blistersJoin
  *       403:
  *         description: User does not belong to the blister.
  */
-blistersRouter.get('/:id/members', validate({ params: blisterParamsSchema }), blistersListMembersController);
+blistersRouter.get(
+  '/:id/members',
+  validate({ params: blisterParamsSchema }),
+  checkBlisterAccess,
+  blistersListMembersController,
+);
 
 /**
  * @openapi
@@ -227,6 +258,7 @@ blistersRouter.get('/:id/members', validate({ params: blisterParamsSchema }), bl
 blistersRouter.delete(
   '/:id/members/:memberId',
   validate({ params: memberIdParamsSchema }),
+  checkBlisterAccess,
   blistersRemoveMemberController,
 );
 
@@ -252,5 +284,7 @@ blistersRouter.delete(
 blistersRouter.patch(
   '/:id/members/:memberId/role',
   validate({ params: memberIdParamsSchema, body: updateMemberRoleSchema }),
+  checkBlisterAccess,
+  authorizeOwner,
   blistersUpdateMemberRoleController,
 );

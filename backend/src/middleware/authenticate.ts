@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 
 import { env } from '../config/env';
 import { HTTP_STATUS_UNAUTHORIZED } from '../constants/http.constants';
+import { UserModel } from '../models/user.model';
 import { AppError } from '../utils/app-error';
 import { type JwtAccessPayload } from '../types/auth.types';
 
@@ -38,11 +39,26 @@ export const authenticate = (
       });
     }
 
-    (request as Request & { auth: { userId: string } }).auth = {
-      userId: payload.sub,
-    };
+    void UserModel.exists({ _id: payload.sub, deletedAt: null })
+      .then((userExists) => {
+        if (!userExists) {
+          next(
+            new AppError({
+              code: 'AUTH_USER_INACTIVE',
+              message: 'Authentication token is invalid or expired.',
+              statusCode: HTTP_STATUS_UNAUTHORIZED,
+            }),
+          );
+          return;
+        }
 
-    next();
+        (request as Request & { auth: { userId: string } }).auth = {
+          userId: payload.sub,
+        };
+
+        next();
+      })
+      .catch(next);
   } catch (error: unknown) {
     if (error instanceof AppError) {
       next(error);
