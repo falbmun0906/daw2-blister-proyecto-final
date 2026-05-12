@@ -80,6 +80,15 @@
   &__med-grid {
     display: grid;
     gap: var(--space-2);
+
+    > .c-field {
+      min-width: 0;
+    }
+
+    .c-field__label {
+      min-height: 2.875rem;
+      align-items: flex-end;
+    }
   }
 
   &__helper {
@@ -146,9 +155,7 @@
   }
 
   &__time-row {
-    display: grid;
-    gap: var(--space-2);
-    align-items: end;
+    display: block;
   }
 
   &__med-note {
@@ -157,6 +164,44 @@
 
   &__time-field {
     min-width: 0;
+  }
+
+  &__time-input-wrap {
+    position: relative;
+  }
+
+  &__time-field--removable {
+    .c-field__input {
+      padding-right: calc(var(--space-touch-min) + var(--space-2));
+    }
+  }
+
+  &__time-remove {
+    position: absolute;
+    right: var(--space-2);
+    bottom: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-tint);
+      color: var(--color-primary-mid);
+      outline: none;
+    }
   }
 
   &__med-label {
@@ -255,8 +300,7 @@
   }
 
   @media (min-width: 48rem) {
-    &__med-grid,
-    &__time-row {
+    &__med-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }

@@ -180,7 +180,6 @@ function TreatmentMedicineFields({
       <div className="c-treatment-form-page__med-row-header">
         <div>
           <p className="c-treatment-form-page__med-row-title">Medicamento {index + 1}</p>
-          <p className="c-treatment-form-page__med-row-caption">Cada medicamento mantiene su propia pauta.</p>
         </div>
         {fieldCount > 1 ? (
           <Button
@@ -210,30 +209,6 @@ function TreatmentMedicineFields({
           <span className="c-field__error">{medicineErrors.medicineId.message}</span>
         ) : null}
       </label>
-
-      <div className="c-treatment-form-page__med-grid">
-        <div>
-          <Input
-            type="number"
-            label="Cantidad por toma"
-            min={0.5}
-            step={0.5}
-            error={medicineErrors?.amount?.message}
-            {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
-          />
-          <p className="c-treatment-form-page__helper">Puedes usar medias unidades, por ejemplo 0,5.</p>
-        </div>
-        {!showExactTimes ? (
-          <Input
-            type="time"
-            label={isRecurring ? 'Hora de la primera toma' : 'Hora de la toma'}
-            icon={<TbClock aria-hidden="true" />}
-            wrapperClassName="c-treatment-form-page__time-field"
-            error={medicineErrors?.firstDoseTime?.message}
-            {...register(`medicines.${index}.firstDoseTime` as const)}
-          />
-        ) : null}
-      </div>
 
       <label className="c-treatment-form-page__active c-treatment-form-page__active--compact">
         <input type="checkbox" {...register(`medicines.${index}.isRecurring` as const)} />
@@ -286,23 +261,26 @@ function TreatmentMedicineFields({
             <div className="c-treatment-form-page__time-list">
               {fields.map((field, timeIndex) => (
                 <div key={field.id} className="c-treatment-form-page__time-row">
-                  <Input
-                    type="time"
-                    label={`Hora ${timeIndex + 1}`}
-                    icon={<TbClock aria-hidden="true" />}
-                    wrapperClassName="c-treatment-form-page__time-field"
-                    error={dailyDoseTimeEntryErrors?.[timeIndex]?.time?.message}
-                    {...register(`medicines.${index}.dailyDoseTimes.${timeIndex}.time` as const)}
-                  />
-                  <Button
-                    type="button"
-                    variant="primary-outline"
-                    className="c-btn--sm"
-                    onClick={() => remove(timeIndex)}
-                    disabled={fields.length <= 1}
-                  >
-                    Quitar hora
-                  </Button>
+                  <div className="c-treatment-form-page__time-input-wrap">
+                    <Input
+                      type="time"
+                      label={`Hora ${timeIndex + 1}`}
+                      icon={<TbClock aria-hidden="true" />}
+                      wrapperClassName="c-treatment-form-page__time-field c-treatment-form-page__time-field--removable"
+                      error={dailyDoseTimeEntryErrors?.[timeIndex]?.time?.message}
+                      {...register(`medicines.${index}.dailyDoseTimes.${timeIndex}.time` as const)}
+                    />
+                    {fields.length > 1 ? (
+                      <button
+                        type="button"
+                        className="c-treatment-form-page__time-remove"
+                        onClick={() => remove(timeIndex)}
+                        aria-label={`Quitar hora ${timeIndex + 1}`}
+                      >
+                        X
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               ))}
               {typeof dailyDoseTimesError === 'string' ? <span className="c-field__error">{dailyDoseTimesError}</span> : null}
@@ -317,6 +295,27 @@ function TreatmentMedicineFields({
           )}
         </div>
       ) : null}
+
+      <div className="c-treatment-form-page__med-grid">
+        <Input
+          type="number"
+          label="Cantidad por toma"
+          min={0.5}
+          step={0.5}
+          error={medicineErrors?.amount?.message}
+          {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
+        />
+        {!showExactTimes ? (
+          <Input
+            type="time"
+            label={isRecurring ? 'Hora de la primera toma' : 'Hora de la toma'}
+            icon={<TbClock aria-hidden="true" />}
+            wrapperClassName="c-treatment-form-page__time-field"
+            error={medicineErrors?.firstDoseTime?.message}
+            {...register(`medicines.${index}.firstDoseTime` as const)}
+          />
+        ) : null}
+      </div>
 
       <label className="c-field c-treatment-form-page__med-note">
         <span className="c-field__label">
@@ -546,7 +545,6 @@ function TreatmentFormPage() {
 
         <FormSection
           label="Medicamentos"
-          hint="Configura cada pauta por separado: cantidad, horario y notas."
           icon={<TbPill />}
         >
           {medsLoading ? <Skeleton height="2rem" /> : null}
