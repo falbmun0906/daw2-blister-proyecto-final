@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 
 import { HTTP_STATUS_OK } from '../../constants/http.constants';
 import { OAUTH_SCOPE } from './oauth.constants';
+import { type OAuthAuthorizeLocals } from './oauth.middleware';
 import {
   createAuthorizationCode,
   exchangeOAuthToken,
@@ -20,8 +21,10 @@ const escapeHtml = (value: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const renderAuthorizePage = (input: Record<string, unknown>, errorMessage?: string): string => {
-  const params = validateAuthorizeQuery(input);
+const renderAuthorizePage = (
+  params: ReturnType<typeof validateAuthorizeQuery>,
+  errorMessage?: string,
+): string => {
   const hiddenInputs = Object.entries(params)
     .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
     .map(([name, value]) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}" />`)
@@ -71,6 +74,9 @@ const renderAuthorizePage = (input: Record<string, unknown>, errorMessage?: stri
 </html>`;
 };
 
+/**
+ * Returns OAuth authorization-server metadata for MCP clients.
+ */
 export const oauthMetadataController = (request: Request, response: Response): void => {
   const issuer = getIssuer(request);
 
@@ -87,6 +93,9 @@ export const oauthMetadataController = (request: Request, response: Response): v
   });
 };
 
+/**
+ * Returns protected-resource metadata for the MCP endpoint.
+ */
 export const oauthProtectedResourceMetadataController = (request: Request, response: Response): void => {
   const issuer = getIssuer(request);
 
@@ -98,17 +107,32 @@ export const oauthProtectedResourceMetadataController = (request: Request, respo
   });
 };
 
-export const oauthAuthorizePageController = (request: Request, response: Response): void => {
-  response.status(HTTP_STATUS_OK).type('html').send(renderAuthorizePage(request.query));
+/**
+ * Renders the OAuth login and consent page with validated hidden parameters.
+ */
+export const oauthAuthorizePageController = (
+  _request: Request,
+  response: Response<unknown, OAuthAuthorizeLocals>,
+): void => {
+  response.status(HTTP_STATUS_OK).type('html').send(renderAuthorizePage(response.locals.oauthAuthorizeInput));
 };
 
-export const oauthAuthorizeSubmitController = async (request: Request, response: Response): Promise<void> => {
+/**
+ * Validates user credentials and redirects the OAuth client with an authorization code.
+ */
+export const oauthAuthorizeSubmitController = async (
+  request: Request,
+  response: Response<unknown, OAuthAuthorizeLocals>,
+): Promise<void> => {
   try {
-    const result = await createAuthorizationCode(request.body as Record<string, unknown>);
+    const result = await createAuthorizationCode(request.body);
     response.redirect(302, result.redirectUri);
   } catch (error: unknown) {
     if (error instanceof Error) {
-      response.status(HTTP_STATUS_OK).type('html').send(renderAuthorizePage(request.body as Record<string, unknown>, error.message));
+      response
+        .status(HTTP_STATUS_OK)
+        .type('html')
+        .send(renderAuthorizePage(response.locals.oauthAuthorizeInput, error.message));
       return;
     }
 
@@ -116,12 +140,18 @@ export const oauthAuthorizeSubmitController = async (request: Request, response:
   }
 };
 
+/**
+ * Exchanges OAuth authorization codes or refresh tokens for MCP access tokens.
+ */
 export const oauthTokenController = async (request: Request, response: Response): Promise<void> => {
-  const result = await exchangeOAuthToken(request.body as Record<string, unknown>);
+  const result = await exchangeOAuthToken(request.body);
   response.status(HTTP_STATUS_OK).json(result);
 };
 
+/**
+ * Registers the public MCP OAuth client metadata used by external clients.
+ */
 export const oauthRegisterController = (request: Request, response: Response): void => {
-  const result = registerOAuthClient(request.body as Record<string, unknown>);
+  const result = registerOAuthClient(request.body);
   response.status(201).json(result);
 };

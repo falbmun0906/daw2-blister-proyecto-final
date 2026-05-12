@@ -261,9 +261,15 @@ const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuth
   };
 };
 
+/**
+ * Validates and normalizes OAuth authorization request parameters.
+ */
 export const validateAuthorizeQuery = (input: AuthorizeQuery): AuthorizeInput =>
   normalizeAuthorizeInput(input);
 
+/**
+ * Registers the public MCP OAuth client and returns metadata for the caller.
+ */
 export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegistrationResult => {
   const redirectUrisInput = input.redirect_uris;
   const redirectUris = typeof input.redirect_uri === 'string'
@@ -294,6 +300,9 @@ export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegi
   };
 };
 
+/**
+ * Authenticates the user, records a short-lived authorization code and returns the redirect URI.
+ */
 export const createAuthorizationCode = async (input: LoginConsentInput): Promise<{ redirectUri: string }> => {
   const normalized = normalizeAuthorizeInput(input);
   const identifier = asString(input.identifier);
@@ -398,12 +407,18 @@ const exchangeRefreshToken = async (input: TokenInput): Promise<OAuthTokenResult
   return issueOAuthTokens(payload.sub, record.clientId);
 };
 
+/**
+ * Revokes a stored OAuth refresh token by deleting its persisted hash.
+ */
 export const revokeOAuthRefreshToken = async (refreshToken: string): Promise<void> => {
   await OAuthTokenModel.deleteOne({
     refreshToken: hashValue(refreshToken),
   });
 };
 
+/**
+ * Exchanges a supported OAuth grant for MCP OAuth access and refresh tokens.
+ */
 export const exchangeOAuthToken = (input: TokenInput): Promise<OAuthTokenResult> => {
   const grantType = asString(input.grant_type);
 
@@ -422,6 +437,9 @@ export const exchangeOAuthToken = (input: TokenInput): Promise<OAuthTokenResult>
   });
 };
 
+/**
+ * Clears in-memory authorization codes between tests or controlled resets.
+ */
 export const clearOAuthAuthorizationCodes = (): void => {
   authorizationCodes.clear();
 };
