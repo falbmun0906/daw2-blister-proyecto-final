@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'blister-auth',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

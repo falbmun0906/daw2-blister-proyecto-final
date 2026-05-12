@@ -8,7 +8,7 @@ import { useTreatmentsStore } from './treatments.store';
 /**
  * Limpia todos los stores de datos vinculados a la sesión.
  * Debe llamarse al cerrar sesión y al iniciar sesión con un usuario distinto
- * para evitar que datos persistidos en `localStorage` (como `blister-active`)
+ * para evitar que datos persistidos (como `blister-active`)
  * pertenecientes al usuario anterior se reutilicen en otra cuenta.
  */
 export function resetAppStores(): void {
