@@ -34,7 +34,7 @@
   }
 
   &__meds {
-    border: 1px solid var(--color-border, var(--color-surface-tinted));
+    border: 0.0625rem solid var(--color-border, var(--color-surface-tinted));
     border-radius: var(--radius-md);
     padding: var(--space-3);
     display: flex;
@@ -47,7 +47,7 @@
     flex-direction: column;
     gap: var(--space-3);
     padding: var(--space-3);
-    border: 1px solid color-mix(in srgb, var(--color-primary-mid) 18%, var(--color-border-subtle));
+    border: 0.0625rem solid color-mix(in srgb, var(--color-primary-mid) 18%, var(--color-border-subtle));
     border-radius: var(--radius-xl);
     background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary-tint) 35%, var(--color-surface)) 0%, var(--color-surface) 100%);
     box-shadow: var(--shadow-sm);
@@ -123,7 +123,7 @@
   &__schedule-option {
     min-height: var(--space-touch-min);
     padding: 0 var(--space-3);
-    border: 1px solid var(--color-border);
+    border: 0.0625rem solid var(--color-border);
     border-radius: var(--radius-md);
     background-color: var(--color-surface);
     color: var(--color-text);
@@ -170,7 +170,7 @@
     min-height: var(--space-touch-min);
     padding: 0 var(--space-2);
     border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border, var(--color-surface-tinted));
+    border: 0.0625rem solid var(--color-border, var(--color-surface-tinted));
     background-color: var(--color-surface);
     font: inherit;
   }
@@ -183,7 +183,7 @@
     gap: var(--space-3);
     min-height: var(--space-touch-min);
     padding: var(--space-3);
-    border: 1px solid var(--color-border);
+    border: 0.0625rem solid var(--color-border);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
@@ -191,15 +191,15 @@
 
     input {
       position: absolute;
-      width: 1px;
-      height: 1px;
+      width: 0.0625rem;
+      height: 0.0625rem;
       opacity: 0;
       pointer-events: none;
     }
 
     input:focus-visible + .c-treatment-form-page__active-control {
-      outline: 2px solid var(--color-primary-mid);
-      outline-offset: 3px;
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.1875rem;
     }
 
     input:checked + .c-treatment-form-page__active-control {
@@ -221,7 +221,7 @@
     width: 2.875rem;
     height: 1.625rem;
     border-radius: var(--radius-full);
-    border: 1px solid var(--color-border);
+    border: 0.0625rem solid var(--color-border);
     background-color: var(--color-border-subtle);
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 

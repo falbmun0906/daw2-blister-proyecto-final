@@ -25,7 +25,6 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Appointment } from '../../types/appointment.types';
-import './CalendarPage.scss';
 
 type CalendarView = 'pillbox' | 'appointments';
 

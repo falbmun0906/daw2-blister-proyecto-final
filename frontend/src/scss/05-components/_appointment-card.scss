@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--color-border-subtle);
+  border: 0.0625rem solid var(--color-border-subtle);
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
 
@@ -104,7 +104,7 @@
     min-height: var(--space-touch-min);
     margin-top: var(--space-1);
     padding-top: var(--space-3);
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 0.0625rem solid var(--color-border-subtle);
     text-align: left;
 
     svg {
@@ -128,7 +128,7 @@
     min-width: 10rem;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--color-border-subtle);
+    border: 0.0625rem solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-md);
@@ -219,7 +219,7 @@
     flex-direction: column;
     gap: var(--space-3);
     padding-top: var(--space-3);
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 0.0625rem solid var(--color-border-subtle);
   }
 
   &__meta-item svg {
@@ -264,7 +264,7 @@
 
   &__description + &__comments {
     padding-top: var(--space-2);
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 0.0625rem solid var(--color-border-subtle);
   }
 
   &__comments-title {
@@ -352,7 +352,7 @@
     width: 100%;
     min-height: var(--space-touch-min);
     padding: 0 var(--space-10) 0 var(--space-3);
-    border: 1px solid var(--color-border-subtle);
+    border: 0.0625rem solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background-color: var(--color-surface);
     color: var(--color-text);
@@ -366,7 +366,7 @@
     &:focus {
       border-color: var(--color-primary-mid);
       outline: 0;
-      box-shadow: 0 0 0 3px var(--color-primary-tint);
+      box-shadow: 0 0 0 0.1875rem var(--color-primary-tint);
     }
   }
 

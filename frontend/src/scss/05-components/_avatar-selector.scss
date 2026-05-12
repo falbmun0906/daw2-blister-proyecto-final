@@ -8,7 +8,7 @@
     aspect-ratio: 1 / 1;
     min-height: var(--space-touch-min);
     padding: 0;
-    border: 2px solid var(--color-border-subtle);
+    border: 0.125rem solid var(--color-border-subtle);
     border-radius: var(--radius-full);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-sm);
@@ -24,14 +24,14 @@
     }
 
     &:hover {
-      transform: translateY(-1px);
+      transform: translateY(-0.0625rem);
       box-shadow: var(--shadow-md);
     }
 
     &--selected {
       border-color: var(--color-primary);
       transform: scale(1.05);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary-mid) 18%, transparent), var(--shadow-sm);
+      box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--color-primary-mid) 18%, transparent), var(--shadow-sm);
     }
   }
 }

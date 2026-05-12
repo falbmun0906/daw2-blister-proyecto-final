@@ -5,7 +5,6 @@ import { TbFileText, TbCode } from 'react-icons/tb';
 import heroImg from '/pwa-512x512.png';
 import appStoreImg from '/app-store.png';
 import playStoreImg from '/play-store.png';
-import './LandingPage.scss';
 import { syncThemeColorWithSections } from '../../lib/themeColor';
 import { ROUTES } from '../../constants/routes';
 import { useUiStore } from '../../stores/ui.store';

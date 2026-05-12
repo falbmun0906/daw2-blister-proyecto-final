@@ -75,7 +75,7 @@
     max-width: 100%;
     box-sizing: border-box;
     padding: var(--space-input-y) var(--space-input-x);
-    border: 1.5px solid var(--color-border);
+    border: 0.09375rem solid var(--color-border);
     border-radius: var(--radius-md);
     background-color: var(--color-surface);
     color: var(--color-text);
@@ -93,7 +93,7 @@
     &:focus-visible {
       outline: none;
       border-color: var(--color-primary-mid);
-      box-shadow: 0 0 0 3px var(--color-primary-tint);
+      box-shadow: 0 0 0 0.1875rem var(--color-primary-tint);
     }
 
     &:disabled {
@@ -179,7 +179,7 @@
       border-color: var(--color-error);
 
       &:focus-visible {
-        box-shadow: 0 0 0 3px var(--color-error-subtle);
+        box-shadow: 0 0 0 0.1875rem var(--color-error-subtle);
       }
     }
 

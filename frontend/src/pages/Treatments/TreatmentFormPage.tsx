@@ -33,7 +33,6 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './TreatmentFormPage.scss';
 
 interface FormValues {
   patientUserId: string;

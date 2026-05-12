@@ -38,7 +38,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 0.0625rem solid var(--color-border-subtle);
     padding-top: var(--space-4);
   }
 
@@ -46,6 +46,13 @@
     margin-top: var(--space-4);
     min-height: 3rem;
     padding-block: var(--space-3);
+  }
+
+  &__pending-email {
+    margin: calc(var(--space-2) * -1) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
   }
 
   &__unsaved {

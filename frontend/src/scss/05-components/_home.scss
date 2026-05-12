@@ -11,7 +11,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-5);
   margin-inline: calc(var(--home-shadow-bleed) * -1);
   padding-inline: var(--home-shadow-bleed);
   overflow: clip;
@@ -76,7 +76,7 @@
     align-items: center;
     gap: var(--space-2);
     padding: var(--space-2) var(--space-3) var(--space-1);
-    border-bottom: 1px solid var(--color-border, color-mix(in srgb, var(--color-primary-mid) 12%, transparent));
+    border-bottom: 0.0625rem solid var(--color-border, color-mix(in srgb, var(--color-primary-mid) 12%, transparent));
   }
 
   &__icon {
@@ -172,7 +172,7 @@
     min-width: max-content;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--color-border-subtle);
+    border: 0.0625rem solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-md);
@@ -268,10 +268,10 @@
     &::before {
       content: '';
       position: absolute;
-      left: calc(3rem + var(--space-2) + var(--timeline-marker-radius) - 1px);
+      left: calc(3rem + var(--space-2) + var(--timeline-marker-radius) - 0.0625rem);
       top: calc(var(--space-1) + var(--timeline-marker-size));
       bottom: -1rem;
-      width: 2px;
+      width: 0.125rem;
       background-color: var(--color-primary-border);
     }
 
@@ -294,7 +294,7 @@
     height: var(--timeline-marker-size);
     border-radius: var(--radius-full);
     background-color: var(--color-surface);
-    border: 2px solid var(--color-primary-tint);
+    border: 0.125rem solid var(--color-primary-tint);
     color: var(--color-primary-mid);
     margin-top: var(--space-1);
 
@@ -309,7 +309,7 @@
 
   &__item--next &__marker {
     border-color: var(--color-primary-mid);
-    box-shadow: 0 0 0 4px var(--color-primary-tint);
+    box-shadow: 0 0 0 0.25rem var(--color-primary-tint);
   }
 
   &__item--taken &__marker {
@@ -339,7 +339,7 @@
   }
 
   &__item--undo &__card {
-    border: 1px solid var(--color-dose-taken);
+    border: 0.0625rem solid var(--color-dose-taken);
   }
 
   &__item--taken &__time,
@@ -353,8 +353,7 @@
     border-radius: 1.5625rem;
     padding: 0;
     overflow: hidden;
-    box-shadow: 0 8px 18px rgba(15, 56, 53, 0.10),
-                0 2px 4px rgba(15, 56, 53, 0.06);
+    box-shadow: var(--shadow-card-soft);
     display: flex;
     flex-direction: column;
     min-height: 7.75rem;
@@ -371,7 +370,7 @@
     gap: var(--space-2);
     padding: var(--space-3) var(--space-4);
     background-color: color-mix(in srgb, var(--color-primary-mid) 22%, var(--color-surface));
-    border-bottom: 1px solid color-mix(in srgb, var(--color-primary-mid) 20%, transparent);
+    border-bottom: 0.0625rem solid color-mix(in srgb, var(--color-primary-mid) 20%, transparent);
   }
 
   &__card-header .c-avatar {
@@ -415,7 +414,7 @@
     min-width: var(--space-touch-min);
     height: var(--space-touch-min);
     padding: 0;
-    border: 1.5px solid var(--color-primary-mid);
+    border: 0.09375rem solid var(--color-primary-mid);
     border-radius: var(--radius-full);
     background-color: transparent;
     color: var(--color-primary-mid);
@@ -441,7 +440,7 @@
     min-width: max-content;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--color-border-subtle);
+    border: 0.0625rem solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background-color: var(--color-surface);
     box-shadow: var(--shadow-md);
@@ -495,7 +494,7 @@
     min-height: var(--space-touch-min);
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-full);
-    border: 1.5px solid var(--color-primary-mid);
+    border: 0.09375rem solid var(--color-primary-mid);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
@@ -547,8 +546,7 @@
 
   &__item--taken &__card {
     background-color: var(--color-surface);
-    box-shadow: 0 6px 14px rgba(15, 56, 53, 0.07),
-                0 1px 3px rgba(15, 56, 53, 0.05);
+    box-shadow: var(--shadow-card-compact);
   }
 
   &__item--taken &__card-header {
@@ -561,7 +559,7 @@
   }
 
   &__item--missed &__card {
-    border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+    border: 0.0625rem solid color-mix(in srgb, var(--color-warning) 35%, transparent);
   }
 
   &__item--missed &__card-header {
@@ -574,7 +572,7 @@
   }
 
   &__item--skipped &__card {
-    border: 1px solid color-mix(in srgb, var(--color-dose-skipped) 35%, transparent);
+    border: 0.0625rem solid color-mix(in srgb, var(--color-dose-skipped) 35%, transparent);
   }
 
   &__item--skipped &__card-header {

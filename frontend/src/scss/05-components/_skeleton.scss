@@ -12,7 +12,7 @@
 
   &--circle {
     aspect-ratio: 1;
-    border-radius: 9999px;
+    border-radius: var(--radius-full);
   }
 
   &--rect {

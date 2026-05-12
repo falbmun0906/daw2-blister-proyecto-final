@@ -12,7 +12,6 @@ import { usePageTitle } from '../../hooks/use.page-title';
 import { updateProfile } from '../../services/auth.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './ChangePasswordPage.scss';
 
 const changePasswordSchema = z
   .object({

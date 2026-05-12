@@ -22,7 +22,7 @@
     padding: var(--space-3) var(--space-screen-x);
     padding-top: calc(var(--space-3) + var(--space-safe-top));
     background-color: var(--color-surface);
-    border-bottom: 1px solid var(--color-border-subtle);
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
   }
 
   &__icon {

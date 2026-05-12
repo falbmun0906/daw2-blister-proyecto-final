@@ -15,12 +15,12 @@
 
 .o-container {
   width: 100%;
-  max-width: 430px; // Ancho máximo optimizado para mobile
+  max-width: var(--size-container-mobile);
   margin-inline: auto;
   padding-inline: var(--space-screen-x);
 
   @include bp.bp-up(md) {
-    max-width: 480px; // En tablet, la app se muestra centrada simulando mobile
+    max-width: var(--size-container-tablet);
     padding-inline: var(--space-6);
   }
 
@@ -29,6 +29,6 @@
   }
 
   &--narrow {
-    max-width: 360px;
+    max-width: var(--size-container-narrow);
   }
 }

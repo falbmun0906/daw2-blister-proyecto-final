@@ -16,7 +16,6 @@ import { ROUTES } from '../../constants/routes';
 import { resetPassword } from '../../services/auth.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './ResetPasswordPage.scss';
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 

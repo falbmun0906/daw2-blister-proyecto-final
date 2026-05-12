@@ -31,7 +31,6 @@ import { isApiError } from '../../types/api.types';
 import type { Appointment } from '../../types/appointment.types';
 import type { ExternalMedicineInfo, Medicine } from '../../types/medicine.types';
 import type { Treatment } from '../../types/treatment.types';
-import './TreatmentDetailPage.scss';
 
 type TreatmentMedicineEntry = Treatment['medicines'][number];
 type CimaPhoto = ExternalMedicineInfo['fotos'][number];

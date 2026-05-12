@@ -23,7 +23,6 @@ import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { ExternalMedicineInfo, ExternalSearchItem } from '../../types/medicine.types';
-import './AddMedicinePage.scss';
 
 const formSchema = z.object({
   alias: z.string().trim().max(100).optional(),

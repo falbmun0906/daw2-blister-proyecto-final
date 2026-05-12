@@ -39,7 +39,6 @@ import type {
   BlisterMemberDetail,
   BlisterRole,
 } from '../../types/blister.types';
-import './BlisterListPage.scss';
 
 const ROLE_LABEL: Record<BlisterRole, string> = {
   OWNER: 'Propietario',

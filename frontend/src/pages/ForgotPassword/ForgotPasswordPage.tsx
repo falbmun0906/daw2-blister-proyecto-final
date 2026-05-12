@@ -15,7 +15,6 @@ import { ROUTES } from '../../constants/routes';
 import { forgotPassword } from '../../services/auth.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './ForgotPasswordPage.scss';
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 

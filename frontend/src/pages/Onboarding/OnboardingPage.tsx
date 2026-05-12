@@ -6,7 +6,6 @@ import { useUiStore } from '../../stores/ui.store';
 import { AuthLayout } from '../../components/layout/AuthLayout';
 import { Button } from '../../components/atoms/Button';
 import { OnboardingDots } from '../../components/atoms/OnboardingDots';
-import './OnboardingPage.scss';
 
 type OnboardingSlide = {
   id: number;

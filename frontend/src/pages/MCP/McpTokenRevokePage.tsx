@@ -7,7 +7,6 @@ import { usePageTitle } from '../../hooks/use.page-title';
 import { revokeMcpToken } from '../../services/mcp.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './McpTokenRevokePage.scss';
 
 function McpTokenRevokePage() {
   usePageTitle('Revocar token');

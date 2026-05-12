@@ -35,12 +35,21 @@
   --color-bg:                  #f5f5f5;
   --color-surface:             #ffffff;
   --color-surface-tinted:      #edf4f3;
+  --color-bg-muted:            #e5e7eb;
   --color-border:              #cddbda;
   --color-border-subtle:       rgba(30, 102, 96, 0.10);
 
   // Fondo exclusivo de pantallas de marca (onboarding, splash)
   --color-brand-surface:       #11a498;
   --color-brand-surface-text:  #ffffff;
+  --color-brand-surface-text-muted: rgba(255, 255, 255, 0.85);
+  --color-brand-surface-text-soft: rgba(255, 255, 255, 0.82);
+  --color-brand-surface-text-footer: rgba(255, 255, 255, 0.90);
+  --color-brand-surface-focus: rgba(255, 255, 255, 0.35);
+  --color-brand-surface-hover: rgba(255, 255, 255, 0.12);
+  --color-brand-surface-active: rgba(255, 255, 255, 0.22);
+  --color-brand-cta-hover: rgba(255, 255, 255, 0.92);
+  --color-brand-cta-active: rgba(255, 255, 255, 0.85);
 
 
   // ─── TEXTO ───────────────────────────────────────────────────────────────
@@ -50,6 +59,7 @@
   --color-text-faint:          #a0afae;
   --color-text-inverse:        #ffffff;
   --color-text-on-primary:     #ffffff;
+  --color-on-primary:          var(--color-text-on-primary);
 
 
   // ─── PRIMARIO — Verde Blíster ─────────────────────────────────────────────
@@ -97,6 +107,7 @@
 
   // --color-warning reutiliza el acento terracota como señal de atención
   --color-warning:             #d97757;
+  --color-warning-strong:      #b54708;
   --color-warning-hover:       #c0613e;
   --color-warning-subtle:      #f0c9a2;
   --color-warning-border:      rgba(217, 119, 87, 0.25);
@@ -168,12 +179,21 @@
   --color-bg:                  #171a1a;
   --color-surface:             #202425;
   --color-surface-tinted:      #283031;
+  --color-bg-muted:            #e5e7eb;
   --color-border:              rgba(103, 194, 187, 0.30);
   --color-border-subtle:       rgba(103, 194, 187, 0.14);
 
   // Marca (onboarding/splash en oscuro): mantiene el verde Blíster
   --color-brand-surface:       #0d8a7f;
   --color-brand-surface-text:  #ffffff;
+  --color-brand-surface-text-muted: rgba(255, 255, 255, 0.85);
+  --color-brand-surface-text-soft: rgba(255, 255, 255, 0.82);
+  --color-brand-surface-text-footer: rgba(255, 255, 255, 0.90);
+  --color-brand-surface-focus: rgba(255, 255, 255, 0.35);
+  --color-brand-surface-hover: rgba(255, 255, 255, 0.12);
+  --color-brand-surface-active: rgba(255, 255, 255, 0.22);
+  --color-brand-cta-hover: rgba(255, 255, 255, 0.92);
+  --color-brand-cta-active: rgba(255, 255, 255, 0.85);
 
   // Texto: blancos cálidos
   --color-text:                #ececec;
@@ -181,6 +201,7 @@
   --color-text-faint:          #6f6f74;
   --color-text-inverse:        #1a1a1c;
   --color-text-on-primary:     #ffffff;
+  --color-on-primary:          var(--color-text-on-primary);
 
   // Primario: verde Blíster
   --color-primary:             #8fd4ce;
@@ -213,6 +234,7 @@
 
   // En oscuro, el warning conserva el terracota como señal de atención
   --color-warning:             #d97757;
+  --color-warning-strong:      #b54708;
   --color-warning-hover:       #e08e6f;
   --color-warning-subtle:      #3a2820;
   --color-warning-border:      rgba(217, 119, 87, 0.32);

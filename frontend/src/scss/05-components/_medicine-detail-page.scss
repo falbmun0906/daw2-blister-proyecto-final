@@ -26,7 +26,7 @@
     height: 4.5rem;
     border-radius: var(--radius-md);
     background-color: var(--color-surface);
-    border: 1px solid var(--color-border-subtle);
+    border: 0.0625rem solid var(--color-border-subtle);
     color: var(--color-primary);
     overflow: hidden;
     flex-shrink: 0;
@@ -56,7 +56,7 @@
     gap: 0;
     margin: 0;
     padding: 0 var(--space-4);
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 0.0625rem solid var(--color-border-subtle);
   }
 
   &__fact {
@@ -64,7 +64,7 @@
     flex-direction: column;
     gap: var(--space-1);
     padding: var(--space-3) 0;
-    border-bottom: 1px solid var(--color-border-subtle);
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
 
     dt { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); }
     dd { margin: 0; font-size: var(--text-base); font-weight: var(--font-weight-medium); }
@@ -79,7 +79,7 @@
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-4);
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 0.0625rem solid var(--color-border-subtle);
     background-color: transparent;
 
     p { margin: 0; font-size: var(--text-sm); }

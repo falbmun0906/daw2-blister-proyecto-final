@@ -7,15 +7,15 @@
     width: 0.5625rem;
     height: 0.5625rem;
     border-radius: var(--radius-full);
-    border: 1px solid var(--color-primary-mid);
+    border: 0.0625rem solid var(--color-primary-mid);
     background-color: var(--color-bg);
     padding: 0;
     min-width: 0;
     min-height: 0;
 
     &:focus-visible {
-      outline: 2px solid var(--color-primary-mid);
-      outline-offset: 2px;
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
     }
 
     &--active {

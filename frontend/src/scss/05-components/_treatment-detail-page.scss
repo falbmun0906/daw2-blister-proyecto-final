@@ -34,7 +34,7 @@
     gap: var(--space-1);
     width: fit-content;
     padding: 0.2rem 0.5rem;
-    border: 1px solid var(--color-border-subtle);
+    border: 0.0625rem solid var(--color-border-subtle);
     border-radius: var(--radius-full);
     background-color: var(--color-surface);
     color: var(--color-text-muted);
@@ -51,8 +51,7 @@
     height: 0.85rem;
     border-radius: var(--radius-full);
     background-color: color-mix(in srgb, var(--color-primary-mid) 18%, var(--color-surface));
-    box-shadow: inset 0 1px 2px rgba(15, 56, 53, 0.10),
-                0 2px 5px rgba(15, 56, 53, 0.12);
+    box-shadow: var(--shadow-progress-track);
     overflow: hidden;
 
     span {
@@ -60,7 +59,7 @@
       height: 100%;
       border-radius: inherit;
       background-color: var(--color-primary-mid);
-      box-shadow: 0 2px 5px rgba(15, 56, 53, 0.16);
+      box-shadow: var(--shadow-progress-thumb);
     }
   }
 
@@ -75,7 +74,7 @@
     span {
       width: fit-content;
       padding: 0.2rem 0.5rem;
-      border: 1px solid var(--color-border-subtle);
+      border: 0.0625rem solid var(--color-border-subtle);
       border-radius: var(--radius-full);
       background-color: var(--color-surface);
       color: var(--color-text-muted);
@@ -127,8 +126,7 @@
     padding: var(--space-4);
     border-radius: 1.5rem;
     background-color: var(--color-surface);
-    box-shadow: 0 8px 18px rgba(15, 56, 53, 0.10),
-                0 2px 4px rgba(15, 56, 53, 0.06);
+    box-shadow: var(--shadow-card-soft);
   }
 
   &__medicine-media {
@@ -193,7 +191,7 @@
       resize: vertical;
       min-height: 4.5rem;
       padding: var(--space-3);
-      border: 1px solid var(--color-border);
+      border: 0.0625rem solid var(--color-border);
       border-radius: var(--radius-md);
       background-color: var(--color-surface);
       color: var(--color-text);
@@ -201,8 +199,8 @@
       font-weight: var(--font-weight-regular);
 
       &:focus-visible {
-        outline: 2px solid var(--color-primary-mid);
-        outline-offset: 2px;
+        outline: 0.125rem solid var(--color-primary-mid);
+        outline-offset: 0.125rem;
       }
 
       &:read-only {
@@ -236,7 +234,7 @@
 
   &__undo-stack {
     position: fixed;
-    inset: auto 0 calc(env(safe-area-inset-bottom, 0px) + 1rem) 0;
+    inset: auto 0 calc(env(safe-area-inset-bottom, 0) + 1rem) 0;
     z-index: var(--z-toast);
     display: flex;
     flex-direction: column;

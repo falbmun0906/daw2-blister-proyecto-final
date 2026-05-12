@@ -11,7 +11,7 @@
     min-height: 2.5rem;
     padding: var(--space-2) var(--space-3);
     background-color: transparent;
-    border: 1px solid transparent;
+    border: 0.0625rem solid transparent;
     border-radius: var(--radius-full);
     color: var(--color-text);
     cursor: pointer;
@@ -48,10 +48,10 @@
     @extend %sr-only !optional;
 
     position: absolute;
-    width: 1px;
-    height: 1px;
+    width: 0.0625rem;
+    height: 0.0625rem;
     padding: 0;
-    margin: -1px;
+    margin: -0.0625rem;
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;

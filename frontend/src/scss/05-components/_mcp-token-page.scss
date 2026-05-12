@@ -22,7 +22,7 @@
   &__heading {
     margin: var(--space-3) 0 var(--space-1);
     padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--color-border-subtle);
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
 
     font-family: var(--font-display);
     font-size: var(--text-lg);
@@ -115,7 +115,7 @@
     gap: var(--space-2);
     min-height: var(--space-touch-min);
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-border);
+    border: 0.0625rem solid var(--color-border);
     border-radius: var(--radius-full);
     background-color: var(--color-surface);
   }
@@ -199,7 +199,7 @@
   &__snippet {
     position: relative;
     margin-top: var(--space-2);
-    border: 1px solid var(--color-border-subtle);
+    border: 0.0625rem solid var(--color-border-subtle);
     border-radius: var(--radius-lg);
     background-color: var(--color-surface-muted, var(--color-surface));
     overflow: hidden;
@@ -247,7 +247,7 @@
     min-height: var(--space-touch-comfortable);
     margin-top: var(--space-2);
     padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--color-error);
+    border: 0.0625rem solid var(--color-error);
     border-radius: var(--radius-full);
     background-color: color-mix(in srgb, var(--color-error) 12%, var(--color-surface));
     color: var(--color-error);

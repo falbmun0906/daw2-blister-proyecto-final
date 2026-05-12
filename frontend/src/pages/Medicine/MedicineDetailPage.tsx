@@ -17,7 +17,6 @@ import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { ExternalMedicineInfo, Medicine } from '../../types/medicine.types';
-import './MedicineDetailPage.scss';
 
 interface DetailState {
   medicine: Medicine | null;

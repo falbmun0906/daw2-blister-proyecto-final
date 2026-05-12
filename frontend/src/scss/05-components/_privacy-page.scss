@@ -9,7 +9,7 @@
     flex-direction: column;
     gap: var(--space-2);
     padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--color-border-subtle);
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
   }
 
   &__title {
@@ -39,7 +39,7 @@
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-4) 0;
-    border-bottom: 1px solid var(--color-border-subtle);
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
 
     &:last-child {
       border-bottom: 0;

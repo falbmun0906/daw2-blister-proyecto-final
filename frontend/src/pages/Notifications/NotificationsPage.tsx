@@ -11,7 +11,6 @@ import { getNotificationTargetRoute } from '../../lib/notification-routing';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { NotificationView } from '../../types/notification.types';
-import './NotificationsPage.scss';
 
 interface NotificationGroup {
   key: 'today' | 'week' | 'older';

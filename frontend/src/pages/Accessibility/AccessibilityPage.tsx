@@ -14,7 +14,6 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { UserSettings } from '../../types/auth.types';
-import './AccessibilityPage.scss';
 
 const DEFAULT_SETTINGS: Pick<UserSettings, 'theme' | 'font' | 'fontSize'> = {
   theme: 'system',

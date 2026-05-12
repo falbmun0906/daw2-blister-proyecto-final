@@ -6,7 +6,6 @@ import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useAuthStore } from '../../stores/auth.store';
 import { resetAppStores } from '../../stores/reset-stores';
-import './ProfilePage.scss';
 
 interface ProfileLinkItem {
   to: string;

@@ -13,7 +13,6 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { AdherenceLog } from '../../types/adherence.types';
-import './AdherencePage.scss';
 
 function AdherencePage() {
   usePageTitle('Historial de tomas');

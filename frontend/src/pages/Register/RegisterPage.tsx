@@ -26,7 +26,6 @@ import { useAuthStore } from '../../stores/auth.store';
 import { resetAppStores } from '../../stores/reset-stores';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './RegisterPage.scss';
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 

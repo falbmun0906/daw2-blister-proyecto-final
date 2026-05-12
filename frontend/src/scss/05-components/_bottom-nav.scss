@@ -11,7 +11,7 @@
 
   position: fixed;
   inset-inline: 0;
-  bottom: -1px;
+  bottom: -0.0625rem;
   z-index: var(--z-sticky);
 
   display: flex;
@@ -22,7 +22,7 @@
   color: var(--color-text-on-primary);
   box-shadow: var(--shadow-md);
 
-  padding-bottom: calc(var(--space-safe-bottom) + 1px);
+  padding-bottom: calc(var(--space-safe-bottom) + 0.0625rem);
   border-top-left-radius: var(--radius-xl);
   border-top-right-radius: var(--radius-xl);
   overflow: hidden;
@@ -57,7 +57,7 @@
       color: var(--bottom-nav-selected);
       background: transparent;
     }
-    &:focus-visible { @include focus-ring(var(--color-text-on-primary), 2px); }
+    &:focus-visible { @include focus-ring(var(--color-text-on-primary), 0.125rem); }
 
     &.is-active {
       color: var(--bottom-nav-selected);

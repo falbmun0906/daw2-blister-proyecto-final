@@ -61,8 +61,8 @@
     }
 
     &__slide[data-nav-tone='light'] &__nav-btn {
-        color: #ffffff;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        color: var(--color-brand-surface-text);
+        text-shadow: var(--shadow-brand-text);
     }
 
     &__slide[data-nav-tone='dark'] &__nav-btn {
@@ -104,7 +104,7 @@
         width: clamp(10rem, 40vw, 14rem);
         height: auto;
         margin: 0 auto;
-        filter: drop-shadow(2px 2px 0px grey);
+        filter: drop-shadow(var(--shadow-brand-logo));
     }
 
     &__title {
@@ -161,8 +161,8 @@
     }
 
     &__slide[data-nav-tone='dark'] .c-onboarding-page__nav-btn {
-        color: #ffffff;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        color: var(--color-brand-surface-text);
+        text-shadow: var(--shadow-brand-text);
     }
 }
 
@@ -181,7 +181,7 @@
 }
 
 /* Ajuste fino solo para viewports bajos (ej. iPhone SE) */
-@media (max-height: 700px) {
+@media (max-height: 43.75rem) {
     .c-onboarding-page {
         &__image-frame {
             max-height: 40vh;

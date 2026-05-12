@@ -26,7 +26,6 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { isApiError } from '../../types/api.types';
 import type { BlisterMemberDetail } from '../../types/blister.types';
 import type { ExternalMedicineInfo } from '../../types/medicine.types';
-import './CimaMedicineDetailPage.scss';
 
 const CIMA_DOC_TYPE_FICHA_TECNICA = 1;
 const CIMA_DOC_TYPE_PROSPECTO = 2;

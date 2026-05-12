@@ -15,7 +15,6 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Treatment } from '../../types/treatment.types';
-import './TreatmentsPage.scss';
 
 function TreatmentsPage() {
   usePageTitle('Tratamientos');

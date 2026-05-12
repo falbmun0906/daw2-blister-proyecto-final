@@ -13,7 +13,6 @@ import {
 } from '../../services/mcp.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './McpTokenPage.scss';
 
 const EMPTY_TOKEN_STATUS: McpTokenStatus = {
   hasToken: false,

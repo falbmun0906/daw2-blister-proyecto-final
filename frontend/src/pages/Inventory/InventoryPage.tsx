@@ -12,7 +12,6 @@ import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
-import './InventoryPage.scss';
 
 function filterMedicines(list: ReturnType<typeof useMedicines>['medicines'], query: string) {
   const q = query.trim().toLowerCase();

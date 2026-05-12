@@ -11,7 +11,6 @@ import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import './AvatarPage.scss';
 
 function AvatarPage() {
   usePageTitle('Avatar');

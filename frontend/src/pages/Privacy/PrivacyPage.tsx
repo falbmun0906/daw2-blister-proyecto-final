@@ -1,5 +1,4 @@
 import { usePageTitle } from '../../hooks/use.page-title';
-import './PrivacyPage.scss';
 
 const PRIVACY_SECTIONS = [
   {
