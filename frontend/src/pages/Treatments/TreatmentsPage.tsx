@@ -6,8 +6,8 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { TreatmentRow } from '../../components/organisms/TreatmentRow';
 import { ROUTES } from '../../constants/routes';
+import { useAppointments } from '../../hooks/use.appointments';
 import { useBlisters } from '../../hooks/use.blisters';
-import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
 import { useAuthStore } from '../../stores/auth.store';
@@ -28,7 +28,7 @@ function TreatmentsPage() {
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const { treatments, isLoading, error, refetch, removeTreatment } = useTreatments(blisterId);
-  const { medicines } = useMedicines(blisterId);
+  const { appointments } = useAppointments(blisterId);
 
   const visible = useMemo(
     () => [...treatments].sort((left, right) => Number(right.active) - Number(left.active)),
@@ -47,6 +47,10 @@ function TreatmentsPage() {
   const getPatient = useCallback(
     (patientUserId: string) => currentBlister?.members.find((member) => member.userId === patientUserId) ?? null,
     [currentBlister],
+  );
+  const getAppointmentCount = useCallback(
+    (treatmentId: string) => appointments.filter((appointment) => appointment.treatmentId === treatmentId).length,
+    [appointments],
   );
 
   if (!blisterId) {
@@ -111,11 +115,10 @@ function TreatmentsPage() {
             <li key={treatment.id} className="c-treatments-page__item">
               <TreatmentRow
                 treatment={treatment}
-                medicines={medicines}
                 blisterId={blisterId}
-                blisterName={currentBlister?.name ?? 'Blíster'}
                 patientName={getPatient(treatment.patientUserId)?.fullName?.trim() || getPatient(treatment.patientUserId)?.username?.trim() || 'Paciente'}
                 patientAvatarKey={getPatient(treatment.patientUserId)?.avatarKey ?? null}
+                appointmentsCount={getAppointmentCount(treatment.id)}
                 userRole={role}
                 onDelete={handleDelete}
               />

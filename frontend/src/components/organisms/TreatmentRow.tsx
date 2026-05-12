@@ -1,20 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TbChevronRight, TbDotsVertical, TbPencil, TbTrash } from 'react-icons/tb';
+import {
+  TbBuildingHospital,
+  TbChevronRight,
+  TbDotsVertical,
+  TbPencil,
+  TbPill,
+  TbTrash,
+  TbUser,
+} from 'react-icons/tb';
 
 import { Avatar } from '../atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
 import type { BlisterRole } from '../../types/blister.types';
-import type { Medicine } from '../../types/medicine.types';
 import type { Treatment } from '../../types/treatment.types';
 
 interface TreatmentRowProps {
   treatment: Treatment;
-  medicines: Medicine[];
   blisterId: string;
-  blisterName: string;
   patientName: string;
   patientAvatarKey?: string | null;
+  appointmentsCount: number;
   userRole: BlisterRole | null;
   onDelete: (treatment: Treatment) => void;
 }
@@ -23,12 +29,6 @@ const canMutate = (role: BlisterRole | null): boolean =>
   role === 'OWNER' || role === 'CAREGIVER';
 
 const MS_PER_DAY = 86_400_000;
-
-function resolveMedicineName(medicines: Medicine[], medicineId: string): string {
-  const medicine = medicines.find((m) => m._id === medicineId);
-  if (!medicine) return 'Medicamento';
-  return medicine.alias?.trim() || medicine.nombre;
-}
 
 function formatDate(iso: string): string {
   return new Intl.DateTimeFormat('es-ES', {
@@ -59,11 +59,10 @@ function getProgress(treatment: Treatment): { percent: number; label: string; ra
 /** Card resumen de tratamiento con progreso y acciones principales. */
 export function TreatmentRow({
   treatment,
-  medicines,
   blisterId,
-  blisterName,
   patientName,
   patientAvatarKey,
+  appointmentsCount,
   userRole,
   onDelete,
 }: TreatmentRowProps) {
@@ -71,9 +70,7 @@ export function TreatmentRow({
   const progress = getProgress(treatment);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const firstMedicine = treatment.medicines[0]
-    ? resolveMedicineName(medicines, treatment.medicines[0].medicineId)
-    : null;
+  const medicineCount = treatment.medicines.length;
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -105,6 +102,10 @@ export function TreatmentRow({
         <Avatar name={patientName || treatment.title} avatarKey={patientAvatarKey ?? undefined} size="md" />
         <div className="c-treatment-row__heading">
           <h3 className="c-treatment-row__title">{treatment.title}</h3>
+          <p className="c-treatment-row__patient">
+            <TbUser aria-hidden="true" />
+            {patientName || 'Paciente'}
+          </p>
         </div>
         {editable ? (
           <div className="c-treatment-row__menu" ref={menuRef}>
@@ -150,10 +151,13 @@ export function TreatmentRow({
         aria-label={`Ver tratamiento ${treatment.title}`}
       >
         <span className="c-treatment-row__meta-stack">
-          <span className="c-treatment-row__meta">{patientName || 'Paciente'}</span>
           <span className="c-treatment-row__meta">
-            {firstMedicine ?? `${treatment.medicines.length} medicamento${treatment.medicines.length === 1 ? '' : 's'}`}
-            <span className="c-treatment-row__meta-context"> · {blisterName}</span>
+            <TbPill aria-hidden="true" />
+            {medicineCount} medicamento{medicineCount === 1 ? '' : 's'} pautado{medicineCount === 1 ? '' : 's'}.
+          </span>
+          <span className="c-treatment-row__meta">
+            <TbBuildingHospital aria-hidden="true" />
+            {appointmentsCount} cita{appointmentsCount === 1 ? '' : 's'} médica{appointmentsCount === 1 ? '' : 's'}.
           </span>
         </span>
         <TbChevronRight className="c-treatment-row__summary-icon" aria-hidden="true" />

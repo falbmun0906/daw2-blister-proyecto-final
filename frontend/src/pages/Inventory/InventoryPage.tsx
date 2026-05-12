@@ -10,6 +10,7 @@ import { ROUTES } from '../../constants/routes';
 import { useBlisters } from '../../hooks/use.blisters';
 import { useMedicines } from '../../hooks/use.medicines';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { useTreatments } from '../../hooks/use.treatments';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 
@@ -36,6 +37,7 @@ function InventoryPage() {
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
   const { medicines, isLoading, error, refetch } = useMedicines(blisterId);
+  const { treatments } = useTreatments(blisterId);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentBlister = useMemo(
@@ -48,6 +50,17 @@ function InventoryPage() {
   );
   const role = routeRole ?? (blisterId === activeBlisterId ? activeRole : null);
   const visible = useMemo(() => filterMedicines(medicines, ''), [medicines]);
+  const treatmentCountByMedicine = useMemo(() => {
+    const counts = new Map<string, number>();
+    treatments
+      .filter((treatment) => treatment.active)
+      .forEach((treatment) => {
+        treatment.medicines.forEach((entry) => {
+          counts.set(entry.medicineId, (counts.get(entry.medicineId) ?? 0) + 1);
+        });
+      });
+    return counts;
+  }, [treatments]);
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';
 
   if (!blisterId) {
@@ -96,7 +109,11 @@ function InventoryPage() {
         <ul className="c-inventory-page__list">
           {visible.map((medicine) => (
             <li key={medicine._id} className="c-inventory-page__item">
-              <MedicineCard medicine={medicine} blisterId={blisterId} />
+              <MedicineCard
+                medicine={medicine}
+                blisterId={blisterId}
+                treatmentCount={treatmentCountByMedicine.get(medicine._id) ?? 0}
+              />
             </li>
           ))}
         </ul>
