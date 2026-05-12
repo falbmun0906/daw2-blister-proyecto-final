@@ -77,6 +77,10 @@ function defaultStartParts(): { date: string; time: string } {
   return toLocalParts(now);
 }
 
+function toLocalDateTimeIso(date: string, time: string): string {
+  return new Date(`${date}T${time}`).toISOString();
+}
+
 const createTreatmentMedicine = (firstDoseTime = '08:00'): FormValues['medicines'][number] => ({
   medicineId: '',
   amount: 1,
@@ -107,7 +111,7 @@ function buildTreatmentMedicinePayload(
   return {
     medicineId: entry.medicineId,
     amount: entry.amount,
-    firstDoseAt: `${startDate}T${firstDoseTime}`,
+    firstDoseAt: toLocalDateTimeIso(startDate, firstDoseTime),
     scheduleType: entry.isRecurring ? entry.scheduleType : 'interval',
     frequencyHours: entry.isRecurring && entry.scheduleType === 'interval' ? entry.frequencyHours : null,
     dailyDoseTimes: entry.isRecurring && entry.scheduleType === 'daily_times' ? exactDailyTimes : [],
@@ -173,15 +177,11 @@ function TreatmentMedicineFields({
   const medicineErrors = errors.medicines?.[index];
   const dailyDoseTimesError = (medicineErrors?.dailyDoseTimes as { message?: string } | undefined)?.message;
   const dailyDoseTimeEntryErrors = medicineErrors?.dailyDoseTimes as Array<{ time?: { message?: string } }> | undefined;
-  const showExactTimes = isRecurring && scheduleType === 'daily_times';
 
   return (
     <div className="c-treatment-form-page__med-row">
-      <div className="c-treatment-form-page__med-row-header">
-        <div>
-          <p className="c-treatment-form-page__med-row-title">Medicamento {index + 1}</p>
-        </div>
-        {fieldCount > 1 ? (
+      {fieldCount > 1 ? (
+        <div className="c-treatment-form-page__med-row-header">
           <Button
             variant="danger"
             type="button"
@@ -190,12 +190,12 @@ function TreatmentMedicineFields({
           >
             Quitar
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <label className="c-field">
         <span className="c-field__label">
-          <span className="c-field__label-text">Medicamento</span>
+          <span className="c-field__label-text">Medicamento {index + 1}</span>
         </span>
         <select className="c-field__select" {...register(`medicines.${index}.medicineId` as const)}>
           <option value="">Selecciona…</option>
@@ -219,82 +219,103 @@ function TreatmentMedicineFields({
         </span>
       </label>
 
-      {isRecurring ? (
-        <div className="c-treatment-form-page__schedule-box">
-          <p className="c-treatment-form-page__schedule-title">Tipo de pauta</p>
-          <div className="c-treatment-form-page__schedule-toggle" role="tablist" aria-label={`Tipo de pauta del medicamento ${index + 1}`}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={scheduleType === 'interval'}
-              className={['c-treatment-form-page__schedule-option', scheduleType === 'interval' && 'is-active'].filter(Boolean).join(' ')}
-              onClick={() => setValue(`medicines.${index}.scheduleType`, 'interval', { shouldDirty: true })}
-            >
-              Intervalo
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={scheduleType === 'daily_times'}
-              className={['c-treatment-form-page__schedule-option', scheduleType === 'daily_times' && 'is-active'].filter(Boolean).join(' ')}
-              onClick={() => {
-                setValue(`medicines.${index}.scheduleType`, 'daily_times', { shouldDirty: true });
-                if (fields.length === 0) {
-                  append({ time: firstDoseTime || '08:00' });
-                }
-              }}
-            >
-              Horas exactas
-            </button>
-          </div>
-
-          {scheduleType === 'interval' ? (
-            <Input
-              type="number"
-              label="Frecuencia (h)"
-              min={1}
-              step={1}
-              error={medicineErrors?.frequencyHours?.message}
-              {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
-            />
-          ) : (
-            <div className="c-treatment-form-page__time-list">
-              {fields.map((field, timeIndex) => (
-                <div key={field.id} className="c-treatment-form-page__time-row">
-                  <div className="c-treatment-form-page__time-input-wrap">
-                    <Input
-                      type="time"
-                      label={`Hora ${timeIndex + 1}`}
-                      icon={<TbClock aria-hidden="true" />}
-                      wrapperClassName="c-treatment-form-page__time-field c-treatment-form-page__time-field--removable"
-                      error={dailyDoseTimeEntryErrors?.[timeIndex]?.time?.message}
-                      {...register(`medicines.${index}.dailyDoseTimes.${timeIndex}.time` as const)}
-                    />
-                    {fields.length > 1 ? (
-                      <button
-                        type="button"
-                        className="c-treatment-form-page__time-remove"
-                        onClick={() => remove(timeIndex)}
-                        aria-label={`Quitar hora ${timeIndex + 1}`}
-                      >
-                        X
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-              {typeof dailyDoseTimesError === 'string' ? <span className="c-field__error">{dailyDoseTimesError}</span> : null}
-              <Button
+      <div className="c-treatment-form-page__schedule-box">
+        {isRecurring ? (
+          <>
+            <p className="c-treatment-form-page__schedule-title">Tipo de pauta</p>
+            <div className="c-treatment-form-page__schedule-toggle" role="tablist" aria-label={`Tipo de pauta del medicamento ${index + 1}`}>
+              <button
                 type="button"
-                variant="primary-outline"
-                onClick={() => append({ time: fields[fields.length - 1]?.time || firstDoseTime || '08:00' })}
+                role="tab"
+                aria-selected={scheduleType === 'interval'}
+                className={['c-treatment-form-page__schedule-option', scheduleType === 'interval' && 'is-active'].filter(Boolean).join(' ')}
+                onClick={() => setValue(`medicines.${index}.scheduleType`, 'interval', { shouldDirty: true })}
               >
-                Añadir otra hora
-              </Button>
+                Intervalo
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={scheduleType === 'daily_times'}
+                className={['c-treatment-form-page__schedule-option', scheduleType === 'daily_times' && 'is-active'].filter(Boolean).join(' ')}
+                onClick={() => {
+                  setValue(`medicines.${index}.scheduleType`, 'daily_times', { shouldDirty: true });
+                  if (fields.length === 0) {
+                    append({ time: firstDoseTime || '08:00' });
+                  }
+                }}
+              >
+                Horas exactas
+              </button>
             </div>
-          )}
-        </div>
-      ) : null}
+
+            {scheduleType === 'interval' ? (
+              <div className="c-treatment-form-page__schedule-fields">
+                <Input
+                  type="number"
+                  label="Frecuencia (h)"
+                  min={1}
+                  step={1}
+                  error={medicineErrors?.frequencyHours?.message}
+                  {...register(`medicines.${index}.frequencyHours` as const, { valueAsNumber: true })}
+                />
+                <Input
+                  type="time"
+                  label="Hora de la primera toma"
+                  icon={<TbClock aria-hidden="true" />}
+                  wrapperClassName="c-treatment-form-page__time-field"
+                  error={medicineErrors?.firstDoseTime?.message}
+                  {...register(`medicines.${index}.firstDoseTime` as const)}
+                />
+              </div>
+            ) : (
+              <div className="c-treatment-form-page__time-list">
+                {fields.map((field, timeIndex) => (
+                  <div key={field.id} className="c-treatment-form-page__time-row">
+                    <div className="c-treatment-form-page__time-input-wrap">
+                      <Input
+                        type="time"
+                        label={`Hora ${timeIndex + 1}`}
+                        icon={<TbClock aria-hidden="true" />}
+                        wrapperClassName="c-treatment-form-page__time-field c-treatment-form-page__time-field--removable"
+                        error={dailyDoseTimeEntryErrors?.[timeIndex]?.time?.message}
+                        {...register(`medicines.${index}.dailyDoseTimes.${timeIndex}.time` as const)}
+                      />
+                      {fields.length > 1 ? (
+                        <button
+                          type="button"
+                          className="c-treatment-form-page__time-remove"
+                          onClick={() => remove(timeIndex)}
+                          aria-label={`Quitar hora ${timeIndex + 1}`}
+                        >
+                          X
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+                {typeof dailyDoseTimesError === 'string' ? <span className="c-field__error">{dailyDoseTimesError}</span> : null}
+                <Button
+                  type="button"
+                  variant="primary-outline"
+                  onClick={() => append({ time: fields[fields.length - 1]?.time || firstDoseTime || '08:00' })}
+                >
+                  Añadir otra hora
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <Input
+            type="time"
+            label="Hora de la toma"
+            icon={<TbClock aria-hidden="true" />}
+            wrapperClassName="c-treatment-form-page__time-field"
+            error={medicineErrors?.firstDoseTime?.message}
+            {...register(`medicines.${index}.firstDoseTime` as const)}
+          />
+        )}
+      </div>
 
       <div className="c-treatment-form-page__med-grid">
         <Input
@@ -305,16 +326,6 @@ function TreatmentMedicineFields({
           error={medicineErrors?.amount?.message}
           {...register(`medicines.${index}.amount` as const, { valueAsNumber: true })}
         />
-        {!showExactTimes ? (
-          <Input
-            type="time"
-            label={isRecurring ? 'Hora de la primera toma' : 'Hora de la toma'}
-            icon={<TbClock aria-hidden="true" />}
-            wrapperClassName="c-treatment-form-page__time-field"
-            error={medicineErrors?.firstDoseTime?.message}
-            {...register(`medicines.${index}.firstDoseTime` as const)}
-          />
-        ) : null}
       </div>
 
       <label className="c-field c-treatment-form-page__med-note">
