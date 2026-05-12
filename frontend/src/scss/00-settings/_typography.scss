@@ -108,7 +108,8 @@
 // Sustituye Nunito por OpenDyslexic y amplía el interlineado.
 
 [data-font="dyslexic"] {
-  --font-body: 'OpenDyslexic', sans-serif;
+  --font-display: var(--font-dyslexia);
+  --font-body: var(--font-dyslexia);
   --leading-normal: 1.8;
   --leading-relaxed: 2;
 }
