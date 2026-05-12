@@ -376,7 +376,7 @@ function RegisterPage() {
                 {...register('ageConfirmed')}
                 className="c-register-page__checkbox-input"
               />
-              <span className="c-register-page__checkbox-text">Confirmo que tengo 18 anos o mas</span>
+              <span className="c-register-page__checkbox-text">Confirmo que tengo 18 años o mas</span>
             </label>
             {errors.ageConfirmed ? (
               <p className="c-register-page__error-message">
