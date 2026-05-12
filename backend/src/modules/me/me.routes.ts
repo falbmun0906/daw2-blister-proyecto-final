@@ -1,6 +1,8 @@
 import { Router } from 'express';
 
 import { authenticate } from '../../middleware/authenticate';
+import { validate } from '../../middleware/validate';
+import { calendarQuerySchema, upcomingDosesQuerySchema } from '../../../../shared/schemas';
 import { meCalendarController, meUpcomingDosesController } from './me.controller';
 
 export const meRouter = Router();
@@ -37,7 +39,11 @@ meRouter.use(authenticate);
  *       200:
  *         description: Aggregated upcoming doses for every blister of the user.
  */
-meRouter.get('/upcoming-doses', meUpcomingDosesController);
+meRouter.get(
+  '/upcoming-doses',
+  validate({ query: upcomingDosesQuerySchema }),
+  meUpcomingDosesController,
+);
 
 /**
  * @openapi
@@ -74,4 +80,8 @@ meRouter.get('/upcoming-doses', meUpcomingDosesController);
  *       200:
  *         description: Calendar payload combining appointments and doses.
  */
-meRouter.get('/calendar', meCalendarController);
+meRouter.get(
+  '/calendar',
+  validate({ query: calendarQuerySchema }),
+  meCalendarController,
+);
