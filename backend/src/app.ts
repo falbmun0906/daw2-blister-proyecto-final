@@ -26,7 +26,8 @@ import { oauthRouter } from './modules/oauth/oauth.routes';
 import { treatmentsRouter } from './modules/treatments/treatments.routes';
 
 export interface AppConfig {
-  clientOrigins: readonly string[];
+  clientOrigins?: readonly string[];
+  clientOrigin?: string;
   mcpServerEnabled?: boolean;
   nodeEnv: 'development' | 'test' | 'production';
 }
@@ -72,7 +73,13 @@ const createCorsOptionsDelegate = (clientOrigins: readonly string[]): CorsOption
 /**
  * Creates the Express application with the mandatory global middleware chain.
  */
-export const createApp = ({ clientOrigins, mcpServerEnabled = true, nodeEnv }: AppConfig): Express => {
+export const createApp = ({
+  clientOrigins,
+  clientOrigin,
+  mcpServerEnabled = true,
+  nodeEnv,
+}: AppConfig): Express => {
+  const allowedClientOrigins = clientOrigins ?? (clientOrigin ? [clientOrigin] : []);
   const app = express();
 
   app.disable('x-powered-by');
@@ -88,7 +95,7 @@ export const createApp = ({ clientOrigins, mcpServerEnabled = true, nodeEnv }: A
       },
     }),
   );
-  app.use(cors(createCorsOptionsDelegate(clientOrigins)));
+  app.use(cors(createCorsOptionsDelegate(allowedClientOrigins)));
 
   if (mcpServerEnabled) {
     // MCP must run before global body parsers so the transport can consume the raw request stream.

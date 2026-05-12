@@ -6,7 +6,8 @@ const AUTH_EMAIL_FROM = 'Blíster <ayuda@miblister.es>';
 
 const EMAIL_COLORS = {
   accent: '#c96f52',
-  primaryMid: '#2f7a68',
+  primaryMid: '#11a498',
+  primaryMidHover: '#0d8a7f',
   colorBg: '#f5f5f5',
   colorText: '#24332f',
   colorTextMuted: '#63756f',
@@ -77,6 +78,9 @@ const renderBaseEmail = ({
 
   return `
   <div style="margin:0;padding:0;background:${EMAIL_COLORS.colorBg};font-family:Arial,Helvetica,sans-serif;color:${EMAIL_COLORS.colorText};">
+    <style>
+      .blister-email-cta:hover { background:${EMAIL_COLORS.primaryMidHover}; }
+    </style>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:${EMAIL_COLORS.colorBg};">
       <tr>
         <td align="center" style="padding:32px 16px;">
@@ -96,7 +100,7 @@ const renderBaseEmail = ({
             </tr>
             <tr>
               <td align="center" style="padding:24px 32px 28px;">
-                <a href="${safeCtaHref}" style="display:inline-block;background:${EMAIL_COLORS.primaryMid};color:${EMAIL_COLORS.colorSurface};text-decoration:none;font-size:17px;font-weight:700;border-radius:999px;padding:15px 28px;">
+                <a href="${safeCtaHref}" class="blister-email-cta" style="display:inline-block;background:${EMAIL_COLORS.primaryMid};color:${EMAIL_COLORS.colorSurface};text-decoration:none;font-size:17px;font-weight:700;border-radius:999px;padding:15px 28px;">
                   ${escapeHtml(ctaLabel)}
                 </a>
               </td>

@@ -36,39 +36,215 @@ const renderAuthorizePage = (
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Autorizar asistente - Blister</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300..700&family=Nunito:wght@400..700&display=swap" rel="stylesheet" />
     <style>
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: system-ui, sans-serif; background: #eef7f5; color: #12312d; }
-      main { width: min(92vw, 28rem); padding: 2rem; background: #fff; border: 1px solid #c9ddd8; border-radius: 0.5rem; box-shadow: 0 1rem 2.5rem rgba(18, 49, 45, 0.12); }
-      h1 { margin: 0 0 0.5rem; font-size: 1.5rem; }
-      p { line-height: 1.5; }
-      label { display: grid; gap: 0.35rem; margin-top: 1rem; font-weight: 600; }
-      input[type="text"], input[type="password"] { min-height: 2.75rem; border: 1px solid #9fbdb7; border-radius: 0.375rem; padding: 0 0.75rem; font: inherit; }
-      .consent { grid-template-columns: auto 1fr; align-items: start; font-weight: 500; }
-      .error { color: #8a1f17; background: #fff1ef; border: 1px solid #ffc9c2; padding: 0.75rem; border-radius: 0.375rem; }
-      button { width: 100%; margin-top: 1.25rem; min-height: 2.75rem; border: 0; border-radius: 0.375rem; background: #087f75; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+      :root {
+        --color-bg: #f5f5f5;
+        --color-surface: #ffffff;
+        --color-border: #cddbda;
+        --color-border-subtle: rgba(30, 102, 96, 0.10);
+        --color-text: #3b3b3b;
+        --color-text-muted: #6b7a79;
+        --color-text-on-primary: #ffffff;
+        --color-primary-hover: #174f4a;
+        --color-primary-active: #0f3835;
+        --color-primary-mid: #11a498;
+        --color-primary-tint: #edf4f3;
+        --color-accent: #d97757;
+        --color-error: #d54d4d;
+        --color-error-subtle: #ffe6e6;
+        --font-display: 'Overpass', system-ui, sans-serif;
+        --font-body: 'Nunito', system-ui, sans-serif;
+        --font-weight-regular: 400;
+        --font-weight-medium: 500;
+        --font-weight-semibold: 600;
+        --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+        --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+        --text-xl: clamp(1.375rem, 1.2rem + 0.75vw, 1.75rem);
+        --leading-tight: 1.2;
+        --leading-normal: 1.55;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+        --space-10: 2.5rem;
+        --space-input-y: 0.875rem;
+        --space-touch-min: 2.75rem;
+        --radius-md: 0.625rem;
+        --radius-lg: 0.875rem;
+        --radius-full: 9999px;
+        --shadow-card-soft: 0 0.875rem 2.5rem rgba(15, 56, 53, 0.10);
+        --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+        --transition-base: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: var(--space-6);
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family: var(--font-body);
+      }
+
+      .c-oauth-authorize {
+        width: min(100%, 28rem);
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .c-oauth-authorize__title {
+        margin: 0;
+        max-width: 22rem;
+        font-family: var(--font-display);
+        font-size: var(--text-xl);
+        font-weight: var(--font-weight-medium);
+        line-height: var(--leading-tight);
+        color: var(--color-text);
+      }
+
+      .c-oauth-authorize__title-accent { color: var(--color-accent); }
+
+      .c-card {
+        padding: var(--space-8);
+        border: 0.0625rem solid var(--color-border-subtle);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+        box-shadow: var(--shadow-card-soft);
+      }
+
+      .c-oauth-authorize__intro {
+        margin: 0 0 var(--space-6);
+        color: var(--color-text-muted);
+        font-size: var(--text-base);
+        line-height: var(--leading-normal);
+      }
+
+      .c-oauth-authorize__form {
+        display: grid;
+        gap: var(--space-5);
+      }
+
+      .c-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      .c-field__label {
+        color: var(--color-primary-mid);
+        font-size: var(--text-base);
+        font-weight: var(--font-weight-regular);
+      }
+
+      .c-field__input {
+        width: 100%;
+        min-height: var(--space-touch-min);
+        padding: var(--space-input-y) var(--space-5);
+        border: 0.09375rem solid var(--color-border);
+        border-radius: var(--radius-full);
+        background: var(--color-surface);
+        color: var(--color-text);
+        font: inherit;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+      }
+
+      .c-field__input:focus-visible {
+        outline: none;
+        border-color: var(--color-primary-mid);
+        box-shadow: 0 0 0 0.1875rem var(--color-primary-tint);
+      }
+
+      .c-checkbox {
+        display: grid;
+        grid-template-columns: var(--space-touch-min) 1fr;
+        gap: var(--space-3);
+        align-items: start;
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+        line-height: var(--leading-normal);
+      }
+
+      .c-checkbox__input {
+        width: 1.25rem;
+        height: 1.25rem;
+        margin: 0.2rem auto 0;
+        accent-color: var(--color-primary-mid);
+      }
+
+      .c-oauth-authorize__error {
+        margin: 0 0 var(--space-5);
+        padding: var(--space-3) var(--space-4);
+        border-radius: var(--radius-md);
+        background: var(--color-error-subtle);
+        color: var(--color-error);
+        font-size: var(--text-sm);
+        line-height: var(--leading-normal);
+      }
+
+      .c-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: var(--space-touch-min);
+        padding: 0.625rem var(--space-4);
+        border: 0.0625rem solid transparent;
+        border-radius: var(--radius-full);
+        background: var(--color-primary-mid);
+        color: var(--color-text-on-primary);
+        font-family: var(--font-body);
+        font-size: var(--text-base);
+        font-weight: var(--font-weight-semibold);
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: background-color var(--transition-base), border-color var(--transition-base);
+      }
+
+      .c-btn:hover { background: var(--color-primary-hover); }
+      .c-btn:active { background: var(--color-primary-active); }
+
+      @media (min-width: 64rem) {
+        body { padding: var(--space-10); }
+        .c-oauth-authorize { width: 28rem; }
+      }
     </style>
   </head>
   <body>
-    <main>
-      <h1>Autorizar asistente</h1>
-      <p>Claude Desktop solicita acceso MCP a Blister para consultar y actualizar tus datos segun tus permisos.</p>
-      ${errorMessage ? `<p class="error">${escapeHtml(errorMessage)}</p>` : ''}
-      <form method="post" action="/oauth/authorize">
+    <main class="c-oauth-authorize">
+      <h1 class="c-oauth-authorize__title" aria-label="Autorizar asistente">
+        <span class="c-oauth-authorize__title-accent">Autorizar</span> asistente
+      </h1>
+      <section class="c-card" aria-label="Formulario de autorizacion MCP">
+        <p class="c-oauth-authorize__intro">Claude Desktop solicita acceso MCP a Blister para consultar y actualizar tus datos segun tus permisos.</p>
+        ${errorMessage ? `<p class="c-oauth-authorize__error">${escapeHtml(errorMessage)}</p>` : ''}
+        <form class="c-oauth-authorize__form" method="post" action="/oauth/authorize">
         ${hiddenInputs}
-        <label>
-          Usuario o email
-          <input name="identifier" type="text" autocomplete="username" required />
+        <label class="c-field">
+          <span class="c-field__label">Usuario o email</span>
+          <input class="c-field__input" name="identifier" type="text" autocomplete="username" required />
         </label>
-        <label>
-          Contraseña
-          <input name="password" type="password" autocomplete="current-password" required />
+        <label class="c-field">
+          <span class="c-field__label">Contraseña</span>
+          <input class="c-field__input" name="password" type="password" autocomplete="current-password" required />
         </label>
-        <label class="consent">
-          <input name="consent" type="checkbox" required />
+        <label class="c-checkbox">
+          <input class="c-checkbox__input" name="consent" type="checkbox" required />
           <span>Permitir que Claude Desktop use el endpoint MCP de Blister con mi cuenta.</span>
         </label>
-        <button type="submit">Autorizar conexión</button>
-      </form>
+        <button class="c-btn c-btn--primary" type="submit">Autorizar conexión</button>
+        </form>
+      </section>
     </main>
   </body>
 </html>`;

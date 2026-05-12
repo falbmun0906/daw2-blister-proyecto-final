@@ -13,14 +13,12 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
 import { forgotPassword } from '../../services/auth.service';
-import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 function ForgotPasswordPage() {
   const navigate = useNavigate();
-  const addToast = useUiStore((state) => state.addToast);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -42,10 +40,6 @@ function ForgotPasswordPage() {
 
     try {
       await forgotPassword(data);
-      addToast({
-        message: 'Si el correo existe, te enviaremos un enlace de recuperación.',
-        variant: 'success',
-      });
       setIsSubmitted(true);
     } catch (error) {
       if (isApiError(error) && error.code === 'VALIDATION_ERROR') {
@@ -73,7 +67,7 @@ function ForgotPasswordPage() {
       </header>
 
       <h1 className="c-forgot-password-page__title">
-        <span className="c-forgot-password-page__title-accent">Recuperar</span> contraseña
+        He <span className="c-forgot-password-page__title-accent">olvidado</span> mi contraseña
       </h1>
 
       {isSubmitted ? (

@@ -36,6 +36,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
   const addToast = useUiStore((state) => state.addToast);
+  const clearToasts = useUiStore((state) => state.clearToasts);
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
@@ -64,6 +65,7 @@ function LoginPage() {
       }
       applyUserSettings(session.user.settings);
       setSession(session);
+      clearToasts();
 
       addToast({
         message: `¡Bienvenido, ${session.user.name}!`,
