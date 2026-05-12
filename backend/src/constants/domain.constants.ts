@@ -42,6 +42,7 @@ export const PUSH_NOTIFICATION_TTL_SECONDS = 24 * 60 * 60;
 export const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi blíster';
 export const MAX_BLISTERS_PER_USER = 3;
 export const BLISTER_RESTORE_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
+export const PRIVACY_PURGE_SCAN_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Catalogo de avatares disponibles para Blísteres. Separado del de usuarios

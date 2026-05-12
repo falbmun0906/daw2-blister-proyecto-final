@@ -7,6 +7,10 @@ import {
   notificationsSchedulerStart,
   notificationsSchedulerStop,
 } from './modules/notifications/notifications-scheduler.service';
+import {
+  privacyPurgeSchedulerStart,
+  privacyPurgeSchedulerStop,
+} from './modules/privacy/privacy-purge.service';
 
 const app = createApp({
   clientOrigin: env.clientOrigin,
@@ -37,6 +41,7 @@ const bootstrap = async (): Promise<void> => {
     console.log(`Blister backend listening on port ${env.port}`);
   });
   notificationsSchedulerStart();
+  privacyPurgeSchedulerStart();
 };
 
 void bootstrap().catch((error: unknown) => {
@@ -51,6 +56,7 @@ const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
 
   await closeServer(server);
   notificationsSchedulerStop();
+  privacyPurgeSchedulerStop();
   await disconnectDb().catch((error: unknown) => {
     // eslint-disable-next-line no-console
     console.error('Failed to close MongoDB connection', error);
