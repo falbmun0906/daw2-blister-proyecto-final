@@ -122,7 +122,7 @@ const renderBaseEmail = ({
 const buildPasswordResetHtml = (resetUrl: string): string => {
   const bodyHtml = `
                 <p style="margin:0 0 16px;font-size:17px;line-height:1.55;color:${EMAIL_COLORS.colorText};text-align:center;">
-                  Blíster se usa mejor cuando tu cuenta está <span style="color:${EMAIL_COLORS.accent};font-weight:700;">segura</span>.
+                  Hemos recibido una solicitud para <span style="color:${EMAIL_COLORS.accent};font-weight:700;">restablecer</span> la contraseña de tu cuenta.
                   Usa este enlace para crear una nueva contraseña.
                 </p>
                 <p style="margin:0;font-size:15px;line-height:1.55;color:${EMAIL_COLORS.colorTextMuted};text-align:center;">
