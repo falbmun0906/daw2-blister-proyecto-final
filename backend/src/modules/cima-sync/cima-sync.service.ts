@@ -57,6 +57,9 @@ const toDate = (value: number | string | null | undefined): Date => {
   return new Date();
 };
 
+/**
+ * Formats a Date as the `dd/mm/yyyy` value expected by CIMA registroCambios.
+ */
 export const formatCimaSyncDate = (date: Date): string => {
   const day = `${date.getDate()}`.padStart(2, '0');
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
