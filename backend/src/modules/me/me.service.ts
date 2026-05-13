@@ -15,6 +15,7 @@ import {
 
 export interface UpcomingDoseItem {
   doseAt: Date;
+  displayTime: string | null;
   blisterId: string;
   blisterName: string;
   blisterAvatarKey: string | null;
@@ -117,6 +118,9 @@ const buildPatientMap = async (userIds: Types.ObjectId[]): Promise<Map<string, P
   );
 };
 
+const formatDoseDisplayTime = (value: Date): string =>
+  `${value.getHours().toString().padStart(2, '0')}:${value.getMinutes().toString().padStart(2, '0')}`;
+
 /**
  * Devuelve las próximas tomas de todos los blísteres a los que pertenece el
  * usuario autenticado dentro del rango solicitado, agrupando información de
@@ -173,6 +177,7 @@ export const meUpcomingDoses = async (
     if (!blister) continue;
 
     for (const entry of treatment.medicines) {
+      const scheduleType = (entry.scheduleType as 'interval' | 'daily_times' | undefined) ?? 'interval';
       const source = {
         startDate: entry.firstDoseAt as Date,
         endDate: (treatment.endDate as Date | null | undefined) ?? null,
@@ -180,7 +185,7 @@ export const meUpcomingDoses = async (
       };
       const occurrences = computeDosesInRange(source, {
         firstDoseAt: entry.firstDoseAt as Date,
-        scheduleType: (entry.scheduleType as 'interval' | 'daily_times' | undefined) ?? 'interval',
+        scheduleType,
         frequencyHours: (entry.frequencyHours as number | null | undefined) ?? null,
         dailyDoseTimes: (entry.dailyDoseTimes as string[] | undefined) ?? [],
         isRecurring: Boolean(entry.isRecurring),
@@ -198,6 +203,7 @@ export const meUpcomingDoses = async (
 
         items.push({
           doseAt,
+          displayTime: scheduleType === 'daily_times' ? formatDoseDisplayTime(doseAt) : null,
           blisterId: blister.id.toString(),
           blisterName: blister.name,
           blisterAvatarKey: blister.avatarKey,

@@ -121,4 +121,27 @@ describe('me.service', () => {
     expect(result.doses).toHaveLength(3);
     expect(result.doses[0]?.isTaken).toBe(true);
   });
+
+  it('returns exact daily dose display time without applying client timezone twice', async () => {
+    const { user, treatment } = await createContext();
+    treatment.medicines = [
+      {
+        ...treatment.medicines[0],
+        firstDoseAt: new Date('2030-11-02T00:02:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['02:02', '04:05'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    const result = await meUpcomingDoses(user._id.toString(), {
+      from: new Date('2030-11-02T00:00:00.000Z'),
+      to: new Date('2030-11-02T23:59:59.999Z'),
+      includeTaken: true,
+    });
+
+    expect(result.map((dose) => dose.displayTime)).toEqual(['02:02', '04:05']);
+  });
 });

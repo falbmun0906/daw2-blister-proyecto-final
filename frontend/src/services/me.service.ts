@@ -10,6 +10,7 @@ const callerRoleSchema = z.enum(['OWNER', 'CAREGIVER', 'OBSERVER']);
 
 export const upcomingDoseSchema = z.object({
   doseAt: z.string(),
+  displayTime: z.string().nullable().default(null),
   blisterId: objectIdSchema,
   blisterName: z.string(),
   blisterAvatarKey: z.string().nullable(),

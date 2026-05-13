@@ -27,7 +27,7 @@ import type { NotificationView } from '../../types/notification.types';
 interface HomeTimelineItem {
   key: string;
   status: 'taken' | 'skipped' | 'missed' | 'next' | 'pending';
-  date: Date;
+  timeLabel: string;
   medicineName: string;
   detail: string;
   avatarName: string;
@@ -48,6 +48,7 @@ interface ActiveUndo {
   patientName: string;
   patientAvatarKey: string | null;
   doseAt: string;
+  displayTime: string | null;
 }
 
 type HomeMedicine = Medicine & {
@@ -189,7 +190,7 @@ function InlineUndoDose({ undo, onUndo, onExpire, itemRef }: InlineUndoDoseProps
 
   return (
     <li ref={itemRef} className={`c-home-next__item c-home-next__item--${undo.status} c-home-next__item--undo`}>
-      <span className="c-home-next__time">{timeFormatter.format(date)}</span>
+      <span className="c-home-next__time">{undo.displayTime ?? timeFormatter.format(date)}</span>
       <span className="c-home-next__marker" aria-hidden="true">
         {undo.status === 'taken' ? (
           <TbCheck className="c-icon c-icon--sm" aria-hidden="true" />
@@ -333,6 +334,7 @@ export default function HomePage() {
         patientName: dose.patientName || dose.blisterName,
         patientAvatarKey: dose.patientAvatarKey,
         doseAt: dose.doseAt,
+        displayTime: dose.displayTime,
       });
     }
 
@@ -370,7 +372,7 @@ export default function HomePage() {
       return {
         key,
         status,
-        date: new Date(dose.doseAt),
+        timeLabel: dose.displayTime ?? timeFormatter.format(new Date(dose.doseAt)),
         medicineName: dose.medicineName,
         detail: `${dose.amount} unidad(es) · ${dose.treatmentTitle} · ${dose.blisterName}`,
         avatarName: dose.patientName || dose.blisterName,
@@ -514,6 +516,7 @@ export default function HomePage() {
           patientName: dose.patientName || dose.blisterName,
           patientAvatarKey: dose.patientAvatarKey,
           doseAt: dose.doseAt,
+          displayTime: dose.displayTime,
         },
         ...prev.filter((undo) => getDoseKey(undo) !== key),
       ]);
@@ -562,6 +565,7 @@ export default function HomePage() {
           patientName: dose.patientName || dose.blisterName,
           patientAvatarKey: dose.patientAvatarKey,
           doseAt: dose.doseAt,
+          displayTime: dose.displayTime,
         },
         ...prev.filter((undo) => getDoseKey(undo) !== key),
       ]);
@@ -744,7 +748,7 @@ export default function HomePage() {
                   className={`c-home-next__item c-home-next__item--${item.status}`}
                 >
                   <span className="c-home-next__time">
-                    {timeFormatter.format(item.date)}
+                    {item.timeLabel}
                   </span>
 
                   <span className="c-home-next__marker" aria-hidden="true">
@@ -850,7 +854,7 @@ export default function HomePage() {
         onClose={() => setEarlyDose(null)}
       >
         <p className="c-home__modal-text">
-          Esta toma está programada para las {earlyDose ? timeFormatter.format(new Date(earlyDose.doseAt)) : ''}.
+          Esta toma está programada para las {earlyDose ? earlyDose.displayTime ?? timeFormatter.format(new Date(earlyDose.doseAt)) : ''}.
         </p>
         <div className="c-home__modal-actions">
           <Button type="button" variant="primary-outline" onClick={() => setEarlyDose(null)}>
