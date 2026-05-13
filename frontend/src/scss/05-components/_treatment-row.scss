@@ -11,7 +11,7 @@
   &__header {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-3);
   }
 
@@ -145,12 +145,12 @@
 
   &__menu-toggle {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     width: var(--space-touch-min);
     min-width: var(--space-touch-min);
     height: var(--space-touch-min);
-    padding: 0;
+    padding: var(--space-1) 0 0;
     border: 0;
     border-radius: var(--radius-full);
     background-color: transparent;

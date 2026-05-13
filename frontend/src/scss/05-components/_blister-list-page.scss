@@ -120,6 +120,8 @@
   &__stack {
     display: inline-flex;
     align-items: center;
+    justify-self: end;
+    margin-left: auto;
 
     & > * + * { margin-left: -0.5rem; }
   }

@@ -56,6 +56,7 @@
     align-items: flex-start;
     justify-content: flex-end;
     justify-self: end;
+    align-self: start;
     width: var(--space-touch-min);
     gap: var(--space-1);
   }
@@ -63,6 +64,7 @@
   &__menu {
     position: relative;
     display: inline-flex;
+    align-items: flex-start;
     width: 100%;
     justify-content: flex-end;
   }
@@ -70,12 +72,12 @@
   &__menu-toggle,
   &__expand-toggle {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-end;
     width: var(--space-touch-min);
     min-width: var(--space-touch-min);
     height: var(--space-touch-min);
-    padding: 0;
+    padding: var(--space-1) 0 0;
     border: 0;
     background-color: transparent;
     color: var(--color-text-muted);
@@ -98,6 +100,7 @@
   }
 
   &__expand-toggle {
+    align-items: center;
     justify-content: space-between;
     width: 100%;
     min-width: 0;
