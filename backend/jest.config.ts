@@ -1,12 +1,14 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/../shared'],
   testMatch: ['**/_tests_/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   clearMocks: true,
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.test.json' }],
+  },
   moduleNameMapper: {
     '^zod$': '<rootDir>/node_modules/zod',
   },
@@ -19,11 +21,6 @@ const config: Config = {
     '!src/**/_tests_/**/*.ts',
     '!../shared/**/_tests_/**/*.ts',
   ],
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.test.json',
-    },
-  },
 };
 
 export default config;
