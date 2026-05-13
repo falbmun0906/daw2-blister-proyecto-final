@@ -1,19 +1,22 @@
 .c-medicine-card {
+  --medicine-card-media-size: 8rem;
+
   display: grid;
-  grid-template-columns: clamp(5.5rem, 28vw, 7.25rem) minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: var(--medicine-card-media-size) minmax(0, 1fr) auto;
+  align-items: stretch;
   gap: var(--space-3);
-  padding: var(--space-4);
+  height: var(--medicine-card-media-size);
+  padding: 0;
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
   color: var(--color-text);
   text-decoration: none;
   box-shadow: var(--shadow-card-soft);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast);
 
   &:hover,
   &:focus-visible {
-    transform: translateY(-0.0625rem);
     box-shadow: var(--shadow-md);
     text-decoration: none;
   }
@@ -27,9 +30,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    aspect-ratio: 1.25;
-    border-radius: var(--radius-md);
+    width: var(--medicine-card-media-size);
+    height: 100%;
+    min-height: var(--medicine-card-media-size);
+    aspect-ratio: 1;
     background-color: var(--color-primary-tint);
     color: var(--color-primary-mid);
     overflow: hidden;
@@ -43,7 +47,7 @@
   &__image {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     background-color: var(--color-surface);
   }
 
@@ -51,14 +55,17 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    justify-content: center;
+    gap: 0.15rem;
+    overflow: hidden;
+    padding: var(--space-2) 0;
   }
 
   &__alias {
     overflow: hidden;
     color: var(--color-text);
     font-family: var(--font-display);
-    font-size: var(--text-2xl);
+    font-size: var(--text-lg);
     font-weight: var(--font-weight-medium);
     line-height: var(--leading-tight);
     text-overflow: ellipsis;
@@ -68,7 +75,7 @@
   &__real-name {
     overflow: hidden;
     color: var(--color-text);
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
     line-height: var(--leading-snug);
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -77,35 +84,46 @@
   &__summary {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    margin-top: var(--space-2);
-    color: var(--color-text);
-    font-size: var(--text-sm);
+    gap: var(--space-1);
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
     line-height: var(--leading-snug);
   }
 
-  &__alert {
-    color: var(--color-warning);
-    font-weight: var(--font-weight-semibold);
-  }
+  &__summary-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+    color: var(--color-text-muted);
 
-  &__expiry {
-    &--warn-30,
-    &--warn-15 {
-      color: var(--color-warning);
-      font-weight: var(--font-weight-semibold);
+    & > svg,
+    .c-medicine-card__summary-icon {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+      color: currentColor;
+      stroke-width: 1.8;
     }
 
-    &--warn-7,
-    &--expired {
-      color: var(--color-error);
-      font-weight: var(--font-weight-semibold);
+    span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &--alert {
+      color: var(--color-text-muted);
     }
   }
 
   &__chevron {
     width: 1.35rem;
     height: 1.35rem;
+    align-self: center;
+    margin-right: var(--space-3);
     color: var(--color-text);
     stroke-width: 2.25;
   }

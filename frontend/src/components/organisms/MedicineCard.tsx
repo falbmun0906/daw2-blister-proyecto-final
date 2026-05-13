@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TbChevronRight } from 'react-icons/tb';
+import { TbAlertTriangle, TbChevronRight, TbStethoscope } from 'react-icons/tb';
 
 import { ROUTES } from '../../constants/routes';
 import { getCimaDetail } from '../../services/external.service';
@@ -25,30 +25,14 @@ const quantityFormatter = new Intl.NumberFormat('es-ES', {
   maximumFractionDigits: 1,
 });
 
-/** Calcula días restantes hasta la fecha de caducidad. */
-function daysUntil(iso: string): number {
-  const ms = new Date(iso).getTime() - Date.now();
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
-}
-
-function expiryClass(days: number): string {
-  if (days < 0) return 'c-medicine-card__expiry--expired';
-  if (days <= 7) return 'c-medicine-card__expiry--warn-7';
-  if (days <= 15) return 'c-medicine-card__expiry--warn-15';
-  if (days <= 30) return 'c-medicine-card__expiry--warn-30';
-  return '';
-}
-
 function formatStock(medicine: Medicine): string {
   return `${quantityFormatter.format(medicine.stock)} ${medicine.stockUnit}`;
 }
 
-function getAlertCount(medicine: Medicine, daysToExpiry: number): number {
+function getAlertCount(medicine: Medicine): number {
   return [
     medicine.cimaStatus.hasAlerts,
     medicine.cimaStatus.psum,
-    medicine.stock <= medicine.threshold,
-    daysToExpiry <= 30,
   ].filter(Boolean).length;
 }
 
@@ -60,10 +44,9 @@ function formatAlertCount(alertCount: number): string {
 
 /** Tarjeta de botiquín centrada en reconocimiento rápido: foto, nombres, stock y alertas. */
 export function MedicineCard({ medicine, blisterId, treatmentCount = 0 }: MedicineCardProps) {
-  const days = daysUntil(medicine.expDate);
   const alias = medicine.alias?.trim();
   const displayName = alias || medicine.nombre;
-  const alertCount = getAlertCount(medicine, days);
+  const alertCount = getAlertCount(medicine);
   const [imageState, setImageState] = useState<MedicineImageState | null>(null);
   const loadedImage = imageState?.nregist === medicine.nregist ? imageState : null;
   const imageUrl = loadedImage?.failed ? null : loadedImage?.url ?? null;
@@ -116,9 +99,16 @@ export function MedicineCard({ medicine, blisterId, treatmentCount = 0 }: Medici
         <span className="c-medicine-card__alias">{displayName}</span>
         <span className="c-medicine-card__real-name">{medicine.nombre}</span>
         <span className="c-medicine-card__summary">
-          <span>{formatStock(medicine)}</span>
-          <span>{treatmentCount} tratamiento{treatmentCount === 1 ? '' : 's'}</span>
-          <span className={alertCount > 0 ? ['c-medicine-card__alert', expiryClass(days)].filter(Boolean).join(' ') : undefined}>
+          <span className="c-medicine-card__summary-item">
+            <MedicineIcon type={medicine.iconType} size="sm" className="c-medicine-card__summary-icon" />
+            <span>{formatStock(medicine)}</span>
+          </span>
+          <span className="c-medicine-card__summary-item">
+            <TbStethoscope aria-hidden="true" />
+            <span>{treatmentCount} tratamiento{treatmentCount === 1 ? '' : 's'}</span>
+          </span>
+          <span className={['c-medicine-card__summary-item', alertCount > 0 && 'c-medicine-card__summary-item--alert'].filter(Boolean).join(' ')}>
+            <TbAlertTriangle aria-hidden="true" />
             {formatAlertCount(alertCount)}
           </span>
         </span>
