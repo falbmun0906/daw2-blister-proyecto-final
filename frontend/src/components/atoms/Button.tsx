@@ -38,7 +38,7 @@ export function Button({
       aria-busy={loading || undefined}
     >
       {loading ? <span className="c-btn__spinner" aria-hidden="true" /> : null}
-      <span>{children}</span>
+      <span className="c-btn__content">{children}</span>
     </button>
   );
 }

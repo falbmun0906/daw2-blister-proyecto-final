@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   TbAlertCircle,
@@ -8,34 +8,21 @@ import {
   TbPhoto,
   TbShare,
   TbTriangle,
-  TbUsers,
 } from 'react-icons/tb';
 import { FaBriefcaseMedical } from 'react-icons/fa6';
 
-import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { getCimaDetail } from '../../services/external.service';
-import { listBlisterMembers } from '../../services/blisters.service';
-import { listMedicines } from '../../services/medicines.service';
-import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { isApiError } from '../../types/api.types';
-import type { BlisterMemberDetail } from '../../types/blister.types';
 import type { ExternalMedicineInfo } from '../../types/medicine.types';
 
 const CIMA_DOC_TYPE_FICHA_TECNICA = 1;
 const CIMA_DOC_TYPE_PROSPECTO = 2;
-
-interface BlisterUsage {
-  blisterId: string;
-  name: string;
-  ownerName: string;
-  members: BlisterMemberDetail[];
-}
 
 type CimaDoc = ExternalMedicineInfo['docs'][number];
 type CimaPhoto = ExternalMedicineInfo['fotos'][number];
@@ -65,15 +52,10 @@ function CimaMedicineDetailPage() {
   const { nregist } = useParams<{ nregist: string }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
-  const blisters = useBlisterStore((s) => s.blisters);
-  const userId = useAuthStore((s) => s.user?.id ?? null);
 
   const [info, setInfo] = useState<ExternalMedicineInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [usage, setUsage] = useState<BlisterUsage[]>([]);
-  const [usageLoading, setUsageLoading] = useState(false);
 
   useEffect(() => {
     if (!nregist) return;
@@ -99,49 +81,6 @@ function CimaMedicineDetailPage() {
     };
   }, [nregist]);
 
-  // Calcula en qué blísters del usuario está presente este medicamento.
-  useEffect(() => {
-    let cancelled = false;
-    const timeoutId = window.setTimeout(() => {
-      if (!nregist || blisters.length === 0) {
-        setUsage([]);
-        return;
-      }
-      setUsageLoading(true);
-      Promise.all(
-        blisters.map(async (b) => {
-          try {
-            const meds = await listMedicines(b._id);
-            if (!meds.some((m) => m.nregist === nregist)) return null;
-            const members = await listBlisterMembers(b._id).catch(
-              () => [] as BlisterMemberDetail[],
-            );
-            const owner = members.find((m) => m.role === 'OWNER');
-            return {
-              blisterId: b._id,
-              name: b.name,
-              ownerName: owner?.fullName ?? '—',
-              members,
-            } satisfies BlisterUsage;
-          } catch {
-            return null;
-          }
-        }),
-      )
-        .then((results) => {
-          if (cancelled) return;
-          setUsage(results.filter((r): r is BlisterUsage => r !== null));
-        })
-        .finally(() => {
-          if (!cancelled) setUsageLoading(false);
-        });
-    }, 0);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [nregist, blisters]);
-
   const fichaTecnica = info?.docs.find((d: CimaDoc) => d.tipo === CIMA_DOC_TYPE_FICHA_TECNICA && d.url);
   const prospecto = info?.docs.find((d: CimaDoc) => d.tipo === CIMA_DOC_TYPE_PROSPECTO && d.url);
   const fotos = info?.fotos.filter((f: CimaPhoto) => f.url) ?? [];
@@ -164,16 +103,6 @@ function CimaMedicineDetailPage() {
       /* sin permisos: no hacemos nada */
     }
   };
-
-  // Avatares secundarios para la fila "Usado en" (excluye al usuario actual).
-  const usageWithExtras = useMemo(
-    () =>
-      usage.map((u) => ({
-        ...u,
-        others: u.members.filter((m) => m.userId !== userId),
-      })),
-    [usage, userId],
-  );
 
   if (!nregist) return <Navigate to={ROUTES.home} replace />;
 
@@ -376,49 +305,6 @@ function CimaMedicineDetailPage() {
             </section>
           ) : null}
 
-          {usageLoading || usageWithExtras.length > 0 ? (
-            <section className="c-cima-detail__section" aria-labelledby="cima-usage">
-              <h2 id="cima-usage" className="c-cima-detail__section-title">
-                <TbUsers aria-hidden="true" />
-                Usado en
-              </h2>
-              {usageLoading && usageWithExtras.length === 0 ? (
-                <Skeleton height="2.5rem" />
-              ) : (
-                <ul className="c-cima-detail__usage">
-                  {usageWithExtras.map((u) => (
-                    <li key={u.blisterId} className="c-cima-detail__usage-row">
-                      <span className="c-cima-detail__usage-icon" aria-hidden="true">
-                        <FaBriefcaseMedical aria-hidden="true" />
-                      </span>
-                      <div className="c-cima-detail__usage-body">
-                        <p className="c-cima-detail__usage-name">{u.name}</p>
-                        <p className="c-cima-detail__usage-meta">
-                          Propietario: {u.ownerName}
-                        </p>
-                      </div>
-                      <div className="c-cima-detail__usage-avatars" aria-hidden="true">
-                        {u.others.slice(0, 2).map((m) => (
-                          <Avatar
-                            key={m.userId}
-                            name={m.fullName}
-                            avatarKey={m.avatarKey ?? undefined}
-                            size="sm"
-                          />
-                        ))}
-                        {u.others.length > 2 ? (
-                          <span className="c-cima-detail__usage-extra">
-                            +{u.others.length - 2}
-                          </span>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          ) : null}
-
           {canMutate && activeBlisterId ? (
             <div className="c-cima-detail__cta c-add-medicine-page__sticky-cta">
               <Button
@@ -433,7 +319,7 @@ function CimaMedicineDetailPage() {
                 }
               >
                 <FaBriefcaseMedical aria-hidden="true" />
-                Añadir a botiquín
+                <span>Añadir a botiquín</span>
               </Button>
             </div>
           ) : null}

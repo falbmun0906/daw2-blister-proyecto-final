@@ -6,13 +6,13 @@
   border-radius: var(--radius-pill);
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
-  background-color: var(--color-success-subtle);
+  background-color: transparent;
   color: var(--color-success);
 
   &__value { font-size: var(--text-base); }
   &__unit  { font-size: var(--text-xs); text-transform: lowercase; }
 
-  &--ok       { background-color: var(--color-success-subtle); color: var(--color-success); }
+  &--ok       { background-color: transparent; color: var(--color-success); }
   &--low      { background-color: var(--color-warning-subtle); color: var(--color-warning); }
   &--critical { background-color: var(--color-error-subtle);   color: var(--color-error);   }
   &--empty {

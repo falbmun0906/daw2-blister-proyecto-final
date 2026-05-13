@@ -1,36 +1,47 @@
 .c-medicine-card {
-  --medicine-card-media-size: 8rem;
+  --medicine-card-media-size: 9.25rem;
 
-  display: grid;
-  grid-template-columns: var(--medicine-card-media-size) minmax(0, 1fr) auto;
-  align-items: stretch;
-  gap: var(--space-3);
   height: var(--medicine-card-media-size);
-  padding: 0;
+  min-height: var(--medicine-card-media-size);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
-  color: var(--color-text);
-  text-decoration: none;
   box-shadow: var(--shadow-card-soft);
   overflow: hidden;
   transition: box-shadow var(--transition-fast);
 
   &:hover,
-  &:focus-visible {
+  &:focus-within {
     box-shadow: var(--shadow-md);
-    text-decoration: none;
   }
 
-  &:focus-visible {
-    outline: 0.125rem solid var(--color-primary-mid);
-    outline-offset: 0.1875rem;
+  &__link {
+    display: grid;
+    grid-template-columns: var(--medicine-card-media-size) minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: var(--space-3);
+    height: 100%;
+    min-height: var(--medicine-card-media-size);
+    padding: 0;
+    color: var(--color-text);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.1875rem;
+    }
   }
 
   &__media {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: var(--medicine-card-media-size);
+    margin: 0;
     height: 100%;
     min-height: var(--medicine-card-media-size);
     aspect-ratio: 1;
@@ -55,37 +66,37 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 0.15rem;
+    justify-content: flex-start;
+    gap: calc(var(--space-1) / 2);
+    padding: var(--space-3) 0;
     overflow: hidden;
-    padding: var(--space-2) 0;
   }
 
   &__alias {
-    overflow: hidden;
+    margin: 0;
     color: var(--color-text);
     font-family: var(--font-display);
-    font-size: var(--text-lg);
+    font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    line-height: var(--leading-tight);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
   }
 
   &__real-name {
-    overflow: hidden;
+    margin: 0;
     color: var(--color-text);
-    font-size: var(--text-sm);
-    line-height: var(--leading-snug);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: var(--text-xs);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
   }
 
   &__summary {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
-    margin-top: var(--space-1);
+    gap: calc(var(--space-1) / 2);
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    list-style: none;
     color: var(--color-text-muted);
     font-size: var(--text-xs);
     line-height: var(--leading-snug);

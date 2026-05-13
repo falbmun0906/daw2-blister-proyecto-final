@@ -167,6 +167,20 @@
     border-radius: var(--radius-full);
     animation: btn-spin 0.6s linear infinite;
   }
+
+  &__content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-width: 0;
+
+    svg {
+      width: 1.1rem;
+      height: 1.1rem;
+      flex-shrink: 0;
+    }
+  }
 }
 
 @keyframes btn-spin {
