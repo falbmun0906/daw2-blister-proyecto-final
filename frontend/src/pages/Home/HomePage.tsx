@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TbAlertTriangle, TbCheck, TbDotsVertical } from 'react-icons/tb';
+import { TbAlertTriangle, TbCheck } from 'react-icons/tb';
 
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Modal } from '../../components/atoms/Modal';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { ActionMenuButton } from '../../components/molecules/ActionMenuButton';
 import { CimaSearchDropdown } from '../../components/molecules/CimaSearchDropdown';
 import { useAdherence, isStockInsufficientError } from '../../hooks/use.adherence';
 import { useBlisters } from '../../hooks/use.blisters';
@@ -661,17 +662,14 @@ export default function HomePage() {
                       <span className="c-home-alert__context"> · {alert.context}</span>
                     </span>
                   </div>
-                  <div className="c-home-alert__menu">
-                    <button
-                      type="button"
+                  <div className="c-action-menu c-home-alert__menu">
+                    <ActionMenuButton
                       className="c-home-alert__menu-toggle"
-                      aria-label="Acciones del aviso"
+                      label="Acciones del aviso"
                       aria-haspopup="menu"
                       aria-expanded={openAlertMenuKey === alert.key}
                       onClick={() => setOpenAlertMenuKey((current) => current === alert.key ? null : alert.key)}
-                    >
-                      <TbDotsVertical aria-hidden="true" />
-                    </button>
+                    />
                   </div>
                 </header>
                 <div className="c-home-alert__body">
@@ -681,9 +679,10 @@ export default function HomePage() {
             ))}
           </div>
           {openAlertMenu ? (
-            <div className="c-home-alert__menu-popover" role="menu">
+            <div className="c-action-menu__popover c-home-alert__menu-popover" role="menu">
               <button
                 type="button"
+                className="c-action-menu__item"
                 role="menuitem"
                 onClick={() => {
                   setOpenAlertMenuKey(null);
@@ -694,6 +693,7 @@ export default function HomePage() {
               </button>
               <button
                 type="button"
+                className="c-action-menu__item"
                 role="menuitem"
                 onClick={() => {
                   setOpenAlertMenuKey(null);
@@ -790,13 +790,12 @@ export default function HomePage() {
                           {loggingDoseKey === item.key ? 'Registrando...' : 'Marcar toma'}
                         </button>
                         <div
-                          className="c-home-next__action-menu"
+                          className="c-action-menu c-home-next__action-menu"
                           ref={openDoseMenu?.key === item.key ? doseMenuRef : undefined}
                         >
-                          <button
-                            type="button"
+                          <ActionMenuButton
                             className="c-home-next__menu-toggle"
-                            aria-label="Acciones de la toma"
+                            label="Acciones de la toma"
                             aria-haspopup="menu"
                             aria-expanded={openDoseMenu?.key === item.key}
                             onClick={() => {
@@ -804,13 +803,12 @@ export default function HomePage() {
                               if (!dose) return;
                               setOpenDoseMenu((current) => current?.key === item.key ? null : { key: item.key, dose });
                             }}
-                          >
-                            <TbDotsVertical aria-hidden="true" />
-                          </button>
+                          />
                           {openDoseMenu?.key === item.key ? (
-                            <div className="c-home-next__menu-popover" role="menu">
+                            <div className="c-action-menu__popover c-home-next__menu-popover" role="menu">
                               <button
                                 type="button"
+                                className="c-action-menu__item"
                                 role="menuitem"
                                 onClick={() => {
                                   const dose = item.dose;
@@ -823,6 +821,7 @@ export default function HomePage() {
                               </button>
                               <button
                                 type="button"
+                                className="c-action-menu__item"
                                 role="menuitem"
                                 disabled={skippingDoseKey === item.key}
                                 onClick={() => {

@@ -350,31 +350,6 @@
     display: inline-flex;
   }
 
-  &__menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--space-touch-min);
-    min-width: var(--space-touch-min);
-    height: var(--space-touch-min);
-    padding: 0;
-    border: 0.09375rem solid var(--color-primary-mid);
-    border-radius: var(--radius-full);
-    background-color: transparent;
-    color: var(--color-primary-mid);
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      background-color: var(--color-primary-tint);
-    }
-
-    svg {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
-  }
-
   &__menu-popover {
     position: absolute;
     right: 0;

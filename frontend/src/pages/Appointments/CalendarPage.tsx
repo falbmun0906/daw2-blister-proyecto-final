@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { TbCalendar, TbCheck, TbChevronLeft, TbChevronRight, TbDotsVertical, TbPill, TbPlus } from 'react-icons/tb';
+import { TbCalendar, TbCheck, TbChevronLeft, TbChevronRight, TbPill, TbPlus } from 'react-icons/tb';
 
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { ActionMenuButton } from '../../components/molecules/ActionMenuButton';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
 import {
   CALENDAR_INITIAL_VISIBLE_ITEMS,
@@ -830,23 +831,21 @@ function CalendarPage() {
                                     </span>
                                   </button>
                                   <div
-                                    className="c-dose-row__action-menu"
+                                    className="c-action-menu c-dose-row__action-menu"
                                     ref={openDoseMenuKey === doseKey ? doseMenuRef : undefined}
                                   >
-                                    <button
-                                      type="button"
+                                    <ActionMenuButton
                                       className="c-dose-row__menu-toggle"
-                                      aria-label="Acciones de la toma"
+                                      label="Acciones de la toma"
                                       aria-haspopup="menu"
                                       aria-expanded={openDoseMenuKey === doseKey}
                                       onClick={() => setOpenDoseMenuKey((current) => current === doseKey ? null : doseKey)}
-                                    >
-                                      <TbDotsVertical aria-hidden="true" />
-                                    </button>
+                                    />
                                     {openDoseMenuKey === doseKey ? (
-                                      <div className="c-dose-row__menu-popover" role="menu">
+                                      <div className="c-action-menu__popover c-dose-row__menu-popover" role="menu">
                                         <button
                                           type="button"
+                                          className="c-action-menu__item"
                                           role="menuitem"
                                           onClick={() => {
                                             setOpenDoseMenuKey(null);
@@ -857,6 +856,7 @@ function CalendarPage() {
                                         </button>
                                         <button
                                           type="button"
+                                          className="c-action-menu__item"
                                           role="menuitem"
                                           disabled={skippingDoseKey === doseKey}
                                           onClick={() => {

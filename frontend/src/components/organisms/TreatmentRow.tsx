@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   TbBuildingHospital,
   TbChevronRight,
-  TbDotsVertical,
   TbPencil,
   TbPill,
   TbTrash,
@@ -11,6 +10,7 @@ import {
 } from 'react-icons/tb';
 
 import { Avatar } from '../atoms/Avatar';
+import { ActionMenuButton } from '../molecules/ActionMenuButton';
 import { ROUTES } from '../../constants/routes';
 import type { BlisterRole } from '../../types/blister.types';
 import type { Treatment } from '../../types/treatment.types';
@@ -108,19 +108,17 @@ export function TreatmentRow({
           </p>
         </div>
         {editable ? (
-          <div className="c-treatment-row__menu" ref={menuRef}>
-            <button
-              type="button"
+          <div className="c-action-menu c-treatment-row__menu" ref={menuRef}>
+            <ActionMenuButton
               className="c-treatment-row__menu-toggle"
-              aria-label="Acciones del tratamiento"
+              label="Acciones del tratamiento"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
-            >
-              <TbDotsVertical aria-hidden="true" />
-            </button>
+            />
             {menuOpen ? (
-              <div className="c-treatment-row__menu-popover" role="menu">
+              <div className="c-action-menu__popover c-treatment-row__menu-popover" role="menu">
                 <Link
+                  className="c-action-menu__item"
                   to={ROUTES.editTreatment(blisterId, treatment.id)}
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
@@ -130,6 +128,7 @@ export function TreatmentRow({
                 </Link>
                 <button
                   type="button"
+                  className="c-action-menu__item c-action-menu__item--danger"
                   role="menuitem"
                   onClick={() => {
                     setMenuOpen(false);

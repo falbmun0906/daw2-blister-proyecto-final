@@ -5,7 +5,6 @@ import {
   TbChevronDown,
   TbChevronUp,
   TbClock,
-  TbDotsVertical,
   TbMapPin,
   TbMessageCircle,
   TbPencil,
@@ -20,6 +19,7 @@ import type { BlisterRole } from '../../types/blister.types';
 import type { Treatment } from '../../types/treatment.types';
 import { Avatar } from '../atoms/Avatar';
 import { Button } from '../atoms/Button';
+import { ActionMenuButton } from '../molecules/ActionMenuButton';
 
 type AppointmentComment = Appointment['comments'][number];
 
@@ -156,20 +156,18 @@ function CommentItem({
         )}
       </div>
       {editable ? (
-        <div className="c-appointment-card__menu">
-          <button
-            type="button"
+        <div className="c-action-menu c-appointment-card__menu">
+          <ActionMenuButton
             className="c-appointment-card__menu-toggle"
-            aria-label="Acciones del comentario"
+            label="Acciones del comentario"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
-          >
-            <TbDotsVertical aria-hidden="true" />
-          </button>
+          />
           {menuOpen ? (
-            <div className="c-appointment-card__menu-popover" role="menu">
+            <div className="c-action-menu__popover c-appointment-card__menu-popover" role="menu">
               <button
                 type="button"
+                className="c-action-menu__item"
                 role="menuitem"
                 onClick={() => {
                   setIsEditing(true);
@@ -181,6 +179,7 @@ function CommentItem({
               </button>
               <button
                 type="button"
+                className="c-action-menu__item c-action-menu__item--danger"
                 role="menuitem"
                 onClick={() => {
                   setMenuOpen(false);
@@ -251,19 +250,17 @@ export function AppointmentCard({
         </div>
         <div className="c-appointment-card__actions">
           {editable ? (
-            <div className="c-appointment-card__menu">
-              <button
-                type="button"
+            <div className="c-action-menu c-appointment-card__menu">
+              <ActionMenuButton
                 className="c-appointment-card__menu-toggle"
-                aria-label="Acciones de la cita"
+                label="Acciones de la cita"
                 aria-expanded={cardMenuOpen}
                 onClick={() => setCardMenuOpen((open) => !open)}
-              >
-                <TbDotsVertical aria-hidden="true" />
-              </button>
+              />
               {cardMenuOpen ? (
-                <div className="c-appointment-card__menu-popover" role="menu">
+                <div className="c-action-menu__popover c-appointment-card__menu-popover" role="menu">
                   <Link
+                    className="c-action-menu__item"
                     to={ROUTES.editAppointment(blisterId, appointment.id)}
                     role="menuitem"
                     onClick={() => setCardMenuOpen(false)}
@@ -273,6 +270,7 @@ export function AppointmentCard({
                   </Link>
                   <button
                     type="button"
+                    className="c-action-menu__item c-action-menu__item--danger"
                     role="menuitem"
                     onClick={() => {
                       setCardMenuOpen(false);

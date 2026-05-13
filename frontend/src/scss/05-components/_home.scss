@@ -131,36 +131,8 @@
   &__menu {
     position: relative;
     display: inline-flex;
+    align-self: flex-start;
     margin-left: auto;
-  }
-
-  &__menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    min-width: 2rem;
-    height: 2rem;
-    padding: 0;
-    border: 0;
-    background-color: transparent;
-    color: var(--color-text-muted);
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      color: var(--color-primary);
-    }
-
-    &:focus-visible {
-      outline: 0.125rem solid var(--color-primary-mid);
-      outline-offset: 0.125rem;
-    }
-
-    svg {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
   }
 
   &__menu-popover {
@@ -404,31 +376,6 @@
     position: relative;
     flex: 0 0 auto;
     display: inline-flex;
-  }
-
-  &__menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--space-touch-min);
-    min-width: var(--space-touch-min);
-    height: var(--space-touch-min);
-    padding: 0;
-    border: 0.09375rem solid var(--color-primary-mid);
-    border-radius: var(--radius-full);
-    background-color: transparent;
-    color: var(--color-primary-mid);
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      background-color: var(--color-primary-tint);
-    }
-
-    svg {
-      width: 1.125rem;
-      height: 1.125rem;
-    }
   }
 
   &__menu-popover {
