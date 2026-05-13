@@ -85,8 +85,10 @@ export function MedicineCard({ medicine, blisterId, treatmentCount = 0 }: Medici
         </figure>
 
         <div className="c-medicine-card__body">
-          <h2 className="c-medicine-card__alias">{displayName}</h2>
-          <p className="c-medicine-card__real-name">{medicine.nombre}</p>
+          <div className="c-medicine-card__copy">
+            <h2 className="c-medicine-card__alias">{displayName}</h2>
+            <p className="c-medicine-card__real-name">{medicine.nombre}</p>
+          </div>
           <ul className="c-medicine-card__summary" aria-label="Resumen del medicamento">
             <li className="c-medicine-card__summary-item">
               <MedicineIcon type={medicine.iconType} size="sm" className="c-medicine-card__summary-icon" />

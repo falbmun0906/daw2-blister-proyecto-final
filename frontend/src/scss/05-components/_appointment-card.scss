@@ -58,6 +58,7 @@
     justify-self: end;
     align-self: start;
     width: var(--space-touch-min);
+    margin-left: auto;
     gap: var(--space-1);
   }
 
@@ -66,6 +67,12 @@
     display: inline-flex;
     align-items: flex-start;
     width: 100%;
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+
+  &__menu-toggle {
+    margin-left: auto;
     justify-content: flex-end;
   }
 
