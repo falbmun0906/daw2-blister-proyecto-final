@@ -53,9 +53,9 @@ function App() {
       <DesktopDeviceShell>
         <Suspense fallback={null}>
           <Routes>
-            <Route index element={<Navigate to={ROUTES.landing} replace />} />
+            <Route index element={<Navigate to={ROUTES.onboarding} replace />} />
             <Route path={ROUTES.landing} element={<LandingPage />} />
-            <Route path={ROUTES.access} element={<Navigate to={ROUTES.landing} replace />} />
+            <Route path={ROUTES.access} element={<Navigate to={ROUTES.onboarding} replace />} />
 
             {/* Onboarding accesible solo la primera vez o si el usuario lo reactiva desde Ajustes */}
             <Route element={<OnboardingRoute />}>
@@ -131,7 +131,7 @@ function App() {
               </Route>
             </Route>
 
-            <Route path={ROUTES.notFound} element={<Navigate to={ROUTES.landing} replace />} />
+            <Route path={ROUTES.notFound} element={<Navigate to={ROUTES.onboarding} replace />} />
           </Routes>
         </Suspense>
       </DesktopDeviceShell>

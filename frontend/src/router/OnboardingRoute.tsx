@@ -8,14 +8,14 @@ import { useUiStore } from '../stores/ui.store';
  * Permite acceder a /onboarding cuando:
  *   - el usuario nunca lo ha visto (`!hasSeenOnboarding`), o
  *   - el usuario lo reactivó explícitamente desde Ajustes (`canReplayOnboarding`).
- * En cualquier otro caso, redirige a /landing.
+ * En cualquier otro caso, redirige a /login.
  */
 export function OnboardingRoute() {
     const canReplayOnboarding = useUiStore((s) => s.canReplayOnboarding);
     const hasSeenOnboarding = useUiStore((s) => s.hasSeenOnboarding);
 
     if (!canReplayOnboarding && hasSeenOnboarding) {
-        return <Navigate to={ROUTES.landing} replace />;
+        return <Navigate to={ROUTES.login} replace />;
     }
 
     return <Outlet />;
