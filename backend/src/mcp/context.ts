@@ -89,6 +89,14 @@ export const resolveMcpContextFromToken = async (token: string): Promise<McpAuth
   const oauthUserId = resolveMcpOAuthUserId(token);
 
   if (oauthUserId) {
+    if (!Types.ObjectId.isValid(oauthUserId)) {
+      throw new AppError({
+        code: 'MCP_TOKEN_INVALID',
+        message: 'MCP OAuth token is invalid or revoked.',
+        statusCode: HTTP_STATUS_UNAUTHORIZED,
+      });
+    }
+
     const user = await UserModel.findOne({
       _id: new Types.ObjectId(oauthUserId),
       deletedAt: null,

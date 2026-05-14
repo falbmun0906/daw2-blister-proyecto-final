@@ -7,6 +7,7 @@ import { createApp } from '../../../app';
 import { env } from '../../../config/env';
 import { resolveMcpContextFromToken } from '../../../mcp/context';
 import { OAuthTokenModel } from '../../../models/oauthToken.model';
+import { UserModel } from '../../../models/user.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../../types/auth.types';
 import * as authEmailService from '../../auth/auth-email.service';
 import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID } from '../oauth.constants';
@@ -22,6 +23,7 @@ const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64ur
 const redirectUri = 'http://localhost:6274/callback';
 const mcpAudience = `${env.backendUrl}/mcp`;
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
+let registerIpCounter = 1;
 
 const createAuthorizePayload = () => ({
   response_type: 'code',
@@ -44,15 +46,18 @@ const createDynamicAuthorizePayload = () => ({
 });
 
 const registerUser = async (app: ReturnType<typeof createApp>) => {
-  await request(app).post('/api/v1/auth/register').send({
-    name: 'Ana Lopez',
-    username: 'analopez',
-    email: 'ana@example.com',
-    password: 'Password1!',
-    confirmPassword: 'Password1!',
-    privacyConsent: true,
-    ageConfirmed: true,
-  });
+  await request(app)
+    .post('/api/v1/auth/register')
+    .set('X-Forwarded-For', `203.0.113.${registerIpCounter++}`)
+    .send({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      privacyConsent: true,
+      ageConfirmed: true,
+    });
 };
 
 describe('oauth.routes', () => {
@@ -381,6 +386,47 @@ describe('oauth.routes', () => {
     expect(storedTokens).toHaveLength(1);
     expect(storedTokens[0].refreshToken).toBe(hashToken(refreshResponse.body.refresh_token));
     expect(storedTokens[0].refreshToken).not.toBe(originalHash);
+  });
+
+  it('rejects MCP OAuth refresh tokens for deleted users', async () => {
+    await registerUser(app);
+
+    const authorizeResponse = await request(app)
+      .post('/oauth/authorize')
+      .type('form')
+      .send({
+        ...createDynamicAuthorizePayload(),
+        identifier: 'ana@example.com',
+        password: 'Password1!',
+        consent: 'on',
+      });
+    const code = new URL(authorizeResponse.headers.location as string).searchParams.get('code');
+    const tokenResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'authorization_code',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        redirect_uri: redirectUri,
+        code,
+        code_verifier: codeVerifier,
+      })
+      .expect(200);
+    const accessPayload = jwt.verify(tokenResponse.body.access_token, env.jwtSecret) as JwtMcpOAuthPayload;
+
+    await UserModel.updateOne({ _id: accessPayload.sub }, { $set: { deletedAt: new Date() } });
+
+    const refreshResponse = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        client_id: OAUTH_DEFAULT_CLIENT_ID,
+        refresh_token: tokenResponse.body.refresh_token,
+      });
+
+    expect(refreshResponse.status).toBe(401);
+    expect(refreshResponse.body.error.code).toBe('OAUTH_USER_INACTIVE');
   });
 
   it('rejects invalid and expired MCP OAuth refresh tokens', async () => {

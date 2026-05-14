@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import jwt from 'jsonwebtoken';
 import { type StringValue } from 'ms';
+import { Types } from 'mongoose';
 
 import { env } from '../../config/env';
 import {
@@ -9,6 +10,7 @@ import {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.constants';
 import { OAuthTokenModel } from '../../models/oauthToken.model';
+import { UserModel } from '../../models/user.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../types/auth.types';
 import { AppError } from '../../utils/app-error';
 import { authLogin } from '../auth/auth.service';
@@ -247,6 +249,24 @@ const persistMcpRefreshToken = async (userId: string, clientId: string, refreshT
 };
 
 const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuthTokenResult> => {
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new AppError({
+      code: 'OAUTH_USER_INACTIVE',
+      message: 'OAuth session is invalid or expired.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+
+  const userExists = await UserModel.exists({ _id: userId, deletedAt: null });
+
+  if (!userExists) {
+    throw new AppError({
+      code: 'OAUTH_USER_INACTIVE',
+      message: 'OAuth session is invalid or expired.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+
   const accessToken = signMcpAccessToken(userId, clientId);
   const refreshToken = signMcpRefreshToken(userId, clientId);
 

@@ -8,8 +8,10 @@ import {
   authCreateMcpToken,
   authGetMcpTokenStatus,
   authLogin,
+  authLogout,
   authRefresh,
   authRegister,
+  authUpdateProfile,
 } from '../auth.service';
 import * as authEmailService from '../auth-email.service';
 import {
@@ -116,6 +118,57 @@ describe('auth.service', () => {
     expect(accessPayload.type).toBe('access');
     expect(refreshPayload.type).toBe('refresh');
     expect(refreshed.refreshToken).not.toBe(registerResult.refreshToken);
+  });
+
+  it('rejects refresh tokens for deleted users', async () => {
+    const registerResult = await authRegister({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      privacyConsent: true,
+      ageConfirmed: true,
+      inviteCode: undefined,
+    });
+
+    await UserModel.updateOne({ _id: registerResult.user.id }, { $set: { deletedAt: new Date() } });
+
+    await expect(authRefresh({ refreshToken: registerResult.refreshToken })).rejects.toMatchObject({
+      code: 'AUTH_REFRESH_INVALID',
+    });
+  });
+
+  it('revokes refresh credentials on logout and password changes', async () => {
+    const registerResult = await authRegister({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      privacyConsent: true,
+      ageConfirmed: true,
+      inviteCode: undefined,
+    });
+
+    await authLogout(registerResult.user.id);
+    await expect(authRefresh({ refreshToken: registerResult.refreshToken })).rejects.toMatchObject({
+      code: 'AUTH_REFRESH_INVALID',
+    });
+
+    const loginResult = await authLogin({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
+
+    await authUpdateProfile(loginResult.user.id, {
+      currentPassword: 'Password1!',
+      newPassword: 'NewPassword1!',
+    });
+
+    await expect(authRefresh({ refreshToken: loginResult.refreshToken })).rejects.toMatchObject({
+      code: 'AUTH_REFRESH_INVALID',
+    });
   });
 
   it('creates hashed MCP tokens without storing the clear text value', async () => {

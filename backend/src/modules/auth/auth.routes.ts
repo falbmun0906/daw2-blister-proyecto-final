@@ -14,6 +14,7 @@ import {
 } from '../../../../shared/schemas/index';
 import {
   AUTH_LOGIN_RATE_LIMIT_MAX,
+  AUTH_PASSWORD_RESET_RATE_LIMIT_MAX,
   AUTH_REGISTER_RATE_LIMIT_MAX,
   FIFTEEN_MINUTES_IN_MS,
   ONE_HOUR_IN_MS,
@@ -27,6 +28,7 @@ import {
   authForgotPasswordController,
   authGetMcpTokenStatusController,
   authLoginController,
+  authLogoutController,
   authRefreshController,
   authRegisterController,
   authResetPasswordController,
@@ -44,6 +46,13 @@ const registerLimiter = rateLimit({
 const loginLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES_IN_MS,
   max: AUTH_LOGIN_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const createPasswordResetLimiter = () => rateLimit({
+  windowMs: FIFTEEN_MINUTES_IN_MS,
+  max: AUTH_PASSWORD_RESET_RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -86,12 +95,14 @@ authRouter.post('/login', loginLimiter, validate({ body: loginSchema }), authLog
 
 authRouter.post(
   '/forgot-password',
+  createPasswordResetLimiter(),
   validate({ body: forgotPasswordSchema }),
   authForgotPasswordController,
 );
 
 authRouter.post(
   '/reset-password',
+  createPasswordResetLimiter(),
   validate({ body: resetPasswordSchema }),
   authResetPasswordController,
 );
@@ -118,6 +129,7 @@ authRouter.post(
  *         description: Invalid or expired refresh token.
  */
 authRouter.post('/refresh', validate({ body: refreshTokenSchema }), authRefreshController);
+authRouter.post('/logout', authenticate, authLogoutController);
 
 /**
  * @openapi

@@ -11,6 +11,7 @@ export const requestSanitizerMiddleware = (
 ): void => {
   sanitize(request.body);
   sanitize(request.params);
+  sanitize(request.query);
 
   next();
 };

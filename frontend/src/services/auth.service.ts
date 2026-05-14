@@ -53,6 +53,13 @@ export async function refresh(input: RefreshTokenInput): Promise<AuthTokens> {
 }
 
 /**
+ * Revokes the current stored refresh token on the backend.
+ */
+export async function logout(): Promise<void> {
+  await apiClient.post('/auth/logout');
+}
+
+/**
  * Requests password reset instructions without revealing if the account exists.
  */
 export async function forgotPassword(input: ForgotPasswordInput): Promise<void> {

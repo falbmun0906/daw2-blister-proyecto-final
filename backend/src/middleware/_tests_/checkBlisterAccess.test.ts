@@ -87,6 +87,17 @@ describe('checkBlisterAccess middleware', () => {
     expect(response.body.error.code).toBe('BLISTER_NOT_FOUND');
   });
 
+  it('returns 400 when the blister id is malformed', async () => {
+    const user = await createUser('75');
+
+    const response = await request(app)
+      .get('/blisters/not-an-object-id/test')
+      .set('x-user-id', user._id.toString());
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('returns 403 when the user does not belong to the blister', async () => {
     const owner = await createUser('73');
     const stranger = await createUser('74');

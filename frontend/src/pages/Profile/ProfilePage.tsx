@@ -4,6 +4,8 @@ import { TbChevronRight } from 'react-icons/tb';
 import { Avatar } from '../../components/atoms/Avatar';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { unsubscribeFromServerPush } from '../../lib/push-notifications';
+import { logout as logoutService } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { resetAppStores } from '../../stores/reset-stores';
 
@@ -26,9 +28,14 @@ function ProfilePage() {
   usePageTitle('');
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
-  const handleLogout = (): void => {
-    resetAppStores();
-    clearSession();
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await unsubscribeFromServerPush().catch(() => undefined);
+      await logoutService();
+    } finally {
+      resetAppStores();
+      clearSession();
+    }
   };
 
   if (!user) return null;

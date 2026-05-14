@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
 
 import {
+  HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
 } from '../constants/http.constants';
@@ -33,6 +34,18 @@ export const createCheckBlisterAccess = ({ includeDeleted = false }: CheckBliste
 
   if (!blisterId) {
     next();
+    return;
+  }
+
+  if (!Types.ObjectId.isValid(blisterId)) {
+    next(
+      new AppError({
+        code: 'VALIDATION_ERROR',
+        message: 'Request validation failed.',
+        statusCode: HTTP_STATUS_BAD_REQUEST,
+        details: ['blisterId: Invalid ObjectId.'],
+      }),
+    );
     return;
   }
 

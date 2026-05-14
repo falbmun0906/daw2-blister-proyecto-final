@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import type { NextFunction, Request, Response } from 'express';
+import { Types } from 'mongoose';
 
 import { env } from '../config/env';
 import { HTTP_STATUS_UNAUTHORIZED } from '../constants/http.constants';
@@ -35,6 +36,14 @@ export const authenticate = (
       throw new AppError({
         code: 'AUTH_TOKEN_INVALID',
         message: 'Authentication token is invalid.',
+        statusCode: HTTP_STATUS_UNAUTHORIZED,
+      });
+    }
+
+    if (!Types.ObjectId.isValid(payload.sub)) {
+      throw new AppError({
+        code: 'AUTH_TOKEN_INVALID',
+        message: 'Authentication token is invalid or expired.',
         statusCode: HTTP_STATUS_UNAUTHORIZED,
       });
     }

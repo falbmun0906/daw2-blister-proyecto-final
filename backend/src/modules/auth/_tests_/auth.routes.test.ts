@@ -152,6 +152,37 @@ describe('auth.routes', () => {
     expect(response.body.data.accessToken).toBeTruthy();
   });
 
+  it('revokes the stored refresh token on logout', async () => {
+    await UserModel.create({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: await bcrypt.hash('Password1!', 12),
+      emailVerified: true,
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
+
+    const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
+    const logoutResponse = await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`);
+    const refreshResponse = await request(app).post('/api/v1/auth/refresh').send({
+      refreshToken: loginResponse.body.data.refreshToken,
+    });
+
+    expect(logoutResponse.status).toBe(200);
+    expect(logoutResponse.body).toEqual({ success: true, data: null });
+    expect(refreshResponse.status).toBe(401);
+    expect(refreshResponse.body.error.code).toBe('AUTH_REFRESH_INVALID');
+  });
+
   it('rejects incorrect passwords on login', async () => {
     await UserModel.create({
       name: 'Ana Lopez',
@@ -387,6 +418,29 @@ describe('auth.routes', () => {
     const response = await request(app)
       .patch('/api/v1/auth/profile')
       .set('Authorization', `Bearer ${expiredToken}`)
+      .send({
+        name: 'Nuevo Nombre',
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe('AUTH_TOKEN_INVALID');
+  });
+
+  it('rejects signed access tokens with malformed user ids', async () => {
+    const malformedUserToken = jwt.sign(
+      {
+        sub: 'not-an-object-id',
+        type: 'access',
+      },
+      env.jwtSecret,
+      {
+        expiresIn: '15m',
+      },
+    );
+
+    const response = await request(app)
+      .patch('/api/v1/auth/profile')
+      .set('Authorization', `Bearer ${malformedUserToken}`)
       .send({
         name: 'Nuevo Nombre',
       });

@@ -242,12 +242,32 @@ const persistRefreshToken = async (
   refreshToken: string,
   refreshTokenExpiresAt: Date,
 ): Promise<void> => {
-  await UserModel.updateOne(
-    { _id: userId },
+  const result = await UserModel.updateOne(
+    { _id: userId, deletedAt: null },
     {
       $set: {
         refreshTokenHash: hashValue(refreshToken),
         refreshTokenExpiresAt,
+      },
+    },
+  );
+
+  if (result.matchedCount === 0) {
+    throw new AppError({
+      code: 'AUTH_USER_INACTIVE',
+      message: 'Authentication session is invalid or expired.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+};
+
+const revokeRefreshCredentials = async (userId: string): Promise<void> => {
+  await UserModel.updateOne(
+    { _id: userId, deletedAt: null },
+    {
+      $set: {
+        refreshTokenHash: null,
+        refreshTokenExpiresAt: null,
       },
     },
   );
@@ -369,10 +389,6 @@ export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
   const user = await findUserForLogin(input.identifier);
 
   if (!user?.password) {
-    if (env.nodeEnv !== 'production') {
-      // eslint-disable-next-line no-console
-      console.warn('[auth] login failed: user not found', { identifier: input.identifier });
-    }
     throw new AppError({
       code: 'AUTH_INVALID_CREDENTIALS',
       message: 'Invalid credentials.',
@@ -383,13 +399,6 @@ export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
   const isPasswordValid = await bcrypt.compare(input.password, user.password);
 
   if (!isPasswordValid) {
-    if (env.nodeEnv !== 'production') {
-      // eslint-disable-next-line no-console
-      console.warn('[auth] login failed: bad password', {
-        identifier: input.identifier,
-        userId: user._id.toString(),
-      });
-    }
     throw new AppError({
       code: 'AUTH_INVALID_CREDENTIALS',
       message: 'Invalid credentials.',
@@ -568,7 +577,19 @@ const verifyRefreshToken = (refreshToken: string): JwtRefreshPayload => {
  */
 export const authRefresh = async (input: RefreshTokenInput): Promise<AuthTokens> => {
   const payload = verifyRefreshToken(input.refreshToken);
-  const user = await UserModel.findById(payload.sub).select('+refreshTokenHash +refreshTokenExpiresAt');
+
+  if (!Types.ObjectId.isValid(payload.sub)) {
+    throw new AppError({
+      code: 'AUTH_REFRESH_INVALID',
+      message: 'Refresh token is invalid or expired.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+
+  const user = await UserModel.findOne({
+    _id: payload.sub,
+    deletedAt: null,
+  }).select('+refreshTokenHash +refreshTokenExpiresAt');
   const storedUser = user as UserAuthDocument | null;
 
   if (
@@ -594,7 +615,15 @@ export const authRefresh = async (input: RefreshTokenInput): Promise<AuthTokens>
 };
 
 const getUserById = async (userId: string) => {
-  const user = await UserModel.findById(userId).select('+password');
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new AppError({
+      code: 'AUTH_USER_NOT_FOUND',
+      message: 'User not found.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+
+  const user = await UserModel.findOne({ _id: userId, deletedAt: null }).select('+password');
 
   if (!user) {
     throw new AppError({
@@ -631,6 +660,9 @@ export const authUpdateProfile = async (
     }
 
     user.password = await bcrypt.hash(input.newPassword, BCRYPT_SALT_ROUNDS);
+    user.refreshTokenHash = null;
+    user.refreshTokenExpiresAt = null;
+    await OAuthTokenModel.deleteMany({ userId });
   }
 
   if (input.name) {
@@ -659,6 +691,13 @@ export const authUpdateProfile = async (
   }
 
   return sanitizeUser(user);
+};
+
+/**
+ * Clears the stored refresh token for the authenticated browser session.
+ */
+export const authLogout = async (userId: string): Promise<void> => {
+  await revokeRefreshCredentials(userId);
 };
 
 /**
@@ -699,8 +738,8 @@ export const authCreateMcpToken = async (
   const createdAt = new Date();
   const expiresAt = getMcpTokenExpiry(createdAt, input.expiresInDays ?? env.mcpTokenTtlDays);
 
-  await UserModel.updateOne(
-    { _id: userId },
+  const result = await UserModel.updateOne(
+    { _id: userId, deletedAt: null },
     {
       $set: {
         mcpToken: hashValue(token),
@@ -710,6 +749,14 @@ export const authCreateMcpToken = async (
       },
     },
   );
+
+  if (result.matchedCount === 0) {
+    throw new AppError({
+      code: 'AUTH_USER_NOT_FOUND',
+      message: 'User not found.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
 
   return {
     token,
@@ -724,7 +771,7 @@ export const authCreateMcpToken = async (
  * Returns whether the authenticated user has an active MCP token.
  */
 export const authGetMcpTokenStatus = async (userId: string): Promise<McpTokenStatus> => {
-  const user = (await UserModel.findById(userId).select(MCP_TOKEN_SELECT)) as UserMcpDocument | null;
+  const user = (await UserModel.findOne({ _id: userId, deletedAt: null }).select(MCP_TOKEN_SELECT)) as UserMcpDocument | null;
 
   if (!user?.mcpToken) {
     return emptyMcpTokenStatus();
@@ -748,7 +795,7 @@ export const authGetMcpTokenStatus = async (userId: string): Promise<McpTokenSta
  */
 export const authRevokeMcpToken = async (userId: string): Promise<void> => {
   await UserModel.updateOne(
-    { _id: userId },
+    { _id: userId, deletedAt: null },
     {
       $set: {
         mcpToken: null,

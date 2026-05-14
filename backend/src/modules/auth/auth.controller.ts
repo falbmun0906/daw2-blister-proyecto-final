@@ -11,6 +11,7 @@ import {
   authForgotPassword,
   authGetMcpTokenStatus,
   authLogin,
+  authLogout,
   authRefresh,
   authRegister,
   authResetPassword,
@@ -64,6 +65,20 @@ export const authRefreshController = async (request: Request, response: Response
   response.status(HTTP_STATUS_OK).json({
     success: true,
     data: result,
+  });
+};
+
+/**
+ * Revokes the stored refresh token for the authenticated user.
+ */
+export const authLogoutController = async (request: Request, response: Response): Promise<void> => {
+  const authenticatedRequest = request as AuthenticatedRequest;
+
+  await authLogout(authenticatedRequest.auth.userId);
+
+  response.status(HTTP_STATUS_OK).json({
+    success: true,
+    data: null,
   });
 };
 

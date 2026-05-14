@@ -12,5 +12,6 @@ export const JSON_BODY_LIMIT = '1mb';
 export const URL_ENCODED_LIMIT = '1mb';
 export const AUTH_LOGIN_RATE_LIMIT_MAX = 10;
 export const AUTH_REGISTER_RATE_LIMIT_MAX = 5;
+export const AUTH_PASSWORD_RESET_RATE_LIMIT_MAX = 5;
 export const FIFTEEN_MINUTES_IN_MS = 15 * 60 * 1000;
 export const ONE_HOUR_IN_MS = 60 * 60 * 1000;
