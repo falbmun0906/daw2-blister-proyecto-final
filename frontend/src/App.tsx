@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ROUTES } from './constants/routes'
 import { AppLayout } from './components/layout/AppLayout'
 import { DesktopDeviceShell } from './components/layout/DesktopDeviceShell'
+import { PublicPageLayout } from './components/layout/PublicPageLayout'
 import { GuestRoute } from './router/GuestRoute'
 import { LoginRoute } from './router/LoginRoute'
 import { OnboardingRoute } from './router/OnboardingRoute'
@@ -72,6 +73,10 @@ function App() {
               <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
             </Route>
 
+            <Route element={<PublicPageLayout />}>
+              <Route path={ROUTES.privacy} element={<PrivacyPage />} />
+            </Route>
+
             <Route path={ROUTES.confirmEmail} element={<ConfirmEmailPage />} />
 
             {/* Shell autenticado: AppHeader + BottomNav envuelven todas las rutas privadas */}
@@ -121,7 +126,7 @@ function App() {
                 <Route path={ROUTES.accessibility} element={<AccessibilityPage />} />
                 <Route path={ROUTES.mcpToken} element={<McpTokenPage />} />
                 <Route path={ROUTES.mcpTokenRevoke} element={<McpTokenRevokePage />} />
-                <Route path={ROUTES.settings} element={<PrivacyPage />} />
+                <Route path={ROUTES.settings} element={<Navigate to={ROUTES.privacy} replace />} />
                 <Route path={ROUTES.mcp} element={<PlaceholderPage />} />
               </Route>
             </Route>

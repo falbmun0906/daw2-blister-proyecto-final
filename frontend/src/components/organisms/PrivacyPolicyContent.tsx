@@ -14,7 +14,7 @@ const PRIVACY_SECTIONS: PrivacyPolicySection[] = [
   {
     title: 'Responsable y contacto',
     paragraphs: [
-      'Blíster es una aplicación web progresiva para gestionar medicación, tratamientos, citas y tomas dentro de blísteres personales o compartidos. El proyecto está publicado en GitHub y el canal de contacto para privacidad, soporte y ejercicio de derechos es soporte@miblister.es.',
+      'Blíster es una aplicación web progresiva para gestionar medicación, tratamientos, citas y tomas dentro de blísteres personales o compartidos. El canal de contacto para privacidad, soporte y ejercicio de derechos es soporte@miblister.es.',
       'No se muestran aquí datos fiscales, NIF, domicilio social ni delegado de protección de datos porque no constan en el repositorio. La política evita inventarlos y usa el canal de contacto facilitado para cualquier identificación adicional exigible en producción.',
     ],
   },
@@ -85,10 +85,10 @@ const PRIVACY_SECTIONS: PrivacyPolicySection[] = [
     ],
   },
   {
-    title: 'Menores, consejo médico y GitHub',
+    title: 'Menores y consejo médico',
     paragraphs: [
       'Blíster está orientada a personas mayores de 18 años. La información de medicamentos y recordatorios ayuda a organizar cuidados, pero no sustituye el diagnóstico, la prescripción ni el consejo de profesionales sanitarios.',
-      'El código fuente publicado en GitHub no debe usarse para publicar incidencias con datos personales o sanitarios reales. Para privacidad o soporte, usa soporte@miblister.es.',
+      'Para cualquier duda relacionada con privacidad, soporte o ejercicio de derechos, usa soporte@miblister.es.',
     ],
   },
 ];

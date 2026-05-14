@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm, useWatch, type FieldError, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
@@ -19,7 +19,6 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { InfoTooltip } from '../../components/atoms/InfoTooltip';
 import { Input } from '../../components/atoms/Input';
 import { AuthLayout } from '../../components/layout/AuthLayout';
-import { PrivacyPolicyContent } from '../../components/organisms/PrivacyPolicyContent';
 import { ROUTES } from '../../constants/routes';
 import { applyUserSettings } from '../../lib/applyUserSettings';
 import { register as registerService } from '../../services/auth.service';
@@ -179,7 +178,6 @@ const applyApiFieldErrors = (
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const setSession = useAuthStore((state) => state.setSession);
   const addToast = useUiStore((state) => state.addToast);
   const [isLoading, setIsLoading] = useState(false);
@@ -208,11 +206,6 @@ function RegisterPage() {
     },
   });
   const passwordValue = useWatch({ control, name: 'password' }) ?? '';
-
-  useEffect(() => {
-    if (location.hash !== '#privacy') return;
-    document.getElementById('privacy')?.scrollIntoView({ block: 'start' });
-  }, [location.hash]);
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
@@ -366,7 +359,7 @@ function RegisterPage() {
                 className="c-register-page__checkbox-input"
               />
               <span className="c-register-page__checkbox-text">
-                Acepto la <a href="#privacy" className="c-register-page__link">política de privacidad</a>
+                Acepto la <Link to={ROUTES.privacy} state={{ parentRoute: ROUTES.register }} className="c-register-page__link">política de privacidad</Link>
               </span>
             </label>
             {errors.privacyConsent ? (
@@ -401,8 +394,6 @@ function RegisterPage() {
       <p className="c-register-page__footer">
         Ya tienes una cuenta? <Link to={ROUTES.login} className="c-register-page__login-link">Inicia sesion</Link>
       </p>
-
-      <PrivacyPolicyContent id="privacy" titleId="register-privacy-title" className="c-register-page__privacy" />
     </AuthLayout>
   );
 }

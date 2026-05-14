@@ -227,28 +227,4 @@
     font-size: var(--text-sm);
     color: var(--color-brand-surface-text-footer);
   }
-
-  &__privacy.c-privacy-page {
-    margin-top: var(--space-8);
-    padding-top: var(--space-5);
-    scroll-margin-top: var(--space-5);
-    border-top: 0.0625rem solid var(--color-brand-surface-active);
-  }
-
-  &__privacy .c-privacy-page__header,
-  &__privacy .c-privacy-page__section {
-    border-color: var(--color-brand-surface-active);
-  }
-
-  &__privacy .c-privacy-page__title,
-  &__privacy .c-privacy-page__section-title {
-    color: var(--color-text-on-primary);
-  }
-
-  &__privacy .c-privacy-page__meta,
-  &__privacy .c-privacy-page__intro,
-  &__privacy .c-privacy-page__section-body,
-  &__privacy .c-privacy-page__list {
-    color: var(--color-brand-surface-text-soft);
-  }
 }

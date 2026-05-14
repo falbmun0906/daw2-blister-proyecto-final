@@ -10,6 +10,7 @@ import { resetAppStores } from '../../stores/reset-stores';
 interface ProfileLinkItem {
   to: string;
   label: string;
+  state?: { parentRoute: string };
 }
 
 const PROFILE_LINKS: ProfileLinkItem[] = [
@@ -18,7 +19,7 @@ const PROFILE_LINKS: ProfileLinkItem[] = [
   { to: ROUTES.notificationSettings, label: 'Notificaciones' },
   { to: ROUTES.mcpToken, label: 'Vincular Asistente de IA (MCP)' },
   { to: ROUTES.accessibility, label: 'Accesibilidad' },
-  { to: ROUTES.settings, label: 'Privacidad' },
+  { to: ROUTES.privacy, label: 'Privacidad', state: { parentRoute: ROUTES.profile } },
 ];
 
 function ProfilePage() {
@@ -42,7 +43,7 @@ function ProfilePage() {
 
       <nav className="c-profile-page__menu" aria-label="Opciones de perfil">
         {PROFILE_LINKS.map((item) => (
-          <Link key={item.to} to={item.to} className="c-profile-page__menu-item">
+          <Link key={item.to} to={item.to} state={item.state} className="c-profile-page__menu-item">
             <span className="c-profile-page__menu-label">{item.label}</span>
             <TbChevronRight
               className="c-icon c-icon--md c-profile-page__menu-chevron"

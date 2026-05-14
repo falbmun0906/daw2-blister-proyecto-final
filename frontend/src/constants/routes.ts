@@ -43,6 +43,7 @@ export const ROUTES = {
   notificationSettings: '/profile/notifications',
   mcpToken: '/profile/mcp',
   mcpTokenRevoke: '/profile/mcp/revoke',
+  privacy: '/privacy',
   settings: '/settings',
   mcp: '/mcp',
   notFound: '*',
