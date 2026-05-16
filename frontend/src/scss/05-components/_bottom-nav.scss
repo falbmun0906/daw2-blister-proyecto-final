@@ -7,7 +7,7 @@
 
 .c-bottom-nav {
   --bottom-nav-selected: var(--color-text-on-primary);
-  --bottom-nav-muted: color-mix(in srgb, var(--color-text-on-primary) 68%, transparent);
+  --bottom-nav-muted: var(--color-text-on-primary);
 
   position: fixed;
   inset-inline: 0;

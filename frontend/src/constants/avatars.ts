@@ -46,8 +46,8 @@ const AVATAR_IMAGES: Record<AvatarOptionKey, string> = {
 
 /** Devuelve el color de fondo asociado a un avatar predefinido. */
 export function getAvatarBackground(key: string | undefined): string {
-  if (!key) return 'var(--color-primary-subtle)';
-  return 'var(--color-primary-subtle)';
+  if (!key) return 'var(--color-primary)';
+  return 'var(--color-primary)';
 }
 
 /** Devuelve la imagen asociada a un avatar predefinido. */

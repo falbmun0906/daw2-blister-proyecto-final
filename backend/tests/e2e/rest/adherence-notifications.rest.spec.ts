@@ -81,12 +81,16 @@ describe('REST adherence and notifications e2e', () => {
     });
     const treatment = await TreatmentModel.create({
       blisterId: blister._id,
+      patientUserId: owner._id,
       title: 'Hipertension',
       medicines: [
         {
           medicineId: medicine._id,
           amount: 1,
-          frequency: 24,
+          firstDoseAt: new Date('2030-01-01T08:00:00.000Z'),
+          scheduleType: 'interval',
+          frequencyHours: 24,
+          isRecurring: true,
         },
       ],
       startDate: new Date('2030-01-01T08:00:00.000Z'),
@@ -114,7 +118,10 @@ describe('REST adherence and notifications e2e', () => {
     });
 
     const storedMedicine = await MedicineModel.findById(medicine._id);
-    const notifications = await NotificationModel.find({ blisterId: blister._id, type: 'stock_low' });
+    const notifications = await NotificationModel.find({
+      blisterId: blister._id,
+      type: { $in: ['stock_low', 'stock_depleted'] },
+    });
 
     expect(storedLog).toBeTruthy();
     expect(storedMedicine?.stock).toBe(0);
