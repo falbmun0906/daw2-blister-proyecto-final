@@ -22,7 +22,7 @@ La estrategia de pruebas de Blíster combina tests automatizados, validaciones d
 	- 8.2 [Frontend](#82-frontend)
 	- 8.3 [Docker Compose](#83-docker-compose)
 9. [Cobertura funcional alcanzada](#9-cobertura-funcional-alcanzada)
-10. [Riesgos y pruebas pendientes](#10-riesgos-y-pruebas-pendientes)
+10. [Limitaciones y evolución de pruebas](#10-limitaciones-y-evolución-de-pruebas)
 
 ## 1. Enfoque de pruebas
 
@@ -47,7 +47,7 @@ La estrategia combina tres niveles. El primer nivel comprueba funciones y servic
 | Integración | Verificar colaboración entre módulos. | Servicios con modelos Mongoose y mocks externos. |
 | E2E REST | Probar API completa con autenticación y datos reales de test. | Registro, blíster, medicamento, toma y notificación. |
 | E2E navegador | Comprobar experiencia en navegador real. | Entrada pública, accesibilidad y rutas visibles. |
-| Manual | Revisar flujos que dependen de permisos, dispositivos o credenciales. | Push, correo, instalación PWA y demo final. |
+| Manual | Revisar flujos que dependen de permisos, dispositivos o credenciales. | Push, correo, instalación PWA y recorrido completo. |
 
 ## 2. Herramientas utilizadas
 
@@ -160,6 +160,8 @@ Suites actuales:
 | :--- | :--- |
 | `components/atoms/EmptyState.test.tsx` | Renderizado de título, descripción y CTA. |
 | `lib/zod-form-resolver.test.ts` | Mensajes de validación y errores del resolver Zod. |
+| `pages/Login/LoginPage.test.tsx` | Validación requerida, error global de credenciales y persistencia de sesión. |
+| `pages/Register/RegisterPage.test.tsx` | Checklist de contraseña, consentimientos obligatorios, errores de API por campo y sesión creada. |
 
 Comando:
 
@@ -168,25 +170,39 @@ cd frontend
 npm test -- --run
 ```
 
-La cobertura actual de frontend es intencionadamente más pequeña que la del backend. El motivo es que el proyecto concentró primero la protección de reglas críticas de datos y permisos. La ruta de mejora más directa es añadir tests a formularios críticos, porque son el punto donde el usuario introduce información sensible.
+La cobertura de frontend protege ya los formularios de entrada más sensibles: login y registro. Estos tests verifican feedback en español antes de llamar a la API, mapeo de errores de servidor y escritura de la sesión local, tres puntos especialmente propensos a regresión en una PWA autenticada.
 
-| Prioridad | Pantalla o componente | Motivo |
-| :--- | :--- | :--- |
-| Alta | Login y recuperación | Evitar regresiones de feedback y sesión. |
-| Alta | Formularios de medicamento y tratamiento | Validan datos sanitarios y reglas complejas. |
-| Media | Cards de medicamento/cita | Contienen estados, menús y acciones. |
-| Media | Perfil y accesibilidad | Cambian preferencias globales. |
-| Media | Notificaciones | Mezclan lectura, push y filtros. |
+| Área cubierta | Motivo |
+| :--- | :--- |
+| Login | Evita regresiones de validación, error global y guardado de sesión. |
+| Registro | Comprueba contraseña, privacidad, mayoría de edad y errores por campo. |
+| Resolver Zod | Garantiza que los formularios reciben mensajes normalizados. |
+| EmptyState | Protege estados vacíos reutilizados en pantallas privadas. |
 
 ### 4.3 Playwright y accesibilidad
 
-La suite `frontend/e2e/public-entry.spec.ts` abre la entrada pública y ejecuta una auditoría con axe. Playwright se ejecuta sobre `vite preview` en el puerto `4173`.
+Playwright se ejecuta sobre `vite preview` en el puerto `4173`. La suite cubre entrada pública, flujos autenticados, permisos por rol, accesibilidad privada y capturas responsive.
+
+| Suite | Cobertura |
+| :--- | :--- |
+| `public-entry.spec.ts` | Render de entrada pública y ausencia de violaciones críticas axe. |
+| `authenticated-flows.spec.ts` | Login, registro con consentimientos, creación de cita por cuidador y bloqueo de mutación para observador. |
+| `private-accessibility.spec.ts` | Axe WCAG A/AA en home, formulario de cita y ajustes de accesibilidad, filtrando violaciones `serious` y `critical`. |
+| `responsive-evidence.spec.ts` | Home autenticada en 375, 768 y 1280 px, sin overflow horizontal y con capturas generadas. |
 
 ```bash
 cd frontend
 npm run build
 npm run test:e2e
 ```
+
+Las capturas responsive se guardan como evidencia en:
+
+| Viewport | Evidencia |
+| :--- | :--- |
+| 375 x 812 | `docs/assets/evidence/responsive-home-mobile-375.png` |
+| 768 x 1024 | `docs/assets/evidence/responsive-home-tablet-768.png` |
+| 1280 x 900 | `docs/assets/evidence/responsive-home-desktop-1280.png` |
 
 ## 5. Pruebas del paquete shared
 
@@ -217,7 +233,7 @@ El backend incluye E2E bajo `backend/tests/e2e`.
 
 Las integraciones externas se prueban con mocks cuando existe dependencia de red o credenciales. En pruebas manuales se validan búsquedas reales en CIMA, generación de tokens MCP y flujos de correo si `RESEND_API_KEY` está configurada.
 
-Para la defensa se recomienda ejecutar una prueba manual guiada con datos controlados. El siguiente guion cubre el recorrido principal:
+La validación manual guiada se organiza con datos controlados y cubre el recorrido principal:
 
 | Paso | Resultado esperado |
 | :--- | :--- |
@@ -240,9 +256,9 @@ El workflow `.github/workflows/ci.yml` se ejecuta en pushes y pull requests a `m
 | Frontend | Checkout, Node 22, `npm ci`, lint, Vitest y build. |
 | Frontend E2E | Solo en PR a `main`: Chromium, build y Playwright. |
 
-La cobertura backend se publica como artefacto del workflow. El porcentaje exacto debe consultarse en el informe generado por el último run de `npm run test:coverage`, evitando fijar en la documentación una cifra que puede quedar obsoleta tras nuevos commits.
+La cobertura backend se publica como artefacto del workflow. El porcentaje exacto se obtiene del informe generado por el último run de `npm run test:coverage`, evitando fijar en la documentación una cifra que puede quedar obsoleta tras nuevos commits.
 
-Para dejar evidencia final se debe guardar o capturar el último resultado de CI antes de la entrega. La tabla siguiente indica qué dato conviene adjuntar en la defensa o en anexos:
+El informe de pruebas se compone de evidencias generadas por la integración continua y por ejecuciones locales verificables:
 
 | Evidencia | Dónde obtenerla |
 | :--- | :--- |
@@ -251,6 +267,19 @@ Para dejar evidencia final se debe guardar o capturar el último resultado de CI
 | Build frontend | Log del job Frontend o ejecución local. |
 | Playwright | Reporte HTML o salida de consola. |
 | Docker Compose | `docker compose ps` y healthcheck. |
+
+La última batería local verificada antes de la entrega se ejecutó sobre la rama `dev` y obtuvo estos resultados:
+
+| Paquete | Comando | Resultado |
+| :--- | :--- | :--- |
+| Backend | `npm run build` | OK. |
+| Backend | `npm run lint` | OK. |
+| Backend | `npm run test:coverage` | 42 suites y 224 tests pasados. Cobertura global: 78.9% statements, 56.75% branches, 76.5% functions y 78.31% lines. |
+| Backend | `npm run test:e2e` | 6 suites y 10 tests E2E pasados. |
+| Frontend | `npm run lint` | OK. |
+| Frontend | `npm test -- --run` | 4 archivos y 9 tests pasados. |
+| Frontend | `npm run build` | OK, build PWA generado. |
+| Frontend | `npm run test:e2e` | 11 tests Playwright pasados. |
 
 ## 8. Comandos de validación
 
@@ -285,7 +314,7 @@ docker compose down
 
 ## 9. Cobertura funcional alcanzada
 
-La cobertura automatizada es especialmente sólida en backend y shared. La cobertura frontend existe como base, aunque debe ampliarse para pantallas complejas.
+La cobertura automatizada es especialmente sólida en backend y shared. La cobertura frontend se ha reforzado con formularios críticos, flujos autenticados, auditorías axe y evidencias responsive.
 
 | Área | Estado de cobertura |
 | :--- | :--- |
@@ -299,27 +328,19 @@ La cobertura automatizada es especialmente sólida en backend y shared. La cober
 | MCP/OAuth | Tools principales, tokens y flujos de autorización. |
 | CIMA sync | Registro de cambios oficiales. |
 | Shared | Validación de esquemas de dominios principales. |
-| Frontend | Componentes base, resolver de formularios, build y entrada pública con axe. |
+| Frontend | Componentes base, resolver de formularios, login, registro, build, flujos autenticados, axe público/privado y capturas responsive. |
 
-Esta cobertura funcional permite defender que las reglas de servidor están protegidas. Para aspirar a la máxima calificación, la parte que más debe crecer es la evidencia de navegador: flujos autenticados, capturas de Playwright y auditorías axe en pantallas privadas.
+Esta cobertura funcional protege las reglas principales de servidor y añade evidencia de navegador sobre recorridos autenticados, permisos, accesibilidad WCAG A/AA y adaptación responsive. La parte frontend sigue siendo más selectiva que backend, pero ya cubre los formularios de acceso, la creación de citas y pantallas privadas sensibles.
 
-| Área pendiente de evidenciar | Acción recomendada |
-| :--- | :--- |
-| Registro completo en navegador | Playwright con usuario temporal y limpieza posterior. |
-| Alta de medicamento | Mock o fixture de CIMA para evitar dependencia externa. |
-| Tratamiento y toma | Validar creación, registro y cambio de stock. |
-| Accesibilidad privada | Ejecutar axe tras login en botiquín, calendario y perfil. |
-| Responsive | Capturas móviles y de escritorio con marco de dispositivo. |
-
-## 10. Riesgos y pruebas pendientes
+## 10. Limitaciones y evolución de pruebas
 
 | Riesgo | Situación actual | Mejora propuesta |
 | :--- | :--- | :--- |
-| Cobertura frontend limitada | Hay tests base de componente y utilidad. | Añadir login, recuperación, cards, formularios y permisos. |
-| E2E autenticado | Playwright cubre entrada pública. | Añadir registro, alta de medicamento, tratamiento y toma con fixtures. |
-| Accesibilidad en pantallas privadas | Axe se ejecuta en entrada pública. | Ampliar a login, botiquín, calendario y perfil. |
+| Cobertura frontend selectiva | Hay tests de componentes base, resolver, login, registro y flujos Playwright clave. | Ampliar a medicamentos, tratamientos, notificaciones y edición de perfil. |
+| E2E sanitario completo | Playwright cubre sesión, permisos y cita. | Añadir alta de medicamento, creación de tratamiento y registro de toma con fixtures CIMA. |
+| Accesibilidad privada | Axe cubre home, formulario de cita y ajustes de accesibilidad. | Ampliar a botiquín, tratamientos, calendario y notificaciones. |
 | Push real | Backend cubierto, depende de navegador y permisos. | Probar en Chrome/Android y escritorio compatible. |
 | Correo real | Servicio preparado y mockeado. | Verificar con credenciales Resend de producción. |
 | Rendimiento en producción | Healthcheck y despliegue validados. | Medir latencia tras cold start y carga ligera. |
 
-La estrategia actual protege el núcleo de negocio y deja una ruta clara para ampliar pruebas visuales y de navegador en futuras iteraciones.
+La estrategia actual protege el núcleo de negocio y añade una base sólida de navegador. Las siguientes iteraciones deben concentrarse en flujos sanitarios largos y pruebas con integraciones reales controladas.

@@ -43,7 +43,7 @@ Este manual explica cómo utilizar Blíster desde la perspectiva de una persona 
 
 Al abrir Blíster se muestra la entrada pública y, en escritorio, una pantalla informativa que indica que la aplicación se usa mejor en dispositivo móvil. Se puede continuar desde ordenador, donde la aplicación aparecerá dentro de un marco móvil.
 
-![Mockup onboarding](assets/placeholder-mockup-onboarding.svg)
+<img width="561" height="1122" alt="Mockup onboarding" src="https://github.com/user-attachments/assets/b94c1411-5c51-42b5-8934-0c5e0b0ed275" />
 
 Acciones disponibles:
 
@@ -111,7 +111,7 @@ Si el enlace ya ha caducado, debe solicitarse uno nuevo desde la pantalla de rec
 
 La navegación se organiza como una aplicación móvil.
 
-![Mockup inicio](assets/placeholder-mockup-home.svg)
+<img width="567" height="1122" alt="Mockup inicio" src="https://github.com/user-attachments/assets/cd1bb091-626a-4d96-8c14-d6de7a66098c" />
 
 | Zona | Función |
 | :--- | :--- |
@@ -182,7 +182,7 @@ Ejemplo de uso familiar:
 
 El botiquín muestra los medicamentos asociados al blíster activo.
 
-![Mockup botiquín](assets/placeholder-mockup-botiquin.svg)
+<img width="552" height="1122" alt="Mockup botiquín" src="https://github.com/user-attachments/assets/07a4e102-941c-4805-88b7-83d007a2a0dc" />
 
 ### 5.1 Consultar medicamentos
 
@@ -225,7 +225,7 @@ La ficha CIMA muestra información disponible del medicamento: nombre, laborator
 
 Los tratamientos organizan una pauta y permiten calcular próximas dosis.
 
-![Mockup tratamientos](assets/placeholder-mockup-tratamientos.svg)
+<img width="561" height="1130" alt="Mockup tratamientos" src="https://github.com/user-attachments/assets/df299fe5-bdd2-455c-93ec-48afbcf397b5" />
 
 ### 6.1 Crear tratamiento
 
@@ -266,7 +266,7 @@ Deshacer está pensado para errores inmediatos, como pulsar la toma equivocada. 
 
 El calendario reúne tomas previstas y citas médicas.
 
-![Mockup calendario](assets/placeholder-mockup-calendario.svg)
+<img width="560" height="1127" alt="Mockup calendario" src="https://github.com/user-attachments/assets/1127714d-7d3d-485f-955d-f1fde8b8c4da" />
 
 ### 7.1 Crear una cita
 
@@ -317,7 +317,7 @@ Las notificaciones pueden aparecer dentro de la bandeja aunque el navegador no p
 
 Perfil agrupa ajustes personales y administrativos.
 
-![Mockup perfil](assets/placeholder-mockup-perfil.svg)
+<img width="557" height="1127" alt="Mockup perfil" src="https://github.com/user-attachments/assets/d56a5c39-8a72-4daa-9c86-719bd73df946" />
 
 ### 9.1 Datos personales
 
@@ -328,8 +328,6 @@ Al cambiar contraseña se recomienda cerrar sesiones en dispositivos no usados y
 ### 9.2 Privacidad
 
 La política de privacidad está disponible en `/privacy` y desde la navegación de perfil.
-
-![Mockup privacidad](assets/placeholder-mockup-privacidad.svg)
 
 La política explica responsable de contacto, datos tratados, bases jurídicas, blísteres compartidos, servicios externos, conservación, medidas de seguridad y derechos RGPD.
 
@@ -415,7 +413,7 @@ Casos típicos de uso:
 | Revisión médica | Crear cita, añadir comentarios y consultar historial antes de acudir. |
 | Uso con asistente IA | Generar token MCP, vincular cliente externo y revocar cuando no se necesite. |
 
-Antes de una demostración o uso real, se recomienda preparar un blíster de prueba con un medicamento, un tratamiento activo y una cita. Así se pueden enseñar las secciones principales sin introducir datos personales reales.
+En entornos de prueba, un blíster con un medicamento, un tratamiento activo y una cita permite recorrer las secciones principales sin introducir datos personales reales.
 
 | Dato de prueba | Recomendación |
 | :--- | :--- |

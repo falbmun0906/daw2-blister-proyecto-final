@@ -421,6 +421,8 @@ flowchart TB
 
 La API se versiona bajo `/api/v1`. Todas las rutas privadas usan Bearer JWT salvo las rutas públicas de autenticación, recuperación y metadatos OAuth.
 
+La documentación OpenAPI se publica en `/api/v1/docs` y se genera desde comentarios JSDoc de rutas y aplicación. La revisión final amplió Swagger para cubrir los endpoints actuales de autenticación, recuperación, confirmación de email, logout, borrado de cuenta, notificaciones push, OAuth, descubrimiento well-known y transporte MCP. Las operaciones críticas incluyen ejemplos de request, respuesta correcta y error para que la API pueda probarse desde Swagger UI sin consultar el código.
+
 ### 6.1 Auth y perfil
 
 | Método | Endpoint | Auth | Respuesta principal |
@@ -536,6 +538,7 @@ Herramientas MCP principales:
 | `stock_modifier` | Escritura | Ajusta stock. |
 | `schedule_assistant` | Lectura | Calcula próximas dosis. |
 | `appointment_manager` | Lectura | Consulta citas. |
+| `appointment_create` | Escritura | Crea una cita médica respetando paciente, tratamiento opcional y rol del usuario. |
 | `appointment_comment_manager` | Escritura | Gestiona comentarios. |
 | `official_source_linker` | Lectura | Devuelve enlaces oficiales AEMPS/CIMA. |
 
@@ -577,6 +580,8 @@ Los errores se normalizan:
   }
 }
 ```
+
+La misma convención se refleja en Swagger mediante ejemplos de `success: true` y `success: false`. Esto permite comprobar de forma visual la estructura esperada en respuestas de autenticación, push, OAuth y MCP, además de las rutas REST de dominio.
 
 Códigos HTTP usados de forma habitual:
 

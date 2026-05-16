@@ -243,7 +243,7 @@ El backend escucha internamente en `3000` y se publica en el puerto `3001` de la
 
 La exposición del contenedor se limita a la máquina. El usuario final no consume `:3001`; entra siempre por HTTPS y por el dominio público. Esta separación permite cambiar el puerto interno sin modificar el frontend, siempre que Nginx siga reenviando al destino correcto.
 
-Estructura recomendada en la VPS:
+Estructura del backend en la VPS:
 
 ```text
 /opt/blister/
@@ -315,7 +315,7 @@ Respuesta esperada:
 
 ### 4.5 Nginx como reverse proxy
 
-Se creó el subdominio `api.miblister.es` apuntando a la IP pública de la VPS mediante un registro A. En el servidor se configuró Nginx como proxy hacia el contenedor:
+Se creó el subdominio `api.miblister.es` apuntando a la IP pública de la VPS mediante un registro A. En el servidor se configuró Nginx como proxy hacia el contenedor mediante un site específico en `/etc/nginx/sites-available/miblister-api`:
 
 ```nginx
 server {
@@ -339,7 +339,10 @@ Activación y comprobación:
 sudo ln -s /etc/nginx/sites-available/miblister-api /etc/nginx/sites-enabled/miblister-api
 sudo nginx -t
 sudo systemctl reload nginx
+curl http://api.miblister.es/api/v1/health
 ```
+
+Si el enlace simbólico ya existe, no es necesario recrearlo. La comprobación importante es `sudo nginx -t`, que debe confirmar que la sintaxis es correcta antes de recargar el servicio.
 
 Las cabeceras proxy mantienen información de la petición original. Esto es útil para logs, generación de URLs y futuras reglas dependientes de protocolo u origen.
 
@@ -356,8 +359,12 @@ El frontend de Render se sirve por HTTPS. Consumir un backend HTTP produciría b
 
 ```bash
 sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
 sudo certbot --nginx -d api.miblister.es
+curl https://api.miblister.es/api/v1/health
 ```
+
+Durante la emisión del certificado se seleccionó la redirección automática de HTTP a HTTPS. De este modo, cualquier acceso a `http://api.miblister.es` termina resolviendo por el canal seguro.
 
 Con el certificado activo, el frontend puede consumir:
 
@@ -371,6 +378,8 @@ Las variables de Render para el frontend quedan así:
 VITE_API_URL=https://api.miblister.es
 VITE_MCP_URL=https://api.miblister.es
 ```
+
+Al tratarse de variables `VITE_*`, el cambio requiere redesplegar el frontend en Render para que la PWA reconstruida use el dominio definitivo de la API.
 
 Esta configuración evita Mixed Content. Si el frontend se sirve por HTTPS y la API por HTTP, el navegador bloqueará las llamadas aunque el servidor responda correctamente. Por eso el certificado no es un detalle opcional, sino una condición para que la aplicación funcione en producción.
 
@@ -448,7 +457,7 @@ docker compose -f docker-compose.backend.yml logs -f backend
 curl https://api.miblister.es/api/v1/health
 ```
 
-Si el despliegue falla, el primer diagnóstico debe hacerse en tres puntos: salida de build, logs del contenedor y estado de Nginx. En cambios críticos conviene conservar el commit anterior identificado para poder volver temporalmente con `git checkout <commit>` y reconstruir.
+El diagnóstico de despliegue se organiza en tres puntos: salida de build, logs del contenedor y estado de Nginx. En cambios críticos, el commit anterior identificado permite volver temporalmente con `git checkout <commit>` y reconstruir.
 
 ## 8. Verificación posterior al despliegue
 
@@ -465,7 +474,7 @@ Comprobaciones mínimas:
 9. Generar un token MCP y probar una tool de lectura.
 10. Revisar logs del contenedor backend.
 
-Además de estas comprobaciones funcionales, se recomienda registrar evidencias para la entrega:
+El despliegue queda respaldado por evidencias funcionales y operativas:
 
 | Evidencia | Cómo obtenerla |
 | :--- | :--- |
@@ -486,7 +495,7 @@ Además de estas comprobaciones funcionales, se recomienda registrar evidencias 
 | MCP | `https://api.miblister.es/mcp` |
 | Swagger | `https://api.miblister.es/api/v1/docs` |
 
-Evidencias recomendadas:
+Evidencias del despliegue:
 
 | Evidencia | Motivo |
 | :--- | :--- |
@@ -499,7 +508,7 @@ Evidencias recomendadas:
 | Certificado Certbot activo | Resolución de Mixed Content. |
 | Workflow CI en verde | Calidad antes de despliegue. |
 
-La URL que debe aparecer en la entrega es la que esté operativa el día de la defensa. Si el dominio propio `miblister.es` no estuviera activo, debe indicarse explícitamente la URL pública de Render y mantener `https://api.miblister.es` como backend si sigue respondiendo.
+La documentación identifica el frontend público, el backend HTTPS, el healthcheck, Swagger y el endpoint MCP. Esta separación permite comprobar de forma independiente la PWA, la API REST y la integración con clientes externos.
 
 ## 10. Mantenimiento y resolución de problemas
 
@@ -514,7 +523,7 @@ La URL que debe aparecer en la entrega es la que esté operativa el día de la d
 | Push no llega | Claves VAPID o permisos del navegador. | Revisar variables y suscripciones. |
 | Certificado no renueva | Certbot o Nginx mal configurado. | Ejecutar `sudo certbot renew --dry-run`. |
 
-Mantenimiento periódico recomendado:
+Mantenimiento periódico:
 
 | Tarea | Frecuencia | Motivo |
 | :--- | :--- | :--- |
@@ -522,7 +531,7 @@ Mantenimiento periódico recomendado:
 | Comprobar healthcheck | Tras cada cambio | Confirmar API disponible. |
 | Renovación Certbot | Mensual o automática | Evitar caducidad de HTTPS. |
 | Backups Atlas | Según configuración de Atlas | Recuperación ante borrado o fallo. |
-| Actualizar dependencias | Por sprint o antes de entrega | Reducir vulnerabilidades conocidas. |
+| Actualizar dependencias | De forma periódica | Reducir vulnerabilidades conocidas. |
 | Verificar CORS | Tras cambiar dominios | Evitar bloqueos en navegador. |
 
 Actuación ante incidente:

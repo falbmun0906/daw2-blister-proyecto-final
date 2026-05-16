@@ -103,20 +103,31 @@ El despliegue ha permitido comparar tres enfoques: Compose local, Render y VPS. 
 
 ## 5. Dificultades superadas
 
+Las mayores dificultades del proyecto aparecieron en los puntos donde varias capas tenían que funcionar al mismo tiempo. No fueron problemas aislados de una pantalla o de un endpoint, sino integraciones que obligaron a revisar backend, frontend, seguridad, despliegue y documentación de forma conjunta.
+
 | Dificultad | Solución |
 | :--- | :--- |
 | Modelar cuidado familiar | Blísteres compartidos con roles y membresía. |
 | Evitar accesos cruzados | Middleware `checkBlisterAccess` y filtros por `blisterId`. |
 | Gestionar stock al registrar tomas | Regla de stock, toma forzada y restauración al deshacer. |
 | Formularios con Zod 4 | Resolver propio para React Hook Form. |
-| Integrar MCP en producción | Endpoint `/mcp` dentro de Express. |
+| Implementar el servidor MCP | Endpoint `/mcp` dentro de Express, tools autorizadas, OAuth y control de permisos. |
+| Integrar notificaciones push | Claves VAPID, service worker, permisos del navegador y requisitos HTTPS. |
+| Coordinar notificaciones internas | Bandeja, preferencias, recordatorios, stock bajo y eventos de tratamiento. |
+| Ajustar la arquitectura frente al Figma inicial | Adaptación del prototipo a datos reales, permisos, estados dinámicos y navegación final. |
 | Evitar Mixed Content | Backend en `https://api.miblister.es` con Nginx y Certbot. |
 | Privacidad de datos sensibles | Política RGPD, borrado lógico y purga programada. |
 | Consistencia CSS | ITCSS, BEM y tokens centralizados. |
 
+El servidor MCP fue uno de los bloques más exigentes porque no se trataba solo de exponer una ruta. Había que definir qué acciones podía ejecutar un cliente externo, cómo autorizarlo, cómo aislarlo por usuario y blíster, cómo revocar tokens y cómo mantener la seguridad del sistema al permitir acceso desde asistentes de IA.
+
+Las notificaciones también generaron una dificultad doble. Por un lado, la aplicación necesitaba notificaciones internas coherentes con citas, tratamientos, stock y preferencias. Por otro, las notificaciones push dependían del navegador, del service worker, de permisos explícitos, de claves VAPID y de un despliegue HTTPS correcto. Esta combinación hizo que el comportamiento tuviera que validarse tanto desde código como desde el entorno real.
+
+Otra dificultad relevante fue la distancia entre la idea inicial definida en Figma y la arquitectura que necesitó la aplicación final. El prototipo ayudó a fijar identidad visual y flujo general, pero al incorporar roles, multitenencia, estados de carga, errores, permisos, MCP, privacidad y notificaciones, algunas pantallas tuvieron que evolucionar para responder a condiciones reales que no estaban representadas 1:1 en el mockup inicial.
+
 ## 6. Limitaciones actuales
 
-El proyecto es funcional, pero existen límites propios de un MVP académico.
+El proyecto es funcional, pero existen límites propios de una primera versión completa.
 
 | Limitación | Impacto |
 | :--- | :--- |
@@ -125,7 +136,7 @@ El proyecto es funcional, pero existen límites propios de un MVP académico.
 | Push dependiente del navegador | Requiere permisos y soporte del dispositivo. |
 | Sin escaneo de códigos | El alta se realiza mediante buscador CIMA, no por cámara. |
 | Sin informes avanzados | No genera todavía informes de adherencia exportables. |
-| Analítica predictiva pendiente | No calcula reposición futura por consumo histórico. |
+| Analítica predictiva no implementada | No calcula reposición futura por consumo histórico. |
 | MCP ampliable | Tools implementadas, pero pueden añadirse recursos, prompts y flujos guiados. |
 
 Estas limitaciones no impiden el uso del núcleo de Blíster, pero marcan una ruta clara de evolución.
@@ -145,20 +156,22 @@ Las mejoras propuestas siguen la dirección del producto: reducir carga cognitiv
 9. **Monitorización de producción:** centralizar logs, métricas de latencia y alertas de disponibilidad.
 10. **Backups y recuperación:** documentar una estrategia de backup Atlas y restauración ante incidente.
 
-Prioridad recomendada:
+Líneas de evolución ordenadas por impacto:
 
-| Prioridad | Mejora | Motivo |
+| Impacto | Mejora | Motivo |
 | :--- | :--- | :--- |
 | Alta | E2E autenticado completo | Aumenta confianza en flujos críticos y mejora evidencia de calidad. |
-| Alta | Capturas reales y evidencias Figma | Refuerza directamente la evaluación de diseño. |
+| Alta | Documentación visual completa | Refuerza la trazabilidad entre prototipo, guía de estilos e interfaz implementada. |
 | Media | Informes exportables | Aporta valor al seguimiento familiar o médico. |
 | Media | Offline avanzado | Mejora uso en situaciones sin conexión, pero requiere resolución de conflictos. |
 | Baja | Internacionalización | Útil si el producto crece fuera del contexto español. |
 
 ## 8. Valoración final
 
-Blíster cumple el objetivo de construir una aplicación web completa, útil y técnicamente sólida. Integra frontend, backend, base de datos, validación compartida, seguridad, diseño accesible, documentación, pruebas, Docker y despliegue real.
+La valoración final se centra en el proceso de aprendizaje y desarrollo. Blíster ha permitido trabajar de forma integrada competencias de segundo curso de Desarrollo de Aplicaciones Web: análisis de requisitos, diseño de interfaz, desarrollo frontend, desarrollo backend, modelado de datos, validación, pruebas, documentación y despliegue.
 
-Su aportación principal es unir gestión doméstica de medicamentos, colaboración familiar e interoperabilidad con asistentes externos. Esta combinación convierte el proyecto en algo más que un CRUD académico: es una solución con un dominio coherente, problemas reales y decisiones técnicas justificables.
+El desarrollo ha exigido tomar decisiones que no aparecen de forma aislada en ejercicios más pequeños. La gestión de medicamentos afecta al modelo de datos, a los permisos, al diseño visual, a la accesibilidad, a la experiencia de formularios y al despliegue. Esa relación entre capas ha sido una de las partes más formativas del proyecto.
 
-Como trabajo final de Desarrollo de Aplicaciones Web, Blíster demuestra capacidad para analizar una necesidad, diseñar una arquitectura, implementar funcionalidades conectadas, validar el sistema y desplegarlo en producción. Como producto, deja una base clara para seguir evolucionando hacia una herramienta útil en el día a día de personas que conviven con medicación propia o familiar.
+La principal conclusión personal es que una aplicación completa no depende solo de añadir funcionalidades. También requiere ordenar el alcance, documentar decisiones, proteger datos, cuidar los estados de error, pensar en accesibilidad y preparar un entorno donde el sistema pueda ejecutarse fuera del equipo de desarrollo. Los mayores inconvenientes surgieron precisamente en las integraciones transversales: MCP, notificaciones, push, despliegue HTTPS y adaptación del diseño inicial a una arquitectura funcional con datos y permisos reales.
+
+Blíster queda como cierre de una etapa formativa y como base de evolución. El proyecto reúne las partes esenciales de una aplicación web moderna y deja identificados los siguientes pasos naturales: ampliar pruebas de navegador, reforzar evidencias visuales, mejorar informes, estudiar sincronización offline y continuar puliendo la experiencia de usuario.

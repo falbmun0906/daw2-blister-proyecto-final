@@ -43,7 +43,7 @@ La implementación se realizó de forma incremental, empezando por una base téc
 | CIMA/AEMPS | Búsqueda y consulta oficial de medicamentos. | Alta de medicamentos con fuente oficial. |
 | MCP/OAuth | Endpoint `/mcp`, tools y flujo OAuth. | Interoperabilidad con asistentes externos. |
 | Frontend PWA | Rutas, layouts, stores, servicios y SCSS. | Experiencia mobile-first instalable. |
-| Seguridad, validación y docs | Auditoría, hardening, mensajes en español y documentación. | Proyecto preparado para entrega. |
+| Seguridad, validación y docs | Auditoría, hardening, mensajes en español y documentación. | Proyecto estabilizado y documentado. |
 
 La secuencia no fue estrictamente lineal. Algunas funcionalidades volvieron a revisarse cuando aparecieron requisitos transversales, especialmente roles, validación compartida, privacidad y MCP. Por ejemplo, la recuperación de contraseña obligó a reforzar tokens, rate limit y emails; MCP obligó a revisar permisos fuera de la interfaz tradicional; y la localización de errores obligó a comprobar todos los formularios, no solo el login.
 
@@ -53,7 +53,7 @@ La secuencia no fue estrictamente lineal. Algunas funcionalidades volvieron a re
 | Autorización por rol | `authenticate`, `authorize`, `checkBlisterAccess` | Proteger datos sensibles por blíster. |
 | Formularios críticos | Login, registro, perfil, medicamentos, tratamientos y citas | Garantizar feedback visible y coherente. |
 | Integraciones | CIMA, Resend, Web Push y MCP | Añadir valor real sin mezclar responsabilidades. |
-| Documentación | `docs/01` a `docs/10` | Preparar defensa técnica y evaluación académica. |
+| Documentación | `docs/01` a `docs/10` | Centralizar decisiones, procesos y evidencias del sistema. |
 
 La evolución del proyecto puede resumirse también por entregables:
 
@@ -66,7 +66,7 @@ La evolución del proyecto puede resumirse también por entregables:
 | Automatización | Tests, lint, build y CI por jobs. |
 | Producción | Frontend Render, backend VPS y MongoDB Atlas. |
 
-Esta lectura por entregables ayuda a defender el proyecto: cada parte del enunciado tiene una correspondencia técnica concreta dentro del repositorio.
+Esta lectura por entregables relaciona cada parte del alcance con una correspondencia técnica concreta dentro del repositorio.
 
 ## 2. Stack tecnológico
 
@@ -90,7 +90,7 @@ El stack combina tecnologías conocidas del entorno MERN con TypeScript en todas
 
 La elección del stack se apoya en tres criterios: mantener TypeScript de extremo a extremo, separar el dominio sanitario de los detalles de interfaz y facilitar el despliegue en contenedores. Express y Mongoose aportan flexibilidad para una API modular; React y Zustand permiten construir una PWA ligera; y Zod actúa como punto común de validación.
 
-No se añadió un framework full-stack único porque el proyecto necesitaba demostrar con claridad cliente, servidor, modelo de datos, API REST y despliegue. La separación por paquetes hace visible esa arquitectura y facilita explicar cada capa en la defensa.
+No se añadió un framework full-stack único porque el proyecto separa con claridad cliente, servidor, modelo de datos, API REST y despliegue. La organización por paquetes hace visible esa arquitectura y facilita auditar cada capa de forma independiente.
 
 ## 3. Backend
 
@@ -253,6 +253,8 @@ Los esquemas Zod de `shared/schemas` son la fuente común de validación para AP
 
 La interfaz usa un resolver propio, `createZodFormResolver`, porque la combinación de Zod 4 con el resolver externo usado inicialmente provocaba errores no capturados en formularios.
 
+En la última iteración se añadió al contrato MCP el input de creación de citas. La tool `appointment_create` reutiliza el servicio existente de citas, por lo que hereda las mismas reglas que la API REST: rol OWNER o CAREGIVER, paciente miembro del blíster, tratamiento opcional perteneciente al mismo blíster y fecha futura.
+
 La decisión de centralizar esquemas tiene una consecuencia importante: si se cambia una regla de negocio, como la longitud mínima de una contraseña o el formato de una hora de toma, el cambio debe hacerse en un único lugar. Frontend y backend pueden evolucionar coordinados y los tests de `shared` detectan regresiones en los contratos.
 
 ## 6. Integraciones externas
@@ -265,6 +267,8 @@ Blíster integra servicios externos para aportar valor funcional sin duplicar re
 | Resend | Emails de recuperación y verificación. | En desarrollo puede omitirse la clave; en test se mockea el servicio. |
 | Web Push | Recordatorios y avisos del navegador. | Si faltan claves VAPID, el backend responde de forma controlada. |
 | MCP SDK | Tools para asistentes externos. | Valida token, usuario, permisos y parámetros. |
+
+El registro de tools MCP queda centralizado en `backend/src/mcp/tool-registry.ts`. Las tools de escritura no implementan reglas paralelas: llaman a servicios de dominio ya probados para mantener una única fuente de permisos y validaciones.
 
 ## 7. Seguridad y privacidad
 
@@ -292,7 +296,7 @@ El desarrollo usa Git con commits descriptivos en inglés y agrupados por intenc
 
 La organización de commits busca que la revisión del histórico sea comprensible. Un cambio de validación, un ajuste visual y una modificación documental se separan cuando afectan a áreas distintas. Esta disciplina facilita defender la evolución del proyecto y revertir cambios concretos si fuera necesario.
 
-La planificación se apoya en tareas por bloques funcionales: autenticación, blísteres, botiquín, tratamientos, calendario, notificaciones, integraciones, despliegue, pruebas y documentación. Para la entrega final conviene mantener GitHub Projects actualizado con sprint, estado, prioridad, estimación y categoría, porque el enunciado lo considera parte del seguimiento del proyecto.
+La planificación se apoya en tareas por bloques funcionales: autenticación, blísteres, botiquín, tratamientos, calendario, notificaciones, integraciones, despliegue, pruebas y documentación. El seguimiento del proyecto se representa mediante sprint, estado, prioridad, estimación y categoría, de acuerdo con la metodología indicada en el enunciado.
 
 La integración continua se define en `.github/workflows/ci.yml` con tres jobs:
 
@@ -327,7 +331,7 @@ Las dificultades más relevantes no fueron errores aislados, sino decisiones de 
 | PWA mobile-first | Layout desktop primero | La toma de medicación ocurre principalmente desde móvil. |
 | MCP con permisos reales | Endpoint externo separado sin contexto | Las tools deben respetar la misma autorización que la API. |
 
-Otra dificultad fue mantener el alcance. Varias mejoras posibles, como escaneo EAN-13, informes PDF o sincronización offline de escrituras, se dejaron documentadas como futuras porque habrían añadido riesgo sin reforzar el núcleo evaluable: inventario, pautas, adherencia, permisos, API y despliegue.
+Otra dificultad fue mantener el alcance. Varias mejoras posibles, como escaneo EAN-13, informes PDF o sincronización offline de escrituras, se situaron como evolución posterior porque habrían añadido riesgo sobre el núcleo funcional: inventario, pautas, adherencia, permisos, API y despliegue.
 
 La última fase se centró en pulido: mensajes de validación en español, revisión de accesibilidad básica, política de privacidad, coherencia visual y documentación. Ese trabajo no añade tantas pantallas nuevas, pero aumenta mucho la calidad percibida y la defendibilidad del proyecto.
 
