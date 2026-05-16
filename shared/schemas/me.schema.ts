@@ -18,7 +18,7 @@ const refineRange = (value: { from: Date; to: Date }, ctx: z.RefinementCtx): voi
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['to'],
-      message: 'to must be later than from.',
+      message: 'La fecha de fin debe ser posterior a la fecha de inicio.',
     });
   }
 };

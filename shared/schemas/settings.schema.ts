@@ -29,7 +29,7 @@ export const settingsSchema = z.object({
 export const updateSettingsSchema = settingsSchema.partial().refine(
   (value) => Object.keys(value).length > 0,
   {
-    message: 'At least one setting must be provided.',
+    message: 'Debes indicar al menos una preferencia.',
   },
 );
 

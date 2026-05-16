@@ -36,7 +36,7 @@ export const updateBlisterSchema = z
     avatarKey: blisterAvatarKeySchema.nullable().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
-    message: 'At least one blister field must be provided.',
+    message: 'Debes indicar al menos un dato del blíster.',
   });
 
 export const createInviteSchema = z.object({
@@ -48,7 +48,7 @@ export const joinBlisterSchema = z.object({
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z0-9]{6,8}$/, 'Invite code must contain 6 to 8 alphanumeric characters.'),
+    .regex(/^[A-Z0-9]{6,8}$/, 'El código de invitación debe tener entre 6 y 8 caracteres alfanuméricos.'),
 });
 
 export type CreateBlisterInput = z.infer<typeof createBlisterSchema>;

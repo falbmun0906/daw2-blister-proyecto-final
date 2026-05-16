@@ -36,7 +36,7 @@ export const createAdherenceLogSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['notes'],
-        message: 'notes is required when force is true.',
+        message: 'La nota es obligatoria para registrar una toma forzada.',
       });
     }
   });

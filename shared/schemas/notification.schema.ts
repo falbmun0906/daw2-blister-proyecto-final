@@ -21,13 +21,13 @@ export const notificationSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, 'Title is required.')
-    .max(120, 'Title must be 120 characters or fewer.'),
+    .min(1, 'El título es obligatorio.')
+    .max(120, 'El título no puede superar los 120 caracteres.'),
   message: z
     .string()
     .trim()
-    .min(1, 'Message is required.')
-    .max(500, 'Message must be 500 characters or fewer.'),
+    .min(1, 'El mensaje es obligatorio.')
+    .max(500, 'El mensaje no puede superar los 500 caracteres.'),
   metadata: notificationMetadataSchema,
   isRead: z.boolean().default(false),
 });
@@ -39,18 +39,18 @@ export const notificationIdParamsSchema = z.object({
 });
 
 export const pushSubscriptionKeysSchema = z.object({
-  p256dh: z.string().trim().min(1, 'p256dh key is required.'),
-  auth: z.string().trim().min(1, 'auth key is required.'),
+  p256dh: z.string().trim().min(1, 'La clave p256dh es obligatoria.'),
+  auth: z.string().trim().min(1, 'La clave auth es obligatoria.'),
 });
 
 export const pushSubscriptionSchema = z.object({
-  endpoint: z.string().trim().url('Endpoint must be a valid URL.'),
+  endpoint: z.string().trim().url('El endpoint debe ser una URL válida.'),
   expirationTime: z.number().int().nonnegative().nullable().optional(),
   keys: pushSubscriptionKeysSchema,
 });
 
 export const deletePushSubscriptionSchema = z.object({
-  endpoint: z.string().trim().url('Endpoint must be a valid URL.'),
+  endpoint: z.string().trim().url('El endpoint debe ser una URL válida.'),
 });
 
 export const expirationWarningLevelSchema = z.enum(expirationWarningLevels);

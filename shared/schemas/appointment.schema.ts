@@ -29,7 +29,7 @@ export const appointmentCommentBodySchema = z.object({
 });
 
 const nullableTrimmedString = (maxLength: number) =>
-  z.string().trim().max(maxLength, `Value must be ${maxLength} characters or fewer.`).nullable().optional();
+  z.string().trim().max(maxLength, `El valor no puede superar los ${maxLength} caracteres.`).nullable().optional();
 
 const appointmentBaseSchema = z.object({
   patientUserId: objectIdSchema,
@@ -45,7 +45,7 @@ export const createAppointmentSchema = appointmentBaseSchema;
 export const updateAppointmentSchema = appointmentBaseSchema
   .partial()
   .refine((value) => Object.keys(value).length > 0, {
-    message: 'At least one appointment field must be provided.',
+    message: 'Debes indicar al menos un dato de la cita.',
   });
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;

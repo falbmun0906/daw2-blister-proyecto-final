@@ -15,18 +15,18 @@ export const userSchema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .min(3, 'Username must be at least 3 characters long.')
-    .max(50, 'Username must be 50 characters or fewer.')
-    .regex(/^[a-z0-9._-]+$/, 'Username contains invalid characters.'),
-  email: z.string().trim().toLowerCase().email('Email must be valid.'),
+    .min(3, 'El nombre de usuario debe tener al menos 3 caracteres.')
+    .max(50, 'El nombre de usuario no puede superar los 50 caracteres.')
+    .regex(/^[a-z0-9._-]+$/, 'El nombre de usuario contiene caracteres no permitidos.'),
+  email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.'),
   emailVerified: z.boolean().default(false),
-  pendingEmail: z.string().trim().toLowerCase().email('Email must be valid.').nullable().optional(),
+  pendingEmail: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.').nullable().optional(),
   settings: settingsSchema,
 });
 
 export const authTokensSchema = z.object({
-  accessToken: z.string().trim().min(1, 'Access token is required.'),
-  refreshToken: z.string().trim().min(1, 'Refresh token is required.'),
+  accessToken: z.string().trim().min(1, 'El token de acceso es obligatorio.'),
+  refreshToken: z.string().trim().min(1, 'El token de refresco es obligatorio.'),
 });
 
 export const authSessionSchema = authTokensSchema.extend({
@@ -50,7 +50,7 @@ const inviteCodeSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .regex(/^[A-Z0-9]{6,8}$/, 'Invite code must contain 6 to 8 alphanumeric characters.')
+  .regex(/^[A-Z0-9]{6,8}$/, 'El código de invitación debe tener entre 6 y 8 caracteres alfanuméricos.')
   .optional()
   .or(z.literal(''))
   .transform((value) => (value === '' || value === undefined ? undefined : value));
@@ -62,17 +62,17 @@ export const registerSchema = z
       .string()
       .trim()
       .toLowerCase()
-      .min(3, 'Username must be at least 3 characters long.')
-      .max(50, 'Username must be 50 characters or fewer.')
-      .regex(/^[a-z0-9._-]+$/, 'Username contains invalid characters.'),
-    email: z.string().trim().toLowerCase().email('Email must be valid.'),
+      .min(3, 'El nombre de usuario debe tener al menos 3 caracteres.')
+      .max(50, 'El nombre de usuario no puede superar los 50 caracteres.')
+      .regex(/^[a-z0-9._-]+$/, 'El nombre de usuario contiene caracteres no permitidos.'),
+    email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.'),
     password: passwordSchema,
     confirmPassword: z.string().trim(),
     privacyConsent: z.literal(true, {
-      error: 'Privacy consent is required.',
+      error: 'Debes aceptar la política de privacidad.',
     }),
     ageConfirmed: z.literal(true, {
-      error: 'Age confirmation is required.',
+      error: 'Debes confirmar que tienes 18 años o más.',
     }),
     inviteCode: inviteCodeSchema,
   })
@@ -81,7 +81,7 @@ export const registerSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['confirmPassword'],
-        message: 'Passwords do not match.',
+        message: 'Las contraseñas no coinciden.',
       });
     }
   });
@@ -90,22 +90,22 @@ export const loginSchema = z.object({
   identifier: z
     .string()
     .trim()
-    .min(3, 'Identifier must be at least 3 characters long.')
-    .max(150, 'Identifier must be 150 characters or fewer.'),
-  password: z.string().trim().min(1, 'Password is required.'),
+    .min(3, 'El usuario o correo electrónico debe tener al menos 3 caracteres.')
+    .max(150, 'El usuario o correo electrónico no puede superar los 150 caracteres.'),
+  password: z.string().trim().min(1, 'La contraseña es obligatoria.'),
 });
 
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().trim().min(1, 'Refresh token is required.'),
+  refreshToken: z.string().trim().min(1, 'El token de refresco es obligatorio.'),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().trim().toLowerCase().email('Email must be valid.'),
+  email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.'),
 });
 
 export const resetPasswordSchema = z
   .object({
-    token: z.string().trim().min(32, 'Reset token is required.').max(256, 'Reset token is too long.'),
+    token: z.string().trim().min(32, 'El token de recuperación es obligatorio.').max(256, 'El token de recuperación es demasiado largo.'),
     password: passwordSchema,
     confirmPassword: z.string().trim(),
   })
@@ -114,13 +114,13 @@ export const resetPasswordSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['confirmPassword'],
-        message: 'Passwords do not match.',
+        message: 'Las contraseñas no coinciden.',
       });
     }
   });
 
 export const confirmEmailSchema = z.object({
-  token: z.string().trim().min(32, 'Email confirmation token is required.').max(256, 'Email confirmation token is too long.'),
+  token: z.string().trim().min(32, 'El token de confirmación de correo es obligatorio.').max(256, 'El token de confirmación de correo es demasiado largo.'),
 });
 
 export const authUserParamsSchema = z.object({
@@ -134,11 +134,11 @@ export const updateProfileSchema = z
       .string()
       .trim()
       .toLowerCase()
-      .min(3, 'Username must be at least 3 characters long.')
-      .max(50, 'Username must be 50 characters or fewer.')
-      .regex(/^[a-z0-9._-]+$/, 'Username contains invalid characters.')
+      .min(3, 'El nombre de usuario debe tener al menos 3 caracteres.')
+      .max(50, 'El nombre de usuario no puede superar los 50 caracteres.')
+      .regex(/^[a-z0-9._-]+$/, 'El nombre de usuario contiene caracteres no permitidos.')
       .optional(),
-    email: z.string().trim().toLowerCase().email('Email must be valid.').optional(),
+    email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.').optional(),
     settings: updateSettingsSchema.optional(),
     currentPassword: optionalTrimmedString(255),
     newPassword: passwordSchema.optional(),
@@ -148,7 +148,7 @@ export const updateProfileSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['currentPassword'],
-        message: 'Current password is required to set a new password.',
+        message: 'La contraseña actual es obligatoria para guardar una contraseña nueva.',
       });
     }
 
@@ -156,7 +156,7 @@ export const updateProfileSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: [],
-        message: 'At least one profile field must be provided.',
+        message: 'Debes indicar al menos un dato del perfil.',
       });
     }
   });

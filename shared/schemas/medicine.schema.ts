@@ -24,7 +24,7 @@ export const medicineIdParamsSchema = z.object({
 });
 
 export const medicineSearchParamsSchema = z.object({
-  nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
+  nregist: z.string().trim().regex(/^\d+$/, 'El número de registro debe ser numérico.'),
 });
 
 export const medicinesListQuerySchema = collectionPaginationQuerySchema;
@@ -34,29 +34,29 @@ export const externalSearchQuerySchema = z.object({
 });
 
 export const createMedicineSchema = z.object({
-  nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
-  alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
+  nregist: z.string().trim().regex(/^\d+$/, 'El número de registro debe ser numérico.'),
+  alias: z.string().trim().max(100, 'El alias no puede superar los 100 caracteres.').optional(),
   stock: nonNegativeQuantitySchema('Stock'),
   stockUnit: z.enum(stockUnits),
   threshold: nonNegativeQuantitySchema('Threshold').default(5),
   expDate: dateSchema('expDate').refine((value) => value.getTime() > Date.now(), {
-    message: 'expDate must be in the future.',
+    message: 'La fecha de caducidad debe ser futura.',
   }),
 });
 
 export const updateMedicineSchema = z
   .object({
-    alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
+    alias: z.string().trim().max(100, 'El alias no puede superar los 100 caracteres.').optional(),
     stock: nonNegativeQuantitySchema('Stock').optional(),
     threshold: nonNegativeQuantitySchema('Threshold').optional(),
     expDate: dateSchema('expDate')
       .refine((value) => value.getTime() > Date.now(), {
-        message: 'expDate must be in the future.',
+        message: 'La fecha de caducidad debe ser futura.',
       })
       .optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
-    message: 'At least one medicine field must be provided.',
+    message: 'Debes indicar al menos un dato del medicamento.',
   });
 
 // ── Schemas de respuesta (lo que devuelve la API) ────────────────────────

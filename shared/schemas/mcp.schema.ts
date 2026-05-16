@@ -14,9 +14,9 @@ const mcpInputDateSchema = (fieldName: string) =>
   z
     .string()
     .trim()
-    .min(1, `${fieldName} is required.`)
+    .min(1, `El campo ${fieldName} es obligatorio.`)
     .refine((value) => !Number.isNaN(Date.parse(value)), {
-      message: `${fieldName} must be a valid ISO date.`,
+      message: `El campo ${fieldName} debe ser una fecha ISO válida.`,
     })
     .transform((value) => new Date(value));
 
@@ -33,7 +33,7 @@ const validateSingleBlisterLocator = (value: { blisterId?: string; blisterName?:
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['blisterName'],
-      message: 'Use either blisterId or blisterName, not both.',
+      message: 'Usa blisterId o blisterName, no ambos.',
     });
   }
 };
@@ -45,7 +45,7 @@ const validateRequiredBlisterLocator = (value: { blisterId?: string; blisterName
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: [],
-      message: 'blisterId or blisterName must be provided.',
+      message: 'Debes indicar blisterId o blisterName.',
     });
   }
 };
@@ -71,7 +71,7 @@ export const blisterMembersInputSchema = z.object({
 export const medicineLookupInputSchema = z.object({
   ...blisterLocatorShape,
   medicineId: objectIdSchema.optional(),
-  nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.').optional(),
+  nregist: z.string().trim().regex(/^\d+$/, 'El número de registro debe ser numérico.').optional(),
   text: optionalSearchTextSchema('Search text'),
   page: positiveIntegerSchema('Page').max(100).default(1),
   limit: positiveIntegerSchema('Limit').max(100).default(20),
@@ -82,7 +82,7 @@ export const medicineLookupInputSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: [],
-      message: 'medicineId, nregist or text must be provided.',
+      message: 'Debes indicar medicineId, nregist o text.',
     });
   }
 });
@@ -96,13 +96,13 @@ export const medicineCatalogSearchInputSchema = z.object({
 
 export const medicineAddInputSchema = z.object({
   ...blisterLocatorShape,
-  nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.'),
-  alias: z.string().trim().max(100, 'Alias must be 100 characters or fewer.').optional(),
+  nregist: z.string().trim().regex(/^\d+$/, 'El número de registro debe ser numérico.'),
+  alias: z.string().trim().max(100, 'El alias no puede superar los 100 caracteres.').optional(),
   stock: nonNegativeQuantitySchema('Stock'),
   stockUnit: z.enum(stockUnits),
   threshold: nonNegativeQuantitySchema('Threshold').default(5),
   expDate: mcpInputDateSchema('expDate').refine((value) => value.getTime() > Date.now(), {
-    message: 'expDate must be in the future.',
+    message: 'La fecha de caducidad debe ser futura.',
   }),
 }).superRefine(validateRequiredBlisterLocator);
 
@@ -121,7 +121,7 @@ export const adherenceLoggerInputSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['notes'],
-      message: 'notes is required when forced is true.',
+      message: 'La nota es obligatoria cuando forced es true.',
     });
   }
 });
@@ -131,9 +131,9 @@ export const stockModifierInputSchema = z.object({
   medicineId: objectIdSchema,
   mode: z.enum(['set', 'delta']),
   value: z.coerce.number().refine((amount) => Number.isFinite(amount), {
-    message: 'value must be a valid number.',
+    message: 'El valor debe ser un número válido.',
   }).refine((amount) => Number.isInteger(amount * 2), {
-    message: 'value must use increments of 0.5.',
+    message: 'El valor debe usar incrementos de 0,5.',
   }),
 }).superRefine((value, context) => {
   validateRequiredBlisterLocator(value, context);
@@ -142,7 +142,7 @@ export const stockModifierInputSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['value'],
-      message: 'value cannot be negative when mode is set.',
+      message: 'El valor no puede ser negativo cuando mode es set.',
     });
   }
 
@@ -150,7 +150,7 @@ export const stockModifierInputSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['value'],
-      message: 'value must be different from 0 when mode is delta.',
+      message: 'El valor debe ser distinto de 0 cuando mode es delta.',
     });
   }
 });
@@ -163,7 +163,7 @@ const fromToRangeSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['to'],
-      message: 'to must be greater than or equal to from.',
+      message: 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
     });
   }
 });
@@ -192,7 +192,7 @@ export const appointmentCommentManagerInputSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['text'],
-      message: 'text is required for add and update actions.',
+      message: 'El texto es obligatorio para añadir o actualizar comentarios.',
     });
   }
 
@@ -200,7 +200,7 @@ export const appointmentCommentManagerInputSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['commentId'],
-      message: 'commentId is required for update and delete actions.',
+      message: 'commentId es obligatorio para actualizar o eliminar comentarios.',
     });
   }
 });
@@ -208,7 +208,7 @@ export const appointmentCommentManagerInputSchema = z.object({
 export const officialSourceLinkerInputSchema = z.object({
   ...blisterLocatorShape,
   medicineId: objectIdSchema.optional(),
-  nregist: z.string().trim().regex(/^\d+$/, 'nregist must be numeric.').optional(),
+  nregist: z.string().trim().regex(/^\d+$/, 'El número de registro debe ser numérico.').optional(),
 }).superRefine((value, context) => {
   validateSingleBlisterLocator(value, context);
 
@@ -216,7 +216,7 @@ export const officialSourceLinkerInputSchema = z.object({
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: [],
-      message: 'medicineId or nregist must be provided.',
+      message: 'Debes indicar medicineId o nregist.',
     });
   }
 });

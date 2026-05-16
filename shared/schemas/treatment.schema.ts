@@ -25,7 +25,7 @@ export const treatmentsListQuerySchema = collectionPaginationQuerySchema;
 
 export const treatmentScheduleTypeSchema = z.enum(['interval', 'daily_times']);
 
-const dailyDoseTimesSchema = z.array(timeOfDaySchema).max(12, 'A medicine can include at most 12 exact daily times.');
+const dailyDoseTimesSchema = z.array(timeOfDaySchema).max(12, 'Un medicamento puede incluir como máximo 12 horas exactas al día.');
 
 export const treatmentMedicineSchema = z
   .object({
@@ -45,7 +45,7 @@ export const treatmentMedicineSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['dailyDoseTimes'],
-        message: 'Exact daily times must be unique.',
+        message: 'Las horas exactas no pueden repetirse.',
       });
     }
 
@@ -57,7 +57,7 @@ export const treatmentMedicineSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['frequencyHours'],
-        message: 'frequencyHours is required for recurring interval schedules.',
+        message: 'La frecuencia en horas es obligatoria en pautas recurrentes por intervalo.',
       });
     }
 
@@ -65,7 +65,7 @@ export const treatmentMedicineSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['dailyDoseTimes'],
-        message: 'At least one exact daily time is required for recurring daily schedules.',
+        message: 'Debes indicar al menos una hora exacta en pautas recurrentes diarias.',
       });
     }
   });
@@ -76,7 +76,7 @@ const treatmentFields = {
   description: optionalTrimmedString(600),
   medicines: z
     .array(treatmentMedicineSchema)
-    .min(1, 'A treatment must include at least one medicine.'),
+    .min(1, 'El tratamiento debe incluir al menos un medicamento.'),
   startDate: dateSchema('startDate'),
   endDate: dateSchema('endDate').optional(),
   active: z.boolean().optional(),
@@ -91,7 +91,7 @@ const treatmentBaseSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['endDate'],
-        message: 'endDate must be later than startDate.',
+        message: 'La fecha de fin debe ser posterior a la fecha de inicio.',
       });
     }
   });
@@ -113,7 +113,7 @@ export const updateTreatmentSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: [],
-        message: 'At least one treatment field must be provided.',
+        message: 'Debes indicar al menos un dato del tratamiento.',
       });
     }
 
@@ -121,7 +121,7 @@ export const updateTreatmentSchema = z
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['endDate'],
-        message: 'endDate must be later than startDate.',
+        message: 'La fecha de fin debe ser posterior a la fecha de inicio.',
       });
     }
   });

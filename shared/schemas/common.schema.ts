@@ -1,79 +1,109 @@
 import { z } from 'zod';
 
+const fieldLabels: Record<string, string> = {
+  Name: 'nombre',
+  Page: 'página',
+  Limit: 'límite',
+  Stock: 'stock',
+  Threshold: 'umbral',
+  Amount: 'cantidad',
+  Comment: 'comentario',
+  Key: 'clave',
+  'Blister name': 'nombre del blíster',
+  'Search query': 'búsqueda',
+  'Search text': 'texto de búsqueda',
+  'Commercial medicine name': 'nombre comercial del medicamento',
+  'MCP token': 'token MCP',
+  'Appointment title': 'título de la cita',
+  'Treatment title': 'título del tratamiento',
+  'Frequency in hours': 'frecuencia en horas',
+  date: 'fecha',
+  expDate: 'fecha de caducidad',
+  timestamp: 'fecha y hora',
+  firstDoseAt: 'primera toma',
+  startDate: 'fecha de inicio',
+  endDate: 'fecha de fin',
+  from: 'fecha de inicio',
+  to: 'fecha de fin',
+  lookAheadHours: 'horas de planificación',
+};
+
+const fieldLabel = (fieldName: string): string => fieldLabels[fieldName] ?? fieldName;
+
 export const objectIdSchema = z
   .string()
   .trim()
-  .regex(/^[a-f\d]{24}$/i, 'Invalid ObjectId.');
+  .regex(/^[a-f\d]{24}$/i, 'Identificador no válido.');
 
 export const nonEmptyTrimmedString = (fieldName: string, maxLength = 200) =>
   z
     .string()
     .trim()
-    .min(1, `${fieldName} is required.`)
-    .max(maxLength, `${fieldName} must be ${maxLength} characters or fewer.`);
+    .min(1, `El campo ${fieldLabel(fieldName)} es obligatorio.`)
+    .max(maxLength, `El campo ${fieldLabel(fieldName)} no puede superar los ${maxLength} caracteres.`);
 
 export const futureDateSchema = (fieldName: string) =>
   z.coerce.date().refine((value) => value.getTime() > Date.now(), {
-    message: `${fieldName} must be in the future.`,
+    message: `El campo ${fieldLabel(fieldName)} debe ser una fecha futura.`,
   });
 
 export const dateSchema = (fieldName: string) =>
   z.coerce.date({
-    error: `${fieldName} must be a valid date.`,
+    error: `El campo ${fieldLabel(fieldName)} debe ser una fecha válida.`,
   });
 
 export const optionalTrimmedString = (maxLength = 500) =>
   z
     .string()
     .trim()
-    .max(maxLength, `Value must be ${maxLength} characters or fewer.`)
+    .max(maxLength, `El valor no puede superar los ${maxLength} caracteres.`)
     .optional();
 
 const hasHalfStep = (value: number): boolean => Number.isInteger(value * 2);
 
 const finiteNumberSchema = (fieldName: string) =>
   z.coerce.number().refine((value) => Number.isFinite(value), {
-    message: `${fieldName} must be a valid number.`,
+    message: `El campo ${fieldLabel(fieldName)} debe ser un número válido.`,
   });
 
 export const positiveQuantityValueSchema = z.number().refine((value) => Number.isFinite(value), {
-  message: 'Value must be a valid number.',
+  message: 'El valor debe ser un número válido.',
 }).positive().refine(hasHalfStep, {
-  message: 'Value must use increments of 0.5.',
+  message: 'El valor debe usar incrementos de 0,5.',
 });
 
 export const nonNegativeQuantityValueSchema = z.number().refine((value) => Number.isFinite(value), {
-  message: 'Value must be a valid number.',
+  message: 'El valor debe ser un número válido.',
 }).min(0).refine(hasHalfStep, {
-  message: 'Value must use increments of 0.5.',
+  message: 'El valor debe usar incrementos de 0,5.',
 });
 
 export const positiveIntegerSchema = (fieldName: string) =>
-  z.coerce.number().int().positive(`${fieldName} must be greater than 0.`);
+  z.coerce.number().int().positive(`El campo ${fieldLabel(fieldName)} debe ser mayor que 0.`);
 
 export const nonNegativeIntegerSchema = (fieldName: string) =>
-  z.coerce.number().int().min(0, `${fieldName} cannot be negative.`);
+  z.coerce.number().int().min(0, `El campo ${fieldLabel(fieldName)} no puede ser negativo.`);
 
 export const positiveQuantitySchema = (fieldName: string) =>
   finiteNumberSchema(fieldName)
-    .positive(`${fieldName} must be greater than 0.`)
+    .positive(`El campo ${fieldLabel(fieldName)} debe ser mayor que 0.`)
     .refine(hasHalfStep, {
-      message: `${fieldName} must use increments of 0.5.`,
+      message: `El campo ${fieldLabel(fieldName)} debe usar incrementos de 0,5.`,
     });
 
 export const nonNegativeQuantitySchema = (fieldName: string) =>
   finiteNumberSchema(fieldName)
-    .min(0, `${fieldName} cannot be negative.`)
+    .min(0, `El campo ${fieldLabel(fieldName)} no puede ser negativo.`)
     .refine(hasHalfStep, {
-      message: `${fieldName} must use increments of 0.5.`,
+      message: `El campo ${fieldLabel(fieldName)} debe usar incrementos de 0,5.`,
     });
 
 export const timeOfDaySchema = z
   .string()
   .trim()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must use HH:mm format.');
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'La hora debe usar el formato HH:mm.');
 
 export const collectionPaginationQuerySchema = z.object({
   page: positiveIntegerSchema('Page').default(1),
-  limit: positiveIntegerSchema('Limit').max(100, 'Limit must be 100 or fewer.').default(20),
+  limit: positiveIntegerSchema('Limit').max(100, 'El límite debe ser 100 o menos.').default(20),
 });
