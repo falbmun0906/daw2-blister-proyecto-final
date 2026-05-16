@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import {
+  appointmentCreateInputSchema,
   appointmentCommentManagerInputSchema,
   appointmentManagerInputSchema,
   inventoryQueryInputSchema,
@@ -20,6 +21,7 @@ import {
 import * as externalService from '../../modules/external/external.service';
 import { type McpAuthContext } from '../types';
 import {
+  appointmentCreateTool,
   appointmentCommentManagerTool,
   appointmentManagerTool,
   blisterListTool,
@@ -295,6 +297,45 @@ describe('MCP tools', () => {
       expect.objectContaining({ text: 'Preparar informe previo' }),
     ]);
     await expect(appointmentCommentManagerTool.run(context, addCommentInput)).rejects.toMatchObject({
+      code: 'BLISTER_ROLE_FORBIDDEN',
+    });
+  });
+
+  it('creates appointments through MCP when the caller has writer role', async () => {
+    const { context, currentUser, bosque } = await createFixture();
+    const input = appointmentCreateInputSchema.parse({
+      blisterName: 'El Bosque',
+      patientUserId: currentUser._id.toString(),
+      title: 'Consulta dermatologica',
+      location: 'Centro medico',
+      description: 'Revisar evolucion del tratamiento',
+      date: '2031-04-10T09:30:00.000Z',
+    });
+
+    const result = await appointmentCreateTool.run(context, input);
+
+    expect(result.appointment).toMatchObject({
+      blisterId: bosque._id.toString(),
+      blisterName: 'El Bosque',
+      patientUserId: currentUser._id.toString(),
+      title: 'Consulta dermatologica',
+      location: 'Centro medico',
+      description: 'Revisar evolucion del tratamiento',
+      treatmentId: null,
+    });
+    await expect(AppointmentModel.countDocuments({ blisterId: bosque._id })).resolves.toBe(1);
+  });
+
+  it('blocks appointment creation through MCP for observer role', async () => {
+    const { context, owner } = await createFixture();
+    const input = appointmentCreateInputSchema.parse({
+      blisterName: 'Casita Blanca',
+      patientUserId: owner._id.toString(),
+      title: 'Consulta no autorizada',
+      date: '2031-04-10T09:30:00.000Z',
+    });
+
+    await expect(appointmentCreateTool.run(context, input)).rejects.toMatchObject({
       code: 'BLISTER_ROLE_FORBIDDEN',
     });
   });

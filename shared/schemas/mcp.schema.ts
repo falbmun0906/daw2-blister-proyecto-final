@@ -179,6 +179,18 @@ export const appointmentManagerInputSchema = fromToRangeSchema.extend({
   limit: positiveIntegerSchema('Limit').max(100).default(20),
 }).superRefine(validateSingleBlisterLocator);
 
+export const appointmentCreateInputSchema = z.object({
+  ...blisterLocatorShape,
+  patientUserId: objectIdSchema,
+  title: nonEmptyTrimmedString('Appointment title', 200),
+  location: z.string().trim().max(200, 'El lugar no puede superar los 200 caracteres.').nullable().optional(),
+  description: z.string().trim().max(600, 'La descripción no puede superar los 600 caracteres.').nullable().optional(),
+  date: mcpInputDateSchema('date').refine((value) => value.getTime() > Date.now(), {
+    message: 'La fecha de la cita debe ser futura.',
+  }),
+  treatmentId: objectIdSchema.nullable().optional(),
+}).superRefine(validateRequiredBlisterLocator);
+
 export const appointmentCommentManagerInputSchema = z.object({
   ...blisterLocatorShape,
   action: z.enum(['list', 'add', 'update', 'delete']),
@@ -241,5 +253,6 @@ export type AdherenceLoggerInput = z.infer<typeof adherenceLoggerInputSchema>;
 export type StockModifierInput = z.infer<typeof stockModifierInputSchema>;
 export type ScheduleAssistantInput = z.infer<typeof scheduleAssistantInputSchema>;
 export type AppointmentManagerInput = z.infer<typeof appointmentManagerInputSchema>;
+export type AppointmentCreateInput = z.infer<typeof appointmentCreateInputSchema>;
 export type AppointmentCommentManagerInput = z.infer<typeof appointmentCommentManagerInputSchema>;
 export type OfficialSourceLinkerInput = z.infer<typeof officialSourceLinkerInputSchema>;

@@ -1,4 +1,5 @@
 export * from './adherence-logger.tool';
+export * from './appointment-create.tool';
 export * from './appointment-comment-manager.tool';
 export * from './appointment-manager.tool';
 export * from './blister-list.tool';

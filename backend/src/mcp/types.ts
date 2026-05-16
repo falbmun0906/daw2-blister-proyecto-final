@@ -2,6 +2,7 @@ import { type BlisterRole } from '../types/blister.types';
 
 import {
   type AdherenceLoggerInput,
+  type AppointmentCreateInput,
   type AppointmentCommentManagerInput,
   type AppointmentManagerInput,
   type BlisterListInput,
@@ -217,6 +218,10 @@ export type McpAppointmentManagerTool = McpToolDefinition<AppointmentManagerInpu
     total: number;
     totalPages: number;
   };
+}>;
+
+export type McpAppointmentCreateTool = McpToolDefinition<AppointmentCreateInput, {
+  appointment: McpAppointmentItem;
 }>;
 
 export type McpAppointmentCommentManagerTool = McpToolDefinition<AppointmentCommentManagerInput, {

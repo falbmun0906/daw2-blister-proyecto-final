@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import {
   adherenceLoggerInputSchema,
+  appointmentCreateInputSchema,
   appointmentCommentManagerInputSchema,
   appointmentManagerInputSchema,
   blisterListInputSchema,
@@ -18,6 +19,7 @@ import {
 import { AppError } from '../utils/app-error';
 import {
   adherenceLoggerTool,
+  appointmentCreateTool,
   appointmentCommentManagerTool,
   appointmentManagerTool,
   blisterListTool,
@@ -99,6 +101,7 @@ export const createMcpServerForContext = (context: McpAuthContext): McpServer =>
   registerTool(server, context, stockModifierTool, stockModifierInputSchema);
   registerTool(server, context, scheduleAssistantTool, scheduleAssistantInputSchema);
   registerTool(server, context, appointmentManagerTool, appointmentManagerInputSchema);
+  registerTool(server, context, appointmentCreateTool, appointmentCreateInputSchema);
   registerTool(server, context, appointmentCommentManagerTool, appointmentCommentManagerInputSchema);
   registerTool(server, context, officialSourceLinkerTool, officialSourceLinkerInputSchema);
 
