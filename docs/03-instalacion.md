@@ -1,262 +1,210 @@
-# 03 - Instalación y configuración del entorno
+# 03 - Instalación y preparación del entorno
 
-La instalación de Blíster se ha documentado para que el proyecto pueda ejecutarse de forma reproducible tanto en un entorno de desarrollo tradicional como en un entorno dockerizado. El objetivo de este capítulo es describir los requisitos, la configuración de variables, los comandos de arranque y las comprobaciones necesarias para validar que frontend, backend, base de datos, PWA y endpoint MCP funcionan correctamente.
+Este capítulo describe cómo preparar Blíster en local, qué dependencias necesita, qué variables de entorno utiliza y cómo validar el arranque con Node.js o con Docker Compose. Las instrucciones están pensadas para que el proyecto pueda reproducirse desde una copia limpia del repositorio.
 
 ## Índice
-1. [Visión general de la instalación](#1-visión-general-de-la-instalación)
-   - 1.1 [Modalidades de ejecución](#11-modalidades-de-ejecución)
-   - 1.2 [Estructura del repositorio](#12-estructura-del-repositorio)
+
+1. [Modalidades de ejecución](#1-modalidades-de-ejecución)
 2. [Requisitos previos](#2-requisitos-previos)
-   - 2.1 [Software necesario](#21-software-necesario)
-   - 2.2 [Servicios externos](#22-servicios-externos)
-3. [Configuración de variables de entorno](#3-configuración-de-variables-de-entorno)
-   - 3.1 [Variables del backend](#31-variables-del-backend)
-   - 3.2 [Variables del frontend](#32-variables-del-frontend)
-   - 3.3 [Variables para Docker Compose](#33-variables-para-docker-compose)
-4. [Instalación en entorno local](#4-instalación-en-entorno-local)
-   - 4.1 [Instalación del backend](#41-instalación-del-backend)
-   - 4.2 [Instalación del frontend](#42-instalación-del-frontend)
-   - 4.3 [Paquete shared](#43-paquete-shared)
-5. [Arranque de la aplicación](#5-arranque-de-la-aplicación)
-   - 5.1 [Arranque del backend](#51-arranque-del-backend)
-   - 5.2 [Arranque del frontend](#52-arranque-del-frontend)
-   - 5.3 [Comprobaciones iniciales](#53-comprobaciones-iniciales)
-6. [Instalación con Docker Compose](#6-instalación-con-docker-compose)
-   - 6.1 [Construcción de servicios](#61-construcción-de-servicios)
-   - 6.2 [Validación del entorno dockerizado](#62-validación-del-entorno-dockerizado)
-   - 6.3 [Parada y limpieza](#63-parada-y-limpieza)
-7. [Problemas habituales de instalación](#7-problemas-habituales-de-instalación)
+3. [Estructura del repositorio](#3-estructura-del-repositorio)
+4. [Variables de entorno](#4-variables-de-entorno)
+  - 4.1 [Backend](#41-backend)
+  - 4.2 [Frontend](#42-frontend)
+  - 4.3 [Compose](#43-compose)
+5. [Instalación local](#5-instalación-local)
+  - 5.1 [Backend](#51-backend)
+  - 5.2 [Frontend](#52-frontend)
+  - 5.3 [Shared](#53-shared)
+6. [Arranque de servicios](#6-arranque-de-servicios)
+  - 6.1 [Base de datos](#61-base-de-datos)
+  - 6.2 [Backend](#62-backend)
+  - 6.3 [Frontend](#63-frontend)
+7. [Validación con Docker Compose](#7-validación-con-docker-compose)
+  - 7.1 [Arranque](#71-arranque)
+  - 7.2 [Comprobaciones](#72-comprobaciones)
+  - 7.3 [Parada](#73-parada)
+8. [Comandos de mantenimiento](#8-comandos-de-mantenimiento)
+9. [Problemas habituales](#9-problemas-habituales)
 
----
+## 1. Modalidades de ejecución
 
-## 1. Visión general de la instalación
+Blíster puede ejecutarse de dos formas principales: localmente con Node.js y MongoDB, o de forma dockerizada con Compose. Ambas modalidades usan el mismo código y las mismas capas de aplicación.
 
-Blíster se organiza como un proyecto MERN con tres paquetes principales: frontend, backend y shared. La instalación local permite desarrollar y depurar cada capa por separado, mientras que Docker Compose ofrece una validación integrada con MongoDB, backend y frontend servidos como servicios independientes.
+| Modalidad | Uso recomendado | Servicios implicados |
+| :--- | :--- | :--- |
+| Desarrollo local | Programar, depurar, ejecutar tests y trabajar con recarga en caliente. | MongoDB local o Atlas, backend en `3000`, frontend en `5173`. |
+| Docker Compose | Validar la portabilidad de la aplicación completa. | MongoDB 7, backend Node, frontend estático con Nginx en `8080`. |
 
-### 1.1 Modalidades de ejecución
-
-El proyecto admite dos formas principales de ejecución:
-
-1. **Modo desarrollo local:** cada paquete se instala con `npm` y se ejecuta desde su directorio correspondiente. Es el modo más cómodo para desarrollar nuevas funcionalidades, depurar TypeScript y trabajar con recarga en caliente.
-2. **Modo dockerizado:** Docker Compose construye los contenedores de backend y frontend, levanta MongoDB y expone la aplicación completa en `http://localhost:8080`. Es el modo adecuado para validar que el proyecto no depende de una configuración particular de la máquina.
-
-En ambos casos, el backend expone la API REST bajo `/api/v1` y el endpoint MCP bajo `/mcp` cuando `MCP_SERVER_ENABLED=true`.
-
-### 1.2 Estructura del repositorio
-
-La estructura raíz del repositorio separa claramente código, documentación y configuración:
-
-```text
-daw2-blister-proyecto-final/
-├── backend/       API REST, lógica de negocio, modelos MongoDB y MCP
-├── frontend/      PWA React, rutas, stores, servicios y SCSS
-├── shared/        Esquemas Zod reutilizados por backend y frontend
-├── docs/          Documentación académica y técnica de la entrega
-├── compose.yaml   Orquestación local con MongoDB, backend y frontend
-└── README.md      Guía rápida del proyecto
-```
-
-Esta división evita duplicar reglas de validación y permite que el backend y el frontend compartan contratos mediante `shared/schemas`.
+El backend expone la API bajo `/api/v1`, la documentación Swagger en `/api/v1/docs` y el endpoint MCP en `/mcp` cuando `MCP_SERVER_ENABLED=true`.
 
 ## 2. Requisitos previos
 
-Antes de iniciar la instalación es necesario disponer de una versión moderna de Node.js y de una base de datos MongoDB accesible. Para la validación completa con contenedores también se requiere Docker.
+La instalación requiere herramientas comunes de desarrollo web moderno.
 
-### 2.1 Software necesario
-
-| Herramienta | Versión recomendada | Uso dentro del proyecto |
+| Herramienta | Versión recomendada | Motivo |
 | :--- | :--- | :--- |
-| Node.js | 22.x | Ejecución de backend, frontend, tests y builds |
-| npm | Incluido con Node | Instalación de dependencias |
-| MongoDB | 7.x o Atlas | Persistencia de datos en desarrollo y producción |
-| Docker Desktop | Versión estable reciente | Validación con Compose |
-| Git | Versión estable reciente | Control de versiones y despliegue desde repositorio |
+| Node.js | 22.x | Misma versión usada en CI y Dockerfiles. |
+| npm | Incluido con Node | Instalación de dependencias. |
+| MongoDB | 7.x o MongoDB Atlas | Persistencia de datos. |
+| Docker Desktop | Versión estable reciente | Ejecución con Compose. |
+| Git | Versión estable reciente | Clonado y control de versiones. |
 
-La versión 22 de Node se utiliza también en el workflow de GitHub Actions y en los Dockerfiles, por lo que mantener esa versión en local reduce diferencias entre entornos.
+Los servicios externos opcionales son Resend para correo transaccional y Web Push VAPID para notificaciones push. CIMA/AEMPS es una API pública y no requiere clave.
 
-### 2.2 Servicios externos
+## 3. Estructura del repositorio
 
-Blíster puede arrancar sin todos los servicios externos configurados, pero algunas funcionalidades requieren credenciales específicas:
+La raíz del repositorio separa las capas de la aplicación y la documentación.
 
-| Servicio | Variable asociada | Funcionalidad |
-| :--- | :--- | :--- |
-| MongoDB Atlas o instancia local | `MONGODB_URI` | Base de datos principal |
-| AEMPS/CIMA | `CIMA_BASE_URL` | Búsqueda e información oficial de medicamentos |
-| Resend | `RESEND_API_KEY` | Envío de correo de recuperación de contraseña |
-| Web Push VAPID | `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY` | Notificaciones push |
+```text
+daw2-blister-proyecto-final/
+├── backend/       API REST, modelos, servicios, seguridad y MCP
+├── frontend/      PWA React, rutas, stores, servicios y SCSS
+├── shared/        Esquemas Zod compartidos
+├── docs/          Documentación académica y técnica
+├── compose.yaml   Orquestación local con MongoDB, backend y frontend
+└── README.md      Resumen y arranque rápido
+```
 
-La API de CIMA es pública y no requiere clave de acceso. Las claves de Resend y Web Push sí deben mantenerse fuera del repositorio.
+No existe un `package.json` raíz para instalar todo el monorepo. Cada paquete gestiona sus dependencias.
 
-## 3. Configuración de variables de entorno
+## 4. Variables de entorno
 
-Las variables de entorno definen cómo se conectan los servicios entre sí y qué capacidades están activas. El backend valida su configuración en el arranque mediante Zod; si falta una variable crítica, el proceso falla de forma explícita.
+Las variables de entorno se cargan en el backend desde `.env` y se validan con Zod al arrancar. Si falta una configuración crítica, el proceso falla de forma explícita.
 
-### 3.1 Variables del backend
+### 4.1 Backend
 
-El backend incluye una plantilla en `backend/.env.example`. Para preparar el entorno local:
+Crear el archivo local:
 
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Las variables principales son:
+Variables principales:
 
 | Variable | Obligatoria | Descripción |
 | :--- | :---: | :--- |
-| `NODE_ENV` | Sí | Entorno de ejecución: `development`, `test` o `production`. |
-| `PORT` | Sí | Puerto HTTP del backend. En desarrollo se usa `3000`. |
-| `BACKEND_URL` | No | Origen público del backend para generar enlaces absolutos. En producción debe configurarse explícitamente. |
-| `MONGODB_URI` | Sí | Cadena de conexión de MongoDB. |
-| `CLIENT_ORIGIN` | Sí | Origen permitido por CORS. En desarrollo suele ser `http://localhost:5173`. |
-| `CIMA_BASE_URL` | Sí | URL base de la API CIMA/AEMPS. |
-| `JWT_SECRET` | Sí | Secreto de al menos 32 caracteres para firmar JWT. |
-| `JWT_ACCESS_EXPIRES_IN` | Sí | Duración del access token. Valor por defecto: `15m`. |
-| `JWT_REFRESH_EXPIRES_IN` | Sí | Duración del refresh token. Valor por defecto: `7d`. |
-| `MCP_TOKEN_TTL_DAYS` | Sí | Duración máxima de los tokens MCP emitidos desde perfil. |
-| `MCP_SERVER_ENABLED` | Sí | Activa el endpoint `/mcp` integrado en Express. |
-| `WEB_PUSH_VAPID_PUBLIC_KEY` | No | Clave pública VAPID para suscripciones push. |
-| `WEB_PUSH_VAPID_PRIVATE_KEY` | No | Clave privada VAPID para envío push. |
+| `NODE_ENV` | Sí | `development`, `test` o `production`. |
+| `PORT` | Sí | Puerto interno del backend; por defecto `3000`. |
+| `BACKEND_URL` | Sí | URL pública del backend para enlaces absolutos. |
+| `MONGODB_URI` | Sí | Cadena de conexión MongoDB local o Atlas. |
+| `CLIENT_ORIGIN` | Sí | Origen principal permitido por CORS. |
+| `CLIENT_ORIGINS` | No | Lista separada por comas de orígenes adicionales. |
+| `EMAIL_ASSET_ORIGIN` | Sí | Origen para recursos usados en emails. |
+| `CIMA_BASE_URL` | Sí | Base de la API CIMA, normalmente `https://cima.aemps.es/cima/rest`. |
+| `JWT_SECRET` | Sí | Secreto privado de al menos 32 caracteres. |
+| `JWT_ACCESS_EXPIRES_IN` | Sí | Duración del access token; valor habitual `15m`. |
+| `JWT_REFRESH_EXPIRES_IN` | Sí | Duración del refresh token; valor habitual `7d`. |
+| `MCP_TOKEN_TTL_DAYS` | Sí | Duración máxima de tokens MCP clásicos. |
+| `MCP_SERVER_ENABLED` | Sí | Activa o desactiva `/mcp`. |
+| `MCP_PORT` | No | Puerto usado por el script MCP independiente de desarrollo. |
+| `WEB_PUSH_VAPID_PUBLIC_KEY` | No | Clave pública VAPID. |
+| `WEB_PUSH_VAPID_PRIVATE_KEY` | No | Clave privada VAPID. |
 | `WEB_PUSH_VAPID_SUBJECT` | Sí | Contacto del emisor Web Push. |
-| `PUSH_REMINDER_SCAN_INTERVAL_MS` | Sí | Intervalo del escáner de recordatorios. |
-| `RESEND_API_KEY` | No | Clave de Resend para recuperación de contraseña. |
+| `PUSH_REMINDER_SCAN_INTERVAL_MS` | Sí | Intervalo de escaneo de recordatorios. |
+| `RESEND_API_KEY` | No | Clave de Resend para email transaccional. |
 
-En desarrollo, si no se configuran VAPID o Resend, la aplicación sigue arrancando, pero las funcionalidades asociadas quedan limitadas.
+### 4.2 Frontend
 
-### 3.2 Variables del frontend
-
-El frontend usa variables de Vite, por lo que deben comenzar por `VITE_`.
-
-```bash
-cd frontend
-```
-
-El archivo `.env` local debe contener:
+El frontend utiliza variables de Vite. En desarrollo se crea `frontend/.env` con:
 
 ```text
 VITE_API_URL=http://localhost:3000
 VITE_MCP_URL=http://localhost:3000
 ```
 
-El cliente normaliza estos orígenes internamente. `VITE_API_URL` se utiliza como base para la API REST y `VITE_MCP_URL` para mostrar al usuario la URL de conexión MCP. En producción, ambos valores apuntan al origen público del backend.
+El cliente añade internamente las rutas necesarias para API y MCP. En producción se indica el origen público del backend, no `/api/v1` ni `/mcp` como ruta completa.
 
-### 3.3 Variables para Docker Compose
+### 4.3 Compose
 
-El `compose.yaml` utiliza `backend/.env` para el backend y construye el frontend con argumentos de build:
+El `compose.yaml` usa `backend/.env` como base y sobrescribe valores necesarios para la red interna:
+
+```text
+MONGODB_URI=mongodb://mongo:27017/blister
+CLIENT_ORIGIN=http://localhost:8080
+BACKEND_URL=http://localhost:8080
+```
+
+El frontend se construye con argumentos:
 
 ```text
 VITE_API_URL=http://localhost:8080
 VITE_MCP_URL=http://localhost:8080
 ```
 
-La base de datos dentro de Compose se resuelve por nombre de servicio:
+## 5. Instalación local
 
-```text
-MONGODB_URI=mongodb://mongo:27017/blister
-```
+La instalación se realiza por paquete.
 
-Esto permite que el backend se conecte a MongoDB sin exponer la base de datos al host.
-
-## 4. Instalación en entorno local
-
-La instalación local se realiza por paquetes. No existe un único `package.json` raíz que instale todo el monorepo, por lo que cada directorio mantiene sus dependencias.
-
-### 4.1 Instalación del backend
-
-Desde la raíz del repositorio:
+### 5.1 Backend
 
 ```bash
 cd backend
 npm install
-```
-
-En entornos de integración o despliegue se utiliza `npm ci`, ya que instala exactamente las versiones fijadas en `package-lock.json`:
-
-```bash
-npm ci
-```
-
-Después de instalar dependencias, se valida que TypeScript compila:
-
-```bash
 npm run build
 ```
 
-### 4.2 Instalación del frontend
+Scripts relevantes:
 
-La instalación del frontend se realiza de forma equivalente:
+| Script | Función |
+| :--- | :--- |
+| `npm run dev` | Arranca `src/index.ts` con nodemon y ts-node. |
+| `npm run lint` | Ejecuta TypeScript sin emitir archivos. |
+| `npm test` | Ejecuta Jest en modo secuencial. |
+| `npm run test:coverage` | Genera informe de cobertura backend. |
+| `npm run test:e2e` | Ejecuta suites E2E backend. |
+| `npm run build` | Compila TypeScript a `dist`. |
+| `npm start` | Ejecuta `dist/backend/src/index.js`. |
+| `npm run cima:sync` | Lanza sincronización de cambios CIMA. |
+| `npm run mcp:start` | Arranca servidor MCP independiente para desarrollo. |
+
+### 5.2 Frontend
 
 ```bash
 cd frontend
 npm install
-```
-
-Para validar la interfaz:
-
-```bash
-npm run lint
 npm run build
 ```
 
-El build genera la carpeta `frontend/dist`, que contiene los archivos estáticos de la PWA.
+Scripts relevantes:
 
-### 4.3 Paquete shared
+| Script | Función |
+| :--- | :--- |
+| `npm run dev` | Arranca Vite en `5173`. |
+| `npm run typecheck` | Ejecuta `tsc -b`. |
+| `npm run lint` | Ejecuta ESLint. |
+| `npm test -- --run` | Ejecuta Vitest una vez. |
+| `npm run coverage` | Genera cobertura Vitest. |
+| `npm run build` | Compila TypeScript y genera `dist`. |
+| `npm run preview` | Sirve el build de producción. |
+| `npm run test:e2e` | Ejecuta Playwright. |
 
-El paquete `shared` contiene los esquemas Zod que definen contratos comunes de autenticación, medicamentos, tratamientos, citas, notificaciones y MCP. No se ejecuta como servicio independiente.
+### 5.3 Shared
 
-El backend y el frontend lo importan directamente desde el repositorio:
+El paquete `shared` contiene los esquemas Zod y no se ejecuta como servicio. Backend y frontend lo importan desde el monorepo. Cuando cambian los contratos, ambos lados consumen la misma definición.
 
-```text
-shared/schemas/
+## 6. Arranque de servicios
+
+Para desarrollo local se usan terminales separadas.
+
+### 6.1 Base de datos
+
+Puede usarse MongoDB local:
+
+```bash
+mongod
 ```
 
-Esta estructura evita redefinir tipos entre cliente y servidor. Cuando un esquema cambia, ambos lados consumen la misma fuente de verdad.
+O una cadena Atlas en `MONGODB_URI`.
 
-## 5. Arranque de la aplicación
-
-Una vez configuradas las variables y dependencias, se arrancan backend y frontend en terminales separadas. MongoDB debe estar disponible antes de iniciar el backend.
-
-### 5.1 Arranque del backend
+### 6.2 Backend
 
 ```bash
 cd backend
 npm run dev
 ```
 
-El script utiliza `nodemon` y `ts-node` para ejecutar `src/index.ts`. El arranque correcto muestra que el backend escucha en el puerto configurado y que se ha establecido conexión con MongoDB.
-
-La URL base en desarrollo es:
-
-```text
-http://localhost:3000
-```
-
-El endpoint de salud queda disponible en:
-
-```text
-http://localhost:3000/api/v1/health
-```
-
-### 5.2 Arranque del frontend
-
-En otra terminal:
-
-```bash
-cd frontend
-npm run dev
-```
-
-Vite sirve la aplicación en:
-
-```text
-http://localhost:5173
-```
-
-Al abrir esa URL, el usuario llega a la pantalla pública de entrada. En escritorio, la aplicación se presenta dentro de un marco visual de dispositivo móvil para mantener la experiencia mobile-first.
-
-### 5.3 Comprobaciones iniciales
-
-Las comprobaciones mínimas son:
+Comprobación:
 
 ```bash
 curl http://localhost:3000/api/v1/health
@@ -273,93 +221,104 @@ Respuesta esperada:
 }
 ```
 
-Después se valida desde navegador:
+### 6.3 Frontend
 
-1. Abrir `http://localhost:5173`.
-2. Completar onboarding o acceder al login.
-3. Registrar un usuario.
-4. Comprobar que se crea el blíster inicial.
-5. Acceder a Perfil y revisar que las secciones principales cargan.
+```bash
+cd frontend
+npm run dev
+```
 
-## 6. Instalación con Docker Compose
+La aplicación queda disponible en:
 
-Docker Compose permite levantar una versión integrada sin depender de MongoDB local ni de procesos manuales separados. La entrada pública queda en `http://localhost:8080`.
+```text
+http://localhost:5173
+```
 
-### 6.1 Construcción de servicios
+## 7. Validación con Docker Compose
 
-Desde la raíz del repositorio:
+Docker Compose levanta una versión integrada con una única entrada pública en `http://localhost:8080`.
+
+### 7.1 Arranque
+
+Desde la raíz:
 
 ```bash
 docker compose up -d --build
 ```
 
-Los servicios definidos son:
+Servicios definidos:
 
 | Servicio | Imagen/base | Función |
 | :--- | :--- | :--- |
 | `mongo` | `mongo:7` | Base de datos con volumen persistente. |
 | `backend` | `backend/Dockerfile` | API REST y endpoint MCP. |
-| `frontend` | `frontend/Dockerfile` + Nginx | PWA estática y reverse proxy local. |
+| `frontend` | `frontend/Dockerfile` y Nginx | PWA estática, SPA fallback y proxy. |
 
-El backend no se expone directamente al host. Nginx publica el puerto `8080` y reenvía `/api/v1` y `/mcp` al backend.
-
-### 6.2 Validación del entorno dockerizado
-
-El estado de los contenedores se comprueba con:
+### 7.2 Comprobaciones
 
 ```bash
 docker compose ps
+curl http://localhost:8080/api/v1/health
+curl -I http://localhost:8080/
 ```
 
-La API debe responder a través del proxy:
+La ruta MCP debe responder a través del proxy. Sin credenciales Bearer válidas, el rechazo de autenticación confirma que la petición llega al backend:
 
 ```bash
-curl http://localhost:8080/api/v1/health
+curl -i http://localhost:8080/mcp
 ```
 
-La interfaz debe cargar en:
-
-```text
-http://localhost:8080
-```
-
-La ruta MCP también pasa por el proxy:
-
-```text
-http://localhost:8080/mcp
-```
-
-Sin token Bearer válido, la ruta debe rechazar la petición. Ese rechazo confirma que el tráfico llega al backend y que la protección de acceso está activa.
-
-### 6.3 Parada y limpieza
-
-Para detener los contenedores:
+### 7.3 Parada
 
 ```bash
 docker compose down
 ```
 
-Para detenerlos y eliminar también la base de datos local:
+Para eliminar también los datos de la base local:
 
 ```bash
 docker compose down -v
 ```
 
-La segunda opción borra el volumen `mongo-data`, por lo que elimina usuarios, blísteres y datos creados durante la prueba.
+## 8. Comandos de mantenimiento
 
-## 7. Problemas habituales de instalación
+Comandos habituales durante el desarrollo:
 
-Esta tabla resume los errores más comunes durante la instalación y la forma de resolverlos:
+| Acción | Comando |
+| :--- | :--- |
+| Ver logs Compose | `docker compose logs backend` |
+| Reconstruir imágenes | `docker compose build --no-cache` |
+| Validar backend | `cd backend && npm run lint && npm test && npm run build` |
+| Validar frontend | `cd frontend && npm run lint && npm test -- --run && npm run build` |
+| Ejecutar E2E backend | `cd backend && npm run test:e2e` |
+| Ejecutar E2E frontend | `cd frontend && npm run test:e2e` |
+
+## 9. Problemas habituales
 
 | Problema | Causa probable | Solución |
 | :--- | :--- | :--- |
-| El backend no arranca | `MONGODB_URI` ausente o MongoDB apagado | Revisar `.env` y arrancar MongoDB. |
-| Error de JWT al iniciar | `JWT_SECRET` demasiado corto | Usar un secreto de al menos 32 caracteres. |
-| El frontend no conecta con la API | `VITE_API_URL` apunta a un origen incorrecto | Ajustar `frontend/.env` y reiniciar Vite. |
-| Error CORS en login | `CLIENT_ORIGIN` no coincide con el origen real del frontend | Configurar `CLIENT_ORIGIN=http://localhost:5173` en desarrollo. |
-| No se envía correo de recuperación | Falta `RESEND_API_KEY` | Configurar la clave de Resend en backend. |
-| No aparecen notificaciones push | Faltan claves VAPID | Generar y configurar `WEB_PUSH_VAPID_PUBLIC_KEY` y `WEB_PUSH_VAPID_PRIVATE_KEY`. |
-| Docker no reconstruye cambios | Imagen cacheada | Ejecutar `docker compose build --no-cache`. |
-| La ruta `/reset-password` devuelve la pantalla pública inicial | El usuario está en escritorio y no ha aceptado el marco móvil | Pulsar "Usar aquí" o probar en viewport móvil. |
+| Backend no arranca | `MONGODB_URI` ausente o MongoDB no disponible. | Revisar `.env` y conexión a base de datos. |
+| Error de configuración JWT | `JWT_SECRET` tiene menos de 32 caracteres. | Usar un secreto largo y privado. |
+| Error CORS | `CLIENT_ORIGIN` no coincide con el frontend real. | Ajustar origen y reiniciar backend. |
+| Frontend no conecta con API | `VITE_API_URL` incorrecta. | Revisar `frontend/.env` y reiniciar Vite. |
+| No llegan correos | Falta `RESEND_API_KEY`. | Configurar Resend o validar el flujo con mocks en test. |
+| Push no disponible | Faltan claves VAPID o permiso del navegador. | Generar claves y revisar permisos. |
+| Recarga de ruta privada da 404 en producción | Servidor estático sin fallback SPA. | Usar Nginx con `try_files` o configuración equivalente. |
+| Mixed Content en despliegue | Frontend HTTPS consume backend HTTP. | Publicar backend con HTTPS mediante proxy y certificado. |
 
-Con estas comprobaciones, Blíster queda instalado y preparado para desarrollo local, validación dockerizada o despliegue posterior.
+Checklist final de instalación:
+
+| Comprobación | Resultado esperado |
+| :--- | :--- |
+| `backend/.env` existe | Variables obligatorias configuradas. |
+| `frontend/.env` existe | URLs públicas o locales correctas. |
+| MongoDB responde | Backend conecta sin errores de arranque. |
+| `npm run build` backend | TypeScript compila a `dist`. |
+| `npm run build` frontend | Vite genera `dist` y assets PWA. |
+| Healthcheck | `/api/v1/health` devuelve `status: ok`. |
+| Swagger | `/api/v1/docs` abre documentación API. |
+| Compose | `localhost:8080` sirve frontend y proxy API. |
+
+Si alguna comprobación falla, se recomienda resolverla antes de continuar con pruebas funcionales. Muchos errores de interfaz tienen origen en variables de entorno o en una API no disponible.
+
+Con estas instrucciones queda cubierto el arranque local, la validación dockerizada y la preparación de variables necesarias para entornos de desarrollo o producción.

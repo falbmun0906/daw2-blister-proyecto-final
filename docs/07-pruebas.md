@@ -1,154 +1,210 @@
 # 07 - Pruebas y validación
 
-La estrategia de pruebas de Blíster responde a la naturaleza del proyecto: una aplicación de salud doméstica donde un error de autenticación, stock, adherencia o permisos puede afectar directamente a la seguridad del usuario. Este capítulo describe los niveles de prueba implementados, las herramientas utilizadas, los comandos de ejecución y los criterios de validación aplicados durante el desarrollo.
+La estrategia de pruebas de Blíster combina tests automatizados, validaciones de build, linting, pruebas de navegador y comprobaciones manuales. El objetivo es proteger las reglas críticas de salud doméstica: autenticación, permisos, stock, adherencia, citas, notificaciones, CIMA y MCP.
 
 ## Índice
-1. [Enfoque general](#1-enfoque-general)
-   - 1.1 [Objetivo de las pruebas](#11-objetivo-de-las-pruebas)
-   - 1.2 [Pirámide de pruebas del proyecto](#12-pirámide-de-pruebas-del-proyecto)
+
+1. [Enfoque de pruebas](#1-enfoque-de-pruebas)
 2. [Herramientas utilizadas](#2-herramientas-utilizadas)
 3. [Pruebas del backend](#3-pruebas-del-backend)
-   - 3.1 [Tests de modelos](#31-tests-de-modelos)
-   - 3.2 [Tests de servicios](#32-tests-de-servicios)
-   - 3.3 [Tests de rutas](#33-tests-de-rutas)
-   - 3.4 [Tests E2E backend](#34-tests-e2e-backend)
+	- 3.1 [Tests de modelos](#31-tests-de-modelos)
+	- 3.2 [Tests de servicios](#32-tests-de-servicios)
+	- 3.3 [Tests de rutas](#33-tests-de-rutas)
 4. [Pruebas del frontend](#4-pruebas-del-frontend)
-   - 4.1 [Linting](#41-linting)
-   - 4.2 [Build de producción](#42-build-de-producción)
-   - 4.3 [Tests unitarios de componentes](#43-tests-unitarios-de-componentes)
-   - 4.4 [E2E de navegador y accesibilidad](#44-e2e-de-navegador-y-accesibilidad)
-   - 4.5 [Validación manual de interfaz](#45-validación-manual-de-interfaz)
-5. [Pruebas de integración externa](#5-pruebas-de-integración-externa)
-   - 5.1 [CIMA/AEMPS](#51-cimaaemps)
-   - 5.2 [MCP](#52-mcp)
-   - 5.3 [Correo y recuperación de contraseña](#53-correo-y-recuperación-de-contraseña)
-   - 5.4 [Notificaciones push](#54-notificaciones-push)
-6. [Integración continua](#6-integración-continua)
-7. [Comandos de validación](#7-comandos-de-validación)
-8. [Cobertura funcional alcanzada](#8-cobertura-funcional-alcanzada)
-9. [Riesgos y pruebas pendientes](#9-riesgos-y-pruebas-pendientes)
+	- 4.1 [Lint y build](#41-lint-y-build)
+	- 4.2 [Tests unitarios](#42-tests-unitarios)
+	- 4.3 [Playwright y accesibilidad](#43-playwright-y-accesibilidad)
+5. [Pruebas del paquete shared](#5-pruebas-del-paquete-shared)
+6. [Pruebas E2E e integración externa](#6-pruebas-e2e-e-integración-externa)
+7. [Integración continua](#7-integración-continua)
+8. [Comandos de validación](#8-comandos-de-validación)
+	- 8.1 [Backend](#81-backend)
+	- 8.2 [Frontend](#82-frontend)
+	- 8.3 [Docker Compose](#83-docker-compose)
+9. [Cobertura funcional alcanzada](#9-cobertura-funcional-alcanzada)
+10. [Riesgos y pruebas pendientes](#10-riesgos-y-pruebas-pendientes)
 
----
+## 1. Enfoque de pruebas
 
-## 1. Enfoque general
+El proyecto no sigue TDD estricto en todas las funcionalidades, pero sí una estrategia incremental: implementar reglas de dominio, cubrirlas con tests de servicio o ruta, y validar el comportamiento de la interfaz con lint, build, Vitest y Playwright cuando corresponde.
 
-Las pruebas de Blíster se centran en validar reglas de negocio, contratos HTTP, persistencia y flujos críticos. No se persigue únicamente un porcentaje de cobertura, sino asegurar que las operaciones que modifican datos de salud se comportan de forma fiable.
+La prioridad de prueba se define por riesgo:
 
-### 1.1 Objetivo de las pruebas
+| Riesgo | Tipo de prueba aplicado |
+| :--- | :--- |
+| Autenticación y recuperación | Tests de servicio, rutas y E2E REST. |
+| Permisos por blíster | Tests de rutas y servicios con roles. |
+| Stock y adherencia | Tests de servicio, rutas y E2E de notificaciones. |
+| Integración CIMA | Tests de servicio con mocks y E2E de sincronización. |
+| MCP/OAuth | Tests de rutas, servidor MCP y autorización. |
+| UI crítica | Lint, build, componentes y Playwright/axe. |
 
-Los objetivos principales son:
+La estrategia combina tres niveles. El primer nivel comprueba funciones y servicios de dominio; el segundo valida rutas HTTP completas con base de datos efímera; el tercero comprueba la aplicación desde navegador y desde comandos de despliegue. Esta combinación evita depender de un único tipo de prueba.
 
-* Verificar que los modelos Mongoose aplican defaults, validaciones e índices.
-* Comprobar que los servicios respetan reglas de permisos, stock, caducidad y adherencia.
-* Validar que la API responde con códigos y estructuras correctas.
-* Asegurar que la autenticación y la recuperación de contraseña no filtran información sensible.
-* Confirmar que MCP respeta el contexto del usuario y sus blísteres accesibles.
-* Detectar regresiones antes del despliegue mediante CI.
-
-### 1.2 Pirámide de pruebas del proyecto
-
-La pirámide se organiza así:
-
-| Nivel | Herramienta | Alcance |
+| Nivel | Objetivo | Ejemplo en Blíster |
 | :--- | :--- | :--- |
-| Unitario backend | Jest | Funciones puras, utilidades y servicios aislados. |
-| Modelos | Jest + Mongoose | Schemas, defaults, índices y validaciones. |
-| Integración API | Jest + Supertest | Rutas Express en memoria. |
-| E2E backend | Jest + Supertest + MCP SDK | Flujos completos REST, MCP y sincronización. |
-| Frontend estático | ESLint + TypeScript + Vite build | Calidad sintáctica, tipado y compilación. |
-| Componentes frontend | Vitest + React Testing Library | Renderizado y comportamiento visible de componentes. |
-| Navegador real | Playwright + axe-core | Entrada pública, accesibilidad y regresiones en browser. |
-| Manual funcional | Navegador | Flujos críticos de usuario. |
+| Unitario | Validar una regla pequeña de forma aislada. | Esquemas Zod, resolver de formularios y modelos. |
+| Integración | Verificar colaboración entre módulos. | Servicios con modelos Mongoose y mocks externos. |
+| E2E REST | Probar API completa con autenticación y datos reales de test. | Registro, blíster, medicamento, toma y notificación. |
+| E2E navegador | Comprobar experiencia en navegador real. | Entrada pública, accesibilidad y rutas visibles. |
+| Manual | Revisar flujos que dependen de permisos, dispositivos o credenciales. | Push, correo, instalación PWA y demo final. |
 
 ## 2. Herramientas utilizadas
 
 | Herramienta | Uso |
 | :--- | :--- |
-| Jest | Ejecución de tests backend. |
+| Jest | Tests backend. |
 | ts-jest | Soporte TypeScript en Jest. |
-| Supertest | Peticiones HTTP sobre Express sin servidor externo. |
-| mongodb-memory-server | MongoDB efímero para tests. |
-| Vitest | Tests unitarios de frontend con entorno `jsdom`. |
-| React Testing Library | Tests de componentes desde la perspectiva del usuario. |
-| Playwright | Tests de navegador real. |
-| @axe-core/playwright | Auditoría automatizada de accesibilidad. |
-| ESLint | Linting frontend. |
-| Vite build | Validación de producción frontend. |
-| GitHub Actions | Integración continua. |
+| Supertest | Pruebas HTTP sobre Express. |
+| mongodb-memory-server | MongoDB efímero en tests. |
+| Vitest | Tests unitarios frontend. |
+| React Testing Library | Renderizado de componentes desde la perspectiva del usuario. |
+| Playwright | Pruebas de navegador real. |
+| @axe-core/playwright | Auditoría automática de accesibilidad. |
+| ESLint | Calidad frontend. |
+| TypeScript | Validación estática de backend y frontend. |
+| GitHub Actions | CI en pushes y pull requests. |
 
-La configuración backend se divide en `jest.config.ts` para tests bajo `src` y `jest.e2e.config.ts` para tests bajo `backend/tests/e2e`. El frontend separa `vitest.config.ts` para unitarios y `playwright.config.ts` para navegador real.
+Las herramientas se eligieron para cubrir el ciclo completo de una aplicación full-stack. Jest y Supertest protegen el servidor; Vitest y React Testing Library permiten comprobar componentes sin abrir navegador completo; Playwright valida la aplicación construida; y Docker Compose confirma que el sistema puede arrancar como producto integrado.
+
+El criterio de aceptación de una funcionalidad no es solo que compile. Debe cumplir validación de entrada, permisos, respuesta de error esperada, estado de interfaz y documentación suficiente para reproducir el comportamiento.
 
 ## 3. Pruebas del backend
 
-El backend concentra la mayor parte de pruebas automatizadas, ya que contiene las reglas de negocio y la persistencia.
+El backend concentra la mayoría de pruebas automatizadas porque contiene reglas de negocio y acceso a datos.
+
+Los tests utilizan una base MongoDB efímera para aislar cada ejecución. Esto permite validar índices, hooks, TTL, relaciones por `ObjectId` y consultas sin depender de una base local compartida. Las integraciones externas se sustituyen por mocks cuando sería inestable o inseguro llamar a servicios reales en CI.
 
 ### 3.1 Tests de modelos
 
-Los tests de modelos validan que los schemas de Mongoose reflejan el dominio:
+Los modelos bajo `backend/src/models/_tests_` validan defaults, índices, enums, TTL y restricciones de esquema.
 
-| Archivo | Entidad validada |
+| Modelo | Aspectos validados |
 | :--- | :--- |
-| `user.model.test.ts` | Usuario, settings, credenciales y soft delete. |
-| `blister.model.test.ts` | Miembros, roles, invitaciones y `deletedAt`. |
-| `medicine.model.test.ts` | Medicamentos, stock, caducidad y vínculo CIMA. |
-| `treatment.model.test.ts` | Pautas, pacientes y medicamentos asociados. |
-| `adherenceLog.model.test.ts` | Registros de toma y autoría. |
-| `appointment.model.test.ts` | Citas y comentarios. |
-| `notification.model.test.ts` | Tipos, severidad y lectura. |
-| `pushSubscription.model.test.ts` | Endpoint push y claves. |
-| `oauthToken.model.test.ts` | Tokens OAuth con expiración. |
-| `passwordResetToken.model.test.ts` | Hash de token e índice TTL. |
-| `cimaChangeLog.model.test.ts` | Cambios oficiales CIMA. |
-| `systemMeta.model.test.ts` | Metadatos de sincronización. |
-
-Estos tests ayudan a detectar cambios accidentales en defaults o índices antes de que afecten a servicios.
+| `User` | Credenciales, settings, email, tokens y borrado lógico. |
+| `Blister` | Miembros, invitación, roles y `deletedAt`. |
+| `Medicine` | CIMA, stock, unidad, umbral y caducidad. |
+| `Treatment` | Paciente, medicamentos y pautas. |
+| `AdherenceLog` | Autoría, estado, cantidad y timestamps. |
+| `Appointment` | Paciente, tratamiento opcional y comentarios. |
+| `Notification` | Tipo, severidad, lectura y descarte. |
+| `PushSubscription` | Endpoint y claves push. |
+| `PasswordResetToken` | Hash e índice TTL. |
+| `EmailVerificationToken` | Hash, email e índice TTL. |
+| `OAuthToken` | Refresh token y expiración. |
+| `CimaChangeLog` | Tipo de cambio y registro oficial. |
+| `SystemMeta` | Metadatos clave-valor. |
 
 ### 3.2 Tests de servicios
 
-Los servicios se prueban para validar reglas de negocio sin depender de HTTP:
+Los tests de servicio cubren reglas de negocio sin depender de HTTP.
 
-| Servicio | Reglas cubiertas |
+| Suite | Reglas principales |
 | :--- | :--- |
-| Auth | Registro, login, bcrypt, refresh token, MCP token y recuperación. |
-| Blisters | Creación, invitación, límite de blísteres, roles y restore. |
-| Medicines | Alta desde CIMA, edición, borrado y duplicados permitidos. |
-| Treatments | Validación de medicamentos, paciente y actualización. |
-| Adherence | Registro de toma, stock, toma forzada y deshacer. |
-| Appointments | CRUD, comentarios, autoría y permisos. |
-| Notifications | Stock, caducidad, adherencia forzada, CIMA, citas y dosis. |
-| External | Adaptación de respuestas CIMA y errores externos. |
-| CIMA sync | Procesamiento de registro de cambios. |
-
-La lógica crítica de stock se prueba especialmente porque afecta al inventario y a las notificaciones.
+| `auth.service.test.ts` | Registro, login, perfil, recuperación, email y MCP token. |
+| `blisters.service.test.ts` | Creación, límite, invitaciones, roles, borrado y restauración. |
+| `medicines.service.test.ts` | Alta desde CIMA, edición, permisos y errores externos. |
+| `treatments.service.test.ts` | Medicamentos asociados, paciente y validación de pautas. |
+| `adherence.service.test.ts` | Stock, toma forzada, logs y deshacer. |
+| `appointments.service.test.ts` | CRUD, comentarios y autoría. |
+| `notifications.service.test.ts` | Stock, caducidad, push, recordatorios y deduplicación. |
+| `external.service.test.ts` | Adaptación de CIMA y errores. |
+| `me.service.test.ts` | Próximas dosis y calendario agregado. |
+| `cima-sync.service.test.ts` | Sincronización de cambios oficiales. |
 
 ### 3.3 Tests de rutas
 
-Los tests de rutas verifican contratos HTTP:
+Las rutas se prueban con Supertest para validar códigos HTTP, envoltorios JSON, autenticación, permisos y validación de entrada.
 
-* Códigos de respuesta.
-* Envoltorio JSON.
-* Rechazo sin token.
-* Rechazo por rol insuficiente.
-* Validación de body, params y query.
-* Respuestas de error normalizadas.
-
-Ejemplos de rutas cubiertas:
-
-| Módulo | Archivo |
+| Módulo | Suite |
 | :--- | :--- |
 | Auth | `auth.routes.test.ts` |
-| Blisters | `blisters.routes.test.ts` |
-| Medicines | `medicines.routes.test.ts` |
-| Treatments | `treatments.routes.test.ts` |
-| Adherence | `adherence.routes.test.ts` |
-| Appointments | `appointments.routes.test.ts` |
+| Blísteres | `blisters.routes.test.ts` |
+| Medicamentos | `medicines.routes.test.ts` |
+| Tratamientos | `treatments.routes.test.ts` |
+| Adherencia | `adherence.routes.test.ts` |
+| Citas | `appointments.routes.test.ts` |
 | External | `external.routes.test.ts` |
-| Notifications | `notifications.routes.test.ts` |
+| Notificaciones | `notifications.routes.test.ts` |
 | OAuth | `oauth.routes.test.ts` |
 
-### 3.4 Tests E2E backend
+Las rutas se prueban tanto en casos positivos como negativos. Los casos negativos son especialmente importantes: usuario sin sesión, usuario autenticado pero sin pertenencia al blíster, rol insuficiente, identificador inválido, body mal formado y recurso inexistente.
 
-Los tests E2E backend viven en `backend/tests/e2e`. Cubren flujos completos con servidor, base de datos en memoria y peticiones reales al stack Express.
+| Tipo de caso | Ejemplo esperado |
+| :--- | :--- |
+| Sin autenticación | `401 Unauthorized`. |
+| Sin rol suficiente | `403 Forbidden`. |
+| Parámetro inválido | `400 Bad Request` o `422` según validación. |
+| Recurso inexistente | `404 Not Found`. |
+| Operación correcta | `200`, `201` o `204` según método. |
+
+## 4. Pruebas del frontend
+
+El frontend se valida con herramientas estáticas y pruebas unitarias de componentes o utilidades.
+
+### 4.1 Lint y build
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+`npm run build` ejecuta `tsc -b && vite build`, por lo que valida tipado, imports, rutas y generación de la PWA.
+
+### 4.2 Tests unitarios
+
+Suites actuales:
+
+| Archivo | Cobertura |
+| :--- | :--- |
+| `components/atoms/EmptyState.test.tsx` | Renderizado de título, descripción y CTA. |
+| `lib/zod-form-resolver.test.ts` | Mensajes de validación y errores del resolver Zod. |
+
+Comando:
+
+```bash
+cd frontend
+npm test -- --run
+```
+
+La cobertura actual de frontend es intencionadamente más pequeña que la del backend. El motivo es que el proyecto concentró primero la protección de reglas críticas de datos y permisos. La ruta de mejora más directa es añadir tests a formularios críticos, porque son el punto donde el usuario introduce información sensible.
+
+| Prioridad | Pantalla o componente | Motivo |
+| :--- | :--- | :--- |
+| Alta | Login y recuperación | Evitar regresiones de feedback y sesión. |
+| Alta | Formularios de medicamento y tratamiento | Validan datos sanitarios y reglas complejas. |
+| Media | Cards de medicamento/cita | Contienen estados, menús y acciones. |
+| Media | Perfil y accesibilidad | Cambian preferencias globales. |
+| Media | Notificaciones | Mezclan lectura, push y filtros. |
+
+### 4.3 Playwright y accesibilidad
+
+La suite `frontend/e2e/public-entry.spec.ts` abre la entrada pública y ejecuta una auditoría con axe. Playwright se ejecuta sobre `vite preview` en el puerto `4173`.
+
+```bash
+cd frontend
+npm run build
+npm run test:e2e
+```
+
+## 5. Pruebas del paquete shared
+
+Los esquemas compartidos también tienen tests. Esto es importante porque un cambio en `shared` afecta a backend y frontend.
+
+| Suite | Cobertura |
+| :--- | :--- |
+| `auth.schema.test.ts` | Login, registro, recuperación y mensajes de validación. |
+| `blister-settings.schema.test.ts` | Blísteres, roles, invitaciones y preferencias. |
+| `medicine.schema.test.ts` | Medicamentos, stock, unidad y CIMA. |
+| `notification.schema.test.ts` | Notificaciones y push. |
+| `treatment-appointment-adherence.schema.test.ts` | Tratamientos, citas y logs. |
+
+Estas pruebas se ejecutan desde el backend porque Jest tiene configurado acceso al monorepo.
+
+## 6. Pruebas E2E e integración externa
+
+El backend incluye E2E bajo `backend/tests/e2e`.
 
 | Suite | Flujo cubierto |
 | :--- | :--- |
@@ -159,172 +215,67 @@ Los tests E2E backend viven en `backend/tests/e2e`. Cubren flujos completos con 
 | `mcp/mcp.spec.ts` | Conexión MCP y ejecución de tools. |
 | `cima-sync/cima-sync.spec.ts` | Sincronización de cambios CIMA. |
 
-Estos tests validan que las piezas funcionan juntas y no solo como unidades aisladas.
+Las integraciones externas se prueban con mocks cuando existe dependencia de red o credenciales. En pruebas manuales se validan búsquedas reales en CIMA, generación de tokens MCP y flujos de correo si `RESEND_API_KEY` está configurada.
 
-## 4. Pruebas del frontend
+Para la defensa se recomienda ejecutar una prueba manual guiada con datos controlados. El siguiente guion cubre el recorrido principal:
 
-El frontend se valida mediante linting, tipado, build de producción, tests unitarios con Vitest/React Testing Library, una suite Playwright con auditoría axe y pruebas manuales de flujos críticos. Esta combinación evita que los estilos, rutas o componentes básicos se rompan sin detectar la regresión.
+| Paso | Resultado esperado |
+| :--- | :--- |
+| Registrar usuario nuevo | Cuenta creada y blíster inicial disponible. |
+| Añadir medicamento desde CIMA | Medicamento guardado con `nregist` y stock inicial. |
+| Crear tratamiento | Pauta asociada al paciente y medicamento. |
+| Registrar toma | Log creado, stock descontado y feedback visible. |
+| Forzar toma sin stock | Confirmación explícita y notificación correspondiente. |
+| Crear cita | Evento visible en calendario con comentarios. |
+| Cambiar rol de miembro | Permisos actualizados en acciones visibles. |
+| Generar token MCP | Token revocable y endpoint usable desde cliente compatible. |
 
-### 4.1 Linting
-
-El comando principal es:
-
-```bash
-cd frontend
-npm run lint
-```
-
-ESLint revisa reglas de TypeScript, React Hooks y React Refresh. Esta validación detecta problemas habituales como dependencias incorrectas en hooks o código no compatible con el entorno de Vite.
-
-### 4.2 Build de producción
-
-El build valida TypeScript y genera la PWA:
-
-```bash
-cd frontend
-npm run build
-```
-
-El script ejecuta:
-
-```text
-tsc -b && vite build
-```
-
-Esto comprueba que las rutas, imports, servicios y componentes compilan correctamente para producción.
-
-### 4.3 Tests unitarios de componentes
-
-Vitest se configura en `frontend/vitest.config.ts` con entorno `jsdom`, alias del proyecto y exclusión explícita de `frontend/e2e/**`. Los tests de componentes viven junto al código fuente bajo `frontend/src` y usan React Testing Library.
-
-El primer test automatizado cubre `EmptyState`, comprobando que el componente renderiza título, descripción y CTA visibles. Esta base permite extender la cobertura hacia formularios, cards y navegación sin mezclarla con pruebas de navegador real.
-
-### 4.4 E2E de navegador y accesibilidad
-
-Playwright se configura en `frontend/playwright.config.ts`. La suite vive en `frontend/e2e` y arranca la aplicación construida mediante `vite preview`. El test público inicial abre la entrada principal y ejecuta una auditoría `@axe-core/playwright`, fallando solo ante violaciones críticas.
-
-Esta suite está separada de Vitest para que los tests unitarios sigan siendo rápidos y para que CI pueda ejecutar navegador real únicamente cuando corresponde.
-
-### 4.5 Validación manual de interfaz
-
-Los flujos manuales principales son:
-
-1. Entrar en landing y onboarding.
-2. Registrarse y comprobar creación de blíster inicial.
-3. Iniciar sesión y cerrar sesión.
-4. Solicitar recuperación de contraseña.
-5. Abrir `/reset-password?token=...` y verificar estados de error.
-6. Crear un blíster.
-7. Invitar o unirse a un blíster.
-8. Añadir medicamento desde CIMA.
-9. Editar stock y umbral.
-10. Crear tratamiento.
-11. Registrar toma.
-12. Deshacer toma dentro de la ventana permitida.
-13. Crear cita y añadir comentario.
-14. Modificar preferencias de notificación.
-15. Generar y revocar token MCP.
-16. Cambiar tema, fuente y tamaño de texto.
-
-Esta validación se realiza en viewport móvil y en escritorio dentro del marco de dispositivo.
-
-## 5. Pruebas de integración externa
-
-Las integraciones externas requieren un enfoque distinto porque dependen de servicios fuera del repositorio.
-
-### 5.1 CIMA/AEMPS
-
-La integración con CIMA se valida con:
-
-* Tests de servicio usando respuestas controladas.
-* Tests de rutas para comprobar normalización de errores.
-* Pruebas manuales desde el buscador de medicamentos.
-* Comprobación de enlaces de prospecto y ficha técnica.
-
-Los errores externos se traducen a respuestas controladas para que el frontend no dependa de detalles internos de la API oficial.
-
-### 5.2 MCP
-
-MCP se prueba en dos niveles:
-
-* Tests unitarios de tools.
-* E2E de servidor MCP.
-
-Las comprobaciones principales son:
-
-* El token identifica al usuario correcto.
-* Las tools solo devuelven blísteres accesibles.
-* Las operaciones de escritura respetan roles.
-* Los parámetros se validan con schemas compartidos.
-* Las respuestas devuelven texto JSON parseable para clientes MCP.
-
-### 5.3 Correo y recuperación de contraseña
-
-La recuperación se valida comprobando:
-
-* Respuesta neutra para emails existentes y no existentes.
-* Creación de `PasswordResetToken` con hash.
-* Envío de email mediante servicio aislado.
-* Caducidad del token.
-* Consumo del token tras uso.
-* Rechazo de token reutilizado.
-* Rechazo de contraseña inválida.
-
-En tests, el envío real se sustituye por mock del servicio de email.
-
-### 5.4 Notificaciones push
-
-Las notificaciones push se validan mediante:
-
-* Tests de configuración pública VAPID.
-* Registro y eliminación de suscripciones.
-* Envío de notificaciones desde servicios.
-* Limpieza de suscripciones inválidas.
-* Preferencias de usuario por tipo de aviso.
-
-Cuando las claves VAPID no están configuradas, el backend responde de forma controlada y evita fallos no capturados.
-
-## 6. Integración continua
+## 7. Integración continua
 
 El workflow `.github/workflows/ci.yml` se ejecuta en pushes y pull requests a `main` y `dev`.
 
-Los jobs actuales son:
-
 | Job | Pasos |
 | :--- | :--- |
-| Backend | `npm ci`, `npm run lint`, `npm run test:coverage`, subida de cobertura y `npm run build`. |
-| Frontend | `npm ci`, `npm run lint`, `npm test -- --run`, `npm run build`. |
-| Frontend E2E | En PRs a `main`: `npm ci`, instalación de Chromium, `npm run build`, `npm run test:e2e`. |
+| Backend | Checkout, Node 22, `npm ci`, lint, coverage, artefacto de cobertura y build. |
+| Frontend | Checkout, Node 22, `npm ci`, lint, Vitest y build. |
+| Frontend E2E | Solo en PR a `main`: Chromium, build y Playwright. |
 
-El backend se ejecuta con `NODE_ENV=test`, `MONGODB_URI` de test y `JWT_SECRET` válido para CI. El frontend se construye con `VITE_API_URL` y `VITE_MCP_URL` apuntando al backend local de referencia.
+La cobertura backend se publica como artefacto del workflow. El porcentaje exacto debe consultarse en el informe generado por el último run de `npm run test:coverage`, evitando fijar en la documentación una cifra que puede quedar obsoleta tras nuevos commits.
 
-## 7. Comandos de validación
+Para dejar evidencia final se debe guardar o capturar el último resultado de CI antes de la entrega. La tabla siguiente indica qué dato conviene adjuntar en la defensa o en anexos:
 
-Los comandos principales son:
+| Evidencia | Dónde obtenerla |
+| :--- | :--- |
+| Estado del workflow | Pestaña Actions del repositorio. |
+| Cobertura backend | Artefacto generado por `npm run test:coverage`. |
+| Build frontend | Log del job Frontend o ejecución local. |
+| Playwright | Reporte HTML o salida de consola. |
+| Docker Compose | `docker compose ps` y healthcheck. |
 
-### Backend
+## 8. Comandos de validación
+
+### 8.1 Backend
 
 ```bash
 cd backend
+npm run lint
 npm test
 npm run test:coverage
 npm run test:e2e
 npm run build
 ```
 
-### Frontend
+### 8.2 Frontend
 
 ```bash
 cd frontend
 npm run lint
-npm run typecheck
-npm run build
 npm test -- --run
-npm run coverage
+npm run build
 npm run test:e2e
 ```
 
-### Docker Compose
+### 8.3 Docker Compose
 
 ```bash
 docker compose up -d --build
@@ -332,33 +283,43 @@ curl http://localhost:8080/api/v1/health
 docker compose down
 ```
 
-## 8. Cobertura funcional alcanzada
+## 9. Cobertura funcional alcanzada
 
-La cobertura funcional automatizada es especialmente sólida en backend. Los flujos críticos cubiertos incluyen:
+La cobertura automatizada es especialmente sólida en backend y shared. La cobertura frontend existe como base, aunque debe ampliarse para pantallas complejas.
 
-| Área | Cobertura |
+| Área | Estado de cobertura |
 | :--- | :--- |
-| Auth | Registro, login, refresh, recuperación y MCP token. |
-| RBAC | Roles en servicios y rutas principales. |
-| Multitenencia | Acceso por blíster y pertenencia. |
-| Inventario | Stock, umbrales y caducidad. |
+| Auth | Registro, login, refresh, recuperación, confirmación y MCP token. |
+| RBAC | Acceso por blíster, roles y operaciones no permitidas. |
+| Inventario | Alta, edición, stock, CIMA y errores. |
+| Tratamientos | Pautas, pacientes y medicamentos asociados. |
 | Adherencia | Toma normal, toma forzada y deshacer. |
 | Citas | CRUD y comentarios. |
-| Notificaciones | Tipos principales, push y deduplicación. |
-| MCP | Tools de lectura y escritura. |
-| CIMA | Consulta externa y sincronización de cambios. |
-| Frontend básico | Renderizado de componentes reutilizables y entrada pública con auditoría crítica de accesibilidad. |
+| Notificaciones | Bandeja, push, stock, caducidad, dosis y citas. |
+| MCP/OAuth | Tools principales, tokens y flujos de autorización. |
+| CIMA sync | Registro de cambios oficiales. |
+| Shared | Validación de esquemas de dominios principales. |
+| Frontend | Componentes base, resolver de formularios, build y entrada pública con axe. |
 
-## 9. Riesgos y pruebas pendientes
+Esta cobertura funcional permite defender que las reglas de servidor están protegidas. Para aspirar a la máxima calificación, la parte que más debe crecer es la evidencia de navegador: flujos autenticados, capturas de Playwright y auditorías axe en pantallas privadas.
 
-El estado actual deja identificadas varias líneas de mejora:
+| Área pendiente de evidenciar | Acción recomendada |
+| :--- | :--- |
+| Registro completo en navegador | Playwright con usuario temporal y limpieza posterior. |
+| Alta de medicamento | Mock o fixture de CIMA para evitar dependencia externa. |
+| Tratamiento y toma | Validar creación, registro y cambio de stock. |
+| Accesibilidad privada | Ejecutar axe tras login en botiquín, calendario y perfil. |
+| Responsive | Capturas móviles y de escritorio con marco de dispositivo. |
 
-| Riesgo | Situación | Próxima validación |
+## 10. Riesgos y pruebas pendientes
+
+| Riesgo | Situación actual | Mejora propuesta |
 | :--- | :--- | :--- |
-| Componentes frontend con cobertura inicial | Existe suite Vitest/RTL, pero todavía no cubre formularios complejos ni navegación crítica. | Añadir tests a login, recuperación, cards de medicamento y flujos de permisos. |
-| Accesibilidad automatizada inicial | Playwright/axe cubre la entrada pública crítica, pero no todas las pantallas privadas. | Ampliar auditoría a login, inventario, calendario y perfil. |
-| Navegador real E2E inicial | Playwright está integrado, pero aún no cubre registro, inventario y toma completa con datos. | Añadir fixtures y flujos completos autenticados. |
-| Push en navegadores reales | La lógica backend está cubierta, pero depende de permisos del navegador. | Probar Chrome/Android y navegador de escritorio compatible. |
-| Cold start en Render | Puede afectar primeras peticiones en tier gratuito. | Registrar tiempos tras despliegue y documentar comportamiento. |
+| Cobertura frontend limitada | Hay tests base de componente y utilidad. | Añadir login, recuperación, cards, formularios y permisos. |
+| E2E autenticado | Playwright cubre entrada pública. | Añadir registro, alta de medicamento, tratamiento y toma con fixtures. |
+| Accesibilidad en pantallas privadas | Axe se ejecuta en entrada pública. | Ampliar a login, botiquín, calendario y perfil. |
+| Push real | Backend cubierto, depende de navegador y permisos. | Probar en Chrome/Android y escritorio compatible. |
+| Correo real | Servicio preparado y mockeado. | Verificar con credenciales Resend de producción. |
+| Rendimiento en producción | Healthcheck y despliegue validados. | Medir latencia tras cold start y carga ligera. |
 
-Esta estrategia permite entregar una base robusta en backend y una ruta clara de ampliación para pruebas visuales y de navegador real.
+La estrategia actual protege el núcleo de negocio y deja una ruta clara para ampliar pruebas visuales y de navegador en futuras iteraciones.

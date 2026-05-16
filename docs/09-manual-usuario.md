@@ -1,464 +1,429 @@
 # 09 - Manual de usuario
 
-Este manual describe el uso funcional de Blíster desde la perspectiva de una persona usuaria final. Incluye el acceso inicial, la gestión de blísteres, medicamentos, tratamientos, citas, notificaciones, accesibilidad y conexión con asistentes de IA mediante MCP.
+Este manual explica cómo utilizar Blíster desde la perspectiva de una persona usuaria final. Incluye acceso, navegación, blísteres, botiquín, tratamientos, calendario, notificaciones, accesibilidad, privacidad y conexión MCP.
 
 ## Índice
-1. [Acceso a la aplicación](#1-acceso-a-la-aplicación)
-   - 1.1 [Pantalla de entrada](#11-pantalla-de-entrada)
-   - 1.2 [Onboarding](#12-onboarding)
-   - 1.3 [Registro](#13-registro)
-   - 1.4 [Inicio de sesión](#14-inicio-de-sesión)
-   - 1.5 [Recuperación de contraseña](#15-recuperación-de-contraseña)
-2. [Navegación general](#2-navegación-general)
-   - 2.1 [Cabecera](#21-cabecera)
-   - 2.2 [Navegación inferior](#22-navegación-inferior)
-   - 2.3 [Uso en escritorio](#23-uso-en-escritorio)
-3. [Gestión de blísteres](#3-gestión-de-blísteres)
-   - 3.1 [Crear un blíster](#31-crear-un-blíster)
-   - 3.2 [Unirse a un blíster](#32-unirse-a-un-blíster)
-   - 3.3 [Gestionar miembros](#33-gestionar-miembros)
-   - 3.4 [Roles y permisos](#34-roles-y-permisos)
-4. [Botiquín e inventario](#4-botiquín-e-inventario)
-   - 4.1 [Consultar medicamentos](#41-consultar-medicamentos)
-   - 4.2 [Añadir medicamento](#42-añadir-medicamento)
-   - 4.3 [Editar medicamento](#43-editar-medicamento)
-   - 4.4 [Consultar ficha oficial](#44-consultar-ficha-oficial)
-5. [Tratamientos y tomas](#5-tratamientos-y-tomas)
-   - 5.1 [Crear tratamiento](#51-crear-tratamiento)
-   - 5.2 [Consultar tratamiento](#52-consultar-tratamiento)
-   - 5.3 [Registrar toma](#53-registrar-toma)
-   - 5.4 [Deshacer toma](#54-deshacer-toma)
-6. [Calendario y citas médicas](#6-calendario-y-citas-médicas)
-   - 6.1 [Vista de calendario](#61-vista-de-calendario)
-   - 6.2 [Crear cita](#62-crear-cita)
-   - 6.3 [Comentarios de citas](#63-comentarios-de-citas)
-7. [Notificaciones](#7-notificaciones)
-   - 7.1 [Bandeja de notificaciones](#71-bandeja-de-notificaciones)
-   - 7.2 [Preferencias](#72-preferencias)
-   - 7.3 [Notificaciones push](#73-notificaciones-push)
-8. [Perfil y accesibilidad](#8-perfil-y-accesibilidad)
-   - 8.1 [Datos personales](#81-datos-personales)
-   - 8.2 [Contraseña](#82-contraseña)
-   - 8.3 [Avatar](#83-avatar)
-   - 8.4 [Accesibilidad](#84-accesibilidad)
-9. [Vinculación con asistentes de IA](#9-vinculación-con-asistentes-de-ia)
-   - 9.1 [Generar token MCP](#91-generar-token-mcp)
-   - 9.2 [Configurar cliente externo](#92-configurar-cliente-externo)
-   - 9.3 [Revocar acceso](#93-revocar-acceso)
-10. [Buenas prácticas de uso](#10-buenas-prácticas-de-uso)
 
----
+1. [Primer acceso](#1-primer-acceso)
+2. [Registro e inicio de sesión](#2-registro-e-inicio-de-sesión)
+	- 2.1 [Crear una cuenta](#21-crear-una-cuenta)
+	- 2.2 [Iniciar sesión](#22-iniciar-sesión)
+	- 2.3 [Recuperar contraseña](#23-recuperar-contraseña)
+3. [Navegación general](#3-navegación-general)
+4. [Gestión de blísteres](#4-gestión-de-blísteres)
+	- 4.1 [Crear un blíster](#41-crear-un-blíster)
+	- 4.2 [Unirse a un blíster](#42-unirse-a-un-blíster)
+	- 4.3 [Gestionar miembros](#43-gestionar-miembros)
+5. [Botiquín y medicamentos](#5-botiquín-y-medicamentos)
+	- 5.1 [Consultar medicamentos](#51-consultar-medicamentos)
+	- 5.2 [Añadir medicamento](#52-añadir-medicamento)
+	- 5.3 [Editar medicamento](#53-editar-medicamento)
+	- 5.4 [Consultar ficha oficial](#54-consultar-ficha-oficial)
+6. [Tratamientos y tomas](#6-tratamientos-y-tomas)
+	- 6.1 [Crear tratamiento](#61-crear-tratamiento)
+	- 6.2 [Consultar tratamiento](#62-consultar-tratamiento)
+	- 6.3 [Registrar toma](#63-registrar-toma)
+	- 6.4 [Deshacer toma](#64-deshacer-toma)
+7. [Calendario y citas](#7-calendario-y-citas)
+	- 7.1 [Crear una cita](#71-crear-una-cita)
+	- 7.2 [Comentarios de citas](#72-comentarios-de-citas)
+8. [Notificaciones](#8-notificaciones)
+9. [Perfil, privacidad y accesibilidad](#9-perfil-privacidad-y-accesibilidad)
+	- 9.1 [Datos personales](#91-datos-personales)
+	- 9.2 [Privacidad](#92-privacidad)
+	- 9.3 [Accesibilidad](#93-accesibilidad)
+10. [Vinculación con asistentes de IA](#10-vinculación-con-asistentes-de-ia)
+	- 10.1 [Generar token](#101-generar-token)
+	- 10.2 [Configurar cliente externo](#102-configurar-cliente-externo)
+	- 10.3 [Revocar acceso](#103-revocar-acceso)
+11. [Preguntas frecuentes](#11-preguntas-frecuentes)
+12. [Buenas prácticas](#12-buenas-prácticas)
 
-## 1. Acceso a la aplicación
+## 1. Primer acceso
 
-El acceso a Blíster comienza en la pantalla pública. Desde ella se puede conocer la aplicación, completar el onboarding, registrarse, iniciar sesión o recuperar una contraseña.
+Al abrir Blíster se muestra la entrada pública y, en escritorio, una pantalla informativa que indica que la aplicación se usa mejor en dispositivo móvil. Se puede continuar desde ordenador, donde la aplicación aparecerá dentro de un marco móvil.
 
-### 1.1 Pantalla de entrada
+![Mockup onboarding](assets/placeholder-mockup-onboarding.svg)
 
-Al abrir la aplicación, el usuario accede a la landing pública. Esta pantalla presenta la identidad de Blíster y permite iniciar el flujo de uso.
+Acciones disponibles:
 
-Las acciones principales son:
-
-* Continuar hacia el onboarding.
-* Iniciar sesión si ya existe una cuenta.
-* Crear una cuenta nueva.
-
-En escritorio, la aplicación muestra una indicación de que Blíster se usa mejor en dispositivo móvil. El usuario puede continuar desde ordenador y la experiencia se mostrará dentro de un marco de móvil.
-
-### 1.2 Onboarding
-
-El onboarding introduce los valores principales de la aplicación:
-
-1. Organización del botiquín.
-2. Información oficial de medicamentos.
-3. Uso compartido con familiares o cuidadores.
-4. Conexión con asistentes de IA.
-
-El usuario puede avanzar entre pantallas o saltar el onboarding. Una vez completado, la aplicación recuerda esa decisión.
-
-### 1.3 Registro
-
-Para crear una cuenta, el usuario debe completar el formulario de registro con:
-
-* Nombre.
-* Nombre de usuario.
-* Email.
-* Contraseña.
-* Confirmación de contraseña.
-* Aceptación de condiciones requeridas.
-
-Tras registrarse correctamente, Blíster crea automáticamente un blíster inicial personal. Este espacio permite empezar a añadir medicamentos sin configurar nada más.
-
-Si el usuario dispone de un código de invitación, puede usarlo para incorporarse a un blíster existente. En ese caso, el sistema mantiene también la identidad personal del usuario y aplica el rol definido por la invitación.
-
-### 1.4 Inicio de sesión
-
-El login permite acceder mediante email o nombre de usuario y contraseña. Si las credenciales son correctas, la aplicación redirige a Inicio.
-
-Si las credenciales son incorrectas, se muestra un mensaje de error sin revelar si el problema corresponde al email, al usuario o a la contraseña.
-
-### 1.5 Recuperación de contraseña
-
-El enlace "He olvidado mi contraseña" abre la pantalla de recuperación. El usuario introduce su email y recibe una respuesta neutra. Por seguridad, la aplicación muestra el mismo mensaje aunque el email no esté registrado.
-
-Si el email corresponde a una cuenta activa, Blíster envía un correo con un enlace:
-
-```text
-/reset-password?token=...
-```
-
-Desde esa pantalla se define una nueva contraseña. El enlace tiene caducidad y solo puede utilizarse una vez.
-
-## 2. Navegación general
-
-La navegación de Blíster está pensada para uso móvil. Las acciones frecuentes se encuentran en la parte inferior y las opciones administrativas se agrupan en Perfil.
-
-### 2.1 Cabecera
-
-La cabecera superior permite:
-
-* Ver la identidad del contexto actual.
-* Acceder al perfil.
-* Abrir notificaciones.
-* Volver a pantallas anteriores cuando corresponde.
-
-En pantallas de detalle, la cabecera muestra navegación contextual para volver al listado relacionado.
-
-### 2.2 Navegación inferior
-
-La navegación inferior tiene cuatro secciones:
-
-| Sección | Uso |
+| Acción | Resultado |
 | :--- | :--- |
-| Inicio | Ver próximas dosis, alertas y resumen diario. |
-| Botiquín | Consultar y gestionar medicamentos. |
-| Tratamientos | Crear y revisar pautas médicas. |
-| Calendario | Consultar tomas previstas y citas médicas. |
+| Continuar onboarding | Presenta las ideas principales de la aplicación. |
+| Iniciar sesión | Lleva al formulario de acceso. |
+| Crear cuenta | Abre el formulario de registro. |
+| Consultar privacidad | Muestra la política de privacidad pública. |
 
-Cuando no hay un blíster activo, las secciones que dependen de él redirigen a la gestión de blísteres.
+En escritorio, la primera pantalla explica que Blíster se usa mejor en móvil y permite continuar igualmente. Esta decisión no bloquea el acceso desde ordenador; solo preserva la experiencia de navegación diseñada para teléfono.
 
-### 2.3 Uso en escritorio
+| Situación | Qué debe hacer el usuario |
+| :--- | :--- |
+| Quiere probar desde ordenador | Pulsar `Usar aquí` y continuar dentro del marco móvil. |
+| Quiere instalar en móvil | Abrir la URL desde el navegador del teléfono y usar la opción de instalación del navegador si aparece. |
+| Quiere consultar privacidad antes de registrarse | Abrir la página pública `/privacy`. |
 
-En ordenador, Blíster mantiene una visualización móvil. El contenido aparece dentro de un marco que simula un dispositivo. Este diseño permite usar la aplicación desde escritorio sin alterar la experiencia principal.
+## 2. Registro e inicio de sesión
 
-## 3. Gestión de blísteres
+La cuenta permite guardar blísteres, medicamentos, tratamientos y preferencias de forma segura.
 
-Un blíster es un espacio de trabajo sanitario. Puede representar el botiquín personal de una persona, el tratamiento de un familiar o un contexto compartido entre cuidadores.
+### 2.1 Crear una cuenta
 
-### 3.1 Crear un blíster
+Pasos:
 
-Desde Perfil, el usuario accede a "Mis blísteres" y puede crear uno nuevo. El formulario solicita:
+1. Entrar en `Crear cuenta`.
+2. Completar nombre, usuario, email y contraseña.
+3. Aceptar los consentimientos requeridos.
+4. Introducir un código de invitación si se dispone de uno.
+5. Enviar el formulario.
 
-* Nombre del blíster.
-* Avatar o icono identificativo.
+Si no se introduce invitación, el sistema crea un blíster personal inicial. Si se usa un código válido, la cuenta se incorpora al blíster compartido con el rol definido por el propietario.
 
-El usuario que crea el blíster queda como Propietario.
+El formulario muestra errores junto al campo afectado. Si falta un dato obligatorio, si el email no tiene formato válido o si la contraseña no cumple la longitud mínima, el usuario recibe feedback en español sin abandonar la pantalla.
 
-### 3.2 Unirse a un blíster
+### 2.2 Iniciar sesión
 
-Para unirse a un blíster existente, el usuario introduce un código de invitación. El código lo genera un Propietario desde la pantalla de miembros.
+Pasos:
 
-Si el código es válido:
+1. Entrar en `Iniciar sesión`.
+2. Escribir email o nombre de usuario.
+3. Introducir contraseña.
+4. Pulsar el botón de acceso.
 
-* El usuario se incorpora al blíster.
-* Se aplica el rol definido en la invitación.
-* El nuevo blíster aparece en sus espacios disponibles.
+Si las credenciales son incorrectas se muestra un mensaje sin indicar si el problema es el email, el usuario o la contraseña.
 
-Si el código ha caducado o no existe, la aplicación muestra un error.
+Después de iniciar sesión correctamente, la aplicación carga los datos de usuario y el blíster activo. Si la sesión caduca, la aplicación intenta renovarla; si no es posible, vuelve al acceso para proteger la información privada.
 
-### 3.3 Gestionar miembros
+### 2.3 Recuperar contraseña
 
-El Propietario puede abrir la pantalla de miembros para:
+Pasos:
 
-* Ver quién pertenece al blíster.
-* Generar invitaciones.
-* Cambiar roles.
-* Eliminar miembros.
+1. Pulsar `He olvidado mi contraseña`.
+2. Introducir el correo de la cuenta.
+3. Revisar el email recibido.
+4. Abrir el enlace `/reset-password?token=...`.
+5. Definir una nueva contraseña.
 
-La aplicación protege el blíster para evitar que quede sin propietario.
+El enlace caduca y solo puede utilizarse una vez.
 
-### 3.4 Roles y permisos
+Si el enlace ya ha caducado, debe solicitarse uno nuevo desde la pantalla de recuperación. Por seguridad, la aplicación no confirma públicamente si un correo existe o no en la base de datos.
 
-| Acción | Propietario | Cuidador | Observador |
-| :--- | :---: | :---: | :---: |
-| Ver medicamentos | Sí | Sí | Sí |
-| Añadir medicamento | Sí | Sí | No |
-| Editar stock | Sí | Sí | No |
-| Eliminar medicamento | Sí | No | No |
-| Crear tratamiento | Sí | Sí | No |
-| Registrar toma | Sí | Sí | No |
-| Ver calendario | Sí | Sí | Sí |
-| Crear cita | Sí | Sí | No |
-| Gestionar miembros | Sí | No | No |
-| Eliminar blíster | Sí | No | No |
+## 3. Navegación general
 
-Los Observadores pueden supervisar, pero no modificar datos.
+La navegación se organiza como una aplicación móvil.
 
-## 4. Botiquín e inventario
+![Mockup inicio](assets/placeholder-mockup-home.svg)
 
-El botiquín permite consultar los medicamentos almacenados en un blíster y controlar stock, caducidad y datos oficiales.
+| Zona | Función |
+| :--- | :--- |
+| Cabecera | Perfil, contexto, notificaciones y navegación de vuelta. |
+| Menú inferior | Inicio, Botiquín, Tratamientos y Calendario. |
+| Perfil | Cuenta, seguridad, blísteres, notificaciones, accesibilidad, privacidad y MCP. |
+| Selector de blíster | Permite cambiar el contexto de trabajo cuando hay varios espacios. |
 
-### 4.1 Consultar medicamentos
+En las secciones operativas se muestran solo las acciones permitidas por el rol del usuario.
 
-La pantalla de Botiquín muestra una lista de medicamentos. Cada tarjeta incluye:
+La navegación está pensada para tareas frecuentes:
 
-* Nombre o alias.
-* Laboratorio.
-* Stock actual.
-* Unidad de stock.
-* Fecha de caducidad.
-* Estado de alerta si corresponde.
+| Necesidad | Sección recomendada |
+| :--- | :--- |
+| Ver qué toca próximamente | Inicio. |
+| Revisar stock o caducidad | Botiquín. |
+| Crear o modificar pautas | Tratamientos. |
+| Consultar citas y calendario | Calendario. |
+| Cambiar contraseña o accesibilidad | Perfil. |
+| Leer avisos | Notificaciones. |
 
-Al pulsar sobre un medicamento se abre su detalle.
+## 4. Gestión de blísteres
 
-### 4.2 Añadir medicamento
+Un blíster es un espacio de trabajo sanitario. Puede representar un botiquín personal, el cuidado de un familiar o un contexto compartido entre varias personas.
 
-El alta de medicamento comienza con una búsqueda en CIMA/AEMPS. El usuario escribe el nombre comercial y selecciona un resultado oficial.
+### 4.1 Crear un blíster
 
-Después completa los datos locales:
+1. Entrar en Perfil.
+2. Abrir `Mis blísteres`.
+3. Pulsar crear.
+4. Indicar nombre y avatar.
+5. Guardar.
 
-* Stock inicial.
-* Unidad.
-* Umbral de aviso.
-* Fecha de caducidad.
-* Alias opcional.
+La persona que lo crea queda como OWNER.
 
-Al guardar, el medicamento queda vinculado al blíster activo.
+Un usuario puede tener varios blísteres. Antes de añadir medicamentos o tratamientos conviene comprobar el blíster activo para no registrar datos en el espacio equivocado.
 
-### 4.3 Editar medicamento
+### 4.2 Unirse a un blíster
 
-Desde el detalle se puede editar:
+1. Entrar en Perfil > Mis blísteres.
+2. Seleccionar la opción de unirse.
+3. Introducir el código recibido.
+4. Confirmar.
 
-* Alias.
-* Stock.
-* Umbral.
-* Fecha de caducidad.
+Si el código es válido y no ha caducado, el blíster aparecerá en la cuenta.
 
-Los datos oficiales procedentes de CIMA no se editan manualmente. Si un medicamento cambia oficialmente, el sistema lo gestiona mediante la integración con AEMPS.
+Los códigos de invitación deben compartirse por un canal seguro. Quien recibe el código obtiene acceso al espacio de salud según el rol definido, por lo que no debe publicarse en conversaciones abiertas.
 
-### 4.4 Consultar ficha oficial
+### 4.3 Gestionar miembros
 
-La ficha CIMA muestra información oficial:
+Solo OWNER puede invitar, expulsar o cambiar roles. La aplicación evita dejar el blíster sin propietario.
 
-* Nombre.
-* Laboratorio.
-* Principios activos.
-* Presentación.
-* Fotos disponibles.
-* Enlace al prospecto.
-* Enlace a ficha técnica.
+| Rol | Uso recomendado |
+| :--- | :--- |
+| OWNER | Persona responsable de administrar el blíster. |
+| CAREGIVER | Familiar o cuidador que registra tomas y gestiona datos. |
+| OBSERVER | Persona que solo necesita supervisar. |
 
-Esta pantalla sirve como acceso rápido a documentación regulada.
+Ejemplo de uso familiar:
 
-## 5. Tratamientos y tomas
+| Persona | Rol recomendado | Motivo |
+| :--- | :--- | :--- |
+| Paciente autónomo | OWNER | Controla su propio blíster. |
+| Familiar que administra medicación | CAREGIVER | Necesita crear tratamientos y registrar tomas. |
+| Familiar que solo revisa evolución | OBSERVER | No debe modificar inventario ni pautas. |
 
-Los tratamientos organizan la pauta de uso de uno o varios medicamentos. Permiten calcular próximas dosis y registrar adherencia.
+## 5. Botiquín y medicamentos
 
-### 5.1 Crear tratamiento
+El botiquín muestra los medicamentos asociados al blíster activo.
 
-Desde Tratamientos se pulsa "Nuevo tratamiento". El formulario solicita:
+![Mockup botiquín](assets/placeholder-mockup-botiquin.svg)
 
-* Paciente del blíster.
-* Descripción o nombre del tratamiento.
-* Fecha de inicio.
-* Fecha de fin, si aplica.
-* Medicamentos asociados.
-* Dosis y horarios.
+### 5.1 Consultar medicamentos
 
-Cada medicamento puede tener su pauta. Al guardar, el tratamiento aparece en el listado.
+Cada card de medicamento muestra nombre o alias, laboratorio, stock, unidad, caducidad y estado visual. Al abrir el detalle se pueden consultar los datos locales y acceder a la ficha oficial.
 
-### 5.2 Consultar tratamiento
+Los estados ayudan a priorizar:
 
-El detalle del tratamiento muestra:
+| Estado | Significado |
+| :--- | :--- |
+| Stock correcto | Hay unidades suficientes según el umbral definido. |
+| Stock bajo | Conviene reponer antes de que falte medicación. |
+| Stock agotado | La siguiente toma puede requerir confirmación forzada. |
+| Caducidad próxima | El medicamento debe revisarse. |
+| Caducado | No debe utilizarse sin consultar a un profesional sanitario. |
 
-* Estado activo o finalizado.
-* Progreso temporal.
-* Medicamentos vinculados.
-* Dosis configuradas.
-* Citas relacionadas.
-* Historial o acciones disponibles.
+### 5.2 Añadir medicamento
 
-Desde esta pantalla se puede navegar al medicamento o crear una cita asociada.
+1. Entrar en Botiquín.
+2. Pulsar añadir medicamento.
+3. Buscar por nombre en CIMA/AEMPS.
+4. Seleccionar el resultado oficial.
+5. Completar stock, unidad, umbral, caducidad y alias opcional.
+6. Guardar.
 
-### 5.3 Registrar toma
+Los datos oficiales no se escriben manualmente. La aplicación los obtiene a partir del registro CIMA.
 
-Una toma puede registrarse desde Inicio, Calendario o pantallas relacionadas. Al marcarla como tomada:
+Si la búsqueda no devuelve resultados, se recomienda probar con una parte del nombre comercial o revisar la escritura. Blíster no inventa medicamentos: si no puede localizar información oficial, no se debe crear una ficha oficial falsa.
+
+### 5.3 Editar medicamento
+
+OWNER y CAREGIVER pueden editar datos locales como alias, stock, umbral y caducidad. OWNER puede eliminar medicamentos del blíster.
+
+El stock debe actualizarse cuando se compra una caja nueva, se retira medicación caducada o se corrige un recuento manual. Esta información alimenta avisos y decisiones de toma.
+
+### 5.4 Consultar ficha oficial
+
+La ficha CIMA muestra información disponible del medicamento: nombre, laboratorio, principios activos, presentación, imágenes y enlaces a documentos oficiales.
+
+## 6. Tratamientos y tomas
+
+Los tratamientos organizan una pauta y permiten calcular próximas dosis.
+
+![Mockup tratamientos](assets/placeholder-mockup-tratamientos.svg)
+
+### 6.1 Crear tratamiento
+
+1. Entrar en Tratamientos.
+2. Pulsar nuevo tratamiento.
+3. Seleccionar paciente dentro del blíster.
+4. Indicar título, descripción, fecha de inicio y fecha de fin si existe.
+5. Añadir medicamentos del botiquín.
+6. Definir dosis, primera toma y frecuencia por intervalo u horarios diarios.
+7. Guardar.
+
+### 6.2 Consultar tratamiento
+
+El detalle muestra estado, progreso, medicamentos, dosis y citas relacionadas. Desde ahí puede editarse el tratamiento si el rol lo permite.
+
+Antes de modificar una pauta activa, conviene confirmar que el cambio procede de una indicación médica o de una corrección de registro. Blíster no decide tratamientos; solo organiza la información introducida por el usuario.
+
+### 6.3 Registrar toma
+
+Una toma puede registrarse desde Inicio, Calendario o Historial. Al confirmar:
 
 1. Se crea un registro de adherencia.
 2. Se guarda quién realizó la acción.
-3. Se descuenta el stock correspondiente.
+3. Se descuenta el stock.
 4. Se generan avisos si el stock queda bajo o agotado.
 
-Si no hay stock suficiente, la aplicación puede solicitar confirmación de toma forzada. Esta acción deja constancia mediante notificación.
+Si no hay stock suficiente, la aplicación solicita confirmación de toma forzada.
 
-### 5.4 Deshacer toma
+La toma forzada existe para reflejar situaciones reales, por ejemplo cuando el stock físico no estaba actualizado. Debe usarse con cuidado porque deja constancia de que el sistema no tenía unidades suficientes registradas.
 
-Tras registrar una toma aparece una opción de deshacer. Si se usa dentro de la ventana permitida:
+### 6.4 Deshacer toma
 
-* Se elimina el registro.
-* Se restaura el stock.
-* La interfaz vuelve al estado anterior.
+Tras registrar una toma puede aparecer la opción de deshacer. Si se pulsa dentro de la ventana permitida, se restaura el stock y se elimina el registro.
 
-Si la ventana expira, el backend rechaza el deshacer para proteger la integridad del historial.
+Deshacer está pensado para errores inmediatos, como pulsar la toma equivocada. Si el error se detecta más tarde, debe revisarse el historial y corregirse siguiendo las acciones permitidas por la aplicación.
 
-## 6. Calendario y citas médicas
+## 7. Calendario y citas
 
-El calendario permite ver la planificación sanitaria combinando tomas y citas.
+El calendario reúne tomas previstas y citas médicas.
 
-### 6.1 Vista de calendario
+![Mockup calendario](assets/placeholder-mockup-calendario.svg)
 
-La vista agrupa información por fecha. Puede mostrar:
+### 7.1 Crear una cita
 
-* Tomas previstas.
-* Tomas registradas.
-* Citas médicas.
-* Indicadores visuales de actividad diaria.
+1. Entrar en Calendario.
+2. Pulsar crear cita.
+3. Seleccionar paciente.
+4. Indicar título, fecha, hora, lugar y descripción.
+5. Vincular un tratamiento si corresponde.
+6. Guardar.
 
-El usuario puede alternar entre vista de pastillero y citas según el contexto.
+### 7.2 Comentarios de citas
 
-### 6.2 Crear cita
+Los comentarios ayudan a coordinar información entre cuidadores. Cada comentario guarda autor, fecha de creación y fecha de edición.
 
-Para crear una cita se indica:
+Ejemplos de comentarios útiles:
 
-* Paciente.
-* Fecha.
-* Hora.
-* Lugar.
-* Descripción.
-* Tratamiento vinculado, si procede.
+| Situación | Comentario recomendado |
+| :--- | :--- |
+| Cambio de hora | `La cita se retrasa a las 12:30.` |
+| Documentación | `Llevar informe de la última analítica.` |
+| Seguimiento | `Preguntar por ajuste de dosis.` |
 
-Las citas ayudan a mantener en el mismo entorno la agenda médica y los tratamientos relacionados.
+## 8. Notificaciones
 
-### 6.3 Comentarios de citas
+La bandeja de notificaciones muestra eventos relevantes.
 
-Los comentarios permiten coordinar información entre miembros del blíster. Un comentario conserva:
+| Tipo | Ejemplo |
+| :--- | :--- |
+| Stock | Medicamento con pocas unidades o agotado. |
+| Caducidad | Medicamento próximo a caducar. |
+| Adherencia | Toma forzada o recordatorio. |
+| CIMA | Cambio oficial detectado. |
+| Citas | Recordatorio de cita médica. |
+| Sistema | Mensajes administrativos. |
 
-* Texto.
-* Autor.
-* Fecha de creación.
-* Fecha de edición, si se modifica.
+Desde Perfil > Notificaciones se configuran categorías y push. Para recibir Web Push el navegador debe permitir notificaciones.
 
-El autor puede editar o eliminar su comentario según las reglas de permisos.
+Las notificaciones pueden aparecer dentro de la bandeja aunque el navegador no permita push. La bandeja forma parte de la aplicación; Web Push depende del dispositivo, permisos y claves de servidor.
 
-## 7. Notificaciones
+| Acción | Resultado |
+| :--- | :--- |
+| Marcar como leída | La notificación deja de aparecer como pendiente. |
+| Eliminar | Se retira de la bandeja. |
+| Cambiar preferencias | Activa o desactiva categorías de aviso. |
+| Activar push | Solicita permiso al navegador compatible. |
 
-Blíster genera notificaciones para avisar de eventos relevantes de salud y sistema.
+## 9. Perfil, privacidad y accesibilidad
 
-### 7.1 Bandeja de notificaciones
+Perfil agrupa ajustes personales y administrativos.
 
-La bandeja muestra avisos como:
+![Mockup perfil](assets/placeholder-mockup-perfil.svg)
 
-* Stock bajo.
-* Stock agotado.
-* Caducidad próxima.
-* Toma forzada.
-* Cambios CIMA.
-* Recordatorios de dosis.
-* Recordatorios de citas.
+### 9.1 Datos personales
 
-El usuario puede marcar notificaciones como leídas o eliminarlas de su bandeja.
+Se pueden editar nombre, usuario, email, avatar y contraseña. Algunas acciones pueden requerir confirmación o verificación.
 
-### 7.2 Preferencias
+Al cambiar contraseña se recomienda cerrar sesiones en dispositivos no usados y utilizar una clave única. Si se modifica el email, el sistema puede requerir verificación para confirmar la nueva dirección.
 
-Desde Perfil > Notificaciones se pueden configurar preferencias. Las categorías principales son:
+### 9.2 Privacidad
 
-* Stock.
-* Caducidad.
-* Cambios CIMA.
-* Adherencia.
-* Dosis.
-* Citas.
-* Push.
+La política de privacidad está disponible en `/privacy` y desde la navegación de perfil.
 
-El sistema respeta estas preferencias al decidir si envía avisos push.
+![Mockup privacidad](assets/placeholder-mockup-privacidad.svg)
 
-### 7.3 Notificaciones push
+La política explica responsable de contacto, datos tratados, bases jurídicas, blísteres compartidos, servicios externos, conservación, medidas de seguridad y derechos RGPD.
 
-Para recibir push, el usuario debe:
+### 9.3 Accesibilidad
 
-1. Activar notificaciones en la aplicación.
-2. Conceder permiso en el navegador.
-3. Mantener una suscripción válida.
+La pantalla de accesibilidad permite cambiar:
 
-Si el navegador no soporta push o el usuario deniega permisos, la aplicación conserva las notificaciones dentro de la bandeja.
+| Ajuste | Opciones |
+| :--- | :--- |
+| Tema | Claro, oscuro o sistema. |
+| Fuente | Estándar u OpenDyslexic. |
+| Tamaño | Normal, grande o extra grande. |
 
-## 8. Perfil y accesibilidad
+Los cambios se aplican a toda la interfaz.
 
-Perfil agrupa la configuración personal, visual y administrativa.
+Si se usa Blíster para una persona mayor o con dificultad visual, se recomienda aumentar el tamaño de texto y probar el tema con mejor contraste en su dispositivo real.
 
-### 8.1 Datos personales
+## 10. Vinculación con asistentes de IA
 
-El usuario puede actualizar:
+Blíster puede conectarse con clientes compatibles con MCP.
 
-* Nombre.
-* Nombre de usuario.
-* Email.
-* Preferencias visuales.
+### 10.1 Generar token
 
-Los cambios se guardan en la cuenta y se aplican al volver a cargar la aplicación.
+1. Entrar en Perfil > Vincular asistente de IA.
+2. Generar token MCP.
+3. Copiar la URL y el token en el cliente externo.
 
-### 8.2 Contraseña
+La pantalla muestra estado, creación y caducidad del token. El token debe tratarse como una credencial privada.
 
-La pantalla de cambio de contraseña solicita contraseña actual y nueva contraseña. Este flujo se usa cuando el usuario ya está autenticado.
+### 10.2 Configurar cliente externo
 
-La recuperación por email se utiliza cuando el usuario no recuerda su contraseña y no puede iniciar sesión.
-
-### 8.3 Avatar
-
-El avatar permite identificar visualmente el perfil. También existen avatares o iconos para blísteres, útiles cuando el usuario pertenece a varios espacios.
-
-### 8.4 Accesibilidad
-
-La pantalla de accesibilidad permite modificar:
-
-* Tema claro, oscuro o sistema.
-* Fuente estándar u OpenDyslexic.
-* Tamaño de texto.
-
-Estos ajustes se aplican a la interfaz completa.
-
-## 9. Vinculación con asistentes de IA
-
-Blíster permite conectar asistentes externos mediante MCP. Esta función está pensada para consultar o registrar información mediante lenguaje natural desde clientes compatibles.
-
-### 9.1 Generar token MCP
-
-Desde Perfil > Vincular Asistente de IA, el usuario puede generar un token. La pantalla muestra:
-
-* Estado del token.
-* Fecha de creación.
-* Fecha de caducidad.
-* URL MCP.
-* Bloque de configuración para el cliente.
-
-El token debe tratarse como una credencial privada.
-
-### 9.2 Configurar cliente externo
-
-La configuración utiliza:
+Configuración general:
 
 ```text
-URL: https://<backend>/mcp
+URL: https://api.miblister.es/mcp
 Authorization: Bearer <token>
 ```
 
-Una vez conectado, el asistente puede ejecutar herramientas autorizadas como consultar inventario, ver próximas dosis o registrar una toma, siempre dentro de los permisos del usuario.
+El asistente podrá consultar o modificar datos según los permisos reales del usuario.
 
-### 9.3 Revocar acceso
+El token MCP no debe pegarse en capturas, repositorios ni mensajes públicos. Permite actuar como el usuario dentro de los límites del sistema, por lo que debe protegerse igual que una contraseña.
 
-Si el usuario sospecha que el token se ha expuesto o ya no necesita la conexión, puede revocarlo desde la pantalla correspondiente. La revocación invalida el token y corta el acceso de clientes externos.
+### 10.3 Revocar acceso
 
-## 10. Buenas prácticas de uso
+Desde Perfil > MCP se puede revocar el token. La revocación invalida el acceso de clientes externos.
 
-Para utilizar Blíster de forma segura:
+## 11. Preguntas frecuentes
 
-* Mantener actualizado el stock después de comprar medicamentos.
-* Revisar caducidades periódicamente.
-* Usar blísteres separados para contextos familiares distintos.
-* Asignar rol Observador a quien solo deba supervisar.
-* No compartir tokens MCP por canales inseguros.
-* Revocar tokens no utilizados.
-* Consultar siempre los enlaces oficiales de CIMA ante dudas farmacológicas.
-* No sustituir indicaciones médicas por decisiones tomadas dentro de la aplicación.
+| Pregunta | Respuesta |
+| :--- | :--- |
+| ¿Blíster sustituye a un médico? | No. Organiza información doméstica, pero no diagnostica ni modifica tratamientos prescritos. |
+| ¿Puedo estar en varios blísteres? | Sí, dentro del límite definido por el sistema. |
+| ¿Un observador puede registrar tomas? | No. OBSERVER solo consulta datos. |
+| ¿Qué ocurre si no hay stock? | La app puede pedir confirmación de toma forzada y deja constancia. |
+| ¿Los datos oficiales se editan? | No. Los datos oficiales proceden de CIMA/AEMPS; se editan solo datos locales. |
+| ¿Puedo usar la app en ordenador? | Sí, se muestra en un marco móvil para conservar la experiencia principal. |
+| ¿Qué pasa si revoco MCP? | El cliente externo deja de acceder con ese token. |
+| No recibo el email de recuperación, ¿qué hago? | Revisar spam y solicitar un nuevo enlace; si no llega, comprobar que el correo introducido es correcto. |
+| La búsqueda CIMA no devuelve resultados, ¿qué hago? | Probar otra parte del nombre y verificar que existe ficha oficial del medicamento. |
+| No veo un botón de editar, ¿por qué? | Es probable que el rol actual no tenga permiso para esa acción. |
+| No llegan notificaciones push, ¿qué reviso? | Permisos del navegador, configuración de notificaciones y compatibilidad del dispositivo. |
+| Me equivoqué al registrar una toma, ¿qué hago? | Usar deshacer si sigue disponible; si no, revisar el historial y corregir según acciones permitidas. |
 
-Blíster ayuda a organizar la información sanitaria del hogar, pero no reemplaza el criterio de profesionales sanitarios ni modifica tratamientos prescritos.
+## 12. Buenas prácticas
+
+| Recomendación | Motivo |
+| :--- | :--- |
+| Mantener stock actualizado | Evita avisos incorrectos y tomas forzadas innecesarias. |
+| Revisar caducidades | Reduce el riesgo de conservar medicamentos vencidos. |
+| Usar roles adecuados | Limita cambios a personas responsables. |
+| No compartir códigos en canales inseguros | Protege datos de salud del blíster. |
+| Revocar tokens MCP no usados | Reduce exposición de credenciales. |
+| Consultar enlaces oficiales | Evita depender de fuentes no verificadas. |
+| Validar cambios con profesionales sanitarios | La app no sustituye indicaciones médicas. |
+
+Casos típicos de uso:
+
+| Caso | Flujo recomendado |
+| :--- | :--- |
+| Persona que vive sola | Crear blíster personal, añadir medicación habitual y activar avisos de stock/caducidad. |
+| Cuidado de familiar | Crear blíster compartido, invitar cuidadores y repartir roles. |
+| Tratamiento temporal | Añadir medicamento, crear pauta con fecha de fin y registrar tomas hasta completar. |
+| Revisión médica | Crear cita, añadir comentarios y consultar historial antes de acudir. |
+| Uso con asistente IA | Generar token MCP, vincular cliente externo y revocar cuando no se necesite. |
+
+Antes de una demostración o uso real, se recomienda preparar un blíster de prueba con un medicamento, un tratamiento activo y una cita. Así se pueden enseñar las secciones principales sin introducir datos personales reales.
+
+| Dato de prueba | Recomendación |
+| :--- | :--- |
+| Usuario | Cuenta temporal sin datos sensibles. |
+| Medicamento | Resultado oficial CIMA fácil de localizar. |
+| Stock | Valor bajo para mostrar avisos. |
+| Tratamiento | Pauta simple con próxima toma cercana. |
+| Cita | Fecha próxima con comentario de ejemplo. |
+| MCP | Token generado y revocado al terminar. |
+
+Con estos pasos, una persona usuaria puede cubrir el ciclo completo de Blíster: crear cuenta, organizar botiquín, planificar tratamientos, registrar tomas, coordinar citas y mantener el control de sus datos.

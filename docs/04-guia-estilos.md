@@ -1,370 +1,342 @@
-# 04 - Guía de estilos
+# 04 - Guía de estilos y prototipado
 
-La guía de estilos de Blíster define las decisiones visuales y de implementación CSS que sostienen la identidad del producto. Su finalidad es garantizar que cada pantalla mantenga coherencia de marca, accesibilidad y consistencia técnica, especialmente en una aplicación de salud donde la claridad visual tiene impacto directo sobre la seguridad de uso.
+La guía de estilos define la identidad visual de Blíster y las reglas técnicas que permiten mantener una interfaz coherente. Este capítulo recoge el enlace al prototipo, la paleta, tipografía, espaciado, arquitectura CSS, componentes reutilizables y espacios reservados para incorporar capturas visuales en la entrega.
 
 ## Índice
-1. [Identidad visual](#1-identidad-visual)
-   - 1.1 [Personalidad de marca](#11-personalidad-de-marca)
-   - 1.2 [Uso del nombre y tono visual](#12-uso-del-nombre-y-tono-visual)
-2. [Paleta cromática](#2-paleta-cromática)
-   - 2.1 [Colores principales](#21-colores-principales)
-   - 2.2 [Colores semánticos](#22-colores-semánticos)
-   - 2.3 [Tokens de dominio sanitario](#23-tokens-de-dominio-sanitario)
-   - 2.4 [Tema oscuro](#24-tema-oscuro)
-3. [Tipografía](#3-tipografía)
-   - 3.1 [Familias tipográficas](#31-familias-tipográficas)
-   - 3.2 [Escala de texto](#32-escala-de-texto)
-   - 3.3 [Legibilidad y dislexia](#33-legibilidad-y-dislexia)
-4. [Espaciado, radios y elevación](#4-espaciado-radios-y-elevación)
-   - 4.1 [Sistema de espaciado](#41-sistema-de-espaciado)
-   - 4.2 [Bordes y radios](#42-bordes-y-radios)
-   - 4.3 [Sombras y profundidad](#43-sombras-y-profundidad)
-5. [Arquitectura CSS](#5-arquitectura-css)
-   - 5.1 [ITCSS](#51-itcss)
-   - 5.2 [BEM](#52-bem)
-   - 5.3 [Variables CSS](#53-variables-css)
-6. [Componentes visuales](#6-componentes-visuales)
-   - 6.1 [Botones](#61-botones)
-   - 6.2 [Campos de formulario](#62-campos-de-formulario)
-   - 6.3 [Cards y filas](#63-cards-y-filas)
-   - 6.4 [Navegación](#64-navegación)
-   - 6.5 [Estados de sistema](#65-estados-de-sistema)
-7. [Accesibilidad visual](#7-accesibilidad-visual)
-   - 7.1 [Contraste](#71-contraste)
-   - 7.2 [Áreas táctiles](#72-áreas-táctiles)
-   - 7.3 [Iconografía y ARIA](#73-iconografía-y-aria)
 
----
+1. [Prototipo](#1-prototipo)
+	- 1.1 [Enlace y alcance](#11-enlace-y-alcance)
+	- 1.2 [Relación con la implementación](#12-relación-con-la-implementación)
+2. [Identidad visual](#2-identidad-visual)
+	- 2.1 [Personalidad de marca](#21-personalidad-de-marca)
+	- 2.2 [Uso del nombre y tono visual](#22-uso-del-nombre-y-tono-visual)
+3. [Paleta cromática](#3-paleta-cromática)
+	- 3.1 [Colores principales](#31-colores-principales)
+	- 3.2 [Colores semánticos y de dominio](#32-colores-semánticos-y-de-dominio)
+	- 3.3 [Tema oscuro](#33-tema-oscuro)
+4. [Tipografía](#4-tipografía)
+	- 4.1 [Familias tipográficas](#41-familias-tipográficas)
+	- 4.2 [Escala de texto](#42-escala-de-texto)
+	- 4.3 [Legibilidad y dislexia](#43-legibilidad-y-dislexia)
+5. [Espaciado, bordes, radios y sombras](#5-espaciado-bordes-radios-y-sombras)
+	- 5.1 [Espaciado](#51-espaciado)
+	- 5.2 [Bordes y radios](#52-bordes-y-radios)
+	- 5.3 [Sombras](#53-sombras)
+6. [Arquitectura CSS](#6-arquitectura-css)
+	- 6.1 [ITCSS](#61-itcss)
+	- 6.2 [BEM](#62-bem)
+	- 6.3 [Variables CSS](#63-variables-css)
+7. [Componentes reutilizables](#7-componentes-reutilizables)
+	- 7.1 [Botones y acciones](#71-botones-y-acciones)
+	- 7.2 [Campos de formulario](#72-campos-de-formulario)
+	- 7.3 [Cards y filas](#73-cards-y-filas)
+	- 7.4 [Navegación y menús](#74-navegación-y-menús)
+	- 7.5 [Estados de sistema](#75-estados-de-sistema)
+8. [Mockups y capturas de pantallas principales](#8-mockups-y-capturas-de-pantallas-principales)
+	- 8.1 [Capturas pendientes de sustituir](#81-capturas-pendientes-de-sustituir)
+	- 8.2 [Pantallas documentadas](#82-pantallas-documentadas)
+9. [Accesibilidad visual](#9-accesibilidad-visual)
+	- 9.1 [Contraste](#91-contraste)
+	- 9.2 [Áreas táctiles](#92-áreas-táctiles)
+	- 9.3 [Iconografía y ARIA](#93-iconografía-y-aria)
 
-## 1. Identidad visual
+## 1. Prototipo
 
-Blíster se presenta como una herramienta sanitaria doméstica: cercana, clara y fiable. La identidad visual evita el exceso decorativo y prioriza que el usuario pueda reconocer rápidamente qué tiene que hacer, qué información es urgente y qué acciones modifican datos de salud.
+### 1.1 Enlace y alcance
 
-### 1.1 Personalidad de marca
+El prototipo funcional de Blíster está disponible en Figma y sirve como referencia visual para las pantallas, jerarquías, flujo de entrada y experiencia mobile-first.
 
-La marca se apoya en tres atributos:
+URL del prototipo:
 
-* **Cuidado:** La interfaz transmite acompañamiento sin infantilizar al usuario.
-* **Rigor:** Los datos farmacológicos se vinculan a fuentes oficiales, por lo que la presentación debe reforzar confianza.
-* **Calma:** Los colores, el espaciado y las transiciones evitan generar sensación de alarma salvo en estados realmente críticos.
+```text
+https://www.figma.com/proto/ij5gM2auQ6ZaJTTvSnkkZo/Bl%C3%ADster?node-id=97-133&t=eu3HSsCkrQK42KJW-1&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=97%3A133&show-proto-sidebar=1
+```
 
-Esta personalidad se traduce en una interfaz móvil limpia, con jerarquías claras y una paleta contenida. La aplicación no utiliza efectos visuales que compitan con la información médica.
+El enlace corresponde a la navegación pública del prototipo y permite comprobar el recorrido inicial previsto para la aplicación. Para la entrega final conviene acompañarlo con capturas exportadas desde Figma o desde la aplicación real, porque la rúbrica valora tanto la existencia del prototipo como la evidencia visible en la documentación.
 
-### 1.2 Uso del nombre y tono visual
+### 1.2 Relación con la implementación
 
-El nombre **Blíster** se escribe siempre con tilde y con mayúscula inicial cuando se refiere al producto. Cuando se utiliza como concepto funcional dentro de la aplicación, puede aparecer en minúscula como nombre común: "crear un blíster", "cambiar de blíster" o "mi blíster familiar".
+La implementación actual no depende de componentes exportados desde Figma. La fuente de verdad de la interfaz está en los componentes React y en los tokens SCSS del proyecto.
 
-El tono visual refuerza el carácter práctico del producto:
+El prototipo actúa como referencia de intención visual: jerarquía, tono, densidad, composición mobile-first y estilo de superficies. La aplicación implementada ha evolucionado sobre esa base para incorporar estados reales, permisos, formularios, validaciones, notificaciones, privacidad y escritorio con marco móvil.
 
-* Los títulos son directos y orientados a la tarea.
-* Los textos de ayuda explican consecuencias, no adornos.
-* Las alertas diferencian información, advertencia y error.
-* Las acciones destructivas requieren confirmación o aparecen claramente diferenciadas.
+## 2. Identidad visual
 
-## 2. Paleta cromática
+### 2.1 Personalidad de marca
 
-La paleta se define mediante variables CSS en `frontend/src/scss/00-settings/_colors.scss`. El sistema usa colores con roles semánticos, no valores arbitrarios en componentes.
+Blíster se presenta como una herramienta sanitaria doméstica: clara, cercana y fiable. La identidad evita una estética clínica fría y prioriza que el usuario pueda leer rápido qué medicamento tiene, cuándo debe tomarlo y qué acción puede realizar.
 
-### 2.1 Colores principales
-
-| Token | Valor claro | Uso principal |
-| :--- | :--- | :--- |
-| `--color-primary` | Verde teal profundo | Botones principales, enlaces activos e interacción principal. |
-| `--color-primary-mid` | Verde Blíster medio | Indicadores, elementos activos, barras de progreso y acentos funcionales. |
-| `--color-primary-subtle` | Verde suave | Avatares, chips y fondos secundarios de marca. |
-| `--color-accent` | Terracota | Palabras destacadas, detalles emocionales, llamadas secundarias y avisos no críticos. |
-| `--color-bg` | Gris claro | Fondo general de aplicación. |
-| `--color-surface` | Blanco | Cards, formularios y superficies elevadas. |
-
-El verde actúa como color de confianza y acción. El terracota se reserva para destacar palabras clave o estados que requieren atención sin alcanzar gravedad clínica.
-
-### 2.2 Colores semánticos
-
-Los estados semánticos se definen con tokens específicos:
-
-| Token | Significado | Ejemplos de uso |
-| :--- | :--- | :--- |
-| `--color-success` | Acción completada o estado correcto | Toma registrada, stock suficiente. |
-| `--color-warning` | Atención requerida | Stock bajo, toma forzada, aviso preventivo. |
-| `--color-error` | Error o estado crítico | Sin stock, caducado, fallo de validación. |
-| `--color-info` | Información neutral | Citas médicas, mensajes de sistema. |
-
-Cada color semántico tiene variantes `subtle`, `hover` y `border` para permitir fondos, estados interactivos y contornos accesibles.
-
-### 2.3 Tokens de dominio sanitario
-
-Además de los colores semánticos generales, Blíster define tokens vinculados al dominio:
-
-| Token | Uso |
+| Atributo | Traducción visual |
 | :--- | :--- |
-| `--color-dose-taken` | Dosis tomada. |
-| `--color-dose-pending` | Dosis pendiente. |
-| `--color-dose-skipped` | Dosis omitida o forzada. |
-| `--color-stock-ok` | Stock correcto. |
+| Cuidado | Interfaz amable, lenguaje directo y componentes con aire suficiente. |
+| Rigor | Datos oficiales CIMA, estados claros y alertas diferenciadas. |
+| Calma | Paleta verde, superficies limpias y uso contenido del color de advertencia. |
+| Seguridad | Confirmaciones, mensajes de error visibles y acciones destructivas diferenciadas. |
+
+La personalidad se apoya en una idea principal: la aplicación debe acompañar sin dramatizar. El dominio de salud exige rigor, pero el contexto de uso es doméstico; por eso la interfaz evita una imagen hospitalaria rígida y busca un equilibrio entre confianza, serenidad y acción inmediata.
+
+### 2.2 Uso del nombre y tono visual
+
+El nombre se escribe como **Blíster** cuando se refiere al producto. En el código aparecen nombres técnicos sin tilde cuando una ruta, variable o archivo lo requiere.
+
+El tono visual prioriza textos cortos, titulares claros y etiquetas funcionales. Las pantallas no introducen explicaciones decorativas dentro de la interfaz; cuando una acción necesita contexto, se utiliza ayuda puntual, feedback inline o una confirmación. Esta decisión reduce ruido en móvil y mantiene el foco en la tarea sanitaria.
+
+## 3. Paleta cromática
+
+Los colores se definen en `frontend/src/scss/00-settings/_colors.scss` mediante variables CSS. Los componentes consumen tokens, no valores hexadecimales sueltos.
+
+![Guía cromática](assets/placeholder-guia-colores.svg)
+
+### 3.1 Colores principales
+
+| Token | Valor | Uso |
+| :--- | :--- | :--- |
+| `--color-primary` | `#1e6660` | Botones principales, enlaces activos y acciones relevantes. |
+| `--color-primary-mid` | `#11a498` | Indicadores, barras de progreso y fondo de marca. |
+| `--color-primary-subtle` | `#67c2bb` | Avatares, chips suaves y acentos secundarios. |
+| `--color-accent` | `#d97757` | Terracota para palabras destacadas y avisos no críticos. |
+| `--color-bg` | `#f5f5f5` | Fondo general claro. |
+| `--color-surface` | `#ffffff` | Formularios, cards y superficies. |
+
+### 3.2 Colores semánticos y de dominio
+
+| Token | Significado |
+| :--- | :--- |
+| `--color-success` | Estado correcto o acción completada. |
+| `--color-warning` | Atención necesaria, como stock bajo. |
+| `--color-error` | Error, stock crítico o caducidad vencida. |
+| `--color-info` | Información neutral, especialmente citas. |
+| `--color-dose-taken` | Toma registrada. |
+| `--color-dose-pending` | Toma pendiente. |
+| `--color-stock-ok` | Stock suficiente. |
 | `--color-stock-low` | Stock bajo. |
 | `--color-stock-critical` | Stock agotado o crítico. |
 | `--color-expired` | Medicamento caducado. |
-| `--color-treatment-active` | Tratamiento activo. |
-| `--color-appointment` | Cita médica. |
 
-Esta capa permite cambiar la representación visual de un concepto sanitario sin modificar todos los componentes que lo usan.
+### 3.3 Tema oscuro
 
-### 2.4 Tema oscuro
+El tema oscuro se activa con `data-theme="dark"` en el elemento `html`. Los componentes no consultan directamente `prefers-color-scheme`; consumen los mismos tokens con valores redefinidos para mantener coherencia.
 
-El tema oscuro se activa mediante el atributo `data-theme="dark"` en el elemento `<html>`. No se delega en `prefers-color-scheme` dentro de componentes, ya que la preferencia se gestiona desde el panel de accesibilidad del usuario.
+## 4. Tipografía
 
-En modo oscuro:
+La tipografía se define en `frontend/src/scss/00-settings/_typography.scss`. La combinación busca legibilidad en móvil y personalidad en pantallas de marca.
 
-* Las superficies pasan a grises oscuros neutros con matiz verde.
-* El verde de marca se mantiene como color principal.
-* El terracota conserva su papel de acento.
-* Las sombras aumentan opacidad para mantener separación entre capas.
+![Guía tipográfica](assets/placeholder-guia-tipografia.svg)
 
-## 3. Tipografía
-
-La tipografía combina una familia de cuerpo legible con una familia display para reforzar la personalidad de marca en títulos principales.
-
-### 3.1 Familias tipográficas
+### 4.1 Familias tipográficas
 
 | Token | Familia | Uso |
 | :--- | :--- | :--- |
+| `--font-display` | Overpass | H1, onboarding y títulos de alto impacto. |
 | `--font-body` | Nunito | Texto general, formularios, navegación y cards. |
-| `--font-display` | Overpass | Títulos principales y pantallas de marca. |
 | `--font-dyslexia` | OpenDyslexic | Modo de lectura accesible. |
 
-El cuerpo de texto usa Nunito por su tono amable y buena legibilidad en interfaces móviles. Overpass se reserva para titulares, evitando sobrecargar pantallas densas.
+Overpass se reserva para momentos de identidad y jerarquía fuerte. Nunito sostiene la aplicación diaria porque resulta amable en tamaños pequeños. OpenDyslexic se ofrece como opción de accesibilidad, no como tipografía por defecto, para que cada usuario pueda decidir si mejora su lectura.
 
-### 3.2 Escala de texto
+### 4.2 Escala de texto
 
-La escala tipográfica se define mediante tokens:
+La escala usa tokens como `--text-xs`, `--text-sm`, `--text-base`, `--text-lg`, `--text-xl`, `--text-2xl` y superiores. El tamaño base puede modificarse con `data-text-size="large"` o `data-text-size="xlarge"`.
 
-| Token | Uso |
-| :--- | :--- |
-| `--text-xs` | Metadatos, etiquetas auxiliares. |
-| `--text-sm` | Ayudas, badges, textos secundarios. |
-| `--text-base` | Texto de lectura y formularios. |
-| `--text-lg` | Subtítulos y bloques destacados. |
-| `--text-xl` | Encabezados de sección. |
-| `--text-2xl` y superiores | Pantallas de marca y títulos de alto impacto. |
+La escala evita que cada componente decida tamaños aislados. En cards, formularios y navegación se usan tamaños intermedios para que el contenido entre en pantallas móviles sin perder legibilidad. Los tamaños mayores se reservan para onboarding, títulos de página y mensajes de estado.
 
-El diseño evita usar tamaños excesivos dentro de cards o paneles compactos. Las pantallas operativas necesitan densidad controlada para que el usuario pueda comparar información de medicamentos, tomas y citas.
+### 4.3 Legibilidad y dislexia
 
-### 3.3 Legibilidad y dislexia
+La legibilidad se refuerza con altura de línea suficiente, pesos moderados y contraste entre texto principal, texto secundario y estados. El selector de fuente disléxica cambia la familia sin modificar la estructura del layout, por lo que la interfaz conserva espaciados y áreas táctiles.
 
-La aplicación permite cambiar la fuente a OpenDyslexic desde el panel de accesibilidad. Este cambio se aplica globalmente mediante `data-font="dyslexic"` y afecta al token `--font-body`.
+Los mensajes de error se muestran junto al campo afectado y en español, evitando que la persona tenga que interpretar códigos técnicos o mensajes en inglés.
 
-El sistema también permite ajustar el tamaño base del texto mediante `data-text-size`, con opciones normal, grande y extra grande. Esta decisión evita implementar variantes manuales por componente y garantiza una respuesta homogénea en toda la interfaz.
+## 5. Espaciado, bordes, radios y sombras
 
-## 4. Espaciado, radios y elevación
+El sistema visual centraliza medidas para reducir inconsistencias entre pantallas.
 
-El sistema de layout se apoya en tokens para reducir inconsistencias entre pantallas. Las medidas se expresan en `rem` siempre que forman parte del diseño.
+### 5.1 Espaciado
 
-### 4.1 Sistema de espaciado
-
-La escala base se define en `frontend/src/scss/00-settings/_spacing.scss` con múltiplos de 0.25rem:
+![Guía de espaciado](assets/placeholder-guia-espaciado.svg)
 
 | Token | Equivalencia | Uso |
 | :--- | :--- | :--- |
-| `--space-1` | 0.25rem | Separaciones mínimas. |
+| `--space-1` | 0.25rem | Separación mínima. |
 | `--space-2` | 0.5rem | Elementos compactos. |
-| `--space-3` | 0.75rem | Listas y pequeños grupos. |
 | `--space-4` | 1rem | Separación estándar. |
 | `--space-6` | 1.5rem | Bloques internos. |
 | `--space-8` | 2rem | Separación entre secciones. |
-| `--space-touch-min` | 2.75rem | Área táctil mínima. |
+| `--space-touch-min` | 2.75rem | Área táctil mínima de 44 px. |
+| `--space-bottom-nav-height` | 4.75rem | Altura de navegación inferior. |
 
-La aplicación se diseña mobile-first, por lo que el espaciado debe permitir lectura cómoda sin desperdiciar superficie útil.
+### 5.2 Bordes y radios
 
-### 4.2 Bordes y radios
-
-Los radios se centralizan en `frontend/src/scss/00-settings/_css-variables.scss`:
+![Guía de bordes y radios](assets/placeholder-guia-bordes-radios.svg)
 
 | Token | Uso |
 | :--- | :--- |
 | `--radius-sm` | Inputs, badges y tooltips. |
 | `--radius-md` | Cards y paneles estándar. |
 | `--radius-lg` | Cards de medicamento y bottom sheets. |
-| `--radius-xl` | Modales de mayor tamaño. |
+| `--radius-xl` | Modales o superficies amplias. |
 | `--radius-full` | Avatares, chips, toggles y botones circulares. |
 
-La interfaz utiliza esquinas suaves pero no excesivamente decorativas. En una herramienta de salud, la forma debe facilitar agrupación y lectura, no convertirse en el elemento protagonista.
+### 5.3 Sombras
 
-### 4.3 Sombras y profundidad
-
-Las sombras se definen con tres niveles:
+![Guía de sombras](assets/placeholder-guia-sombras.svg)
 
 | Token | Uso |
 | :--- | :--- |
 | `--shadow-sm` | Separación sutil en listas. |
-| `--shadow-md` | Modales, dropdowns y bottom sheets. |
-| `--shadow-lg` | Toasts, elementos flotantes y superficies de máxima prioridad. |
+| `--shadow-md` | Dropdowns, modales y bottom sheets. |
+| `--shadow-lg` | Toasts y superficies de máxima prioridad. |
+| `--shadow-card-soft` | Cards principales. |
+| `--shadow-device` | Marco de dispositivo móvil en escritorio. |
 
-Cuando una pantalla necesita una elevación específica, se crea un token semántico en `00-settings/_css-variables.scss`, por ejemplo `--shadow-card-soft`, `--shadow-bottom-sheet`, `--shadow-sticky-cta`, `--shadow-dialog`, `--shadow-toast` o `--shadow-device`. Los componentes consumen esos tokens en lugar de valores `rgba(...)` literales.
+## 6. Arquitectura CSS
 
-La elevación se usa para indicar jerarquía interactiva. Las cards de información repetida no deben parecer modales ni competir con acciones principales.
-
-## 5. Arquitectura CSS
-
-La arquitectura de estilos sigue ITCSS y BEM. Esta combinación ordena la cascada desde lo más genérico hasta lo más específico y reduce conflictos entre componentes.
-
-### 5.1 ITCSS
-
-El punto de entrada principal es `frontend/src/scss/main.scss`, que importa las capas en este orden:
+La arquitectura de estilos sigue ITCSS y BEM. La entrada global es `frontend/src/scss/main.scss` y las capas se importan de menor a mayor especificidad.
 
 ```scss
 @use '00-settings' as settings;
-@use '01-tools'    as tools;
-@use '02-generic'  as generic;
+@use '01-tools' as tools;
+@use '02-generic' as generic;
 @use '03-elements' as elements;
-@use '04-objects'  as objects;
+@use '04-objects' as objects;
 @use '05-components' as components;
-@use '06-utilities'  as utilities;
+@use '06-utilities' as utilities;
 ```
+
+### 6.1 ITCSS
 
 | Capa | Responsabilidad |
 | :--- | :--- |
-| `00-settings` | Tokens de color, tipografía, espaciado, breakpoints y variables globales. |
-| `01-tools` | Mixins, funciones y helpers SCSS sin salida CSS directa. |
-| `02-generic` | Reset, normalización y reglas globales de base. |
-| `03-elements` | Estilos de etiquetas HTML. |
+| `00-settings` | Tokens y variables globales. |
+| `01-tools` | Mixins y funciones SCSS. |
+| `02-generic` | Reset y normalización. |
+| `03-elements` | Estilos base de etiquetas HTML. |
 | `04-objects` | Patrones de layout sin apariencia de marca. |
 | `05-components` | Componentes concretos de interfaz. |
-| `06-utilities` | Utilidades controladas y excepciones transversales. |
+| `06-utilities` | Utilidades controladas. |
 
-Los estilos de páginas también se integran en `05-components` como parciales SCSS y se re-exportan desde `frontend/src/scss/05-components/_index.scss`. De esta forma React solo carga `src/scss/main.scss` como entrada global y se evita que cada página importe hojas de estilo directas fuera de la arquitectura ITCSS.
+La ventaja de ITCSS en este proyecto es que permite escalar pantallas nuevas sin aumentar la especificidad de forma desordenada. Los tokens y herramientas aparecen primero; los componentes concretos llegan después; y las utilidades quedan al final para ajustes pequeños y explícitos.
 
-### 5.2 BEM
+### 6.2 BEM
 
-Las clases CSS siguen nomenclatura BEM:
+La nomenclatura BEM utiliza prefijos: `.c-` para componentes, `.o-` para objetos de layout y `.u-` para utilidades.
 
-```scss
-.c-medicine-card { }
-.c-medicine-card__title { }
-.c-medicine-card--expired { }
-```
+Ejemplos reales de la aplicación:
 
-Los prefijos principales son:
+| Prefijo | Ejemplo | Significado |
+| :--- | :--- | :--- |
+| `.c-` | `.c-appointment-card` | Componente con aspecto propio. |
+| `.o-` | `.o-stack` | Objeto de layout reutilizable. |
+| `.u-` | `.u-sr-only` | Utilidad puntual de accesibilidad. |
 
-| Prefijo | Uso |
+BEM ayuda a localizar responsabilidades: una clase de componente no debería utilizarse para resolver un problema global, y una utilidad no debería convertirse en una variante visual compleja.
+
+### 6.3 Variables CSS
+
+Los tokens se exponen como variables CSS para poder cambiar tema, tamaño de texto y familias tipográficas sin recompilar Sass. Esta decisión permite que preferencias como `data-theme`, `data-font` o `data-text-size` se apliquen en tiempo de ejecución.
+
+La regla general es que los componentes consuman variables semánticas, no valores literales. Así, un botón usa `--color-primary` o `--color-error` según intención, en lugar de repetir un hexadecimal.
+
+## 7. Componentes reutilizables
+
+La tabla recoge componentes reales del proyecto React. No describe componentes de Figma, sino piezas implementadas en `frontend/src/components`.
+
+Los componentes se agrupan por responsabilidad: átomos para controles básicos, moléculas para combinaciones pequeñas, organismos para bloques funcionales y layouts para estructura de página.
+
+| Componente | Ubicación | Uso principal |
+| :--- | :--- | :--- |
+| `Button` | `atoms` | Botones primarios, secundarios, ghost y destructivos. |
+| `Input` | `atoms` | Campos con label, ayuda y error inline. |
+| `Modal` | `atoms` | Diálogos de confirmación y edición. |
+| `Avatar` | `atoms` | Identidad visual de usuario o blíster. |
+| `Skeleton` | `atoms` | Estados de carga. |
+| `EmptyState` | `atoms` | Pantallas sin datos con acción sugerida. |
+| `ErrorState` | `atoms` | Fallos recuperables con reintento. |
+| `Stepper` | `atoms` | Progreso en flujos guiados. |
+| `InfoTooltip` | `atoms` | Información auxiliar accesible. |
+| `SearchBar` | `molecules` | Búsqueda de listados. |
+| `CimaSearchDropdown` | `molecules` | Resultados de medicamentos oficiales. |
+| `StockBadge` | `molecules` | Estado visual de stock. |
+| `RoleBadge` | `molecules` | Identificación de OWNER, CAREGIVER y OBSERVER. |
+| `ActionMenuButton` | `molecules` | Menús contextuales en cards. |
+| `ForceDoseDialog` | `molecules` | Confirmación de toma con stock insuficiente. |
+| `UndoToast` | `molecules` | Acción reversible tras registrar una toma. |
+| `ThemeSelector`, `FontSelector`, `TextSizeSelector` | `molecules` | Ajustes de accesibilidad. |
+| `AppHeader` | `organisms` | Cabecera privada con perfil y notificaciones. |
+| `BottomNav` | `organisms` | Navegación inferior móvil. |
+| `NotificationsSheet` | `organisms` | Panel de notificaciones. |
+| `MedicineCard` | `organisms` | Card de inventario. |
+| `AppointmentCard` | `organisms` | Card de cita con comentarios y acciones. |
+| `TreatmentRow` | `organisms` | Fila de tratamiento. |
+| `BlisterSelector` y variantes | `organisms` | Cambio de contexto de blíster. |
+| `AppLayout` | `layout` | Shell privado con cabecera y navegación. |
+| `AuthLayout` | `layout` | Estructura de pantallas de acceso. |
+| `PublicPageLayout` | `layout` | Páginas públicas como privacidad. |
+| `DesktopDeviceShell` | `layout` | Marco móvil en escritorio y pantalla de entrada. |
+
+### 7.1 Botones y acciones
+
+Los botones diferencian prioridad visual: acción primaria, acción secundaria, acción fantasma y acción destructiva. Las acciones críticas, como eliminar o revocar, no dependen solo del color; se acompañan de texto claro y confirmación cuando procede.
+
+### 7.2 Campos de formulario
+
+Los campos muestran label visible, ayuda opcional y error inline. Esta estructura es importante porque Blíster maneja formularios con datos sensibles: cuenta, contraseña, medicamentos, tratamientos, citas, preferencias y tokens MCP.
+
+### 7.3 Cards y filas
+
+Las cards se usan para elementos repetidos que el usuario revisa con frecuencia: medicamentos, citas, tratamientos o blísteres. Las filas se reservan para listados más densos. En ambos casos se mantiene una jerarquía estable: título, metadatos, estado y acciones.
+
+### 7.4 Navegación y menús
+
+La navegación inferior concentra las secciones principales de la aplicación privada. Los menús contextuales aparecen en cards y deben abrirse sin tapar la acción principal ni quedar fuera del viewport móvil.
+
+### 7.5 Estados de sistema
+
+Los estados `Skeleton`, `EmptyState`, `ErrorState`, toasts y diálogos comunican qué está ocurriendo. La interfaz evita silencios: cuando se carga, falla, queda vacía o se completa una acción, debe existir una respuesta visible.
+
+## 8. Mockups y capturas de pantallas principales
+
+Estos espacios están preparados para sustituirse por capturas finales de la aplicación o del prototipo en la documentación de entrega.
+
+### 8.1 Capturas pendientes de sustituir
+
+Los SVG incluidos en `docs/assets` son placeholders deliberados. Permiten reservar el lugar exacto donde se incorporarán imágenes reales sin romper el formato de la documentación. Para una entrega final excelente deben sustituirse por capturas de la aplicación desplegada o por exportaciones del prototipo Figma.
+
+### 8.2 Pantallas documentadas
+
+| Pantalla | Imagen reservada |
 | :--- | :--- |
-| `.c-` | Componentes visuales. |
-| `.o-` | Objetos de layout. |
-| `.u-` | Utilidades transversales. |
+| Onboarding | ![Mockup onboarding](assets/placeholder-mockup-onboarding.svg) |
+| Inicio | ![Mockup inicio](assets/placeholder-mockup-home.svg) |
+| Botiquín | ![Mockup botiquín](assets/placeholder-mockup-botiquin.svg) |
+| Tratamientos | ![Mockup tratamientos](assets/placeholder-mockup-tratamientos.svg) |
+| Calendario | ![Mockup calendario](assets/placeholder-mockup-calendario.svg) |
+| Perfil | ![Mockup perfil](assets/placeholder-mockup-perfil.svg) |
+| Privacidad | ![Mockup privacidad](assets/placeholder-mockup-privacidad.svg) |
 
-Esta convención permite identificar rápidamente si una clase pertenece a un componente, a un patrón estructural o a una utilidad.
+Las capturas recomendadas son móviles, con una anchura similar a la experiencia real de la PWA. En escritorio debe mostrarse el marco de dispositivo solo cuando se quiera evidenciar la adaptación desktop; para explicar flujos principales, la captura móvil directa resulta más clara.
 
-### 5.3 Variables CSS
+## 9. Accesibilidad visual
 
-Blíster utiliza variables CSS nativas en lugar de variables SCSS para los tokens que pueden cambiar en tiempo de ejecución. Esto permite alternar tema, fuente y tamaño de texto sin recompilar estilos.
+La accesibilidad se integra en el diseño base porque Blíster trata información de salud que debe poder consultarse con claridad.
 
-Ejemplo de uso correcto:
+### 9.1 Contraste
 
-```scss
-.c-btn--primary {
-  background-color: var(--color-primary);
-  color: var(--color-text-on-primary);
-}
-```
+El contraste se trabaja desde los tokens de texto, superficie y estados. Los colores semánticos no se utilizan como único mecanismo de comprensión; un estado de stock bajo, por ejemplo, debe estar acompañado por etiqueta o icono.
 
-Los componentes no deben depender de valores hexadecimales directos. Cuando aparece una necesidad visual nueva, se crea un token específico sin eliminar ni renombrar los existentes.
+### 9.2 Áreas táctiles
 
-## 6. Componentes visuales
+Las acciones principales respetan un área táctil mínima de 44 px. Esta medida se aplica especialmente en navegación inferior, botones de formularios, menús contextuales y acciones de cards.
 
-Los componentes de Blíster se diseñan para flujos de uso repetido: registrar tomas, revisar stock, consultar tratamientos y navegar entre blísteres. Por ello, los controles deben ser reconocibles y consistentes.
+### 9.3 Iconografía y ARIA
 
-### 6.1 Botones
+La iconografía sirve para reconocimiento rápido, pero no sustituye a la accesibilidad textual. Las acciones solo con icono deben incorporar `aria-label` o texto alternativo equivalente.
 
-Los botones se organizan por intención:
-
-| Variante | Uso |
+| Criterio | Implementación |
 | :--- | :--- |
-| Primario | Acción principal de la pantalla. |
-| Secundario o outline | Acción alternativa no destructiva. |
-| Ghost | Navegación, cancelación o acción de baja prioridad. |
-| Destructivo | Eliminación, revocación o acciones irreversibles. |
+| Contraste | Tokens semánticos preparados para cumplir contraste suficiente en claro y oscuro. |
+| Área táctil | `--space-touch-min` de 44 px para acciones principales. |
+| Labels | Formularios con etiquetas visibles y errores cercanos al campo. |
+| ARIA | Uso de `aria-label`, `aria-live`, `aria-busy` y roles de diálogo cuando corresponde. |
+| Personalización | Tema, tamaño de texto y fuente OpenDyslexic. |
+| Color no exclusivo | Los estados se acompañan de texto, iconos o badges. |
 
-Cada botón debe mantener área táctil suficiente, estado `disabled`, foco visible y texto claro. Los botones con icono sin texto visible requieren `aria-label`.
-
-### 6.2 Campos de formulario
-
-Los formularios usan labels visibles y mensajes de error próximos al campo afectado. El error no se expresa solo por color; también aparece texto explicativo para lectores de pantalla y usuarios con daltonismo.
-
-Los campos críticos son:
-
-* Email, usuario y contraseña en autenticación.
-* Stock, umbral y caducidad en medicamentos.
-* Pauta, frecuencia y paciente en tratamientos.
-* Fecha, hora y descripción en citas médicas.
-
-### 6.3 Cards y filas
-
-Las cards representan entidades persistentes: medicamentos, tratamientos, citas, notificaciones o miembros. Su estructura debe permitir escaneo rápido:
-
-1. Identificador principal: nombre del medicamento, tratamiento o cita.
-2. Información secundaria: stock, fecha, paciente o estado.
-3. Acción o navegación: editar, ver detalle, registrar toma.
-
-Las filas compactas se reservan para listados densos, como historial de adherencia o comentarios.
-
-### 6.4 Navegación
-
-La navegación principal se sitúa en la parte inferior mediante `BottomNav`, siguiendo el patrón móvil:
-
-| Sección | Función |
-| :--- | :--- |
-| Inicio | Vista diaria y alertas. |
-| Botiquín | Inventario de medicamentos. |
-| Tratamientos | Pautas activas y detalle. |
-| Calendario | Tomas y citas. |
-
-La cabecera superior concentra perfil, selector de contexto y notificaciones. En escritorio, el contenido se envuelve dentro del marco de dispositivo móvil para conservar la experiencia de uso prevista.
-
-### 6.5 Estados de sistema
-
-La interfaz define estados consistentes:
-
-| Estado | Representación |
-| :--- | :--- |
-| Loading | Skeleton o estructura de carga equivalente. |
-| Empty | Mensaje contextual y CTA. |
-| Error | Mensaje claro y acción de reintento cuando procede. |
-| Success | Toast o confirmación breve. |
-| Warning | Banner o texto destacado cuando existe riesgo operativo. |
-
-Estos estados evitan que una pantalla parezca rota cuando todavía no hay datos o cuando una llamada a la API falla.
-
-## 7. Accesibilidad visual
-
-La accesibilidad forma parte del diseño base, no de una fase posterior. Blíster maneja datos de salud y debe poder utilizarse por personas mayores, cuidadores y usuarios con diferentes capacidades visuales o motoras.
-
-### 7.1 Contraste
-
-Los textos deben cumplir los umbrales WCAG 2.2 AA:
-
-* 4.5:1 para texto normal.
-* 3:1 para texto grande o elementos gráficos esenciales.
-
-Los colores semánticos se acompañan de texto, iconografía o estado para que la información no dependa exclusivamente del color.
-
-### 7.2 Áreas táctiles
-
-Los elementos pulsables deben respetar un área mínima de `44x44px` CSS, expresada en el sistema mediante `--space-touch-min`. Esta regla se aplica especialmente a:
-
-* Botones de navegación inferior.
-* Toggles de toma.
-* Botones de editar o eliminar.
-* Cierre de modales.
-* Controles de calendario.
-
-### 7.3 Iconografía y ARIA
-
-La iconografía procede de `react-icons`. Los iconos decorativos se marcan con `aria-hidden="true"`; los iconos que actúan como acción sin texto visible deben incluir `aria-label`.
-
-Los componentes interactivos comunican su estado mediante atributos nativos o ARIA:
-
-* `disabled` para acciones no permitidas.
-* `aria-busy` para listados en carga.
-* `aria-live` para mensajes dinámicos.
-* `role="dialog"` y `aria-modal="true"` para modales.
-
-Con esta guía, la interfaz mantiene coherencia visual, accesibilidad y una base técnica escalable para futuras pantallas.
+Con esta guía, la interfaz mantiene coherencia visual y una base técnica escalable para seguir incorporando pantallas sin romper el sistema de diseño.

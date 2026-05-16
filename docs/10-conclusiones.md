@@ -1,176 +1,164 @@
 # 10 - Conclusiones
 
-El proyecto Blíster culmina en una aplicación web progresiva funcional para la gestión doméstica de medicamentos, tratamientos, citas y adherencia. Esta conclusión recoge el grado de cumplimiento de objetivos, los aprendizajes técnicos, las limitaciones detectadas y las posibles líneas de evolución del producto.
+Blíster concluye como una aplicación web progresiva funcional para gestionar medicación doméstica, tratamientos, citas, adherencia, notificaciones y colaboración familiar. Este capítulo evalúa el cumplimiento de objetivos, los aprendizajes obtenidos, las limitaciones actuales y las líneas de mejora.
 
 ## Índice
-1. [Balance general del proyecto](#1-balance-general-del-proyecto)
+
+1. [Balance general](#1-balance-general)
 2. [Cumplimiento de objetivos](#2-cumplimiento-de-objetivos)
-   - 2.1 [Objetivos funcionales](#21-objetivos-funcionales)
-   - 2.2 [Objetivos técnicos](#22-objetivos-técnicos)
-   - 2.3 [Objetivos de diseño y accesibilidad](#23-objetivos-de-diseño-y-accesibilidad)
-3. [Aprendizajes obtenidos](#3-aprendizajes-obtenidos)
-   - 3.1 [Aprendizaje full-stack](#31-aprendizaje-full-stack)
-   - 3.2 [Aprendizaje de producto](#32-aprendizaje-de-producto)
-   - 3.3 [Aprendizaje en integración con IA](#33-aprendizaje-en-integración-con-ia)
-4. [Dificultades encontradas](#4-dificultades-encontradas)
-5. [Limitaciones actuales](#5-limitaciones-actuales)
-6. [Líneas futuras](#6-líneas-futuras)
-7. [Valoración final](#7-valoración-final)
+	- 2.1 [Objetivos funcionales](#21-objetivos-funcionales)
+	- 2.2 [Objetivos técnicos](#22-objetivos-técnicos)
+	- 2.3 [Objetivos de diseño](#23-objetivos-de-diseño)
+3. [Evaluación crítica del alcance](#3-evaluación-crítica-del-alcance)
+4. [Aprendizajes técnicos](#4-aprendizajes-técnicos)
+	- 4.1 [Full-stack y arquitectura](#41-full-stack-y-arquitectura)
+	- 4.2 [Seguridad aplicada](#42-seguridad-aplicada)
+	- 4.3 [Producto y experiencia de usuario](#43-producto-y-experiencia-de-usuario)
+	- 4.4 [Despliegue real](#44-despliegue-real)
+5. [Dificultades superadas](#5-dificultades-superadas)
+6. [Limitaciones actuales](#6-limitaciones-actuales)
+7. [Mejoras futuras](#7-mejoras-futuras)
+8. [Valoración final](#8-valoración-final)
 
----
+## 1. Balance general
 
-## 1. Balance general del proyecto
+El proyecto ha evolucionado desde una idea de organización del botiquín hasta una plataforma full-stack con multitenencia, roles, integración oficial CIMA/AEMPS, PWA, notificaciones, recuperación de contraseña, privacidad RGPD, MCP y despliegue real.
 
-Blíster ha evolucionado desde una idea centrada en ordenar un botiquín doméstico hasta una plataforma PWA con multitenencia, roles, integración con datos oficiales, notificaciones y conexión con asistentes de IA. El resultado demuestra que una aplicación de salud cotidiana puede combinar sencillez de uso con una arquitectura técnica avanzada.
-
-El proyecto no se limita a registrar medicamentos. Su valor reside en relacionar inventario, tratamientos, citas, stock, caducidad y responsabilidad familiar dentro de una misma experiencia. Además, la integración MCP abre la posibilidad de consultar y actualizar datos mediante asistentes externos, manteniendo el control de acceso en el backend.
+El resultado no se limita a recordar tomas. Blíster relaciona inventario, tratamiento, paciente, cita, stock, caducidad, autoría y permisos. Esa relación es la parte más valiosa del proyecto, porque refleja cómo se organiza realmente la medicación en un hogar compartido.
 
 ## 2. Cumplimiento de objetivos
 
-Los objetivos planteados en la introducción se han abordado desde tres planos: funcional, técnico y de diseño. El resultado final cubre el núcleo del producto y deja una base preparada para ampliaciones posteriores.
+Los objetivos iniciales se han cubierto en tres planos: funcional, técnico y de diseño.
 
 ### 2.1 Objetivos funcionales
 
-El proyecto cumple las funciones principales previstas:
-
 | Objetivo | Resultado |
 | :--- | :--- |
-| Gestionar medicamentos | Implementado mediante botiquín por blíster, alta desde CIMA, stock, umbral y caducidad. |
-| Gestionar tratamientos | Implementado con pautas, pacientes, fechas, medicamentos y detalle de progreso. |
-| Registrar tomas | Implementado con logs de adherencia, autoría, decremento de stock y deshacer. |
-| Gestionar citas | Implementado con calendario, formularios y comentarios. |
-| Compartir blísteres | Implementado con miembros, invitaciones y roles. |
-| Alertar de eventos relevantes | Implementado con notificaciones de stock, caducidad, adherencia, CIMA, dosis y citas. |
-| Recuperar contraseña | Implementado con token hasheado, expiración y envío por Resend. |
-| Conectar asistentes IA | Implementado mediante endpoint MCP y tools de lectura/escritura controladas. |
-
-La aplicación permite cubrir el uso diario de una persona que necesita organizar medicación propia o de un familiar.
+| Gestionar medicamentos | Implementado con botiquín por blíster, alta desde CIMA, stock, umbral y caducidad. |
+| Gestionar tratamientos | Implementado con paciente, medicamentos, dosis, frecuencias, fechas y progreso. |
+| Registrar adherencia | Implementado con logs, autoría, descuento de stock, toma forzada y deshacer. |
+| Gestionar citas | Implementado con calendario, formulario, tratamiento opcional y comentarios. |
+| Compartir cuidados | Implementado con blísteres, miembros, invitaciones y roles. |
+| Notificar eventos | Implementado con bandeja, preferencias y soporte Web Push. |
+| Recuperar contraseña | Implementado con tokens hasheados, TTL y email transaccional. |
+| Conectar asistentes IA | Implementado con MCP, OAuth y tools autorizadas. |
+| Proteger privacidad | Implementado con política propia, borrado lógico y purga programada. |
 
 ### 2.2 Objetivos técnicos
 
-Desde el punto de vista técnico, se ha construido una solución completa:
+| Objetivo | Resultado |
+| :--- | :--- |
+| Arquitectura full-stack | React, Vite, Express, MongoDB, Mongoose y TypeScript. |
+| Contratos compartidos | Esquemas Zod en `shared`. |
+| Seguridad | JWT, bcrypt, Helmet, CORS, rate limit, sanitización, roles y tokens hasheados. |
+| Documentación API | Swagger en `/api/v1/docs` y tablas de endpoints en documentación. |
+| PWA | Manifest, service worker, cache y push. |
+| Testing | Jest, Supertest, mongodb-memory-server, Vitest, Playwright y axe. |
+| CI | GitHub Actions con jobs backend, frontend y E2E en PR a `main`. |
+| Despliegue | Docker Compose, Render, MongoDB Atlas y backend final en VPS con Nginx/HTTPS. |
 
-* Backend Express con TypeScript.
-* Persistencia MongoDB mediante Mongoose.
-* Contratos Zod compartidos entre backend y frontend.
-* Autenticación JWT con refresh token.
-* Integración con CIMA/AEMPS.
-* Envío de emails de recuperación con Resend.
-* Notificaciones push mediante Web Push.
-* PWA con Vite y Workbox.
-* Endpoint MCP integrado en Express.
-* OAuth para clientes MCP compatibles.
-* Docker Compose para validación local.
-* CI con GitHub Actions.
-* Tests backend unitarios, integración y E2E.
-* Tests frontend con Vitest/React Testing Library.
-* Playwright con auditoría axe para navegador real en CI.
+### 2.3 Objetivos de diseño
 
-El uso de TypeScript en todas las capas ha permitido mantener mayor coherencia entre datos, servicios y UI.
+| Objetivo | Resultado |
+| :--- | :--- |
+| Mobile-first | Interfaz móvil como experiencia principal y marco en escritorio. |
+| Coherencia visual | Sass, ITCSS, BEM y tokens CSS. |
+| Accesibilidad | Tema, tamaño de texto, OpenDyslexic, labels, errores inline y contraste. |
+| Prototipado | Prototipo Figma documentado y guía de estilos actualizada. |
+| Usabilidad | Navegación inferior, feedback inmediato y estados de carga/vacío/error. |
 
-### 2.3 Objetivos de diseño y accesibilidad
+## 3. Evaluación crítica del alcance
 
-El proyecto también cumple una línea de diseño propia:
+El alcance final es ambicioso para un proyecto individual, pero mantiene coherencia porque las funcionalidades giran alrededor de un mismo núcleo: la medicación doméstica. Las piezas no se añaden como módulos aislados, sino que se conectan entre sí.
 
-* Identidad visual basada en verdes teal y acento terracota.
-* Experiencia mobile-first.
-* Marco móvil en escritorio.
-* Sistema de estilos con Sass, ITCSS y BEM.
-* Tema oscuro.
-* Ajustes de accesibilidad.
-* Tipografía alternativa para dislexia.
-* Componentes reutilizables.
-* Estados de carga, vacío y error.
+El punto más logrado es la integración entre inventario y adherencia. Registrar una toma no solo cambia una pantalla: crea historial, descuenta stock, puede generar notificaciones y mantiene autoría. También destaca la multitenencia por blísteres, que permite modelar casos familiares reales con permisos distintos.
 
-La interfaz evita una estética clínica fría y busca un equilibrio entre confianza, calma y claridad.
+El punto que requiere más evolución es la cobertura de interfaz en navegador real. El backend y los contratos compartidos tienen una base de pruebas amplia, mientras que el frontend automatizado todavía debe crecer en formularios complejos y flujos autenticados.
 
-## 3. Aprendizajes obtenidos
+## 4. Aprendizajes técnicos
 
-El desarrollo de Blíster ha requerido integrar conocimientos de programación, diseño, seguridad, documentación y despliegue. La complejidad del proyecto ha permitido practicar decisiones propias de un entorno profesional.
+El proyecto ha reforzado competencias de desarrollo web profesional.
 
-### 3.1 Aprendizaje full-stack
+### 4.1 Full-stack y arquitectura
 
-El proyecto ha reforzado competencias en:
+Se ha trabajado con separación entre rutas, controladores, servicios y modelos. Esta estructura facilita mantener reglas de negocio complejas sin convertir los controladores en bloques monolíticos.
 
-* Modelado de datos documentales con MongoDB.
-* Diseño de API REST versionada.
-* Validación compartida con Zod.
-* Gestión de autenticación y permisos.
-* Consumo de servicios externos.
-* Arquitectura React con rutas protegidas.
-* Estado global con Zustand.
-* Estilos escalables con ITCSS.
-* Testing automatizado backend.
-* Dockerización y despliegue.
+La decisión de usar Zod en `shared` ha sido especialmente útil. Permite que un cambio en un contrato se refleje en frontend y backend y reduce errores por duplicación de validaciones.
 
-La principal lección técnica es la importancia de separar responsabilidades. Cuando las rutas, servicios, modelos y schemas están bien diferenciados, el sistema crece con menos fricción.
+### 4.2 Seguridad aplicada
 
-### 3.2 Aprendizaje de producto
+Blíster maneja datos sensibles relacionados con salud. Por ello se han aplicado medidas como tokens hasheados, recuperación con respuesta neutra, CORS controlado, sanitización, validación de ObjectId, permisos por rol y revocación de accesos externos.
 
-Blíster ha demostrado que el diseño de producto no consiste solo en añadir funciones. En una aplicación de salud, cada funcionalidad debe responder a una necesidad clara y evitar aumentar la carga cognitiva.
+La seguridad no se ha tratado como una capa final, sino como una condición de cada flujo: login, recuperación, blísteres, MCP, OAuth y borrado.
 
-Decisiones como agrupar administración en Perfil, mantener la navegación inferior simple o usar un marco móvil en escritorio ayudan a proteger la coherencia del producto. La experiencia final debe sentirse sencilla aunque el sistema interno sea complejo.
+### 4.3 Producto y experiencia de usuario
 
-### 3.3 Aprendizaje en integración con IA
+El diseño mobile-first obligó a priorizar información. En pantallas pequeñas no es viable mostrar todo, por lo que cada sección se centra en una tarea principal: tomar, consultar stock, crear tratamiento, revisar calendario o configurar perfil.
 
-La implementación MCP ha sido uno de los aprendizajes más diferenciales. Integrar asistentes de IA externos obliga a pensar en:
+La interfaz también ha mostrado la importancia del feedback. En una aplicación de salud, un error de formulario o una acción silenciosa genera desconfianza. Por eso se incorporaron mensajes inline, toasts, estados vacíos y confirmaciones.
 
-* Autorización granular.
-* Contratos de tools.
-* Respuestas parseables.
-* Seguridad de tokens.
-* Separación entre lectura y escritura.
-* Contexto multi-blíster.
+### 4.4 Despliegue real
 
-La IA no se integra como elemento decorativo, sino como una capa de interoperabilidad que permite al usuario consultar y operar sobre sus datos desde otros entornos.
+El despliegue ha permitido comparar tres enfoques: Compose local, Render y VPS. Docker aportó reproducibilidad; Render permitió publicar rápido frontend y backend; la VPS dio control sobre el backend y resolvió la arquitectura final con dominio propio, Nginx y HTTPS.
 
-## 4. Dificultades encontradas
+## 5. Dificultades superadas
 
-El proyecto ha presentado varias dificultades relevantes:
+| Dificultad | Solución |
+| :--- | :--- |
+| Modelar cuidado familiar | Blísteres compartidos con roles y membresía. |
+| Evitar accesos cruzados | Middleware `checkBlisterAccess` y filtros por `blisterId`. |
+| Gestionar stock al registrar tomas | Regla de stock, toma forzada y restauración al deshacer. |
+| Formularios con Zod 4 | Resolver propio para React Hook Form. |
+| Integrar MCP en producción | Endpoint `/mcp` dentro de Express. |
+| Evitar Mixed Content | Backend en `https://api.miblister.es` con Nginx y Certbot. |
+| Privacidad de datos sensibles | Política RGPD, borrado lógico y purga programada. |
+| Consistencia CSS | ITCSS, BEM y tokens centralizados. |
 
-1. **Complejidad del dominio sanitario:** Medicamentos, tratamientos, tomas, citas y stock están relacionados. Un cambio en una entidad puede afectar a varias pantallas y servicios.
-2. **Multitenencia y roles:** No basta con autenticar al usuario; cada operación debe comprobar su relación con el blíster y su rol.
-3. **Sincronización con CIMA:** La API externa introduce errores, formatos y tiempos de respuesta que deben normalizarse.
-4. **Notificaciones:** El sistema debe distinguir entre crear una notificación interna, enviarla por push y respetar preferencias.
-5. **MCP:** La conexión con agentes externos requiere un contrato distinto al de una API REST tradicional.
-6. **Diseño mobile-first:** Mantener una experiencia móvil rica sin saturar pantallas pequeñas exige priorizar constantemente.
+## 6. Limitaciones actuales
 
-Estas dificultades han ayudado a madurar la arquitectura y a tomar decisiones más cuidadosas.
-
-## 5. Limitaciones actuales
-
-Aunque el resultado es funcional, existen limitaciones identificadas:
+El proyecto es funcional, pero existen límites propios de un MVP académico.
 
 | Limitación | Impacto |
 | :--- | :--- |
-| Cobertura frontend automatizada inicial | Existe base Vitest/RTL, pero aún faltan formularios y pantallas críticas. |
-| E2E de navegador inicial | Playwright cubre entrada pública y accesibilidad crítica, pero no todos los flujos autenticados. |
-| Dependencia de servicios externos | CIMA, Resend y Web Push pueden fallar o no estar configurados. |
-| Experiencia offline parcial | La PWA cachea recursos y datos CIMA, pero no implementa sincronización completa de escrituras offline. |
-| Escaneo de códigos no implementado | El alta se realiza por buscador, no mediante cámara. |
-| Analítica sanitaria avanzada pendiente | El sistema no predice reposiciones futuras más allá de umbrales y recordatorios. |
+| E2E frontend limitado | Falta cubrir registro, inventario, tratamiento y toma completa en navegador real. |
+| Offline parcial | La PWA cachea recursos y datos CIMA, pero no sincroniza escrituras offline. |
+| Push dependiente del navegador | Requiere permisos y soporte del dispositivo. |
+| Sin escaneo de códigos | El alta se realiza mediante buscador CIMA, no por cámara. |
+| Sin informes avanzados | No genera todavía informes de adherencia exportables. |
+| Analítica predictiva pendiente | No calcula reposición futura por consumo histórico. |
+| MCP ampliable | Tools implementadas, pero pueden añadirse recursos, prompts y flujos guiados. |
 
-Estas limitaciones no impiden el uso del MVP, pero marcan prioridades claras para futuras versiones.
+Estas limitaciones no impiden el uso del núcleo de Blíster, pero marcan una ruta clara de evolución.
 
-## 6. Líneas futuras
+## 7. Mejoras futuras
 
-Las líneas de evolución más relevantes son:
+Las mejoras propuestas siguen la dirección del producto: reducir carga cognitiva y aumentar seguridad en la gestión doméstica.
 
-1. **Ampliación de tests frontend y E2E:** Extender React Testing Library, Playwright y auditorías automáticas con axe a login, inventario, calendario y toma de medicación.
-2. **Escaneo EAN-13:** Añadir alta de medicamentos mediante cámara y código de barras.
-3. **Modo offline avanzado:** Permitir registrar tomas sin conexión y sincronizar al recuperar red.
-4. **Predicción de reposición:** Calcular cuándo se agotará un medicamento según ritmo real de consumo.
-5. **Exportación de datos:** Generar informes de adherencia para compartir con profesionales sanitarios.
-6. **Mejora de analítica familiar:** Mostrar métricas de adherencia por tratamiento, paciente y periodo.
-7. **Mayor integración MCP:** Añadir prompts guiados, recursos MCP y flujos OAuth más completos para clientes compatibles.
-8. **Internacionalización:** Preparar textos para varios idiomas si el proyecto crece fuera del contexto español.
+1. **E2E autenticado completo:** cubrir registro, creación de blíster, alta de medicamento, tratamiento y toma con Playwright.
+2. **Mayor cobertura de componentes:** añadir tests para login, formularios, cards, modales y navegación inferior.
+3. **Escaneo EAN-13:** permitir alta mediante cámara y código de barras si CIMA o una fuente compatible permite resolver el medicamento.
+4. **Modo offline avanzado:** registrar tomas sin conexión y sincronizar al recuperar red con resolución de conflictos.
+5. **Informes exportables:** generar PDF o CSV de adherencia por tratamiento, paciente y periodo.
+6. **Predicción de reposición:** estimar fecha de agotamiento según ritmo real de consumo.
+7. **Mejoras MCP:** añadir recursos, prompts guiados y auditoría visible de acciones externas.
+8. **Internacionalización:** preparar textos para otros idiomas si el proyecto crece fuera del contexto español.
+9. **Monitorización de producción:** centralizar logs, métricas de latencia y alertas de disponibilidad.
+10. **Backups y recuperación:** documentar una estrategia de backup Atlas y restauración ante incidente.
 
-Estas mejoras siguen la misma dirección del producto: reducir carga cognitiva y aumentar seguridad en la gestión doméstica de medicamentos.
+Prioridad recomendada:
 
-## 7. Valoración final
+| Prioridad | Mejora | Motivo |
+| :--- | :--- | :--- |
+| Alta | E2E autenticado completo | Aumenta confianza en flujos críticos y mejora evidencia de calidad. |
+| Alta | Capturas reales y evidencias Figma | Refuerza directamente la evaluación de diseño. |
+| Media | Informes exportables | Aporta valor al seguimiento familiar o médico. |
+| Media | Offline avanzado | Mejora uso en situaciones sin conexión, pero requiere resolución de conflictos. |
+| Baja | Internacionalización | Útil si el producto crece fuera del contexto español. |
 
-Blíster cumple el objetivo de construir una aplicación web completa, útil y técnicamente ambiciosa. El proyecto integra frontend, backend, base de datos, diseño accesible, PWA, notificaciones, API externa, recuperación de contraseña, pruebas y despliegue.
+## 8. Valoración final
 
-Su mayor aportación es unir tres dimensiones que normalmente aparecen separadas: gestión doméstica de medicamentos, colaboración familiar e interoperabilidad con asistentes de IA. Esta combinación convierte a Blíster en una propuesta diferenciada dentro del ámbito de aplicaciones de salud personal.
+Blíster cumple el objetivo de construir una aplicación web completa, útil y técnicamente sólida. Integra frontend, backend, base de datos, validación compartida, seguridad, diseño accesible, documentación, pruebas, Docker y despliegue real.
 
-Como trabajo final de Desarrollo de Aplicaciones Web, el proyecto demuestra capacidad para diseñar, implementar, documentar y desplegar una solución realista con criterios profesionales. Como producto, deja una base sólida para seguir evolucionando hacia una herramienta útil en el día a día de personas que conviven con tratamientos médicos propios o familiares.
+Su aportación principal es unir gestión doméstica de medicamentos, colaboración familiar e interoperabilidad con asistentes externos. Esta combinación convierte el proyecto en algo más que un CRUD académico: es una solución con un dominio coherente, problemas reales y decisiones técnicas justificables.
+
+Como trabajo final de Desarrollo de Aplicaciones Web, Blíster demuestra capacidad para analizar una necesidad, diseñar una arquitectura, implementar funcionalidades conectadas, validar el sistema y desplegarlo en producción. Como producto, deja una base clara para seguir evolucionando hacia una herramienta útil en el día a día de personas que conviven con medicación propia o familiar.
