@@ -108,13 +108,18 @@ function CommentItem({
   const [menuOpen, setMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.text);
+  const [draftError, setDraftError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const isEdited = hasCommentBeenEdited(comment);
+  const draftErrorId = draftError ? `appointment-comment-edit-${comment.id}-error` : undefined;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = draft.trim();
-    if (!text) return;
+    if (!text) {
+      setDraftError('El comentario no puede estar vacío.');
+      return;
+    }
     setBusy(true);
     try {
       await onUpdateComment(appointment, comment, text);
@@ -133,12 +138,23 @@ function CommentItem({
         {isEditing ? (
           <form className="c-appointment-card__comment-edit" onSubmit={(event) => void handleSubmit(event)}>
             <textarea
-              className="c-field__textarea"
+              className={['c-field__textarea', draftError && 'c-field__textarea--error'].filter(Boolean).join(' ')}
               value={draft}
               rows={3}
               maxLength={500}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                setDraftError(null);
+              }}
+              aria-invalid={draftError ? true : undefined}
+              aria-describedby={draftErrorId}
+              aria-errormessage={draftErrorId}
             />
+            {draftError ? (
+              <span id={draftErrorId} className="c-field__error" role="status" aria-live="polite">
+                {draftError}
+              </span>
+            ) : null}
             <div className="c-appointment-card__comment-edit-actions">
               <Button type="button" variant="primary-outline" onClick={() => setIsEditing(false)} disabled={busy}>
                 Cancelar
@@ -212,6 +228,7 @@ export function AppointmentCard({
   const [cardMenuOpen, setCardMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [commentError, setCommentError] = useState<string | null>(null);
   const [commentBusy, setCommentBusy] = useState(false);
   const editable = canMutate(userRole);
   const linkedTreatment = appointment.treatmentId
@@ -224,11 +241,15 @@ export function AppointmentCard({
   const detailsId = `appointment-card-details-${appointment.id}`;
   const canSubmitComment = commentText.trim().length > 0 && !commentBusy;
   const commentsCountLabel = formatCommentsCount(appointment.comments.length);
+  const commentErrorId = commentError ? `appointment-comment-${appointment.id}-error` : undefined;
 
   const handleCommentSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = commentText.trim();
-    if (!text) return;
+    if (!text) {
+      setCommentError('Escribe un comentario antes de enviarlo.');
+      return;
+    }
     setCommentBusy(true);
     try {
       await onAddComment(appointment, text);
@@ -352,7 +373,13 @@ export function AppointmentCard({
                     maxLength={500}
                     placeholder="Añadir comentario"
                     autoComplete="off"
-                    onChange={(event) => setCommentText(event.target.value)}
+                    onChange={(event) => {
+                      setCommentText(event.target.value);
+                      setCommentError(null);
+                    }}
+                    aria-invalid={commentError ? true : undefined}
+                    aria-describedby={commentErrorId}
+                    aria-errormessage={commentErrorId}
                   />
                   <button
                     type="submit"
@@ -364,6 +391,11 @@ export function AppointmentCard({
                     <TbSend aria-hidden="true" />
                   </button>
                 </div>
+                {commentError ? (
+                  <span id={commentErrorId} className="c-field__error" role="status" aria-live="polite">
+                    {commentError}
+                  </span>
+                ) : null}
               </form>
             ) : null}
           </section>

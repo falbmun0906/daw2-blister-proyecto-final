@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
 import { TbMail } from 'react-icons/tb';
@@ -12,6 +11,7 @@ import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { forgotPassword } from '../../services/auth.service';
 import { isApiError } from '../../types/api.types';
 
@@ -28,7 +28,7 @@ function ForgotPasswordPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
+    resolver: createZodFormResolver(forgotPasswordSchema),
     defaultValues: {
       email: '',
     },
@@ -86,7 +86,7 @@ function ForgotPasswordPage() {
             Introduce tu correo electrónico y te enviaremos un enlace temporal para crear una nueva.
           </p>
 
-          <form className="c-forgot-password-page__form" onSubmit={handleSubmit(onSubmit)}>
+          <form className="c-forgot-password-page__form" onSubmit={handleSubmit(onSubmit)} noValidate>
             {globalError ? <p className="c-forgot-password-page__error">{globalError}</p> : null}
 
             <Input

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { TbCalendar, TbFileText, TbInfoCircle, TbNumbers, TbTag } from 'react-icons/tb';
 
@@ -17,6 +16,7 @@ import { stockUnits } from '../../../../shared/schemas/schema.constants';
 import { createMedicine } from '../../services/medicines.service';
 import { getCimaDetail } from '../../services/external.service';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
 import { useMedicinesStore } from '../../stores/medicines.store';
@@ -25,7 +25,7 @@ import { isApiError } from '../../types/api.types';
 import type { ExternalMedicineInfo, ExternalSearchItem } from '../../types/medicine.types';
 
 const formSchema = z.object({
-  alias: z.string().trim().max(100).optional(),
+  alias: z.string().trim().max(100, 'El alias no puede superar los 100 caracteres.').optional(),
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo.').refine(
     (value) => Number.isInteger(value * 2),
     'El stock debe ir en incrementos de 0,5.',
@@ -73,7 +73,7 @@ function AddMedicinePage() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: createZodFormResolver(formSchema),
     defaultValues: { alias: '', stock: 0, stockUnit: 'pastillas', threshold: 5, expDate: '' },
   });
 

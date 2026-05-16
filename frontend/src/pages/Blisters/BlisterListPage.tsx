@@ -1,4 +1,4 @@
-import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useId, useMemo, useState } from 'react';
 import {
   TbChevronDown,
   TbChevronUp,
@@ -39,6 +39,7 @@ import type {
   BlisterMemberDetail,
   BlisterRole,
 } from '../../types/blister.types';
+import { createBlisterSchema, joinBlisterSchema } from '../../../../shared/schemas/blister.schema';
 
 const ROLE_LABEL: Record<BlisterRole, string> = {
   OWNER: 'Propietario',
@@ -230,31 +231,58 @@ function RenameBlisterModal({
   onConfirm,
 }: RenameBlisterModalProps) {
   const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState<string | null>(null);
+  const inputId = useId();
+  const errorId = error ? `${inputId}-error` : undefined;
 
   useEffect(() => {
     if (!open) return;
-    const timeoutId = window.setTimeout(() => setValue(initialValue), 0);
+    const timeoutId = window.setTimeout(() => {
+      setValue(initialValue);
+      setError(null);
+    }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [initialValue, open]);
 
+  const handleConfirm = (): void => {
+    const parsed = createBlisterSchema.safeParse({ name: value });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Revisa el nombre del blíster.');
+      return;
+    }
+    onConfirm(parsed.data.name);
+  };
+
   return (
     <Modal open={open} onClose={onClose} title="Editar titulo del blister">
-      <label className="c-new-blister-modal__label">
+      <label className="c-new-blister-modal__label" htmlFor={inputId}>
         <span>Nuevo titulo</span>
         <input
+          id={inputId}
           type="text"
           className="c-pill-input"
           value={value}
           maxLength={120}
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(event) => {
+            setValue(event.target.value);
+            setError(null);
+          }}
           autoFocus
+          aria-invalid={error ? true : undefined}
+          aria-describedby={errorId}
+          aria-errormessage={errorId}
         />
       </label>
+      {error ? (
+        <p id={errorId} className="c-field__error" role="status" aria-live="polite">
+          {error}
+        </p>
+      ) : null}
       <div className="c-confirm-modal__actions">
         <Button type="button" variant="primary-outline" onClick={onClose}>
           Cancelar
         </Button>
-        <Button type="button" variant="primary" onClick={() => onConfirm(value)}>
+        <Button type="button" variant="primary" onClick={handleConfirm}>
           Guardar
         </Button>
       </div>
@@ -357,7 +385,13 @@ interface NewBlisterModalProps {
 function NewBlisterModal({ open, onClose, onCreated }: NewBlisterModalProps) {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const nameInputId = useId();
+  const codeInputId = useId();
+  const nameErrorId = nameError ? `${nameInputId}-error` : undefined;
+  const codeErrorId = codeError ? `${codeInputId}-error` : undefined;
   const addToast = useUiStore((s) => s.addToast);
 
   useEffect(() => {
@@ -365,22 +399,43 @@ function NewBlisterModal({ open, onClose, onCreated }: NewBlisterModalProps) {
     const timeoutId = window.setTimeout(() => {
       setName('');
       setCode('');
+      setNameError(null);
+      setCodeError(null);
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, [open]);
 
   const handleSubmit = async () => {
-    if (!name.trim() && !code.trim()) {
-      addToast({ message: 'Indica un nombre o un código de invitación.', variant: 'error' });
+    const trimmedName = name.trim();
+    const trimmedCode = code.trim();
+    setNameError(null);
+    setCodeError(null);
+
+    if (!trimmedName && !trimmedCode) {
+      setNameError('Indica un nombre para crear un blíster.');
+      setCodeError('O introduce un código de invitación para unirte.');
       return;
     }
+
+    const parsedCode = trimmedCode ? joinBlisterSchema.safeParse({ code: trimmedCode }) : null;
+    if (parsedCode && !parsedCode.success) {
+      setCodeError(parsedCode.error.issues[0]?.message ?? 'Revisa el código de invitación.');
+      return;
+    }
+
+    const parsedName = !trimmedCode ? createBlisterSchema.safeParse({ name: trimmedName }) : null;
+    if (parsedName && !parsedName.success) {
+      setNameError(parsedName.error.issues[0]?.message ?? 'Revisa el nombre del blíster.');
+      return;
+    }
+
     setBusy(true);
     try {
-      if (code.trim()) {
-        await joinBlister({ code: code.trim() });
+      if (parsedCode?.success) {
+        await joinBlister({ code: parsedCode.data.code });
         addToast({ message: 'Te has unido al blíster.', variant: 'success' });
-      } else {
-        await createBlister({ name: name.trim() });
+      } else if (parsedName?.success) {
+        await createBlister({ name: parsedName.data.name });
         addToast({ message: 'Blíster creado.', variant: 'success' });
       }
       await onCreated();
@@ -397,29 +452,53 @@ function NewBlisterModal({ open, onClose, onCreated }: NewBlisterModalProps) {
 
   return (
     <Modal open={open} onClose={onClose} title="Nuevo blíster">
-      <label className="c-new-blister-modal__label">
+      <label className="c-new-blister-modal__label" htmlFor={nameInputId}>
         <span>Elige un nombre para tu nuevo blíster:</span>
         <input
+          id={nameInputId}
           type="text"
           className="c-pill-input"
           placeholder="Nombre del blíster"
           value={name}
           maxLength={120}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setNameError(null);
+          }}
+          aria-invalid={nameError ? true : undefined}
+          aria-describedby={nameErrorId}
+          aria-errormessage={nameErrorId}
         />
       </label>
+      {nameError ? (
+        <p id={nameErrorId} className="c-field__error" role="status" aria-live="polite">
+          {nameError}
+        </p>
+      ) : null}
       <p className="c-new-blister-modal__or">o</p>
-      <label className="c-new-blister-modal__label">
+      <label className="c-new-blister-modal__label" htmlFor={codeInputId}>
         <span>¡Únete con un código de invitación!</span>
         <input
+          id={codeInputId}
           type="text"
           className="c-pill-input"
           placeholder="Código de invitación"
           value={code}
           maxLength={8}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onChange={(e) => {
+            setCode(e.target.value.toUpperCase());
+            setCodeError(null);
+          }}
+          aria-invalid={codeError ? true : undefined}
+          aria-describedby={codeErrorId}
+          aria-errormessage={codeErrorId}
         />
       </label>
+      {codeError ? (
+        <p id={codeErrorId} className="c-field__error" role="status" aria-live="polite">
+          {codeError}
+        </p>
+      ) : null}
       <Button type="button" variant="primary" loading={busy} onClick={() => void handleSubmit()}>
         Crear o unirme
       </Button>

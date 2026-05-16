@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 
 import {
@@ -11,6 +10,7 @@ import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { createBlister } from '../../services/blisters.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -32,7 +32,7 @@ export default function BlisterCreatePage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<CreateBlisterInput>({
-    resolver: zodResolver(createBlisterSchema),
+    resolver: createZodFormResolver(createBlisterSchema),
     defaultValues: { name: '' },
   });
 

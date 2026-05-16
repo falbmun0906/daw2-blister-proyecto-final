@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
 import { TbUserCircle, TbLock } from 'react-icons/tb';
@@ -13,6 +12,7 @@ import { Input } from '../../components/atoms/Input';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { ROUTES } from '../../constants/routes';
 import { applyUserSettings } from '../../lib/applyUserSettings';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { login as loginService } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { resetAppStores } from '../../stores/reset-stores';
@@ -45,7 +45,7 @@ function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+    resolver: createZodFormResolver(loginSchema),
     defaultValues: {
       identifier: '',
       password: '',
@@ -103,7 +103,7 @@ function LoginPage() {
           <span className="c-login-page__title-accent">Iniciar</span> sesión
         </h1>
 
-        <form className="c-login-page__form" onSubmit={handleSubmit(onSubmit)}>
+        <form className="c-login-page__form" onSubmit={handleSubmit(onSubmit)} noValidate>
           {globalError ? <ErrorState message={globalError} /> : null}
 
           <Input

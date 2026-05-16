@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -9,6 +8,7 @@ import { Input } from '../../components/atoms/Input';
 import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { updateProfile } from '../../services/auth.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
@@ -49,7 +49,7 @@ function ChangePasswordPage() {
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordFormValues>({
-    resolver: zodResolver(changePasswordSchema),
+    resolver: createZodFormResolver(changePasswordSchema),
     defaultValues: {
       currentPassword: '',
       newPassword: '',

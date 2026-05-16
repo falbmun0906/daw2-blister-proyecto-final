@@ -48,6 +48,12 @@ function buildPayload(values: FormValues): CreateAppointmentInput {
   });
 }
 
+function getAppointmentIssueMessage(path: string, message: string): string {
+  if (path === 'patientUserId') return 'Selecciona un miembro del blíster.';
+  if (path === 'treatmentId') return 'Selecciona un tratamiento válido.';
+  return message;
+}
+
 function toLocalDateTimeInput(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
@@ -159,7 +165,7 @@ function AppointmentFormPage() {
       if (err instanceof ZodError) {
         for (const issue of err.issues) {
           const path = issue.path.join('.');
-          if (path) setError(path as never, { message: issue.message });
+          if (path) setError(path as never, { message: getAppointmentIssueMessage(path, issue.message) });
         }
         return;
       }

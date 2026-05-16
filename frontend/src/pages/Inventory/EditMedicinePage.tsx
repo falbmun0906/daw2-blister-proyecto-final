@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { TbCalendar, TbNumbers, TbTag } from 'react-icons/tb';
 
@@ -14,6 +13,7 @@ import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { useRefreshNotifications } from '../../hooks/use.notifications';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { getMedicine, removeMedicine, updateMedicine } from '../../services/medicines.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
@@ -23,7 +23,7 @@ import { isApiError } from '../../types/api.types';
 import type { Medicine } from '../../types/medicine.types';
 
 const formSchema = z.object({
-  alias: z.string().trim().max(100).optional(),
+  alias: z.string().trim().max(100, 'El alias no puede superar los 100 caracteres.').optional(),
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo.').refine(
     (value) => Number.isInteger(value * 2),
     'El stock debe ir en incrementos de 0,5.',
@@ -66,7 +66,7 @@ function EditMedicinePage() {
     ?.role ?? null;
 
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: createZodFormResolver(formSchema),
     defaultValues: { alias: '', stock: 0, threshold: 0, expDate: '' },
   });
 

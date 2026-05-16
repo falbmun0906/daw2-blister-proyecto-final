@@ -63,7 +63,20 @@ export default function NotificationSettingsPage() {
     setSettings((current: NotificationSettings) => ({ ...current, [key]: value }));
   };
 
+  const customHoursError = settings.appointments
+    && settings.appointmentReminderPreset === 'custom'
+    && (!Number.isInteger(settings.customAppointmentReminderHours)
+      || settings.customAppointmentReminderHours < 1
+      || settings.customAppointmentReminderHours > 168)
+    ? 'Introduce un número entero entre 1 y 168 horas.'
+    : null;
+
   const handleSave = async (): Promise<void> => {
+    if (customHoursError) {
+      setError(null);
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
@@ -125,7 +138,7 @@ export default function NotificationSettingsPage() {
           </select>
         </label>
         {settings.appointmentReminderPreset === 'custom' ? (
-          <label className="c-field">
+          <label className={['c-field', customHoursError && 'c-field--error'].filter(Boolean).join(' ')}>
             <span className="c-field__label"><span className="c-field__label-text">Horas antes</span></span>
             <input
               className="c-field__input"
@@ -133,9 +146,20 @@ export default function NotificationSettingsPage() {
               min={1}
               max={168}
               value={settings.customAppointmentReminderHours}
-              onChange={(event) => setFlag('customAppointmentReminderHours', Number(event.target.value) || 1)}
+              onChange={(event) => {
+                const nextValue = event.target.value === '' ? 0 : Number(event.target.value);
+                setFlag('customAppointmentReminderHours', Number.isNaN(nextValue) ? 0 : nextValue);
+              }}
               disabled={!settings.appointments}
+              aria-invalid={customHoursError ? true : undefined}
+              aria-describedby={customHoursError ? 'custom-reminder-hours-error' : undefined}
+              aria-errormessage={customHoursError ? 'custom-reminder-hours-error' : undefined}
             />
+            {customHoursError ? (
+              <span id="custom-reminder-hours-error" className="c-field__error" role="status" aria-live="polite">
+                {customHoursError}
+              </span>
+            ) : null}
           </label>
         ) : null}
       </FormSection>

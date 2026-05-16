@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -11,13 +10,14 @@ import { Input } from '../../components/atoms/Input';
 import { Modal } from '../../components/atoms/Modal';
 import { ROUTES } from '../../constants/routes';
 import { usePageBackOverride, usePageTitle } from '../../hooks/use.page-title';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 
 const personalInfoSchema = z.object({
-  name: z.string().trim().min(1, 'El nombre es obligatorio.').max(100),
+  name: z.string().trim().min(1, 'El nombre es obligatorio.').max(100, 'El nombre no puede superar los 100 caracteres.'),
   username: z
     .string()
     .trim()
@@ -49,7 +49,7 @@ function PersonalInfoPage() {
     setError,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<PersonalInfoFormValues>({
-    resolver: zodResolver(personalInfoSchema),
+    resolver: createZodFormResolver(personalInfoSchema),
     defaultValues: {
       name: user?.name ?? '',
       username: user?.username ?? '',

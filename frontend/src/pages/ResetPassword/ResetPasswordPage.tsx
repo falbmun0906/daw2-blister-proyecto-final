@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
 import { TbLock } from 'react-icons/tb';
@@ -13,6 +12,7 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
 import { AuthLayout } from '../../components/layout/AuthLayout';
 import { ROUTES } from '../../constants/routes';
+import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { resetPassword } from '../../services/auth.service';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
@@ -46,7 +46,7 @@ function ResetPasswordPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<ResetPasswordFormData>({
-    resolver: zodResolver(resetPasswordSchema),
+    resolver: createZodFormResolver(resetPasswordSchema),
     defaultValues: {
       token,
       password: '',
@@ -101,7 +101,7 @@ function ResetPasswordPage() {
           </Link>
         </div>
       ) : (
-        <form className="c-reset-password-page__form" onSubmit={handleSubmit(onSubmit)}>
+        <form className="c-reset-password-page__form" onSubmit={handleSubmit(onSubmit)} noValidate>
           {globalError ? <ErrorState message={globalError} /> : null}
           <input type="hidden" {...register('token')} value={token} />
 

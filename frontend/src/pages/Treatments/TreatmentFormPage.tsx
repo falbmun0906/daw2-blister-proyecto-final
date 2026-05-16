@@ -144,6 +144,12 @@ function buildUpdatePayload(values: FormValues): UpdateTreatmentInput {
   });
 }
 
+function getTreatmentIssueMessage(path: string, message: string): string {
+  if (path === 'patientUserId') return 'Selecciona un miembro del blíster.';
+  if (/^medicines\.\d+\.medicineId$/u.test(path)) return 'Selecciona un medicamento.';
+  return message;
+}
+
 function getMedicineSectionError(errors: FieldErrors<FormValues>): string | null {
   const rootMessage = (errors.medicines as { message?: string } | undefined)?.message;
   if (typeof rootMessage === 'string') {
@@ -467,7 +473,7 @@ function TreatmentFormPage() {
       if (err instanceof ZodError) {
         for (const issue of err.issues) {
           const path = issue.path.join('.');
-          if (path) setError(path as never, { message: issue.message });
+          if (path) setError(path as never, { message: getTreatmentIssueMessage(path, issue.message) });
         }
         return;
       }
