@@ -85,7 +85,7 @@ El tono visual prioriza textos cortos, titulares claros y etiquetas funcionales.
 
 Los colores se definen en `frontend/src/scss/00-settings/_colors.scss` mediante variables CSS. Los componentes consumen tokens, no valores hexadecimales sueltos.
 
-![Guía cromática](assets/placeholder-guia-colores.svg)
+<img width="932" height="1100" alt="image" src="https://github.com/user-attachments/assets/a2aaa0fc-e310-479a-b71f-41b669bf50ac" />
 
 ### 3.1 Colores principales
 
@@ -121,7 +121,7 @@ El tema oscuro se activa con `data-theme="dark"` en el elemento `html`. Los comp
 
 La tipografía se define en `frontend/src/scss/00-settings/_typography.scss`. La combinación busca legibilidad en móvil y personalidad en pantallas de marca.
 
-![Guía tipográfica](assets/placeholder-guia-tipografia.svg)
+<img width="1052" height="530" alt="image" src="https://github.com/user-attachments/assets/1dbabee1-5231-4886-b5de-4b55a34d09d7" />
 
 ### 4.1 Familias tipográficas
 
@@ -151,7 +151,7 @@ El sistema visual centraliza medidas para reducir inconsistencias entre pantalla
 
 ### 5.1 Espaciado
 
-![Guía de espaciado](assets/placeholder-guia-espaciado.svg)
+<img width="1517" height="957" alt="image" src="https://github.com/user-attachments/assets/2be40ac3-ab67-4eec-894c-4aa371048d75" />
 
 | Token | Equivalencia | Uso |
 | :--- | :--- | :--- |
@@ -165,7 +165,7 @@ El sistema visual centraliza medidas para reducir inconsistencias entre pantalla
 
 ### 5.2 Bordes y radios
 
-![Guía de bordes y radios](assets/placeholder-guia-bordes-radios.svg)
+<img width="1032" height="482" alt="image" src="https://github.com/user-attachments/assets/81841c61-d6f6-4526-afa1-5caddecc5ab9" />
 
 | Token | Uso |
 | :--- | :--- |
@@ -177,7 +177,7 @@ El sistema visual centraliza medidas para reducir inconsistencias entre pantalla
 
 ### 5.3 Sombras
 
-![Guía de sombras](assets/placeholder-guia-sombras.svg)
+<img width="1517" height="402" alt="image" src="https://github.com/user-attachments/assets/e0653f14-959f-40f3-8753-d8ec9ef531b6" />
 
 | Token | Uso |
 | :--- | :--- |
@@ -304,13 +304,12 @@ Los SVG incluidos en `docs/assets` son placeholders deliberados. Permiten reserv
 
 | Pantalla | Imagen reservada |
 | :--- | :--- |
-| Onboarding | ![Mockup onboarding](assets/placeholder-mockup-onboarding.svg) |
-| Inicio | ![Mockup inicio](assets/placeholder-mockup-home.svg) |
-| Botiquín | ![Mockup botiquín](assets/placeholder-mockup-botiquin.svg) |
-| Tratamientos | ![Mockup tratamientos](assets/placeholder-mockup-tratamientos.svg) |
-| Calendario | ![Mockup calendario](assets/placeholder-mockup-calendario.svg) |
-| Perfil | ![Mockup perfil](assets/placeholder-mockup-perfil.svg) |
-| Privacidad | ![Mockup privacidad](assets/placeholder-mockup-privacidad.svg) |
+| Onboarding | <img width="561" height="1122" alt="image" src="https://github.com/user-attachments/assets/b94c1411-5c51-42b5-8934-0c5e0b0ed275" /> |
+| Inicio | <img width="567" height="1122" alt="image" src="https://github.com/user-attachments/assets/cd1bb091-626a-4d96-8c14-d6de7a66098c" /> |
+| Botiquín | <img width="552" height="1122" alt="image" src="https://github.com/user-attachments/assets/07a4e102-941c-4805-88b7-83d007a2a0dc" /> |
+| Tratamientos | <img width="561" height="1130" alt="image" src="https://github.com/user-attachments/assets/df299fe5-bdd2-455c-93ec-48afbcf397b5" /> |
+| Calendario | <img width="560" height="1127" alt="image" src="https://github.com/user-attachments/assets/1127714d-7d3d-485f-955d-f1fde8b8c4da" /> |
+| Perfil | <img width="557" height="1127" alt="image" src="https://github.com/user-attachments/assets/d56a5c39-8a72-4daa-9c86-719bd73df946" /> |
 
 Las capturas recomendadas son móviles, con una anchura similar a la experiencia real de la PWA. En escritorio debe mostrarse el marco de dispositivo solo cuando se quiera evidenciar la adaptación desktop; para explicar flujos principales, la captura móvil directa resulta más clara.
 
