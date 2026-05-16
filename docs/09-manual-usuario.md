@@ -43,7 +43,6 @@ Este manual explica cómo utilizar Blíster desde la perspectiva de una persona 
 
 Al abrir Blíster se muestra la entrada pública y, en escritorio, una pantalla informativa que indica que la aplicación se usa mejor en dispositivo móvil. Se puede continuar desde ordenador, donde la aplicación aparecerá dentro de un marco móvil.
 
-<img width="561" height="1122" alt="Mockup onboarding" src="https://github.com/user-attachments/assets/b94c1411-5c51-42b5-8934-0c5e0b0ed275" />
 
 Acciones disponibles:
 
@@ -110,8 +109,6 @@ Si el enlace ya ha caducado, debe solicitarse uno nuevo desde la pantalla de rec
 ## 3. Navegación general
 
 La navegación se organiza como una aplicación móvil.
-
-<img width="567" height="1122" alt="Mockup inicio" src="https://github.com/user-attachments/assets/cd1bb091-626a-4d96-8c14-d6de7a66098c" />
 
 | Zona | Función |
 | :--- | :--- |
@@ -182,8 +179,6 @@ Ejemplo de uso familiar:
 
 El botiquín muestra los medicamentos asociados al blíster activo.
 
-<img width="552" height="1122" alt="Mockup botiquín" src="https://github.com/user-attachments/assets/07a4e102-941c-4805-88b7-83d007a2a0dc" />
-
 ### 5.1 Consultar medicamentos
 
 Cada card de medicamento muestra nombre o alias, laboratorio, stock, unidad, caducidad y estado visual. Al abrir el detalle se pueden consultar los datos locales y acceder a la ficha oficial.
@@ -225,8 +220,6 @@ La ficha CIMA muestra información disponible del medicamento: nombre, laborator
 
 Los tratamientos organizan una pauta y permiten calcular próximas dosis.
 
-<img width="561" height="1130" alt="Mockup tratamientos" src="https://github.com/user-attachments/assets/df299fe5-bdd2-455c-93ec-48afbcf397b5" />
-
 ### 6.1 Crear tratamiento
 
 1. Entrar en Tratamientos.
@@ -265,9 +258,6 @@ Deshacer está pensado para errores inmediatos, como pulsar la toma equivocada. 
 ## 7. Calendario y citas
 
 El calendario reúne tomas previstas y citas médicas.
-
-<img width="560" height="1127" alt="Mockup calendario" src="https://github.com/user-attachments/assets/1127714d-7d3d-485f-955d-f1fde8b8c4da" />
-
 ### 7.1 Crear una cita
 
 1. Entrar en Calendario.
@@ -316,8 +306,6 @@ Las notificaciones pueden aparecer dentro de la bandeja aunque el navegador no p
 ## 9. Perfil, privacidad y accesibilidad
 
 Perfil agrupa ajustes personales y administrativos.
-
-<img width="557" height="1127" alt="Mockup perfil" src="https://github.com/user-attachments/assets/d56a5c39-8a72-4daa-9c86-719bd73df946" />
 
 ### 9.1 Datos personales
 
@@ -423,5 +411,3 @@ En entornos de prueba, un blíster con un medicamento, un tratamiento activo y u
 | Tratamiento | Pauta simple con próxima toma cercana. |
 | Cita | Fecha próxima con comentario de ejemplo. |
 | MCP | Token generado y revocado al terminar. |
-
-Con estos pasos, una persona usuaria puede cubrir el ciclo completo de Blíster: crear cuenta, organizar botiquín, planificar tratamientos, registrar tomas, coordinar citas y mantener el control de sus datos.
