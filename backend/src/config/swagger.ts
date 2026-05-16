@@ -158,6 +158,8 @@ const swaggerSpec = swaggerJSDoc({
     },
   },
   apis: [
+    path.join(__dirname, '../app.ts'),
+    path.join(__dirname, '../app.js'),
     path.join(__dirname, '../modules/**/*.routes.ts'),
     path.join(__dirname, '../modules/**/*.routes.js'),
   ],

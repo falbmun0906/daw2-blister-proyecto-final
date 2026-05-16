@@ -49,8 +49,28 @@ describe('app infrastructure', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.openapi).toBe('3.0.3');
-    expect(response.body.paths['/auth/register']).toBeDefined();
-    expect(response.body.paths['/blisters/{blisterId}/medicines']).toBeDefined();
-    expect(response.body.paths['/notifications']).toBeDefined();
+    expect(response.body.paths).toEqual(expect.objectContaining({
+      '/.well-known/oauth-authorization-server': expect.any(Object),
+      '/.well-known/openid-configuration': expect.any(Object),
+      '/.well-known/oauth-protected-resource': expect.any(Object),
+      '/auth/register': expect.any(Object),
+      '/auth/forgot-password': expect.any(Object),
+      '/auth/reset-password': expect.any(Object),
+      '/auth/confirm-email': expect.any(Object),
+      '/auth/logout': expect.any(Object),
+      '/auth/account': expect.any(Object),
+      '/blisters/{blisterId}/medicines': expect.any(Object),
+      '/mcp': expect.any(Object),
+      '/notifications': expect.any(Object),
+      '/notifications/push/config': expect.any(Object),
+      '/notifications/push/subscriptions': expect.any(Object),
+      '/oauth/authorize': expect.any(Object),
+      '/oauth/register': expect.any(Object),
+      '/oauth/token': expect.any(Object),
+    }));
+    expect(response.body.paths['/auth/register'].post.requestBody.content['application/json'].schema.properties.email.example)
+      .toBe('ana@example.com');
+    expect(response.body.paths['/notifications/push/subscriptions'].post.requestBody.content['application/json'].schema.properties.endpoint.example)
+      .toContain('https://fcm.googleapis.com');
   });
 });

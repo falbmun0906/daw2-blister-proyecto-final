@@ -98,10 +98,132 @@ notificationsRouter.get(
   validate({ query: notificationsListQuerySchema }),
   notificationsListController,
 );
+
+/**
+ * @openapi
+ * /notifications/push/config:
+ *   get:
+ *     summary: Get Web Push availability and the public VAPID key
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Push configuration returned.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 enabled: true
+ *                 publicKey: BLnJ4hZ8k...
+ *       401:
+ *         description: Missing or invalid JWT.
+ */
 notificationsRouter.get(
   '/push/config',
   notificationsPushConfigController,
 );
+
+/**
+ * @openapi
+ * /notifications/push/subscriptions:
+ *   get:
+ *     summary: List Web Push subscriptions for the authenticated user
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Registered browser subscriptions.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 - id: 507f1f77bcf86cd799439020
+ *                   endpoint: https://fcm.googleapis.com/fcm/send/example
+ *                   createdAt: 2031-05-01T10:00:00.000Z
+ *       401:
+ *         description: Missing or invalid JWT.
+ *   post:
+ *     summary: Register the current browser for Web Push notifications
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [endpoint, keys]
+ *             properties:
+ *               endpoint:
+ *                 type: string
+ *                 example: https://fcm.googleapis.com/fcm/send/example
+ *               expirationTime:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: null
+ *               keys:
+ *                 type: object
+ *                 required: [p256dh, auth]
+ *                 properties:
+ *                   p256dh:
+ *                     type: string
+ *                     example: BEl6...
+ *                   auth:
+ *                     type: string
+ *                     example: a1b2c3d4
+ *     responses:
+ *       201:
+ *         description: Subscription stored or refreshed.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 id: 507f1f77bcf86cd799439020
+ *                 endpoint: https://fcm.googleapis.com/fcm/send/example
+ *                 createdAt: 2031-05-01T10:00:00.000Z
+ *       400:
+ *         description: Validation error.
+ *       503:
+ *         description: Push service unavailable or not configured.
+ *   delete:
+ *     summary: Remove a Web Push subscription from the authenticated user
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [endpoint]
+ *             properties:
+ *               endpoint:
+ *                 type: string
+ *                 example: https://fcm.googleapis.com/fcm/send/example
+ *     responses:
+ *       200:
+ *         description: Subscription removed.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data: null
+ *       400:
+ *         description: Validation error.
+ *       401:
+ *         description: Missing or invalid JWT.
+ */
 notificationsRouter.get(
   '/push/subscriptions',
   notificationsPushSubscriptionsListController,
@@ -121,6 +243,36 @@ notificationsRouter.patch(
   validate({ params: notificationIdParamsSchema }),
   notificationsMarkAsReadController,
 );
+
+/**
+ * @openapi
+ * /notifications/{id}:
+ *   delete:
+ *     summary: Delete one notification from the authenticated inbox
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 507f1f77bcf86cd799439020
+ *     responses:
+ *       200:
+ *         description: Notification deleted.
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data: null
+ *       401:
+ *         description: Missing or invalid JWT.
+ *       404:
+ *         description: Notification not found for this user.
+ */
 notificationsRouter.delete(
   '/:id',
   validate({ params: notificationIdParamsSchema }),

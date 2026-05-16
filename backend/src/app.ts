@@ -99,6 +99,76 @@ export const createApp = ({
 
   if (mcpServerEnabled) {
     // MCP must run before global body parsers so the transport can consume the raw request stream.
+    /**
+     * @openapi
+     * /mcp:
+     *   get:
+     *     summary: Open or resume a Streamable HTTP MCP session
+     *     tags:
+     *       - MCP
+     *     servers:
+     *       - url: /
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: header
+     *         name: x-mcp-token
+     *         schema:
+     *           type: string
+     *         description: Legacy Blister MCP token alternative to OAuth Bearer.
+     *       - in: query
+     *         name: mcp-session-id
+     *         schema:
+     *           type: string
+     *     responses:
+     *       200:
+     *         description: MCP stream response.
+     *       401:
+     *         description: Missing or invalid MCP authentication.
+     *   post:
+     *     summary: Send a JSON-RPC MCP message
+     *     tags:
+     *       - MCP
+     *     servers:
+     *       - url: /
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *           example:
+     *             jsonrpc: '2.0'
+     *             id: 1
+     *             method: tools/list
+     *             params: {}
+     *     responses:
+     *       200:
+     *         description: MCP JSON-RPC response or stream event.
+     *       401:
+     *         description: Missing or invalid MCP authentication.
+     *   delete:
+     *     summary: Close a Streamable HTTP MCP session
+     *     tags:
+     *       - MCP
+     *     servers:
+     *       - url: /
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: query
+     *         name: mcp-session-id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     responses:
+     *       200:
+     *         description: MCP session closed.
+     *       401:
+     *         description: Missing or invalid MCP authentication.
+     */
     app.get('/mcp', handleMcpExpressRequest);
     app.post('/mcp', handleMcpExpressRequest);
     app.delete('/mcp', handleMcpExpressRequest);
@@ -120,8 +190,65 @@ export const createApp = ({
       },
     });
   });
+  /**
+   * @openapi
+   * /.well-known/oauth-authorization-server:
+   *   get:
+   *     summary: OAuth 2.0 authorization server metadata for MCP clients
+   *     tags:
+   *       - OAuth
+   *     servers:
+   *       - url: /
+   *     responses:
+   *       200:
+   *         description: RFC 8414 authorization server metadata.
+   *         content:
+   *           application/json:
+   *             example:
+   *               issuer: https://api.miblister.es
+   *               authorization_endpoint: https://api.miblister.es/oauth/authorize
+   *               token_endpoint: https://api.miblister.es/oauth/token
+   *               registration_endpoint: https://api.miblister.es/oauth/register
+   *               response_types_supported:
+   *                 - code
+   *               grant_types_supported:
+   *                 - authorization_code
+   *                 - refresh_token
+   */
   app.get('/.well-known/oauth-authorization-server', oauthMetadataController);
+  /**
+   * @openapi
+   * /.well-known/openid-configuration:
+   *   get:
+   *     summary: Minimal OpenID metadata for MCP client compatibility
+   *     tags:
+   *       - OAuth
+   *     servers:
+   *       - url: /
+   *     responses:
+   *       200:
+   *         description: Discovery document compatible with strict clients.
+   */
   app.get('/.well-known/openid-configuration', oauthMetadataController);
+  /**
+   * @openapi
+   * /.well-known/oauth-protected-resource:
+   *   get:
+   *     summary: OAuth protected resource metadata for the MCP endpoint
+   *     tags:
+   *       - OAuth
+   *     servers:
+   *       - url: /
+   *     responses:
+   *       200:
+   *         description: Protected resource metadata with MCP audience information.
+   *         content:
+   *           application/json:
+   *             example:
+   *               resource: https://api.miblister.es/mcp
+   *               authorization_servers:
+   *                 - https://api.miblister.es
+   */
   app.get('/.well-known/oauth-protected-resource', oauthProtectedResourceMetadataController);
   app.use('/oauth', oauthRouter);
   registerSwagger(app);
