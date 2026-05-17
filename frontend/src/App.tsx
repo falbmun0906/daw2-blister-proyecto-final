@@ -5,6 +5,8 @@ import { ROUTES } from './constants/routes'
 import { AppLayout } from './components/layout/AppLayout'
 import { DesktopDeviceShell } from './components/layout/DesktopDeviceShell'
 import { PublicPageLayout } from './components/layout/PublicPageLayout'
+import { PwaUpdatePrompt } from './components/organisms/PwaUpdatePrompt'
+import { Toaster } from './components/organisms/Toaster'
 import { GuestRoute } from './router/GuestRoute'
 import { LoginRoute } from './router/LoginRoute'
 import { OnboardingRoute } from './router/OnboardingRoute'
@@ -51,6 +53,7 @@ function App() {
   return (
     <BrowserRouter>
       <DesktopDeviceShell>
+        <PwaUpdatePrompt />
         <Suspense fallback={null}>
           <Routes>
             <Route index element={<Navigate to={ROUTES.onboarding} replace />} />
@@ -134,6 +137,7 @@ function App() {
             <Route path={ROUTES.notFound} element={<Navigate to={ROUTES.onboarding} replace />} />
           </Routes>
         </Suspense>
+        <Toaster />
       </DesktopDeviceShell>
     </BrowserRouter>
   )

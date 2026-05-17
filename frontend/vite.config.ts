@@ -1,15 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import path from 'path';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+const packageJson = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+) as { version?: string };
+
+const buildStamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 12);
+const appVersion = process.env.VITE_APP_VERSION?.trim() || `${packageJson.version ?? '0.0.0'}-${buildStamp}`;
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      registerType: 'prompt',
+      includeAssets: ['favicon.svg', 'favicon.png', 'apple-touch-icon.png', 'icons.svg'],
       manifest: {
+        id: '/',
         name: 'Blíster — Gestión de Botiquín',
         short_name: 'Blíster',
         description: 'Gestión inteligente de tu botiquín personal y familiar.',
@@ -39,6 +51,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: false,
+        skipWaiting: false,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         importScripts: ['push-sw.js'],
         runtimeCaching: [

@@ -4,7 +4,6 @@ import { AppHeader } from '../organisms/AppHeader';
 import { PageHeader } from '../organisms/PageHeader';
 import { BottomNav } from '../organisms/BottomNav';
 import { NotificationsSheet } from '../organisms/NotificationsSheet';
-import { Toaster } from '../organisms/Toaster';
 import { ROUTES } from '../../constants/routes';
 
 /**
@@ -31,7 +30,6 @@ export function AppLayout() {
         <Outlet />
       </main>
       {showBottomNav ? <BottomNav /> : null}
-      <Toaster />
       <NotificationsSheet />
     </div>
   );
