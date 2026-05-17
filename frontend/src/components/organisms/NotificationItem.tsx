@@ -89,8 +89,8 @@ export function NotificationItem({
         onClick={handleClick}
         aria-label={
           notification.isRead
-            ? `Notificacion: ${notification.title}`
-            : `Marcar como leida: ${notification.title}`
+            ? `Notificación: ${notification.title}`
+            : `Marcar como leída: ${notification.title}`
         }
       >
         <span className="c-notification-item__icon" aria-hidden="true">
@@ -111,7 +111,7 @@ export function NotificationItem({
         <button
           type="button"
           className="c-notification-item__dismiss"
-          aria-label={`Eliminar notificacion: ${notification.title}`}
+          aria-label={`Eliminar notificación: ${notification.title}`}
           onClick={() => onDismiss(notification)}
         >
           <TbX aria-hidden="true" />

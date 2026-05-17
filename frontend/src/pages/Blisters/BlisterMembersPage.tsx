@@ -5,6 +5,7 @@ import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { RoleBadge } from '../../components/molecules/RoleBadge';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -48,6 +49,7 @@ export default function BlisterMembersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmRemoveMember, setConfirmRemoveMember] = useState<BlisterMemberDetail | null>(null);
 
   const refresh = useCallback(async () => {
     if (!blisterId) return;
@@ -90,10 +92,6 @@ export default function BlisterMembersPage() {
   const handleRemove = async (memberId: string) => {
     if (!blisterId) return;
     const isSelf = memberId === userId;
-    const confirmed = window.confirm(
-      isSelf ? '¿Seguro que quieres abandonar este blíster?' : '¿Eliminar a este miembro del blíster?',
-    );
-    if (!confirmed) return;
     setBusyId(memberId);
     try {
       await removeBlisterMember(blisterId, memberId);
@@ -186,7 +184,7 @@ export default function BlisterMembersPage() {
                     type="button"
                     variant="danger"
                     loading={busyId === member.userId}
-                    onClick={() => void handleRemove(member.userId)}
+                    onClick={() => setConfirmRemoveMember(member)}
                   >
                     {isSelf ? 'Salir' : 'Expulsar'}
                   </Button>
@@ -196,6 +194,20 @@ export default function BlisterMembersPage() {
           );
         })}
       </ul>
+      <ConfirmDialog
+        open={confirmRemoveMember !== null}
+        message={
+          confirmRemoveMember?.userId === userId
+            ? '¿Seguro que quieres abandonar este blíster?'
+            : `¿Expulsar a ${confirmRemoveMember?.fullName ?? 'este miembro'} del blíster?`
+        }
+        onCancel={() => setConfirmRemoveMember(null)}
+        onConfirm={async () => {
+          if (confirmRemoveMember) await handleRemove(confirmRemoveMember.userId);
+        }}
+        ariaLabel="Confirmar eliminación de miembro"
+        confirmLabel={confirmRemoveMember?.userId === userId ? 'Sí, salir' : 'Sí, expulsar'}
+      />
     </section>
   );
 }

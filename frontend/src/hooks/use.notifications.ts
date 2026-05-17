@@ -78,7 +78,7 @@ export function useNotifications(
         setNotifications(previous);
         const message = isApiError(err)
           ? err.message
-          : 'No se ha podido marcar la notificacion como leida.';
+          : 'No se ha podido marcar la notificación como leída.';
         setError(message);
         throw err;
       }
@@ -97,7 +97,7 @@ export function useNotifications(
         setNotifications(previous);
         const message = isApiError(err)
           ? err.message
-          : 'No se ha podido eliminar la notificacion.';
+          : 'No se ha podido eliminar la notificación.';
         setError(message);
         throw err;
       }

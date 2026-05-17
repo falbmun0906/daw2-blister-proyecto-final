@@ -53,5 +53,11 @@
 
   &__action {
     text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-text-on-primary);
+      background-color: var(--color-primary-hover);
+    }
   }
 }

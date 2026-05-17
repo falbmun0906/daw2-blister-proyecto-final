@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { NotificationItem } from '../../components/organisms/NotificationItem';
 import { useNotifications } from '../../hooks/use.notifications';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -46,6 +47,7 @@ function NotificationsPage() {
   const { notifications, unreadCount, isLoading, error, refetch, markAsRead, dismiss } =
     useNotifications();
   const addToast = useUiStore((s) => s.addToast);
+  const [dismissCandidate, setDismissCandidate] = useState<NotificationView | null>(null);
 
   const groups = useMemo(() => groupByDate(notifications), [notifications]);
 
@@ -54,11 +56,11 @@ function NotificationsPage() {
     if (unread.length === 0) return;
     try {
       await Promise.all(unread.map((n) => markAsRead(n.id)));
-      addToast({ message: 'Notificaciones marcadas como leidas.', variant: 'success' });
+      addToast({ message: 'Notificaciones marcadas como leídas.', variant: 'success' });
     } catch (err) {
       const message = isApiError(err)
         ? err.message
-        : 'No se han podido marcar todas como leidas.';
+        : 'No se han podido marcar todas como leídas.';
       addToast({ message, variant: 'error' });
     }
   };
@@ -67,7 +69,7 @@ function NotificationsPage() {
     void markAsRead(id).catch((err) => {
       const message = isApiError(err)
         ? err.message
-        : 'No se ha podido marcar como leida.';
+        : 'No se ha podido marcar como leída.';
       addToast({ message, variant: 'error' });
     });
   };
@@ -77,13 +79,15 @@ function NotificationsPage() {
     if (route) navigate(route);
   };
 
-  const handleDismiss = (notification: NotificationView): void => {
-    void dismiss(notification).catch((err) => {
+  const handleDismiss = async (notification: NotificationView): Promise<void> => {
+    try {
+      await dismiss(notification);
+    } catch (err) {
       const message = isApiError(err)
         ? err.message
-        : 'No se ha podido eliminar la notificacion.';
+        : 'No se ha podido eliminar la notificación.';
       addToast({ message, variant: 'error' });
-    });
+    }
   };
 
   return (
@@ -95,7 +99,7 @@ function NotificationsPage() {
             className="c-notifications-page__mark-all"
             onClick={() => void handleMarkAll()}
           >
-            Marcar todas como leidas
+            Marcar todas como leídas
           </button>
         </header>
       ) : null}
@@ -128,13 +132,22 @@ function NotificationsPage() {
                   notification={notification}
                   onMarkAsRead={handleMarkAsRead}
                   onOpen={handleOpenNotification}
-                  onDismiss={handleDismiss}
+                  onDismiss={setDismissCandidate}
                 />
               ))}
             </section>
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={dismissCandidate !== null}
+        message={`¿Eliminar la notificación "${dismissCandidate?.title ?? ''}"?`}
+        onCancel={() => setDismissCandidate(null)}
+        onConfirm={async () => {
+          if (dismissCandidate) await handleDismiss(dismissCandidate);
+        }}
+        ariaLabel="Confirmar eliminación de notificación"
+      />
     </section>
   );
 }

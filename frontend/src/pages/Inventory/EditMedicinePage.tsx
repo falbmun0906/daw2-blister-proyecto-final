@@ -10,6 +10,7 @@ import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { Stepper } from '../../components/atoms/Stepper';
+import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { FormSection } from '../../components/molecules/FormSection';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -60,6 +61,7 @@ function EditMedicinePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const blisterId = routeBlisterId ?? activeBlisterId;
   const routeRole = blisters
     .find((blister) => blister._id === blisterId)
@@ -134,7 +136,6 @@ function EditMedicinePage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('¿Eliminar este medicamento del botiquín?')) return;
     setDeleting(true);
     try {
       await removeMedicine(blisterId, medicineId);
@@ -223,9 +224,16 @@ function EditMedicinePage() {
           <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>
             Guardar cambios
           </Button>
-          <Button type="button" variant="danger" fullWidth onClick={handleDelete} loading={deleting}>
+          <Button type="button" variant="danger" fullWidth onClick={() => setConfirmDeleteOpen(true)} loading={deleting}>
             Eliminar del botiquín
           </Button>
+          <ConfirmDialog
+            open={confirmDeleteOpen}
+            message="¿Eliminar este medicamento del botiquín?"
+            onCancel={() => setConfirmDeleteOpen(false)}
+            onConfirm={handleDelete}
+            ariaLabel="Confirmar eliminación del medicamento"
+          />
         </form>
       )}
     </section>

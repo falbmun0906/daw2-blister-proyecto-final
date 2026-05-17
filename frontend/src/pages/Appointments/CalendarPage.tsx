@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
 import { ActionMenuButton } from '../../components/molecules/ActionMenuButton';
+import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { AppointmentCard } from '../../components/organisms/AppointmentCard';
 import {
   CALENDAR_INITIAL_VISIBLE_ITEMS,
@@ -28,6 +29,12 @@ import { isApiError } from '../../types/api.types';
 import type { Appointment } from '../../types/appointment.types';
 
 type CalendarView = 'pillbox' | 'appointments';
+type AppointmentComment = Appointment['comments'][number];
+
+interface PendingCommentDelete {
+  appointment: Appointment;
+  comment: AppointmentComment;
+}
 
 const WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
@@ -290,6 +297,7 @@ function CalendarPage() {
   const [cursor, setCursor] = useState(() => new Date());
   const [selected, setSelected] = useState<Date | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Appointment | null>(null);
+  const [confirmDeleteComment, setConfirmDeleteComment] = useState<PendingCommentDelete | null>(null);
   const [calendarDoses, setCalendarDoses] = useState<UpcomingDose[]>([]);
   const [monthDoseMarkers, setMonthDoseMarkers] = useState<UpcomingDose[]>([]);
   const [calendarError, setCalendarError] = useState<string | null>(null);
@@ -596,7 +604,10 @@ function CalendarPage() {
         onDelete={(item) => setConfirmDelete(item)}
         onAddComment={handleAddComment}
         onUpdateComment={handleUpdateComment}
-        onDeleteComment={handleDeleteComment}
+        onDeleteComment={(item, comment) => {
+          setConfirmDeleteComment({ appointment: item, comment });
+          return Promise.resolve();
+        }}
       />
     </li>
   );
@@ -896,75 +907,43 @@ function CalendarPage() {
 
       {confirmDelete ? (
         <ConfirmDialog
+          open={confirmDelete !== null}
           message={`¿Eliminar la cita "${confirmDelete.title}"?`}
           onCancel={() => setConfirmDelete(null)}
           onConfirm={async () => {
             await handleDelete(confirmDelete);
-            setConfirmDelete(null);
           }}
+          ariaLabel="Confirmar eliminación de la cita"
+        />
+      ) : null}
+
+      {confirmDeleteComment ? (
+        <ConfirmDialog
+          open={confirmDeleteComment !== null}
+          message="¿Eliminar este comentario?"
+          onCancel={() => setConfirmDeleteComment(null)}
+          onConfirm={async () => {
+            await handleDeleteComment(confirmDeleteComment.appointment, confirmDeleteComment.comment);
+          }}
+          ariaLabel="Confirmar eliminación del comentario"
         />
       ) : null}
 
       {skipDoseCandidate ? (
         <ConfirmDialog
+          open={skipDoseCandidate !== null}
           message="¿Seguro que quieres omitir esta toma? Quedará registrada como omitida y no se descontará stock."
           cancelLabel="Cancelar"
           confirmLabel="Omitir toma"
+          destructive={false}
           onCancel={() => setSkipDoseCandidate(null)}
           onConfirm={async () => {
             await handleSkipDose(skipDoseCandidate);
           }}
+          ariaLabel="Confirmar omisión de toma"
         />
       ) : null}
     </section>
-  );
-}
-
-interface ConfirmDialogProps {
-  message: string;
-  onCancel: () => void;
-  onConfirm: () => Promise<void>;
-  cancelLabel?: string;
-  confirmLabel?: string;
-}
-
-function ConfirmDialog({
-  message,
-  onCancel,
-  onConfirm,
-  cancelLabel = 'Conservar',
-  confirmLabel = 'Sí, eliminar',
-}: ConfirmDialogProps) {
-  const [busy, setBusy] = useState(false);
-  return (
-    <div className="c-modal" role="dialog" aria-modal="true">
-      <div className="c-modal__backdrop" onClick={onCancel} />
-      <div className="c-modal__panel">
-        <div className="c-modal__body">
-          <p className="c-confirm-modal__message">{message}</p>
-          <div className="c-confirm-modal__actions">
-            <Button type="button" variant="primary-outline" onClick={onCancel} disabled={busy}>
-              {cancelLabel}
-            </Button>
-            <Button
-              type="button"
-              variant="danger"
-              loading={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  await onConfirm();
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              {confirmLabel}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
