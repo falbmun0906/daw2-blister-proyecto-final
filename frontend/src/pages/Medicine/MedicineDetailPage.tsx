@@ -14,6 +14,7 @@ import {
 
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { ActionMenuButton } from '../../components/molecules/ActionMenuButton';
 import { MedicineIcon } from '../../components/molecules/MedicineIcon';
 import { StockBadge } from '../../components/molecules/StockBadge';
@@ -98,6 +99,7 @@ function MedicineDetailPage() {
   });
   const [deleting, setDeleting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const routeRole = blisters
@@ -202,7 +204,6 @@ function MedicineDetailPage() {
 
   const handleDelete = async () => {
     if (!medicine) return;
-    if (!confirm('¿Eliminar este medicamento del botiquín?')) return;
     setDeleting(true);
     try {
       await removeMedicine(blisterId, medicine._id);
@@ -289,7 +290,7 @@ function MedicineDetailPage() {
                       disabled={deleting}
                       onClick={() => {
                         setMenuOpen(false);
-                        void handleDelete();
+                        setConfirmDeleteOpen(true);
                       }}
                     >
                       <TbTrash aria-hidden="true" />
@@ -340,9 +341,12 @@ function MedicineDetailPage() {
             {medicineAlerts.length > 0 ? (
               <ul className="c-medicine-detail-page__alert-list">
                 {medicineAlerts.map((alert) => (
-                  <li key={alert.kind} className="c-medicine-detail-page__alert">
+                  <li key={`${alert.kind}-${alert.label}`} className="c-medicine-detail-page__alert">
                     <TbAlertCircle aria-hidden="true" />
-                    <span>{alert.label}</span>
+                    <span>
+                      {alert.label}
+                      {alert.detail ? <small>{alert.detail}</small> : null}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -386,6 +390,14 @@ function MedicineDetailPage() {
               </p>
             )}
           </section>
+
+          <ConfirmDialog
+            open={confirmDeleteOpen}
+            message="¿Eliminar este medicamento del botiquín?"
+            onCancel={() => setConfirmDeleteOpen(false)}
+            onConfirm={handleDelete}
+            ariaLabel="Confirmar eliminación del medicamento"
+          />
         </>
       )}
     </section>

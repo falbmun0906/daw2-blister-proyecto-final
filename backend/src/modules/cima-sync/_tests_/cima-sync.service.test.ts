@@ -50,25 +50,25 @@ describe('cima-sync.service', () => {
       change: 'estado',
       nregist: '610001',
       severity: 'warning',
-      title: 'Cambio en el estado de autorizacion',
+      title: 'Cambio en el estado de autorización',
     },
     {
       change: 'comerc',
       nregist: '610002',
       severity: 'warning',
-      title: 'Cambio en la comercializacion',
+      title: 'Cambio en la comercialización',
     },
     {
       change: 'prosp',
       nregist: '610003',
       severity: 'info',
-      title: 'Actualizacion de prospecto',
+      title: 'Actualización de prospecto',
     },
     {
       change: 'ft',
       nregist: '610004',
       severity: 'info',
-      title: 'Actualizacion de ficha tecnica',
+      title: 'Actualización de ficha técnica',
     },
     {
       change: 'psum',
@@ -86,7 +86,7 @@ describe('cima-sync.service', () => {
       change: 'matinf',
       nregist: '610007',
       severity: 'info',
-      title: 'Actualizacion de materiales informativos',
+      title: 'Actualización de materiales informativos',
     },
     {
       change: 'otros',

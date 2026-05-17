@@ -225,8 +225,8 @@ const renderAuthorizePage = (
       <h1 class="c-oauth-authorize__title" aria-label="Autorizar asistente">
         <span class="c-oauth-authorize__title-accent">Autorizar</span> asistente
       </h1>
-      <section class="c-card" aria-label="Formulario de autorizacion MCP">
-        <p class="c-oauth-authorize__intro">Claude Desktop solicita acceso MCP a Blister para consultar y actualizar tus datos segun tus permisos.</p>
+      <section class="c-card" aria-label="Formulario de autorización MCP">
+        <p class="c-oauth-authorize__intro">Claude Desktop solicita acceso MCP a Blíster para consultar y actualizar tus datos según tus permisos.</p>
         ${errorMessage ? `<p class="c-oauth-authorize__error">${escapeHtml(errorMessage)}</p>` : ''}
         <form class="c-oauth-authorize__form" method="post" action="/oauth/authorize">
         ${hiddenInputs}

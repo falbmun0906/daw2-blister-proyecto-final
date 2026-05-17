@@ -16,6 +16,7 @@ export type MedicineAlertKind =
 export interface MedicineAlertItem {
   kind: MedicineAlertKind;
   label: string;
+  detail?: string;
 }
 
 function getDaysUntilExpiry(expDate: string): number | null {
@@ -45,15 +46,36 @@ export function getMedicineAlerts(medicine: Medicine): MedicineAlertItem[] {
   }
 
   if (!medicine.cimaStatus.comerc) {
-    alerts.push({ kind: 'not-commercialized', label: 'No comercializado' });
+    alerts.push({ kind: 'not-commercialized', label: 'No comercializado', detail: 'CIMA indica que no está comercializado actualmente.' });
+  }
+
+  if (medicine.cimaStatus.estado === 2) {
+    alerts.push({ kind: 'cima', label: 'Estado suspendido', detail: 'CIMA marca una suspensión de autorización.' });
+  }
+
+  if (medicine.cimaStatus.estado === 3) {
+    alerts.push({ kind: 'cima', label: 'Estado revocado', detail: 'CIMA marca una revocación de autorización.' });
   }
 
   if (medicine.cimaStatus.psum) {
-    alerts.push({ kind: 'supply', label: 'Problemas de suministro' });
+    alerts.push({ kind: 'supply', label: 'Problemas de suministro', detail: 'CIMA informa de problemas de suministro.' });
   }
 
-  if (medicine.cimaStatus.hasAlerts && !medicine.cimaStatus.psum) {
-    alerts.push({ kind: 'cima', label: 'Alerta CIMA' });
+  if (medicine.cimaStatus.notas) {
+    alerts.push({ kind: 'cima', label: 'Nota de seguridad CIMA', detail: 'Hay notas de seguridad oficiales asociadas al medicamento.' });
+  }
+
+  if (medicine.cimaStatus.materialesInf) {
+    alerts.push({ kind: 'cima', label: 'Material informativo CIMA', detail: 'Hay materiales informativos oficiales asociados al medicamento.' });
+  }
+
+  if (
+    medicine.cimaStatus.hasAlerts
+    && !medicine.cimaStatus.psum
+    && !medicine.cimaStatus.notas
+    && !medicine.cimaStatus.materialesInf
+  ) {
+    alerts.push({ kind: 'cima', label: 'Alerta CIMA', detail: 'CIMA informa de una alerta oficial vigente.' });
   }
 
   return alerts;

@@ -536,23 +536,23 @@ const getCimaChangeTitle = (cambios: string[]): string => {
   }
 
   if (cambios.includes('estado')) {
-    return 'Cambio en el estado de autorizacion';
+    return 'Cambio en el estado de autorización';
   }
 
   if (cambios.includes('comerc')) {
-    return 'Cambio en la comercializacion';
+    return 'Cambio en la comercialización';
   }
 
   if (cambios.includes('ft')) {
-    return 'Actualizacion de ficha tecnica';
+    return 'Actualización de ficha técnica';
   }
 
   if (cambios.includes('prosp')) {
-    return 'Actualizacion de prospecto';
+    return 'Actualización de prospecto';
   }
 
   if (cambios.includes('matinf')) {
-    return 'Actualizacion de materiales informativos';
+    return 'Actualización de materiales informativos';
   }
 
   return 'Cambio relevante en CIMA';

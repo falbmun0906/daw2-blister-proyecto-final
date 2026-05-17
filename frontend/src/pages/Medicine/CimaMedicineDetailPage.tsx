@@ -274,9 +274,19 @@ function CimaMedicineDetailPage() {
                     <TbAlertCircle aria-hidden="true" /> Problemas de suministro.
                   </p>
                 ) : null}
-                {info.cimaStatus.hasAlerts && !info.psum ? (
+                {info.cimaStatus.notas ? (
                   <p className="c-cima-detail__alert">
-                    <TbAlertCircle aria-hidden="true" /> Existen alertas oficiales.
+                    <TbAlertCircle aria-hidden="true" /> Nota de seguridad CIMA.
+                  </p>
+                ) : null}
+                {info.cimaStatus.materialesInf ? (
+                  <p className="c-cima-detail__alert">
+                    <TbAlertCircle aria-hidden="true" /> Material informativo CIMA.
+                  </p>
+                ) : null}
+                {info.cimaStatus.hasAlerts && !info.psum && !info.cimaStatus.notas && !info.cimaStatus.materialesInf ? (
+                  <p className="c-cima-detail__alert">
+                    <TbAlertCircle aria-hidden="true" /> Alerta oficial CIMA.
                   </p>
                 ) : null}
               </div>
