@@ -251,8 +251,8 @@ function RegisterPage() {
         <button
           type="button"
           className="c-register-page__back-btn"
-          onClick={() => navigate(ROUTES.landing)}
-          aria-label="Volver a la portada"
+          onClick={() => navigate(ROUTES.login)}
+          aria-label="Volver al inicio de sesion"
         >
           <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
@@ -352,6 +352,11 @@ function RegisterPage() {
 
         <div className="c-register-page__checkboxes">
           <div className="c-register-page__checkbox-field">
+            {errors.privacyConsent ? (
+              <p className="c-register-page__error-message">
+                {getFieldError(errors.privacyConsent)}
+              </p>
+            ) : null}
             <label className="c-register-page__checkbox-label">
               <input
                 type="checkbox"
@@ -362,14 +367,14 @@ function RegisterPage() {
                 Acepto la <Link to={ROUTES.privacy} state={{ parentRoute: ROUTES.register }} className="c-register-page__link">política de privacidad</Link>
               </span>
             </label>
-            {errors.privacyConsent ? (
-              <p className="c-register-page__error-message">
-                {getFieldError(errors.privacyConsent)}
-              </p>
-            ) : null}
           </div>
 
           <div className="c-register-page__checkbox-field">
+            {errors.ageConfirmed ? (
+              <p className="c-register-page__error-message">
+                {getFieldError(errors.ageConfirmed)}
+              </p>
+            ) : null}
             <label className="c-register-page__checkbox-label">
               <input
                 type="checkbox"
@@ -378,11 +383,6 @@ function RegisterPage() {
               />
               <span className="c-register-page__checkbox-text">Confirmo que tengo 18 años o mas</span>
             </label>
-            {errors.ageConfirmed ? (
-              <p className="c-register-page__error-message">
-                {getFieldError(errors.ageConfirmed)}
-              </p>
-            ) : null}
           </div>
         </div>
 

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { FaArrowLeft } from 'react-icons/fa6';
 import { TbUserCircle, TbLock } from 'react-icons/tb';
 
 import { loginSchema } from '../../../../shared/schemas/auth.schema';
@@ -86,18 +85,6 @@ function LoginPage() {
 
   return (
     <AuthLayout className="c-login-page" innerClassName="c-login-page__inner">
-      <header className="c-login-page__header">
-        <button
-          type="button"
-          className="c-login-page__back-btn"
-          onClick={() => navigate(ROUTES.landing)}
-          aria-label="Volver a la portada"
-        >
-          <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
-        </button>
-        <span className="c-login-page__spacer" aria-hidden="true" />
-      </header>
-
       <div className="c-login-page__body">
         <h1 className="c-login-page__title">
           <span className="c-login-page__title-accent">Iniciar</span> sesión

@@ -25,34 +25,6 @@
     gap: var(--space-5);
   }
 
-  &__header {
-    display: grid;
-    grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
-    align-items: center;
-    column-gap: var(--space-3);
-  }
-
-  &__back-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--space-touch-min);
-    min-height: var(--space-touch-min);
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: transparent;
-    color: var(--color-primary-mid);
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-
-    &:hover { background-color: var(--color-primary-tint); }
-  }
-
-  &__spacer {
-    min-width: var(--space-touch-min);
-  }
-
   // Cuerpo: ocupa el espacio disponible y centra el formulario un poco
   // por encima del centro real.
   &__body {
