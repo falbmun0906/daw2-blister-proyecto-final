@@ -24,6 +24,8 @@ const getErrorMessage = (code: string | undefined): string => {
   switch (code) {
     case 'AUTH_INVALID_CREDENTIALS':
       return 'Usuario o contraseña incorrectos. Verifique e intente nuevamente.';
+    case 'AUTH_EMAIL_NOT_VERIFIED':
+      return 'Confirma tu correo electrónico antes de iniciar sesión. Revisa también la carpeta de spam.';
     case 'VALIDATION_ERROR':
       return 'Datos inválidos. Verifique los campos.';
     default:

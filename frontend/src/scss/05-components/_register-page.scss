@@ -13,10 +13,13 @@
 .c-register-page {
   color: var(--color-text-on-primary);
   background-color: var(--color-primary-mid);
+  overflow-x: hidden;
 
   &__inner.c-auth-layout__inner {
+    min-width: 0;
     background-color: var(--color-primary-mid);
     gap: var(--space-5);
+    overflow-x: hidden;
   }
 
   // Inputs blancos sobre fondo verde, labels e iconos en blanco.
@@ -114,6 +117,7 @@
   }
 
   &__form {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
@@ -170,6 +174,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    min-width: 0;
     cursor: pointer;
   }
 
@@ -181,9 +186,11 @@
   }
 
   &__checkbox-text {
+    min-width: 0;
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
     color: var(--color-text-on-primary);
+    overflow-wrap: anywhere;
   }
 
   &__link,
@@ -226,5 +233,30 @@
     text-align: center;
     font-size: var(--text-sm);
     color: var(--color-brand-surface-text-footer);
+  }
+
+  &__sent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  &__sent .c-register-page__title {
+    margin-bottom: var(--space-2);
+  }
+
+  &__sent-text {
+    margin: 0;
+    color: var(--color-brand-surface-text-footer);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    text-align: center;
+  }
+
+  &__sent-text span {
+    color: var(--color-text-on-primary);
+    font-weight: var(--font-weight-semibold);
+    overflow-wrap: anywhere;
   }
 }

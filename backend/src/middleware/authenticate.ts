@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
 
 import { env } from '../config/env';
-import { HTTP_STATUS_UNAUTHORIZED } from '../constants/http.constants';
+import { HTTP_STATUS_FORBIDDEN, HTTP_STATUS_UNAUTHORIZED } from '../constants/http.constants';
 import { UserModel } from '../models/user.model';
 import { AppError } from '../utils/app-error';
 import { type JwtAccessPayload } from '../types/auth.types';
@@ -48,14 +48,25 @@ export const authenticate = (
       });
     }
 
-    void UserModel.exists({ _id: payload.sub, deletedAt: null })
-      .then((userExists) => {
-        if (!userExists) {
+    void UserModel.findOne({ _id: payload.sub, deletedAt: null }).select('emailVerified')
+      .then((user) => {
+        if (!user) {
           next(
             new AppError({
               code: 'AUTH_USER_INACTIVE',
               message: 'Authentication token is invalid or expired.',
               statusCode: HTTP_STATUS_UNAUTHORIZED,
+            }),
+          );
+          return;
+        }
+
+        if (!user.emailVerified) {
+          next(
+            new AppError({
+              code: 'AUTH_EMAIL_NOT_VERIFIED',
+              message: 'Email address must be confirmed before using Blister.',
+              statusCode: HTTP_STATUS_FORBIDDEN,
             }),
           );
           return;

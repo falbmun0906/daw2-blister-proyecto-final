@@ -38,7 +38,12 @@ describe('auth.service', () => {
     await disconnectTestDatabase();
   });
 
-  it('hashes passwords and issues access and refresh tokens on register', async () => {
+  const verifyUserEmail = async (userId: string): Promise<void> => {
+    await UserModel.updateOne({ _id: userId }, { $set: { emailVerified: true } });
+  };
+
+  it('hashes passwords and sends confirmation email on register', async () => {
+    const sendVerificationEmailSpy = jest.mocked(authEmailService.sendEmailVerificationEmail);
     const result = await authRegister({
       name: 'Ana Lopez',
       username: 'analopez',
@@ -55,10 +60,14 @@ describe('auth.service', () => {
 
     expect(storedUser).not.toBeNull();
     expect(storedUser?.password).not.toBe('Password1!');
-    expect(result.accessToken).toBeTruthy();
-    expect(result.refreshToken).toBeTruthy();
-    expect(storedUser?.refreshTokenHash).toBeTruthy();
-    expect(storedUser?.refreshTokenExpiresAt).toBeInstanceOf(Date);
+    expect(result.email).toBe('ana@example.com');
+    expect(result.emailVerified).toBe(false);
+    expect(storedUser?.refreshTokenHash).toBeNull();
+    expect(storedUser?.refreshTokenExpiresAt).toBeNull();
+    expect(sendVerificationEmailSpy).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'ana@example.com',
+      name: 'Ana Lopez',
+    }));
   });
 
   it('creates a personal blister only when register has no invite code', async () => {
@@ -97,7 +106,7 @@ describe('auth.service', () => {
   });
 
   it('rotates refresh tokens and validates their payloads', async () => {
-    const registerResult = await authRegister({
+    const registeredUser = await authRegister({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
@@ -107,9 +116,15 @@ describe('auth.service', () => {
       ageConfirmed: true,
       inviteCode: undefined,
     });
+    await verifyUserEmail(registeredUser.id);
+
+    const loginResult = await authLogin({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
 
     const refreshed = await authRefresh({
-      refreshToken: registerResult.refreshToken,
+      refreshToken: loginResult.refreshToken,
     });
 
     const accessPayload = jwt.verify(refreshed.accessToken, env.jwtSecret) as { type: string };
@@ -117,11 +132,11 @@ describe('auth.service', () => {
 
     expect(accessPayload.type).toBe('access');
     expect(refreshPayload.type).toBe('refresh');
-    expect(refreshed.refreshToken).not.toBe(registerResult.refreshToken);
+    expect(refreshed.refreshToken).not.toBe(loginResult.refreshToken);
   });
 
   it('rejects refresh tokens for deleted users', async () => {
-    const registerResult = await authRegister({
+    const registeredUser = await authRegister({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
@@ -131,16 +146,21 @@ describe('auth.service', () => {
       ageConfirmed: true,
       inviteCode: undefined,
     });
+    await verifyUserEmail(registeredUser.id);
+    const loginResult = await authLogin({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
 
-    await UserModel.updateOne({ _id: registerResult.user.id }, { $set: { deletedAt: new Date() } });
+    await UserModel.updateOne({ _id: loginResult.user.id }, { $set: { deletedAt: new Date() } });
 
-    await expect(authRefresh({ refreshToken: registerResult.refreshToken })).rejects.toMatchObject({
+    await expect(authRefresh({ refreshToken: loginResult.refreshToken })).rejects.toMatchObject({
       code: 'AUTH_REFRESH_INVALID',
     });
   });
 
   it('revokes refresh credentials on logout and password changes', async () => {
-    const registerResult = await authRegister({
+    const registeredUser = await authRegister({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
@@ -150,9 +170,14 @@ describe('auth.service', () => {
       ageConfirmed: true,
       inviteCode: undefined,
     });
+    await verifyUserEmail(registeredUser.id);
+    const registerLoginResult = await authLogin({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
 
-    await authLogout(registerResult.user.id);
-    await expect(authRefresh({ refreshToken: registerResult.refreshToken })).rejects.toMatchObject({
+    await authLogout(registerLoginResult.user.id);
+    await expect(authRefresh({ refreshToken: registerLoginResult.refreshToken })).rejects.toMatchObject({
       code: 'AUTH_REFRESH_INVALID',
     });
 
@@ -172,7 +197,7 @@ describe('auth.service', () => {
   });
 
   it('creates hashed MCP tokens without storing the clear text value', async () => {
-    const registerResult = await authRegister({
+    const registeredUser = await authRegister({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
@@ -183,8 +208,8 @@ describe('auth.service', () => {
       inviteCode: undefined,
     });
 
-    const mcpTokenResult = await authCreateMcpToken(registerResult.user.id, {});
-    const storedUser = await UserModel.findById(registerResult.user.id)
+    const mcpTokenResult = await authCreateMcpToken(registeredUser.id, {});
+    const storedUser = await UserModel.findById(registeredUser.id)
       .select('+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt');
 
     expect(mcpTokenResult.token).toHaveLength(64);
@@ -197,7 +222,7 @@ describe('auth.service', () => {
   });
 
   it('returns MCP token status without exposing the clear text value', async () => {
-    const registerResult = await authRegister({
+    const registeredUser = await authRegister({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
@@ -208,8 +233,8 @@ describe('auth.service', () => {
       inviteCode: undefined,
     });
 
-    const mcpTokenResult = await authCreateMcpToken(registerResult.user.id, { expiresInDays: 1 });
-    const status = await authGetMcpTokenStatus(registerResult.user.id);
+    const mcpTokenResult = await authCreateMcpToken(registeredUser.id, { expiresInDays: 1 });
+    const status = await authGetMcpTokenStatus(registeredUser.id);
 
     expect(status).toMatchObject({
       hasToken: true,
@@ -220,7 +245,7 @@ describe('auth.service', () => {
   });
 
   it('authenticates existing users with username or email', async () => {
-    await authRegister({
+    const registeredUser = await authRegister({
       name: 'Ana Lopez',
       username: 'analopez',
       email: 'ana@example.com',
@@ -230,6 +255,7 @@ describe('auth.service', () => {
       ageConfirmed: true,
       inviteCode: undefined,
     });
+    await verifyUserEmail(registeredUser.id);
 
     const result = await authLogin({
       identifier: 'analopez',

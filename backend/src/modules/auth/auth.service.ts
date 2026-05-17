@@ -17,6 +17,7 @@ import {
 import {
   HTTP_STATUS_BAD_REQUEST,
   HTTP_STATUS_CONFLICT,
+  HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_GONE,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.constants';
@@ -152,6 +153,16 @@ const parseJwtExpiration = (token: string): Date => {
   }
 
   return new Date(decoded.exp * 1000);
+};
+
+const assertEmailVerified = (user: Pick<UserDocument, 'emailVerified'>): void => {
+  if (user.emailVerified) return;
+
+  throw new AppError({
+    code: 'AUTH_EMAIL_NOT_VERIFIED',
+    message: 'Email address must be confirmed before using Blister.',
+    statusCode: HTTP_STATUS_FORBIDDEN,
+  });
 };
 
 const createTokens = async (userId: string): Promise<AuthTokens & { refreshTokenExpiresAt: Date }> => {
@@ -320,7 +331,7 @@ const sendEmailConfirmation = async (
 /**
  * Registers a new user and either joins them to the invited blister or creates a personal one.
  */
-export const authRegister = async (input: RegisterInput): Promise<AuthResult> => {
+export const authRegister = async (input: RegisterInput): Promise<PublicUser> => {
   await ensureUniqueCredentials(input.email, input.username);
 
   const targetBlister = input.inviteCode ? await findInviteTarget(input.inviteCode) : null;
@@ -354,15 +365,9 @@ export const authRegister = async (input: RegisterInput): Promise<AuthResult> =>
     });
   }
 
-  const { accessToken, refreshToken, refreshTokenExpiresAt } = await createTokens(user._id.toString());
-  await persistRefreshToken(user._id.toString(), refreshToken, refreshTokenExpiresAt);
   await sendEmailConfirmation(user, user.email);
 
-  return {
-    user: sanitizeUser(user),
-    accessToken,
-    refreshToken,
-  };
+  return sanitizeUser(user);
 };
 
 const findUserForLogin = async (identifier: string) => {
@@ -405,6 +410,8 @@ export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
       statusCode: HTTP_STATUS_UNAUTHORIZED,
     });
   }
+
+  assertEmailVerified(user);
 
   const { accessToken, refreshToken, refreshTokenExpiresAt } = await createTokens(user._id.toString());
   await persistRefreshToken(user._id.toString(), refreshToken, refreshTokenExpiresAt);
@@ -604,6 +611,8 @@ export const authRefresh = async (input: RefreshTokenInput): Promise<AuthTokens>
       statusCode: HTTP_STATUS_UNAUTHORIZED,
     });
   }
+
+  assertEmailVerified(storedUser);
 
   const { accessToken, refreshToken, refreshTokenExpiresAt } = await createTokens(storedUser._id.toString());
   await persistRefreshToken(storedUser._id.toString(), refreshToken, refreshTokenExpiresAt);

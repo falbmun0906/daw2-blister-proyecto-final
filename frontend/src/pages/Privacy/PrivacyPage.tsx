@@ -12,6 +12,12 @@ const getParentRoute = (state: unknown): string | null => {
   return typeof candidate.parentRoute === 'string' ? candidate.parentRoute : null;
 };
 
+const getReturnState = (state: unknown): object | undefined => {
+  if (typeof state !== 'object' || state === null) return undefined;
+  const candidate = state as { registerDraft?: unknown };
+  return candidate.registerDraft ? { registerDraft: candidate.registerDraft } : undefined;
+};
+
 function PrivacyPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,7 +25,8 @@ function PrivacyPage() {
   usePageTitle('Privacidad');
   usePageBackOverride(() => {
     const parentRoute = getParentRoute(location.state);
-    navigate(parentRoute ?? (accessToken ? ROUTES.profile : ROUTES.register));
+    const returnState = getReturnState(location.state);
+    navigate(parentRoute ?? (accessToken ? ROUTES.profile : ROUTES.register), { state: returnState });
   });
 
   return <PrivacyPolicyContent />;

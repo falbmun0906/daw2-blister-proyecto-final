@@ -51,8 +51,9 @@ describe('auth.routes', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.user.email).toBe('ana@example.com');
-    expect(response.body.data.user.emailVerified).toBe(false);
+    expect(response.body.data.email).toBe('ana@example.com');
+    expect(response.body.data.emailVerified).toBe(false);
+    expect(response.body.data.accessToken).toBeUndefined();
   });
 
   it('sends and consumes email confirmation tokens after registration', async () => {
@@ -150,6 +151,29 @@ describe('auth.routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.accessToken).toBeTruthy();
+  });
+
+  it('rejects unconfirmed users on login', async () => {
+    await UserModel.create({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: await bcrypt.hash('Password1!', 12),
+      emailVerified: false,
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
+
+    const response = await request(app).post('/api/v1/auth/login').send({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe('AUTH_EMAIL_NOT_VERIFIED');
   });
 
   it('revokes the stored refresh token on logout', async () => {
@@ -274,6 +298,7 @@ describe('auth.routes', () => {
       password: 'NewPassword1!',
       confirmPassword: 'NewPassword1!',
     });
+    await UserModel.updateOne({ email: 'ana@example.com' }, { $set: { emailVerified: true } });
     const loginResponse = await request(app).post('/api/v1/auth/login').send({
       identifier: 'ana@example.com',
       password: 'NewPassword1!',

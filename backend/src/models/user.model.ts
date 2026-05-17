@@ -73,7 +73,7 @@ const userSchema = new Schema<UserDocument>({
     trim: true,
     lowercase: true,
     minlength: 3,
-    maxlength: 50,
+    maxlength: 30,
     unique: true,
   },
   email: {

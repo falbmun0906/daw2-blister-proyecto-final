@@ -27,6 +27,8 @@ import {
 } from '../notifications-push.service';
 
 describe('notifications.service', () => {
+  let userCounter = 0;
+
   beforeAll(async () => {
     await connectTestDatabase();
   });
@@ -42,10 +44,11 @@ describe('notifications.service', () => {
   const createUser = async (suffix: string) =>
     UserModel.create({
       name: `User ${suffix}`,
-      username: `user${suffix}`,
+      username: `u${++userCounter}${suffix}`.slice(0, 30),
       email: `user${suffix}@example.com`,
       password:
         '$2b$12$123456789012345678901uY7LwQ3xVw2Cl5EKeosFVJeFt3PcTJS.',
+      emailVerified: true,
       settings: {
         theme: 'system',
         font: 'standard',

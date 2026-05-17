@@ -33,7 +33,7 @@ import {
 } from '../../../../shared/schemas/index';
 
 /**
- * Registers a new user and returns the initial auth session.
+ * Registers a new user and returns their public profile after sending confirmation email.
  */
 export const authRegisterController = async (request: Request, response: Response): Promise<void> => {
   const result = await authRegister(request.body as RegisterInput);

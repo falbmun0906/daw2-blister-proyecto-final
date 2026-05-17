@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm, useWatch, type FieldError, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { FaArrowLeft } from 'react-icons/fa6';
@@ -13,17 +13,14 @@ import {
   TbCircle,
 } from 'react-icons/tb';
 
-import { registerSchema } from '../../../../shared/schemas/auth.schema';
+import { registerSchema, USERNAME_MAX_LENGTH } from '../../../../shared/schemas/auth.schema';
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { InfoTooltip } from '../../components/atoms/InfoTooltip';
 import { Input } from '../../components/atoms/Input';
 import { AuthLayout } from '../../components/layout/AuthLayout';
 import { ROUTES } from '../../constants/routes';
-import { applyUserSettings } from '../../lib/applyUserSettings';
 import { register as registerService } from '../../services/auth.service';
-import { useAuthStore } from '../../stores/auth.store';
-import { resetAppStores } from '../../stores/reset-stores';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 
@@ -34,18 +31,53 @@ type RegisterFormValues = Omit<RegisterFormData, 'privacyConsent' | 'ageConfirme
   ageConfirmed: boolean;
 };
 
+const DEFAULT_REGISTER_VALUES: RegisterFormValues = {
+  name: '',
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  privacyConsent: false,
+  ageConfirmed: false,
+  inviteCode: '',
+};
+
+const getBooleanDraftValue = (value: unknown): boolean | undefined =>
+  typeof value === 'boolean' ? value : undefined;
+
+const getStringDraftValue = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value : undefined;
+
+const getRegisterDraft = (state: unknown): Partial<RegisterFormValues> => {
+  if (typeof state !== 'object' || state === null) return {};
+  const candidate = state as { registerDraft?: unknown };
+  if (typeof candidate.registerDraft !== 'object' || candidate.registerDraft === null) return {};
+  const draft = candidate.registerDraft as Partial<Record<keyof RegisterFormValues, unknown>>;
+
+  return {
+    name: getStringDraftValue(draft.name),
+    username: getStringDraftValue(draft.username),
+    email: getStringDraftValue(draft.email),
+    password: getStringDraftValue(draft.password),
+    confirmPassword: getStringDraftValue(draft.confirmPassword),
+    privacyConsent: getBooleanDraftValue(draft.privacyConsent),
+    ageConfirmed: getBooleanDraftValue(draft.ageConfirmed),
+    inviteCode: getStringDraftValue(draft.inviteCode),
+  };
+};
+
 const getErrorMessage = (code: string | undefined): string => {
   switch (code) {
     case 'AUTH_EMAIL_CONFLICT':
-      return 'Este correo electronico ya esta registrado.';
+      return 'Este correo electrónico ya está registrado.';
     case 'AUTH_USERNAME_CONFLICT':
-      return 'Este nombre de usuario ya esta en uso.';
+      return 'Este nombre de usuario ya está en uso.';
     case 'AUTH_INVITE_INVALID':
-      return 'El codigo de invitacion es invalido o ha expirado.';
+      return 'El código de invitación es inválido o ha expirado.';
     case 'VALIDATION_ERROR':
-      return 'Datos invalidos. Verifica los campos.';
+      return 'Datos inválidos. Verifica los campos.';
     default:
-      return 'Ha ocurrido un error al crear la cuenta. Intentalo de nuevo.';
+      return 'Ha ocurrido un error al crear la cuenta. Inténtalo de nuevo.';
   }
 };
 
@@ -62,20 +94,21 @@ const FIELD_ERROR_LABELS: Record<string, keyof RegisterFormValues> = {
 
 const translateValidationMessage = (message: string): string => {
   const translations: Record<string, string> = {
-    'Name is required.': 'El nombre completo es obligatorio.',
-    'Name must be 100 characters or fewer.': 'El nombre completo no puede superar los 100 caracteres.',
+    'Name is required.': 'El nombre y apellido es obligatorio.',
+    'Name must be 100 characters or fewer.': 'El nombre y apellido no puede superar los 100 caracteres.',
     'Username must be at least 3 characters long.': 'El nombre de usuario debe tener al menos 3 caracteres.',
-    'Username must be 50 characters or fewer.': 'El nombre de usuario no puede superar los 50 caracteres.',
-    'Password must include an uppercase letter.': 'La contrasena debe incluir una mayuscula.',
-    'Password must include a lowercase letter.': 'La contrasena debe incluir una minuscula.',
-    'Password must include a number.': 'La contrasena debe incluir un numero.',
-    'Password must include a symbol.': 'La contrasena debe incluir un simbolo.',
-    'Passwords do not match.': 'Las contrasenas no coinciden.',
-    'Email must be valid.': 'Introduce un correo valido.',
-    'Username contains invalid characters.': 'Solo minusculas, numeros y . _ -.',
-    'Invite code must contain 6 to 8 alphanumeric characters.': 'El codigo de invitacion debe tener entre 6 y 8 caracteres alfanumericos.',
-    'Privacy consent is required.': 'Debes aceptar la politica de privacidad.',
-    'Age confirmation is required.': 'Debes confirmar que tienes 18 años o mas.',
+    'Username must be 50 characters or fewer.': `El nombre de usuario no puede superar los ${USERNAME_MAX_LENGTH} caracteres.`,
+    [`El nombre de usuario no puede superar los ${USERNAME_MAX_LENGTH} caracteres.`]: `El nombre de usuario no puede superar los ${USERNAME_MAX_LENGTH} caracteres.`,
+    'Password must include an uppercase letter.': 'La contraseña debe incluir una mayúscula.',
+    'Password must include a lowercase letter.': 'La contraseña debe incluir una minúscula.',
+    'Password must include a number.': 'La contraseña debe incluir un número.',
+    'Password must include a symbol.': 'La contraseña debe incluir un símbolo.',
+    'Passwords do not match.': 'Las contraseñas no coinciden.',
+    'Email must be valid.': 'Introduce un correo válido.',
+    'Username contains invalid characters.': 'Solo minúsculas, números y . _ -.',
+    'Invite code must contain 6 to 8 alphanumeric characters.': 'El código de invitación debe tener entre 6 y 8 caracteres alfanuméricos.',
+    'Privacy consent is required.': 'Debes aceptar la política de privacidad.',
+    'Age confirmation is required.': 'Debes confirmar que tienes 18 años o más.',
   };
   return translations[message] ?? message;
 };
@@ -131,19 +164,19 @@ const PASSWORD_REQUIREMENTS = [
     test: (value: string) => value.trim().length >= 8,
   },
   {
-    label: 'Una mayuscula',
+    label: 'Una mayúscula',
     test: (value: string) => /\p{Lu}/u.test(value),
   },
   {
-    label: 'Una minuscula',
+    label: 'Una minúscula',
     test: (value: string) => /\p{Ll}/u.test(value),
   },
   {
-    label: 'Un numero',
+    label: 'Un número',
     test: (value: string) => /\d/.test(value),
   },
   {
-    label: 'Un simbolo',
+    label: 'Un símbolo',
     test: (value: string) => /[^\p{L}\p{N}\s]/u.test(value),
   },
 ];
@@ -155,8 +188,8 @@ const getMissingPasswordRequirements = (value: string): string[] =>
 
 const getPasswordRequirementMessage = (value: string): string => {
   const missing = getMissingPasswordRequirements(value);
-  if (missing.length === 0) return 'La contrasena no esta bien cumplimentada.';
-  return `La contrasena debe incluir: ${missing.join(', ')}.`;
+  if (missing.length === 0) return 'La contraseña no está bien cumplimentada.';
+  return `La contraseña debe incluir: ${missing.join(', ')}.`;
 };
 
 const applyApiFieldErrors = (
@@ -178,10 +211,15 @@ const applyApiFieldErrors = (
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const setSession = useAuthStore((state) => state.setSession);
+  const location = useLocation();
   const addToast = useUiStore((state) => state.addToast);
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+  const defaultValues = useMemo(
+    () => ({ ...DEFAULT_REGISTER_VALUES, ...getRegisterDraft(location.state) }),
+    [location.state],
+  );
 
   const {
     register,
@@ -194,35 +232,30 @@ function RegisterPage() {
     resolver: registerFormResolver,
     mode: 'onChange',
     criteriaMode: 'all',
-    defaultValues: {
-      name: '',
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      privacyConsent: false,
-      ageConfirmed: false,
-      inviteCode: '',
-    },
+    defaultValues,
   });
   const passwordValue = useWatch({ control, name: 'password' }) ?? '';
+  const watchedValues = useWatch({ control });
+  const privacyState = useMemo(
+    () => ({
+      parentRoute: ROUTES.register,
+      registerDraft: { ...DEFAULT_REGISTER_VALUES, ...watchedValues },
+    }),
+    [watchedValues],
+  );
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     setGlobalError(null);
 
     try {
-      const session = await registerService(data as RegisterFormData);
-      resetAppStores();
-      applyUserSettings(session.user.settings);
-      setSession(session);
+      await registerService(data as RegisterFormData);
+      setRegisteredEmail(data.email);
 
       addToast({
-        message: `Bienvenido, ${session.user.name}.`,
+        message: 'Te hemos enviado el correo de confirmación.',
         variant: 'success',
       });
-
-      navigate(ROUTES.home, { replace: true });
     } catch (error) {
       if (isApiError(error)) {
         const hasFieldErrors = applyApiFieldErrors(error.details, setError);
@@ -245,6 +278,39 @@ function RegisterPage() {
     setFocus('password');
   };
 
+  if (registeredEmail) {
+    return (
+      <AuthLayout className="c-register-page" tone="brand" innerClassName="c-register-page__inner">
+        <header className="c-register-page__header">
+          <button
+            type="button"
+            className="c-register-page__back-btn"
+            onClick={() => setRegisteredEmail(null)}
+            aria-label="Volver al registro"
+          >
+            <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
+          </button>
+          <span className="c-register-page__spacer" aria-hidden="true" />
+        </header>
+
+        <section className="c-register-page__sent" aria-labelledby="register-email-sent-title">
+          <h1 id="register-email-sent-title" className="c-register-page__title">
+            Revisa tu correo
+          </h1>
+          <p className="c-register-page__sent-text">
+            Te hemos enviado un correo de confirmación a <span>{registeredEmail}</span>.
+          </p>
+          <p className="c-register-page__sent-text">
+            Confirma tu cuenta antes de iniciar sesión y revisa también la carpeta de <span>spam</span>.
+          </p>
+          <Button type="button" variant="primary" fullWidth onClick={() => navigate(ROUTES.login)}>
+            Ir a iniciar sesión
+          </Button>
+        </section>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout className="c-register-page" tone="brand" innerClassName="c-register-page__inner">
       <header className="c-register-page__header">
@@ -252,7 +318,7 @@ function RegisterPage() {
           type="button"
           className="c-register-page__back-btn"
           onClick={() => navigate(ROUTES.login)}
-          aria-label="Volver al inicio de sesion"
+          aria-label="Volver al inicio de sesión"
         >
           <FaArrowLeft className="c-icon c-icon--md" aria-hidden="true" />
         </button>
@@ -265,8 +331,8 @@ function RegisterPage() {
 
       <form className="c-register-page__form" onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)} noValidate>
         <Input
-          label="Nombre completo"
-          placeholder="Tu nombre completo"
+          label="Nombre y apellido"
+          placeholder="Tu nombre y apellido"
           type="text"
           autoComplete="name"
           {...register('name')}
@@ -279,16 +345,17 @@ function RegisterPage() {
           placeholder="nombre_usuario"
           type="text"
           autoComplete="username"
+          maxLength={USERNAME_MAX_LENGTH}
           {...register('username')}
           error={getFieldError(errors.username)}
           icon={<TbUser className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
-            <InfoTooltip content="Solo minusculas, numeros y los caracteres . _ -. Entre 3 y 50 caracteres." />
+            <InfoTooltip content={`Será tu usuario para iniciar sesión. Usa minúsculas, números y . _ -. Entre 3 y ${USERNAME_MAX_LENGTH} caracteres.`} />
           }
         />
 
         <Input
-          label="Correo electronico"
+          label="Correo electrónico"
           placeholder="tu@correo.com"
           type="email"
           autoComplete="email"
@@ -298,7 +365,7 @@ function RegisterPage() {
         />
 
         <Input
-          label="Contrasena"
+          label="Contraseña"
           placeholder="********"
           type="password"
           autoComplete="new-password"
@@ -306,10 +373,10 @@ function RegisterPage() {
           error={getFieldError(errors.password)}
           icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
-            <InfoTooltip content="Minimo 8 caracteres. Debe incluir mayuscula, minuscula, numero y simbolo." />
+            <InfoTooltip content="Mínimo 8 caracteres. Debe incluir mayúscula, minúscula, número y símbolo." />
           }
         />
-        <ul className="c-register-page__password-feedback" aria-label="Requisitos de contrasena">
+        <ul className="c-register-page__password-feedback" aria-label="Requisitos de contraseña">
           {PASSWORD_REQUIREMENTS.map((requirement) => {
             const isMet = requirement.test(passwordValue);
             return (
@@ -329,7 +396,7 @@ function RegisterPage() {
         </ul>
 
         <Input
-          label="Confirmar contrasena"
+          label="Confirmar contraseña"
           placeholder="********"
           type="password"
           autoComplete="new-password"
@@ -339,14 +406,14 @@ function RegisterPage() {
         />
 
         <Input
-          label="Codigo de invitacion (opcional)"
+          label="Código de invitación (opcional)"
           placeholder="ABC12345"
           type="text"
           {...register('inviteCode')}
           error={getFieldError(errors.inviteCode)}
           icon={<TbKey className="c-icon c-icon--md" aria-hidden="true" />}
           tooltip={
-            <InfoTooltip content="Si alguien te ha compartido un blister familiar, introduce aqui el codigo que ha generado." />
+            <InfoTooltip content="Si alguien te ha compartido un blíster familiar, introduce aquí el código que ha generado." />
           }
         />
 
@@ -364,7 +431,7 @@ function RegisterPage() {
                 className="c-register-page__checkbox-input"
               />
               <span className="c-register-page__checkbox-text">
-                Acepto la <Link to={ROUTES.privacy} state={{ parentRoute: ROUTES.register }} className="c-register-page__link">política de privacidad</Link>
+                Acepto la <Link to={ROUTES.privacy} state={privacyState} className="c-register-page__link">política de privacidad</Link>
               </span>
             </label>
           </div>
@@ -381,7 +448,7 @@ function RegisterPage() {
                 {...register('ageConfirmed')}
                 className="c-register-page__checkbox-input"
               />
-              <span className="c-register-page__checkbox-text">Confirmo que tengo 18 años o mas</span>
+              <span className="c-register-page__checkbox-text">Confirmo que tengo 18 años o más</span>
             </label>
           </div>
         </div>
@@ -392,7 +459,7 @@ function RegisterPage() {
       </form>
 
       <p className="c-register-page__footer">
-        Ya tienes una cuenta? <Link to={ROUTES.login} className="c-register-page__login-link">Inicia sesion</Link>
+        ¿Ya tienes una cuenta? <Link to={ROUTES.login} className="c-register-page__login-link">Inicia sesión</Link>
       </p>
     </AuthLayout>
   );

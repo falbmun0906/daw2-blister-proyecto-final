@@ -8,6 +8,8 @@ import {
 import { settingsSchema } from './settings.schema';
 import { updateSettingsSchema } from './settings.schema';
 
+export const USERNAME_MAX_LENGTH = 30;
+
 export const userSchema = z.object({
   id: objectIdSchema,
   name: nonEmptyTrimmedString('Name', 100),
@@ -16,7 +18,7 @@ export const userSchema = z.object({
     .trim()
     .toLowerCase()
     .min(3, 'El nombre de usuario debe tener al menos 3 caracteres.')
-    .max(50, 'El nombre de usuario no puede superar los 50 caracteres.')
+    .max(USERNAME_MAX_LENGTH, `El nombre de usuario no puede superar los ${USERNAME_MAX_LENGTH} caracteres.`)
     .regex(/^[a-z0-9._-]+$/, 'El nombre de usuario contiene caracteres no permitidos.'),
   email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.'),
   emailVerified: z.boolean().default(false),
@@ -63,7 +65,7 @@ export const registerSchema = z
       .trim()
       .toLowerCase()
       .min(3, 'El nombre de usuario debe tener al menos 3 caracteres.')
-      .max(50, 'El nombre de usuario no puede superar los 50 caracteres.')
+      .max(USERNAME_MAX_LENGTH, `El nombre de usuario no puede superar los ${USERNAME_MAX_LENGTH} caracteres.`)
       .regex(/^[a-z0-9._-]+$/, 'El nombre de usuario contiene caracteres no permitidos.'),
     email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.'),
     password: passwordSchema,
@@ -135,7 +137,7 @@ export const updateProfileSchema = z
       .trim()
       .toLowerCase()
       .min(3, 'El nombre de usuario debe tener al menos 3 caracteres.')
-      .max(50, 'El nombre de usuario no puede superar los 50 caracteres.')
+      .max(USERNAME_MAX_LENGTH, `El nombre de usuario no puede superar los ${USERNAME_MAX_LENGTH} caracteres.`)
       .regex(/^[a-z0-9._-]+$/, 'El nombre de usuario contiene caracteres no permitidos.')
       .optional(),
     email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.').optional(),

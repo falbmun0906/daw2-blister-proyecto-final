@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { TbPencil } from 'react-icons/tb';
 import { z } from 'zod';
 
+import { USERNAME_MAX_LENGTH } from '../../../../shared/schemas/auth.schema';
 import { Avatar } from '../../components/atoms/Avatar';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
@@ -23,7 +24,7 @@ const personalInfoSchema = z.object({
     .trim()
     .toLowerCase()
     .min(3, 'Debe tener al menos 3 caracteres.')
-    .max(50, 'Máximo 50 caracteres.')
+    .max(USERNAME_MAX_LENGTH, `Máximo ${USERNAME_MAX_LENGTH} caracteres.`)
     .regex(
       /^[a-z0-9._-]+$/u,
       'Solo se permiten letras minúsculas, números, puntos, guiones y guion bajo.',
@@ -153,6 +154,7 @@ function PersonalInfoPage() {
         <Input
           label="Usuario"
           autoComplete="username"
+          maxLength={USERNAME_MAX_LENGTH}
           placeholder="franalba21"
           error={errors.username?.message}
           wrapperClassName="c-field--pill"

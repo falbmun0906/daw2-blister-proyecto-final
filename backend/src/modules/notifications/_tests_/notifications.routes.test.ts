@@ -38,6 +38,7 @@ describe('notifications.routes', () => {
       email: `user${suffix}@example.com`,
       password:
         '$2b$12$123456789012345678901uY7LwQ3xVw2Cl5EKeosFVJeFt3PcTJS.',
+      emailVerified: true,
       settings: {
         theme: 'system',
         font: 'standard',
@@ -113,7 +114,7 @@ describe('notifications.routes', () => {
       type: 'system',
       severity: 'info',
       title: 'Sistema',
-      message: 'Actualizacion general',
+      message: 'Actualización general',
     });
 
     const response = await request(app)

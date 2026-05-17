@@ -104,24 +104,21 @@ export const authRouter = Router();
  *                 example: ABC123
  *     responses:
  *       201:
- *         description: User registered and session created.
+ *         description: User registered. Email confirmation is required before login.
  *         content:
  *           application/json:
  *             example:
  *               success: true
  *               data:
- *                 user:
- *                   id: 507f1f77bcf86cd799439011
- *                   name: Ana Lopez
- *                   username: ana.lopez
- *                   email: ana@example.com
- *                   emailVerified: false
- *                   settings:
- *                     theme: system
- *                     font: standard
- *                     fontSize: normal
- *                 accessToken: <jwt_access>
- *                 refreshToken: <jwt_refresh>
+ *                 id: 507f1f77bcf86cd799439011
+ *                 name: Ana Lopez
+ *                 username: ana.lopez
+ *                 email: ana@example.com
+ *                 emailVerified: false
+ *                 settings:
+ *                   theme: system
+ *                   font: standard
+ *                   fontSize: normal
  *       400:
  *         description: Validation error.
  *         content:
@@ -185,7 +182,7 @@ authRouter.post('/register', registerLimiter, validate({ body: registerSchema })
  *       400:
  *         description: Validation error.
  *       401:
- *         description: Invalid credentials.
+ *         description: Invalid credentials or unconfirmed email.
  *         content:
  *           application/json:
  *             schema:

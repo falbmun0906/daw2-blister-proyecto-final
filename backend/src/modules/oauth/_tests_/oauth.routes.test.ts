@@ -58,6 +58,7 @@ const registerUser = async (app: ReturnType<typeof createApp>) => {
       privacyConsent: true,
       ageConfirmed: true,
     });
+  await UserModel.updateOne({ email: 'ana@example.com' }, { $set: { emailVerified: true } });
 };
 
 describe('oauth.routes', () => {
