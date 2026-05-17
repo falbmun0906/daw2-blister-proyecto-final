@@ -3,7 +3,7 @@ export const APP_COMMIT = typeof __APP_COMMIT__ === 'string' && __APP_COMMIT__ ?
 export const LAST_SEEN_APP_VERSION_KEY = 'blister-last-seen-version';
 
 export const APP_RELEASE_NOTES = [
-  'Comprobaciones de actualización más frecuentes al abrir o reactivar la PWA.',
-  'Tema y tamaño de pantalla restaurados al arrancar desde la app instalada.',
-  'Código de commit visible en Perfil para confirmar qué versión está desplegada.',
+  'Blíster avisa mejor cuando hay una nueva versión lista para usar.',
+  'La app instalada conserva mejor el modo oscuro y el tamaño correcto de pantalla en móvil.',
+  'Invitar a otras personas a un blíster es más claro y permite compartir el mensaje desde otras apps.',
 ] as const;
