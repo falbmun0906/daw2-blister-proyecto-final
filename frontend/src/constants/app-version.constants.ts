@@ -3,7 +3,7 @@ export const APP_COMMIT = typeof __APP_COMMIT__ === 'string' && __APP_COMMIT__ ?
 export const LAST_SEEN_APP_VERSION_KEY = 'blister-last-seen-version';
 
 export const APP_RELEASE_NOTES = [
-  'Blíster avisa mejor cuando hay una nueva versión lista para usar.',
-  'La app instalada conserva mejor el modo oscuro y el tamaño correcto de pantalla en móvil.',
-  'Invitar a otras personas a un blíster es más claro y permite compartir el mensaje desde otras apps.',
+  'Las cuentas nuevas deben confirmar el correo antes de usar la app, con una pantalla de registro más clara.',
+  'Las eliminaciones usan confirmaciones propias de Blíster para evitar acciones accidentales.',
+  'Los tratamientos y medicamentos muestran avisos más precisos, con alertas CIMA mejor explicadas.',
 ] as const;
