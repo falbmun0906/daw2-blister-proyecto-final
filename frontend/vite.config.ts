@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+import { execSync } from 'node:child_process';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { readFileSync } from 'node:fs';
@@ -8,15 +9,57 @@ const packageJson = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version?: string };
 
-const buildStamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 12);
+const buildDate = new Date();
+const buildIso = buildDate.toISOString();
+const buildStamp = buildIso.replace(/[-:.TZ]/g, '').slice(0, 12);
 const appVersion = process.env.VITE_APP_VERSION?.trim() || `${packageJson.version ?? '0.0.0'}-${buildStamp}`;
+
+const normalizeCommit = (value: string | undefined): string | null => {
+  const normalized = value?.trim();
+  return normalized ? normalized.slice(0, 7) : null;
+};
+
+const resolveAppCommit = (): string => {
+  const envCommit = normalizeCommit(process.env.VITE_APP_COMMIT)
+    ?? normalizeCommit(process.env.RENDER_GIT_COMMIT)
+    ?? normalizeCommit(process.env.GIT_COMMIT)
+    ?? normalizeCommit(process.env.COMMIT_SHA);
+
+  if (envCommit) return envCommit;
+
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      cwd: path.resolve(__dirname, '..'),
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).toString().trim();
+  } catch {
+    return 'local';
+  }
+};
+
+const appCommit = resolveAppCommit();
+
+function appVersionManifestPlugin(): Plugin {
+  return {
+    name: 'blister-app-version-manifest',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: `${JSON.stringify({ version: appVersion, commit: appCommit, builtAt: buildIso }, null, 2)}\n`,
+      });
+    },
+  };
+}
 
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_COMMIT__: JSON.stringify(appCommit),
   },
   plugins: [
     react(),
+    appVersionManifestPlugin(),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'favicon.png', 'apple-touch-icon.png', 'icons.svg'],
