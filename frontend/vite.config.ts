@@ -25,7 +25,7 @@ export default defineConfig({
         name: 'Blíster — Gestión de Botiquín',
         short_name: 'Blíster',
         description: 'Gestión inteligente de tu botiquín personal y familiar.',
-        theme_color: '#11a498',
+        theme_color: '#0b8178',
         background_color: '#f5f5f5',
         display: 'standalone',
         orientation: 'portrait',
