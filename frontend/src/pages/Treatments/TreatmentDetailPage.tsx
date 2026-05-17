@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import {
   TbBuildingHospital,
   TbCalendar,
   TbInfoCircle,
   TbMapPin,
+  TbPencil,
   TbPill,
+  TbTrash,
   TbUser,
 } from 'react-icons/tb';
 
@@ -14,6 +16,8 @@ import { Button } from '../../components/atoms/Button';
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
+import { ActionMenuButton } from '../../components/molecules/ActionMenuButton';
+import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { ForceDoseDialog } from '../../components/molecules/ForceDoseDialog';
 import { UndoToast } from '../../components/molecules/UndoToast';
 import { ROUTES } from '../../constants/routes';
@@ -233,7 +237,7 @@ function TreatmentDetailPage() {
   const blisterId = routeBlisterId ?? activeBlisterId;
 
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
-  const { treatments, isLoading, error, refetch, updateTreatment } = useTreatments(blisterId);
+  const { treatments, isLoading, error, refetch, updateTreatment, removeTreatment } = useTreatments(blisterId);
   const { medicines, isLoading: medicinesLoading } = useMedicines(blisterId);
   const { appointments, isLoading: appointmentsLoading } = useAppointments(blisterId);
   const { logDose, undoLog } = useAdherence(blisterId);
@@ -243,6 +247,9 @@ function TreatmentDetailPage() {
   const [loggingMedicineId, setLoggingMedicineId] = useState<string | null>(null);
   const [pendingDose, setPendingDose] = useState<PendingDose | null>(null);
   const [activeUndos, setActiveUndos] = useState<ActiveUndo[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const treatment = useMemo(
     () => (treatmentId ? treatments.find((item) => item.id === treatmentId) ?? null : null),
@@ -314,6 +321,28 @@ function TreatmentDetailPage() {
       cancelled = true;
     };
   }, [medicineById, treatment]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (menuRef.current && event.target instanceof Node && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [menuOpen]);
 
   const handleNoteChange = useCallback((medicineId: string, note: string) => {
     setNotes((prev) => ({ ...prev, [medicineId]: note }));
@@ -445,6 +474,20 @@ function TreatmentDetailPage() {
     [addToast, dismissUndoToast, undoLog],
   );
 
+  const handleDeleteTreatment = useCallback(async () => {
+    if (!treatment || !blisterId) return;
+    try {
+      await removeTreatment(treatment.id);
+      addToast({ message: 'Tratamiento eliminado.', variant: 'success' });
+      navigate(ROUTES.blisterTreatments(blisterId));
+    } catch (err) {
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido eliminar el tratamiento.',
+        variant: 'error',
+      });
+    }
+  }, [addToast, blisterId, navigate, removeTreatment, treatment]);
+
   if (!blisterId) return <Navigate to={ROUTES.blisters} replace />;
   if (!treatmentId) return <Navigate to={ROUTES.blisterTreatments(blisterId)} replace />;
 
@@ -481,6 +524,42 @@ function TreatmentDetailPage() {
             <TbBuildingHospital aria-hidden="true" /> {currentBlister?.name ?? 'Blíster'}
           </p>
         </div>
+        {canMutate ? (
+          <div className="c-action-menu c-treatment-detail__menu" ref={menuRef}>
+            <ActionMenuButton
+              className="c-treatment-detail__menu-toggle"
+              label="Acciones del tratamiento"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            />
+            {menuOpen ? (
+              <div className="c-action-menu__popover c-treatment-detail__menu-popover" role="menu">
+                <Link
+                  className="c-action-menu__item"
+                  to={ROUTES.editTreatment(blisterId, treatment.id)}
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <TbPencil aria-hidden="true" />
+                  <span>Editar</span>
+                </Link>
+                <button
+                  type="button"
+                  className="c-action-menu__item c-action-menu__item--danger"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setConfirmDeleteOpen(true);
+                  }}
+                >
+                  <TbTrash aria-hidden="true" />
+                  <span>Eliminar</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {progress ? (
@@ -573,6 +652,14 @@ function TreatmentDetailPage() {
           ))}
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        message={`¿Eliminar el tratamiento "${treatment.title}"?`}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDeleteTreatment}
+        ariaLabel="Confirmar eliminación del tratamiento"
+      />
     </section>
   );
 }

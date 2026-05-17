@@ -1,18 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   TbBuildingHospital,
   TbChevronRight,
-  TbPencil,
   TbPill,
-  TbTrash,
   TbUser,
 } from 'react-icons/tb';
 
 import { Avatar } from '../atoms/Avatar';
-import { ActionMenuButton } from '../molecules/ActionMenuButton';
 import { ROUTES } from '../../constants/routes';
-import type { BlisterRole } from '../../types/blister.types';
 import type { Treatment } from '../../types/treatment.types';
 
 interface TreatmentRowProps {
@@ -21,12 +16,7 @@ interface TreatmentRowProps {
   patientName: string;
   patientAvatarKey?: string | null;
   appointmentsCount: number;
-  userRole: BlisterRole | null;
-  onDelete: (treatment: Treatment) => void;
 }
-
-const canMutate = (role: BlisterRole | null): boolean =>
-  role === 'OWNER' || role === 'CAREGIVER';
 
 const MS_PER_DAY = 86_400_000;
 
@@ -63,38 +53,9 @@ export function TreatmentRow({
   patientName,
   patientAvatarKey,
   appointmentsCount,
-  userRole,
-  onDelete,
 }: TreatmentRowProps) {
-  const editable = canMutate(userRole);
   const progress = getProgress(treatment);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const medicineCount = treatment.medicines.length;
-
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (menuRef.current && event.target instanceof Node && !menuRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [menuOpen]);
 
   return (
     <article className="c-treatment-row" aria-label={treatment.title}>
@@ -107,41 +68,6 @@ export function TreatmentRow({
             {patientName || 'Paciente'}
           </p>
         </div>
-        {editable ? (
-          <div className="c-action-menu c-treatment-row__menu" ref={menuRef}>
-            <ActionMenuButton
-              className="c-treatment-row__menu-toggle"
-              label="Acciones del tratamiento"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            />
-            {menuOpen ? (
-              <div className="c-action-menu__popover c-treatment-row__menu-popover" role="menu">
-                <Link
-                  className="c-action-menu__item"
-                  to={ROUTES.editTreatment(blisterId, treatment.id)}
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <TbPencil aria-hidden="true" />
-                  <span>Editar</span>
-                </Link>
-                <button
-                  type="button"
-                  className="c-action-menu__item c-action-menu__item--danger"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onDelete(treatment);
-                  }}
-                >
-                  <TbTrash aria-hidden="true" />
-                  <span>Eliminar</span>
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
       </header>
 
       <Link

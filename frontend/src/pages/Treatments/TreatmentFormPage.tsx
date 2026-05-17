@@ -156,18 +156,20 @@ function buildUpdatePayload(values: FormValues): UpdateTreatmentInput {
 
 function getTreatmentIssueMessage(path: string, message: string): string {
   if (path === 'patientUserId') return 'Selecciona un miembro del blíster.';
-  if (/^medicines\.\d+\.medicineId$/u.test(path)) return 'Selecciona un medicamento.';
+  if (/^medicines\.\d+\.medicineId$/u.test(path)) return 'Selecciona al menos un medicamento';
   return message;
 }
 
 function getMedicineSectionError(errors: FieldErrors<FormValues>): string | null {
   const rootMessage = (errors.medicines as { message?: string } | undefined)?.message;
   if (typeof rootMessage === 'string') {
-    return rootMessage;
+    return rootMessage === 'El tratamiento debe incluir al menos un medicamento.'
+      ? 'Selecciona al menos un medicamento'
+      : rootMessage;
   }
 
   if (Array.isArray(errors.medicines) && errors.medicines.some((entry) => entry?.medicineId)) {
-    return 'Selecciona al menos un medicamento antes de guardar el tratamiento.';
+    return 'Selecciona al menos un medicamento';
   }
 
   return null;
@@ -540,7 +542,7 @@ function TreatmentFormPage() {
           <Input
             label="Título"
             maxLength={200}
-            placeholder="Ej. Antibiótico amoxicilina"
+            placeholder="Ej. Fascitis plantar"
             error={formState.errors.title?.message}
             {...register('title')}
           />

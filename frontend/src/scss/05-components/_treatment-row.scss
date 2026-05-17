@@ -10,7 +10,7 @@
 
   &__header {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: flex-start;
     gap: var(--space-3);
   }

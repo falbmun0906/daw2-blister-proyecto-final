@@ -12,9 +12,6 @@ import { usePageTitle } from '../../hooks/use.page-title';
 import { useTreatments } from '../../hooks/use.treatments';
 import { useAuthStore } from '../../stores/auth.store';
 import { useBlisterStore } from '../../stores/blister.store';
-import { useUiStore } from '../../stores/ui.store';
-import { isApiError } from '../../types/api.types';
-import type { Treatment } from '../../types/treatment.types';
 
 function TreatmentsPage() {
   usePageTitle('Tratamientos');
@@ -24,10 +21,9 @@ function TreatmentsPage() {
   const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
   const activeRole = useBlisterStore((state) => state.activeRole);
   const userId = useAuthStore((state) => state.user?.id ?? null);
-  const addToast = useUiStore((state) => state.addToast);
   const blisterId = routeBlisterId ?? activeBlisterId;
   const { hasLoaded: blistersLoaded } = useBlisters(blisterId);
-  const { treatments, isLoading, error, refetch, removeTreatment } = useTreatments(blisterId);
+  const { treatments, isLoading, error, refetch } = useTreatments(blisterId);
   const { appointments } = useAppointments(blisterId);
 
   const visible = useMemo(
@@ -66,17 +62,6 @@ function TreatmentsPage() {
       </div>
     );
   }
-
-  const handleDelete = async (treatment: Treatment): Promise<void> => {
-    if (!window.confirm(`¿Eliminar el tratamiento "${treatment.title}"?`)) return;
-    try {
-      await removeTreatment(treatment.id);
-      addToast({ message: 'Tratamiento eliminado.', variant: 'success' });
-    } catch (err) {
-      const message = isApiError(err) ? err.message : 'No se ha podido eliminar.';
-      addToast({ message, variant: 'error' });
-    }
-  };
 
   return (
     <section className="c-treatments-page" aria-label="Listado de tratamientos">
@@ -119,8 +104,6 @@ function TreatmentsPage() {
                 patientName={getPatient(treatment.patientUserId)?.fullName?.trim() || getPatient(treatment.patientUserId)?.username?.trim() || 'Paciente'}
                 patientAvatarKey={getPatient(treatment.patientUserId)?.avatarKey ?? null}
                 appointmentsCount={getAppointmentCount(treatment.id)}
-                userRole={role}
-                onDelete={handleDelete}
               />
             </li>
           ))}
