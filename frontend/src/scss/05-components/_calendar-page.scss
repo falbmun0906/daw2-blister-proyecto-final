@@ -73,18 +73,16 @@
     align-items: center;
     justify-content: center;
     min-height: var(--space-touch-min);
-    padding: var(--space-2) var(--space-3);
-    border: 0.0625rem solid var(--color-primary-border);
-    border-radius: var(--radius-full);
-    background-color: var(--color-surface);
+    padding: var(--space-2) 0;
     color: var(--color-primary);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
-    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
 
     &:hover,
     &:focus-visible {
-      background-color: var(--color-primary-tint);
+      color: var(--color-primary-hover);
     }
 
     &:focus-visible {
@@ -348,10 +346,12 @@
     position: relative;
     flex: 0 0 auto;
     display: inline-flex;
+    align-items: center;
   }
 
   &__menu-popover {
     position: absolute;
+    top: auto;
     right: 0;
     bottom: calc(100% + var(--space-1));
     z-index: var(--z-dropdown);

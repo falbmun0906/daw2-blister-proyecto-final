@@ -185,9 +185,7 @@ export const appointmentCreateInputSchema = z.object({
   title: nonEmptyTrimmedString('Appointment title', 200),
   location: z.string().trim().max(200, 'El lugar no puede superar los 200 caracteres.').nullable().optional(),
   description: z.string().trim().max(600, 'La descripción no puede superar los 600 caracteres.').nullable().optional(),
-  date: mcpInputDateSchema('date').refine((value) => value.getTime() > Date.now(), {
-    message: 'La fecha de la cita debe ser futura.',
-  }),
+  date: mcpInputDateSchema('date'),
   treatmentId: objectIdSchema.nullable().optional(),
 }).superRefine(validateRequiredBlisterLocator);
 

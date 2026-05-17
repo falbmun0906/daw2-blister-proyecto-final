@@ -5,12 +5,12 @@
 
   &__toggle {
     display: inline-flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     width: var(--space-touch-min);
     min-width: var(--space-touch-min);
     height: var(--space-touch-min);
-    padding: var(--space-1) 0 0;
+    padding: 0;
     border: 0;
     border-radius: var(--radius-full);
     background-color: transparent;

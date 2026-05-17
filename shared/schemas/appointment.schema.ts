@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import {
   collectionPaginationQuerySchema,
-  futureDateSchema,
+  dateSchema,
   nonEmptyTrimmedString,
   objectIdSchema,
 } from './common.schema';
@@ -36,7 +36,7 @@ const appointmentBaseSchema = z.object({
   title: nonEmptyTrimmedString('Appointment title', 200),
   location: nullableTrimmedString(200),
   description: nullableTrimmedString(600),
-  date: futureDateSchema('date'),
+  date: dateSchema('date'),
   treatmentId: objectIdSchema.nullable().optional(),
 });
 

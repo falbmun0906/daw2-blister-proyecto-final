@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { TbCalendar, TbCheck, TbChevronLeft, TbChevronRight, TbPill, TbPlus } from 'react-icons/tb';
 
 import { Avatar } from '../../components/atoms/Avatar';
@@ -655,8 +655,9 @@ function CalendarPage() {
                     Próximas citas
                   </h3>
                   {selected ? (
-                    <button
-                      type="button"
+                    <Link
+                      to={ROUTES.blisterAppointments(blisterId)}
+                      replace
                       className="c-calendar-page__clear-filter"
                       onClick={() => {
                         setSelected(null);
@@ -664,7 +665,7 @@ function CalendarPage() {
                       }}
                     >
                       Ver todas
-                    </button>
+                    </Link>
                   ) : null}
                 </div>
                 {filteredUpcomingAppointments.length === 0 ? (

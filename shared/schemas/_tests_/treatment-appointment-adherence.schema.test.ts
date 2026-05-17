@@ -4,6 +4,7 @@ import {
 } from '../adherence.schema';
 import {
   adherenceLoggerInputSchema,
+  appointmentCreateInputSchema,
   appointmentManagerInputSchema,
   scheduleAssistantInputSchema,
 } from '../mcp.schema';
@@ -50,13 +51,21 @@ describe('treatment, appointment and adherence shared schemas', () => {
     expect(result.success).toBe(false);
   });
 
-  it('requires future dates for appointments', () => {
+  it('accepts historical appointment dates for manual records', () => {
     const result = createAppointmentSchema.safeParse({
+      patientUserId: '507f1f77bcf86cd799439011',
       title: 'Revision',
       date: '2020-04-25T10:00:00.000Z',
     });
+    const mcpResult = appointmentCreateInputSchema.safeParse({
+      blisterId: '507f1f77bcf86cd799439012',
+      patientUserId: '507f1f77bcf86cd799439011',
+      title: 'Revision historica',
+      date: '2020-04-25T10:00:00.000Z',
+    });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+    expect(mcpResult.success).toBe(true);
   });
 
   it('accepts appointment descriptions and response comments', () => {
