@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 import { env } from '../../config/env';
 
-const AUTH_EMAIL_FROM = 'Blíster <ayuda@miblister.es>';
+const AUTH_EMAIL_FROM = 'Blíster <soporte@miblister.es>';
 
 const EMAIL_COLORS = {
   accent: '#c96f52',
