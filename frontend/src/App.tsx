@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ROUTES } from './constants/routes'
@@ -11,6 +11,8 @@ import { GuestRoute } from './router/GuestRoute'
 import { LoginRoute } from './router/LoginRoute'
 import { OnboardingRoute } from './router/OnboardingRoute'
 import { PrivateRoute } from './router/PrivateRoute'
+import { applyUserSettings } from './lib/applyUserSettings'
+import { useAuthStore } from './stores/auth.store'
 
 const LandingPage = lazy(() => import('./pages/Landing/LandingPage'))
 const OnboardingPage = lazy(() => import('./pages/Onboarding/OnboardingPage'))
@@ -49,10 +51,21 @@ const McpTokenPage = lazy(() => import('./pages/MCP/McpTokenPage'))
 const McpTokenRevokePage = lazy(() => import('./pages/MCP/McpTokenRevokePage'))
 const PrivacyPage = lazy(() => import('./pages/Privacy/PrivacyPage'))
 
+function UserSettingsBootstrap() {
+  const settings = useAuthStore((state) => state.user?.settings)
+
+  useEffect(() => {
+    applyUserSettings(settings)
+  }, [settings])
+
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
       <DesktopDeviceShell>
+        <UserSettingsBootstrap />
         <PwaUpdatePrompt />
         <Suspense fallback={null}>
           <Routes>

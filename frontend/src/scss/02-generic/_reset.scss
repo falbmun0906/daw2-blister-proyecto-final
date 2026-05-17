@@ -35,12 +35,13 @@ html {
 
   // Padding superior para anclas con cabecera fija
   scroll-padding-top: var(--size-header-height);
+  overscroll-behavior-y: none;
 
   font-size: 100%; // Base para la escala rem
 }
 
 body {
-  min-height: 100dvh; // dvh en lugar de vh para móviles con barra del navegador
+  min-height: var(--size-app-viewport-height);
   font-family: var(--font-body);
   font-size: var(--text-base);
   font-weight: var(--font-weight-regular);
@@ -50,6 +51,7 @@ body {
 
   // Evita el scroll horizontal accidental en móvil
   overflow-x: hidden;
+  overscroll-behavior-y: none;
 }
 
 // Elementos multimedia: bloque por defecto, nunca desbordan su contenedor

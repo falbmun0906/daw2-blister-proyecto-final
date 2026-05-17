@@ -3,7 +3,7 @@
 // Layout autenticado: header sticky + contenido scrollable + bottom nav fijo.
 
 .c-app-layout {
-  min-height: 100dvh;
+  min-height: var(--size-app-viewport-height);
   display: flex;
   flex-direction: column;
   background-color: var(--color-bg);

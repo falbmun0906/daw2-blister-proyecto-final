@@ -1,9 +1,9 @@
 .c-desktop-device-shell {
   --device-aspect: 430 / 923;
-  --device-height: min(var(--size-device-height-max), calc(100dvh - 2rem));
+  --device-height: min(var(--size-device-height-max), calc(var(--size-app-viewport-height) - 2rem));
   --device-width: min(var(--size-device-width-max), calc(var(--device-height) * 430 / 923));
 
-  min-height: 100dvh;
+  min-height: var(--size-app-viewport-height);
   background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%);
   color: var(--color-text);
 
@@ -97,7 +97,7 @@
   }
 
   &__device--preview {
-    --device-height: min(var(--size-device-preview-height-max), calc(100dvh - 10rem));
+    --device-height: min(var(--size-device-preview-height-max), calc(var(--size-app-viewport-height) - 10rem));
     --device-width: min(var(--size-device-preview-width-max), calc(var(--device-height) * 430 / 923));
   }
 

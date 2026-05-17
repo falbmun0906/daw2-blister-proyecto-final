@@ -2,7 +2,7 @@
     display: flex;
     justify-content: center;
     align-items: stretch;
-    min-height: 100dvh;
+    min-height: var(--size-app-viewport-height);
     background-color: var(--color-bg);
     color: var(--color-text);
     padding: 0;
@@ -10,7 +10,7 @@
     &__inner {
         width: 100%;
         max-width: 28rem;
-        min-height: 100dvh;
+        min-height: var(--size-app-viewport-height);
         margin-inline: auto;
         display: flex;
         flex-direction: column;

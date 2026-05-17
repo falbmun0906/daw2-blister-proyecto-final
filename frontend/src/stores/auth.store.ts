@@ -18,6 +18,8 @@ const initialState = {
   refreshToken: null,
 };
 
+export const AUTH_STORAGE_KEY = 'blister-auth';
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -35,7 +37,7 @@ export const useAuthStore = create<AuthState>()(
       clearSession: () => set({ ...initialState }),
     }),
     {
-      name: 'blister-auth',
+      name: AUTH_STORAGE_KEY,
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         user: state.user,
