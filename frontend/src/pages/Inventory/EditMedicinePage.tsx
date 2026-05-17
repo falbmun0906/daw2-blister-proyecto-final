@@ -4,6 +4,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { TbCalendar, TbNumbers, TbTag } from 'react-icons/tb';
 
+import type { UpdateMedicineInput } from '../../../../shared/schemas/medicine.schema';
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
@@ -112,12 +113,17 @@ function EditMedicinePage() {
     setSubmitError(null);
 
     try {
-      const updated = await updateMedicine(blisterId, medicineId, {
+      const payload: UpdateMedicineInput = {
         alias: data.alias || undefined,
         stock: data.stock,
         threshold: data.threshold,
-        expDate: data.expDate ? new Date(data.expDate) : undefined,
-      });
+      };
+      const currentExpDate = medicine ? toDateInputValue(medicine.expDate) : '';
+      if (data.expDate && data.expDate !== currentExpDate) {
+        payload.expDate = new Date(data.expDate);
+      }
+
+      const updated = await updateMedicine(blisterId, medicineId, payload);
       upsertMedicine(updated);
       await refreshNotifications();
       addToast({ message: 'Medicamento actualizado.', variant: 'success' });
