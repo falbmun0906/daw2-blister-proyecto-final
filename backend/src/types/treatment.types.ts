@@ -17,6 +17,7 @@ export interface TreatmentDocument {
   patientUserId: Types.ObjectId;
   title: string;
   description?: string | null;
+  timeZone: string;
   medicines: TreatmentMedicineEntry[];
   startDate: Date;
   endDate?: Date | null;

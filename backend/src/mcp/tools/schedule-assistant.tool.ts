@@ -35,6 +35,7 @@ export const scheduleAssistantTool: McpScheduleAssistantTool = {
                   startDate: entry.firstDoseAt,
                   endDate: treatment.endDate,
                   active: treatment.active,
+                  timeZone: treatment.timeZone,
                 }, {
                   firstDoseAt: entry.firstDoseAt,
                   scheduleType: entry.scheduleType,

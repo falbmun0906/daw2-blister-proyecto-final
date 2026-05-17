@@ -3,47 +3,65 @@ import {
   computeNextDose,
 } from '../dose-schedule';
 
-const localDate = (year: number, monthIndex: number, day: number, hours: number, minutes = 0): Date =>
-  new Date(year, monthIndex, day, hours, minutes, 0, 0);
-
 describe('dose-schedule', () => {
   it('computes the next exact daily dose inside the requested range', () => {
     const nextDose = computeNextDose({
-      startDate: localDate(2030, 3, 25, 8),
+      startDate: new Date('2030-04-24T22:00:00.000Z'),
       endDate: null,
       active: true,
+      timeZone: 'Europe/Madrid',
     }, {
-      firstDoseAt: localDate(2030, 3, 25, 8),
+      firstDoseAt: new Date('2030-04-24T22:00:00.000Z'),
       scheduleType: 'daily_times',
       frequencyHours: null,
       dailyDoseTimes: ['08:00', '20:00'],
       isRecurring: true,
-    }, localDate(2030, 3, 25, 12));
+    }, new Date('2030-04-25T10:00:00.000Z'));
 
     expect(nextDose).not.toBeNull();
-    expect(nextDose?.getHours()).toBe(20);
-    expect(nextDose?.getMinutes()).toBe(0);
+    expect(nextDose?.toISOString()).toBe('2030-04-25T18:00:00.000Z');
   });
 
   it('generates recurring exact daily doses across multiple days', () => {
     const doses = computeDosesInRange({
-      startDate: localDate(2030, 3, 25, 8),
+      startDate: new Date('2030-04-24T22:00:00.000Z'),
       endDate: null,
       active: true,
+      timeZone: 'Europe/Madrid',
     }, {
-      firstDoseAt: localDate(2030, 3, 25, 8),
+      firstDoseAt: new Date('2030-04-24T22:00:00.000Z'),
       scheduleType: 'daily_times',
       frequencyHours: null,
       dailyDoseTimes: ['08:00', '20:00'],
       isRecurring: true,
-    }, localDate(2030, 3, 25, 0), localDate(2030, 3, 26, 23));
+    }, new Date('2030-04-24T22:00:00.000Z'), new Date('2030-04-26T20:59:00.000Z'));
 
     expect(doses).toHaveLength(4);
-    expect(doses.map((dose) => `${dose.getDate()}-${dose.getHours()}:${dose.getMinutes()}`)).toEqual([
-      '25-8:0',
-      '25-20:0',
-      '26-8:0',
-      '26-20:0',
+    expect(doses.map((dose) => dose.toISOString())).toEqual([
+      '2030-04-25T06:00:00.000Z',
+      '2030-04-25T18:00:00.000Z',
+      '2030-04-26T06:00:00.000Z',
+      '2030-04-26T18:00:00.000Z',
+    ]);
+  });
+
+  it('keeps civil daily times stable across Europe/Madrid DST changes', () => {
+    const doses = computeDosesInRange({
+      startDate: new Date('2026-03-27T23:00:00.000Z'),
+      endDate: null,
+      active: true,
+      timeZone: 'Europe/Madrid',
+    }, {
+      firstDoseAt: new Date('2026-03-27T23:00:00.000Z'),
+      scheduleType: 'daily_times',
+      frequencyHours: null,
+      dailyDoseTimes: ['10:00'],
+      isRecurring: true,
+    }, new Date('2026-03-27T23:00:00.000Z'), new Date('2026-03-29T21:59:00.000Z'));
+
+    expect(doses.map((dose) => dose.toISOString())).toEqual([
+      '2026-03-28T09:00:00.000Z',
+      '2026-03-29T08:00:00.000Z',
     ]);
   });
 });

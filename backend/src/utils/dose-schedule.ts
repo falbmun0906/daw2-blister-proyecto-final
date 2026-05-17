@@ -1,10 +1,19 @@
+import {
+  addCivilDays,
+  getCivilDateKey,
+  getMedicationTimeZone,
+  maxCivilDateKey,
+  zonedTimeToDate,
+} from './time-zone';
+
 const HOUR_IN_MS = 60 * 60 * 1000;
-const DAY_IN_MS = 24 * HOUR_IN_MS;
+const MAX_DAILY_TIME_LOOKAHEAD_DAYS = 366 * 10;
 
 export interface DoseScheduleSource {
   startDate: Date;
   endDate?: Date | null;
   active: boolean;
+  timeZone?: string | null;
 }
 
 export interface DoseScheduleEntry {
@@ -14,19 +23,6 @@ export interface DoseScheduleEntry {
   dailyDoseTimes?: string[];
   isRecurring: boolean;
 }
-
-const toDayStart = (value: Date): Date => {
-  const start = new Date(value.getTime());
-  start.setHours(0, 0, 0, 0);
-  return start;
-};
-
-const toDoseAt = (day: Date, timeOfDay: string): Date => {
-  const [hours, minutes] = timeOfDay.split(':').map(Number);
-  const doseAt = new Date(day.getTime());
-  doseAt.setHours(hours, minutes, 0, 0);
-  return doseAt;
-};
 
 const getSortedDailyTimes = (entry: DoseScheduleEntry): string[] =>
   [...(entry.dailyDoseTimes ?? [])].sort((left, right) => left.localeCompare(right));
@@ -62,12 +58,20 @@ const computeNextDailyTimeDose = (
     return null;
   }
 
+  const timeZone = getMedicationTimeZone(source.timeZone);
   const cutoff = source.endDate?.getTime() ?? Number.POSITIVE_INFINITY;
-  let dayCursor = toDayStart(lowerBound > source.startDate ? lowerBound : source.startDate);
+  const firstDay = maxCivilDateKey(
+    getCivilDateKey(lowerBound > source.startDate ? lowerBound : source.startDate, timeZone),
+    getCivilDateKey(source.startDate, timeZone),
+  );
+  const lastDay = source.endDate
+    ? getCivilDateKey(source.endDate, timeZone)
+    : addCivilDays(firstDay, MAX_DAILY_TIME_LOOKAHEAD_DAYS);
+  let dayCursor = firstDay;
 
-  while (dayCursor.getTime() <= cutoff) {
+  while (dayCursor <= lastDay) {
     for (const timeOfDay of dailyTimes) {
-      const doseAt = toDoseAt(dayCursor, timeOfDay);
+      const doseAt = zonedTimeToDate(dayCursor, timeOfDay, timeZone);
       if (doseAt < source.startDate || doseAt < lowerBound) {
         continue;
       }
@@ -77,7 +81,7 @@ const computeNextDailyTimeDose = (
       return doseAt;
     }
 
-    dayCursor = new Date(dayCursor.getTime() + DAY_IN_MS);
+    dayCursor = addCivilDays(dayCursor, 1);
   }
 
   return null;
@@ -152,10 +156,17 @@ export const computeDosesInRange = (
       return occurrences;
     }
 
-    let dayCursor = toDayStart(from > source.startDate ? from : source.startDate);
-    while (dayCursor.getTime() <= cutoff && occurrences.length < maxOccurrences) {
+    const timeZone = getMedicationTimeZone(source.timeZone);
+    const firstDay = maxCivilDateKey(
+      getCivilDateKey(from > source.startDate ? from : source.startDate, timeZone),
+      getCivilDateKey(source.startDate, timeZone),
+    );
+    const lastDay = getCivilDateKey(new Date(cutoff), timeZone);
+    let dayCursor = firstDay;
+
+    while (dayCursor <= lastDay && occurrences.length < maxOccurrences) {
       for (const timeOfDay of dailyTimes) {
-        const doseAt = toDoseAt(dayCursor, timeOfDay);
+        const doseAt = zonedTimeToDate(dayCursor, timeOfDay, timeZone);
         if (doseAt < source.startDate || doseAt < from || doseAt.getTime() > cutoff) {
           continue;
         }
@@ -166,7 +177,7 @@ export const computeDosesInRange = (
         }
       }
 
-      dayCursor = new Date(dayCursor.getTime() + DAY_IN_MS);
+      dayCursor = addCivilDays(dayCursor, 1);
     }
 
     return occurrences;

@@ -37,13 +37,20 @@ const toNullableText = (value: string): string | null => {
   return trimmed ? trimmed : null;
 };
 
+function toLocalDateTime(value: string): Date {
+  const [datePart = '', timePart = ''] = value.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes] = timePart.split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+}
+
 function buildPayload(values: FormValues): CreateAppointmentInput {
   return createAppointmentSchema.parse({
     patientUserId: values.patientUserId,
     title: values.title,
     location: toNullableText(values.location),
     description: toNullableText(values.description),
-    date: values.date,
+    date: toLocalDateTime(values.date),
     treatmentId: values.treatmentId ? values.treatmentId : null,
   });
 }

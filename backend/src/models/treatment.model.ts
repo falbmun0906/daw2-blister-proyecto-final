@@ -1,5 +1,6 @@
 import { model, models, Schema } from 'mongoose';
 
+import { DEFAULT_MEDICATION_TIME_ZONE } from '../../../shared/schemas/schema.constants';
 import { type TreatmentDocument } from '../types/treatment.types';
 
 const treatmentMedicineSchema = new Schema<TreatmentDocument['medicines'][number]>(
@@ -100,6 +101,13 @@ const treatmentSchema = new Schema<TreatmentDocument>({
     maxlength: 600,
     default: null,
   },
+  timeZone: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100,
+    default: DEFAULT_MEDICATION_TIME_ZONE,
+  },
   medicines: {
     type: [treatmentMedicineSchema],
     required: true,
@@ -126,5 +134,15 @@ const treatmentSchema = new Schema<TreatmentDocument>({
 treatmentSchema.path('endDate').validate(function validateEndDate(this: TreatmentDocument, value: Date | null | undefined) {
   return !value || value > this.startDate;
 }, 'endDate must be later than startDate.');
+
+treatmentSchema.path('timeZone').validate((value: string | undefined) => {
+  if (!value) return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}, 'timeZone must be a valid IANA timezone.');
 
 export const TreatmentModel = models.Treatment ?? model<TreatmentDocument>('Treatment', treatmentSchema);

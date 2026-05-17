@@ -360,9 +360,8 @@ describe('notifications.service', () => {
       ],
     });
     const referenceDate = new Date('2030-01-01T12:00:00.000Z');
-    const doseTime = `${referenceDate.getHours().toString().padStart(2, '0')}:${referenceDate.getMinutes().toString().padStart(2, '0')}`;
-    const treatmentStart = new Date(referenceDate.getTime());
-    treatmentStart.setHours(0, 0, 0, 0);
+    const doseTime = '12:00';
+    const treatmentStart = new Date('2030-01-01T00:00:00.000Z');
     const medicine = await MedicineModel.create({
       blisterId: blister._id,
       nregist: '920001',
@@ -380,6 +379,7 @@ describe('notifications.service', () => {
       blisterId: blister._id,
       patientUserId: owner._id,
       title: 'Control glucosa',
+      timeZone: 'UTC',
       startDate: treatmentStart,
       active: true,
       medicines: [
@@ -408,6 +408,53 @@ describe('notifications.service', () => {
     expect(notifications[0]?.metadata?.amount).toBe(0.5);
   });
 
+  it('creates dose reminders from civil daily times in the treatment timezone', async () => {
+    const owner = await createUser('notify-dose-madrid-owner');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [{ userId: owner._id, role: 'OWNER' }],
+    });
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: '920011',
+      nombre: 'Levotiroxina',
+      pactivos: 'Levotiroxina',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '50 mcg',
+      iconType: 'pill',
+      stock: 20,
+      stockUnit: 'pastillas',
+      threshold: 3,
+      expDate: new Date('2031-01-01T00:00:00.000Z'),
+    });
+    await TreatmentModel.create({
+      blisterId: blister._id,
+      patientUserId: owner._id,
+      title: 'Tiroides',
+      timeZone: 'Europe/Madrid',
+      startDate: new Date('2030-06-01T22:00:00.000Z'),
+      active: true,
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 1,
+          firstDoseAt: new Date('2030-06-01T22:00:00.000Z'),
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes: ['10:00'],
+          isRecurring: true,
+        },
+      ],
+    });
+
+    await notifyDueDoseReminders(new Date('2030-06-02T08:00:00.000Z'));
+
+    const notifications = await NotificationModel.find({ type: 'dose_reminder' });
+
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]?.metadata?.doseAt).toBe('2030-06-02T08:00:00.000Z');
+  });
+
   it('does not create dose reminders for already logged scheduled doses', async () => {
     const owner = await createUser('notify-dose-taken-owner');
     const blister = await BlisterModel.create({
@@ -415,9 +462,8 @@ describe('notifications.service', () => {
       members: [{ userId: owner._id, role: 'OWNER' }],
     });
     const referenceDate = new Date('2030-01-01T12:00:00.000Z');
-    const doseTime = `${referenceDate.getHours().toString().padStart(2, '0')}:${referenceDate.getMinutes().toString().padStart(2, '0')}`;
-    const treatmentStart = new Date(referenceDate.getTime());
-    treatmentStart.setHours(0, 0, 0, 0);
+    const doseTime = '12:00';
+    const treatmentStart = new Date('2030-01-01T00:00:00.000Z');
     const medicine = await MedicineModel.create({
       blisterId: blister._id,
       nregist: '920002',
@@ -435,6 +481,7 @@ describe('notifications.service', () => {
       blisterId: blister._id,
       patientUserId: owner._id,
       title: 'Tension',
+      timeZone: 'UTC',
       startDate: treatmentStart,
       active: true,
       medicines: [

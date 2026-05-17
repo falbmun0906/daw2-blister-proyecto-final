@@ -47,3 +47,4 @@ export const userAvatarKeys = [
 
 export const MAX_BLISTERS_PER_USER = 3;
 export const DEFAULT_PERSONAL_BLISTER_NAME = 'Mi blíster';
+export const DEFAULT_MEDICATION_TIME_ZONE = 'Europe/Madrid';

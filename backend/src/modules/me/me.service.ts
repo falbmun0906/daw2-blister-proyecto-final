@@ -8,6 +8,7 @@ import { TreatmentModel } from '../../models/treatment.model';
 import { UserModel } from '../../models/user.model';
 import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
 import { computeDosesInRange } from '../../utils/dose-schedule';
+import { formatTimeOfDayInTimeZone, getMedicationTimeZone } from '../../utils/time-zone';
 import {
   type CalendarQuery,
   type UpcomingDosesQuery,
@@ -118,9 +119,6 @@ const buildPatientMap = async (userIds: Types.ObjectId[]): Promise<Map<string, P
   );
 };
 
-const formatDoseDisplayTime = (value: Date): string =>
-  `${value.getHours().toString().padStart(2, '0')}:${value.getMinutes().toString().padStart(2, '0')}`;
-
 /**
  * Devuelve las próximas tomas de todos los blísteres a los que pertenece el
  * usuario autenticado dentro del rango solicitado, agrupando información de
@@ -178,10 +176,12 @@ export const meUpcomingDoses = async (
 
     for (const entry of treatment.medicines) {
       const scheduleType = (entry.scheduleType as 'interval' | 'daily_times' | undefined) ?? 'interval';
+      const timeZone = getMedicationTimeZone(treatment.timeZone as string | null | undefined);
       const source = {
         startDate: entry.firstDoseAt as Date,
         endDate: (treatment.endDate as Date | null | undefined) ?? null,
         active: Boolean(treatment.active),
+        timeZone,
       };
       const occurrences = computeDosesInRange(source, {
         firstDoseAt: entry.firstDoseAt as Date,
@@ -203,7 +203,7 @@ export const meUpcomingDoses = async (
 
         items.push({
           doseAt,
-          displayTime: scheduleType === 'daily_times' ? formatDoseDisplayTime(doseAt) : null,
+          displayTime: scheduleType === 'daily_times' ? formatTimeOfDayInTimeZone(doseAt, timeZone) : null,
           blisterId: blister.id.toString(),
           blisterName: blister.name,
           blisterAvatarKey: blister.avatarKey,

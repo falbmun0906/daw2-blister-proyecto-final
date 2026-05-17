@@ -15,9 +15,11 @@ import {
 } from '../appointment.schema';
 import {
   createTreatmentSchema,
+  treatmentSchema,
   treatmentsListQuerySchema,
   updateTreatmentSchema,
 } from '../treatment.schema';
+import { DEFAULT_MEDICATION_TIME_ZONE } from '../schema.constants';
 
 describe('treatment, appointment and adherence shared schemas', () => {
   it('rejects treatment end dates earlier than start dates', () => {
@@ -158,6 +160,43 @@ describe('treatment, appointment and adherence shared schemas', () => {
 
     expect(treatmentResult.success).toBe(true);
     expect(adherenceResult.success).toBe(true);
+  });
+
+  it('defaults and validates treatment schedule timezones', () => {
+    const treatmentResult = createTreatmentSchema.safeParse({
+      patientUserId: '507f1f77bcf86cd799439015',
+      title: 'Tratamiento exacto',
+      medicines: [
+        {
+          medicineId: '507f1f77bcf86cd799439011',
+          amount: 1,
+          firstDoseAt: '2030-04-25T08:00:00.000Z',
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes: ['10:00'],
+          isRecurring: true,
+        },
+      ],
+      startDate: '2030-04-25T00:00:00.000Z',
+    });
+    const invalidResponse = treatmentSchema.safeParse({
+      id: '507f1f77bcf86cd799439012',
+      blisterId: '507f1f77bcf86cd799439013',
+      patientUserId: '507f1f77bcf86cd799439015',
+      title: 'Tratamiento exacto',
+      description: null,
+      timeZone: 'Invalid/Timezone',
+      medicines: [],
+      startDate: '2030-04-25T00:00:00.000Z',
+      endDate: null,
+      active: true,
+    });
+
+    expect(treatmentResult.success).toBe(true);
+    if (treatmentResult.success) {
+      expect(treatmentResult.data.timeZone).toBe(DEFAULT_MEDICATION_TIME_ZONE);
+    }
+    expect(invalidResponse.success).toBe(false);
   });
 
   it('allows clearing treatment end dates in patch payloads', () => {

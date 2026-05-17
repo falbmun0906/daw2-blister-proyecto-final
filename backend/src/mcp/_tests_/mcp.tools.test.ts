@@ -8,10 +8,12 @@ import {
   medicineAddInputSchema,
   medicineCatalogSearchInputSchema,
   medicineLookupInputSchema,
+  scheduleAssistantInputSchema,
 } from '../../../../shared/schemas';
 import { AppointmentModel } from '../../models/appointment.model';
 import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
+import { TreatmentModel } from '../../models/treatment.model';
 import { UserModel } from '../../models/user.model';
 import {
   clearTestDatabase,
@@ -30,6 +32,7 @@ import {
   medicineAddTool,
   medicineCatalogSearchTool,
   medicineLookupTool,
+  scheduleAssistantTool,
 } from '../tools';
 
 describe('MCP tools', () => {
@@ -324,6 +327,39 @@ describe('MCP tools', () => {
       treatmentId: null,
     });
     await expect(AppointmentModel.countDocuments({ blisterId: bosque._id })).resolves.toBe(1);
+  });
+
+  it('returns schedule assistant doses using the treatment timezone', async () => {
+    const { context, currentUser, bosque, naproxeno } = await createFixture();
+    await TreatmentModel.create({
+      blisterId: bosque._id,
+      patientUserId: currentUser._id,
+      title: 'Pauta matinal',
+      timeZone: 'Europe/Madrid',
+      startDate: new Date('2030-06-01T22:00:00.000Z'),
+      active: true,
+      medicines: [
+        {
+          medicineId: naproxeno._id,
+          amount: 1,
+          firstDoseAt: new Date('2030-06-01T22:00:00.000Z'),
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes: ['10:00'],
+          isRecurring: true,
+        },
+      ],
+    });
+    const input = scheduleAssistantInputSchema.parse({
+      blisterName: 'El Bosque',
+      from: '2030-06-02T08:00:00.000Z',
+      to: '2030-06-02T08:30:00.000Z',
+    });
+
+    const result = await scheduleAssistantTool.run(context, input);
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].nextDoseAt.toISOString()).toBe('2030-06-02T08:00:00.000Z');
   });
 
   it('blocks appointment creation through MCP for observer role', async () => {

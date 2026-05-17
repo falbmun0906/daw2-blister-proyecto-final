@@ -23,6 +23,7 @@ const fieldLabels: Record<string, string> = {
   firstDoseAt: 'primera toma',
   startDate: 'fecha de inicio',
   endDate: 'fecha de fin',
+  timeZone: 'zona horaria',
   from: 'fecha de inicio',
   to: 'fecha de fin',
   lookAheadHours: 'horas de planificación',
@@ -102,6 +103,20 @@ export const timeOfDaySchema = z
   .string()
   .trim()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'La hora debe usar el formato HH:mm.');
+
+export const timeZoneSchema = z
+  .string()
+  .trim()
+  .min(1, `El campo ${fieldLabel('timeZone')} es obligatorio.`)
+  .max(100, `El campo ${fieldLabel('timeZone')} no puede superar los 100 caracteres.`)
+  .refine((value) => {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: value });
+      return true;
+    } catch {
+      return false;
+    }
+  }, 'La zona horaria debe ser un identificador IANA válido.');
 
 export const collectionPaginationQuerySchema = z.object({
   page: positiveIntegerSchema('Page').default(1),

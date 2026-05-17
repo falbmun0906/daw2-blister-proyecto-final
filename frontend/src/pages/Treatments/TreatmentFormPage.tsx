@@ -19,6 +19,7 @@ import {
   updateTreatmentSchema,
   type UpdateTreatmentInput,
 } from '../../../../shared/schemas/treatment.schema';
+import { DEFAULT_MEDICATION_TIME_ZONE } from '../../../../shared/schemas/schema.constants';
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
@@ -38,6 +39,7 @@ interface FormValues {
   patientUserId: string;
   title: string;
   description: string;
+  timeZone: string;
   startDate: string;
   endDate: string;
   active: boolean;
@@ -77,8 +79,14 @@ function defaultStartParts(): { date: string; time: string } {
   return toLocalParts(now);
 }
 
-function toLocalDateTimeIso(date: string, time: string): string {
-  return new Date(`${date}T${time}`).toISOString();
+function getBrowserTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_MEDICATION_TIME_ZONE;
+}
+
+function toLocalDateTime(date: string, time: string): Date {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hours, minutes] = time.split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
 }
 
 const createTreatmentMedicine = (firstDoseTime = '08:00'): FormValues['medicines'][number] => ({
@@ -111,7 +119,7 @@ function buildTreatmentMedicinePayload(
   return {
     medicineId: entry.medicineId,
     amount: entry.amount,
-    firstDoseAt: toLocalDateTimeIso(startDate, firstDoseTime),
+    firstDoseAt: toLocalDateTime(startDate, firstDoseTime),
     scheduleType: entry.isRecurring ? entry.scheduleType : 'interval',
     frequencyHours: entry.isRecurring && entry.scheduleType === 'interval' ? entry.frequencyHours : null,
     dailyDoseTimes: entry.isRecurring && entry.scheduleType === 'daily_times' ? exactDailyTimes : [],
@@ -125,8 +133,9 @@ function buildCreatePayload(values: FormValues): CreateTreatmentInput {
     patientUserId: values.patientUserId,
     title: values.title,
     description: values.description || undefined,
-    startDate: `${values.startDate}T00:00`,
-    endDate: values.endDate ? `${values.endDate}T23:59` : undefined,
+    timeZone: values.timeZone || getBrowserTimeZone(),
+    startDate: toLocalDateTime(values.startDate, '00:00'),
+    endDate: values.endDate ? toLocalDateTime(values.endDate, '23:59') : undefined,
     active: values.active,
     medicines: values.medicines.map((entry) => buildTreatmentMedicinePayload(entry, values.startDate)),
   });
@@ -137,8 +146,9 @@ function buildUpdatePayload(values: FormValues): UpdateTreatmentInput {
     patientUserId: values.patientUserId,
     title: values.title,
     description: values.description || undefined,
-    startDate: `${values.startDate}T00:00`,
-    endDate: values.endDate ? `${values.endDate}T23:59` : null,
+    timeZone: values.timeZone || getBrowserTimeZone(),
+    startDate: toLocalDateTime(values.startDate, '00:00'),
+    endDate: values.endDate ? toLocalDateTime(values.endDate, '23:59') : null,
     active: values.active,
     medicines: values.medicines.map((entry) => buildTreatmentMedicinePayload(entry, values.startDate)),
   });
@@ -360,6 +370,7 @@ function toFormValues(
       patientUserId: fallbackPatientUserId,
       title: '',
       description: '',
+      timeZone: getBrowserTimeZone(),
       startDate: start.date,
       endDate: '',
       active: true,
@@ -371,8 +382,9 @@ function toFormValues(
     patientUserId: treatment.patientUserId,
     title: treatment.title,
     description: treatment.description ?? '',
+    timeZone: treatment.timeZone || getBrowserTimeZone(),
     startDate: start.date,
-    endDate: treatment.endDate ? treatment.endDate.slice(0, 10) : '',
+    endDate: treatment.endDate ? toLocalParts(new Date(treatment.endDate)).date : '',
     active: treatment.active,
     medicines: treatment.medicines.map((entry: Treatment['medicines'][number]) => ({
       medicineId: entry.medicineId,
@@ -504,6 +516,7 @@ function TreatmentFormPage() {
   return (
     <section className="c-treatment-form-page" aria-labelledby="treatment-form-title">
       <form className="c-treatment-form-page__form" onSubmit={onSubmit} noValidate>
+        <input type="hidden" {...register('timeZone')} />
         <FormSection label="Paciente" icon={<TbUserHeart />}>
           <label className="c-field">
             <span className="c-field__label">

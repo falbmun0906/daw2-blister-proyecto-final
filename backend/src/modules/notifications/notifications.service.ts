@@ -33,6 +33,7 @@ import { type TreatmentMedicineEntry } from '../../types/treatment.types';
 import { type UserSettings } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
 import { computeDosesInRange } from '../../utils/dose-schedule';
+import { getMedicationTimeZone } from '../../utils/time-zone';
 import { type NotificationsListQuery } from '../../../../shared/schemas';
 import { type CimaChangeLogDocument } from '../../types/cima-change-log.types';
 import { sendPushForNotifications } from './notifications-push.service';
@@ -782,12 +783,14 @@ export const notifyDueDoseReminders = async (
 
     const patientUserId = treatment.patientUserId as Types.ObjectId;
     const patientName = usersById.get(patientUserId.toString())?.name ?? 'Paciente';
+    const timeZone = getMedicationTimeZone(treatment.timeZone);
 
     for (const entry of treatment.medicines as TreatmentMedicineEntry[]) {
       const source = {
         startDate: entry.firstDoseAt,
         endDate: treatment.endDate ?? null,
         active: Boolean(treatment.active),
+        timeZone,
       };
       const occurrences = computeDosesInRange(source, {
         firstDoseAt: entry.firstDoseAt,

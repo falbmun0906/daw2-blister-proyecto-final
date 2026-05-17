@@ -10,7 +10,9 @@ import {
   positiveQuantitySchema,
   positiveQuantityValueSchema,
   timeOfDaySchema,
+  timeZoneSchema,
 } from './common.schema';
+import { DEFAULT_MEDICATION_TIME_ZONE } from './schema.constants';
 
 export const blisterTreatmentParamsSchema = z.object({
   blisterId: objectIdSchema,
@@ -74,6 +76,7 @@ const treatmentFields = {
   patientUserId: objectIdSchema,
   title: nonEmptyTrimmedString('Treatment title', 200),
   description: optionalTrimmedString(600),
+  timeZone: timeZoneSchema.default(DEFAULT_MEDICATION_TIME_ZONE),
   medicines: z
     .array(treatmentMedicineSchema)
     .min(1, 'El tratamiento debe incluir al menos un medicamento.'),
@@ -103,6 +106,7 @@ export const updateTreatmentSchema = z
     patientUserId: treatmentFields.patientUserId.optional(),
     title: treatmentFields.title.optional(),
     description: treatmentFields.description,
+    timeZone: timeZoneSchema.optional(),
     medicines: treatmentFields.medicines.optional(),
     startDate: treatmentFields.startDate.optional(),
     endDate: clearableEndDateSchema,
@@ -137,6 +141,7 @@ export const treatmentSchema = z.object({
   patientUserId: objectIdSchema,
   title: z.string(),
   description: z.string().nullable(),
+  timeZone: timeZoneSchema,
   medicines: z.array(
     z.object({
       medicineId: objectIdSchema,

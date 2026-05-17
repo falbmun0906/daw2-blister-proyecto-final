@@ -17,6 +17,7 @@ import {
   type TreatmentsListQuery,
   type UpdateTreatmentInput,
 } from '../../../../shared/schemas';
+import { DEFAULT_MEDICATION_TIME_ZONE } from '../../../../shared/schemas/schema.constants';
 
 interface TreatmentMedicineView {
   medicineId: string;
@@ -35,6 +36,7 @@ interface TreatmentView {
   patientUserId: string;
   title: string;
   description: string | null;
+  timeZone: string;
   medicines: TreatmentMedicineView[];
   startDate: Date;
   endDate: Date | null;
@@ -51,9 +53,13 @@ interface TreatmentsListResult {
   };
 }
 
+type CreateTreatmentServiceInput = Omit<CreateTreatmentInput, 'timeZone'> & {
+  timeZone?: string;
+};
+
 const WRITER_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
 
-const toTreatmentMedicineDocument = (entry: CreateTreatmentInput['medicines'][number]) => ({
+const toTreatmentMedicineDocument = (entry: CreateTreatmentServiceInput['medicines'][number]) => ({
   medicineId: new Types.ObjectId(entry.medicineId),
   amount: entry.amount,
   firstDoseAt: entry.firstDoseAt,
@@ -70,6 +76,7 @@ const toTreatmentView = (treatment: Awaited<ReturnType<typeof TreatmentModel.fin
   patientUserId: treatment!.patientUserId.toString(),
   title: treatment!.title,
   description: treatment!.description ?? null,
+  timeZone: treatment!.timeZone ?? DEFAULT_MEDICATION_TIME_ZONE,
   medicines: treatment!.medicines.map((entry: TreatmentMedicineEntry) => ({
     medicineId: entry.medicineId.toString(),
     amount: entry.amount,
@@ -114,7 +121,7 @@ const getTreatmentDocument = async (blisterId: string, treatmentId: string) => {
 
 const ensureMedicinesBelongToBlister = async (
   blisterId: string,
-  medicines: CreateTreatmentInput['medicines'],
+  medicines: CreateTreatmentServiceInput['medicines'],
 ): Promise<void> => {
   const medicineIds = [...new Set(medicines.map((entry) => entry.medicineId))];
   const totalMatches = await MedicineModel.countDocuments({
@@ -205,7 +212,7 @@ export const treatmentsList = async (
 export const treatmentsCreate = async (
   blisterId: string,
   blisterRole: BlisterRole,
-  input: CreateTreatmentInput,
+  input: CreateTreatmentServiceInput,
 ): Promise<TreatmentView> => {
   ensureWriterRole(blisterRole);
   ensureValidDateRange(input.startDate, input.endDate ?? null);
@@ -217,6 +224,7 @@ export const treatmentsCreate = async (
     patientUserId: new Types.ObjectId(input.patientUserId),
     title: input.title,
     description: input.description ?? null,
+    timeZone: input.timeZone ?? DEFAULT_MEDICATION_TIME_ZONE,
     medicines: input.medicines.map((entry) => toTreatmentMedicineDocument(entry)),
     startDate: input.startDate,
     endDate: input.endDate ?? null,
@@ -260,6 +268,10 @@ export const treatmentsUpdate = async (
 
   if (input.description !== undefined) {
     treatment.description = input.description ?? null;
+  }
+
+  if (input.timeZone !== undefined) {
+    treatment.timeZone = input.timeZone;
   }
 
   if (input.startDate !== undefined) {
