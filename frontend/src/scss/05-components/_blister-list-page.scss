@@ -37,6 +37,7 @@
     grid-template-columns: 1fr auto auto;
     align-items: center;
     gap: var(--space-3);
+    width: 100%;
     padding: 0;
     border: none;
     background: transparent;
@@ -95,6 +96,8 @@
   }
 
   &__open--editing {
+    display: flex;
+    justify-content: space-between;
     cursor: default;
     align-items: flex-start;
   }
@@ -141,6 +144,7 @@
   }
 
   &__edit-mark {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -498,6 +502,10 @@
     gap: var(--space-2);
     justify-content: center;
   }
+
+  &__actions--end {
+    justify-content: flex-end;
+  }
 }
 
 .c-add-member-modal {
@@ -507,10 +515,31 @@
     color: var(--color-text);
   }
 
+  &__description {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  &__rule {
+    border: 0;
+    border-top: 0.0625rem solid var(--color-border-subtle);
+    margin: 0;
+  }
+
+  &__share {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
   &__help {
     margin: 0;
     font-size: var(--text-xs);
     color: var(--color-text-muted);
+    text-align: center;
   }
 }
 

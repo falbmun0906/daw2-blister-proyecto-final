@@ -7,6 +7,7 @@ import {
   TbHeart,
   TbPencil,
   TbPlus,
+  TbShare3,
   TbUser,
 } from 'react-icons/tb';
 import { FaBriefcaseMedical, FaCapsules } from 'react-icons/fa6';
@@ -64,6 +65,10 @@ function formatRole(role: BlisterRole, fullName: string): string {
   // estética, no como inferencia de género real.
   const last = fullName.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
   return last.endsWith('a') ? ROLE_LABEL_FEMALE[role] : ROLE_LABEL[role];
+}
+
+function createInviteShareMessage(inviterName: string, blisterName: string, inviteCode: string): string {
+  return `¡${inviterName} te ha invitado a unirte al blíster "${blisterName}" en Blíster! Entra en https://miblister.es, regístrate o inicia sesión y usa el código ${inviteCode}. Si el código ha caducado, pídele una invitación nueva.`;
 }
 
 function toBlisterAvatarKey(value: string | null | undefined): BlisterAvatarKey | null {
@@ -254,9 +259,9 @@ function RenameBlisterModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Editar titulo del blister">
+    <Modal open={open} onClose={onClose} title="Editar título del blíster">
       <label className="c-new-blister-modal__label" htmlFor={inputId}>
-        <span>Nuevo titulo</span>
+        <span>Nuevo título</span>
         <input
           id={inputId}
           type="text"
@@ -278,10 +283,7 @@ function RenameBlisterModal({
           {error}
         </p>
       ) : null}
-      <div className="c-confirm-modal__actions">
-        <Button type="button" variant="primary-outline" onClick={onClose}>
-          Cancelar
-        </Button>
+      <div className="c-confirm-modal__actions c-confirm-modal__actions--end">
         <Button type="button" variant="primary" onClick={handleConfirm}>
           Guardar
         </Button>
@@ -292,15 +294,20 @@ function RenameBlisterModal({
 
 interface AddMemberModalProps {
   open: boolean;
+  blisterName: string;
   onClose: () => void;
   onCreateInvite: (role: BlisterRole) => Promise<string>;
 }
 
-function AddMemberModal({ open, onClose, onCreateInvite }: AddMemberModalProps) {
+type PendingInviteAction = 'copy' | 'share';
+
+function AddMemberModal({ open, blisterName, onClose, onCreateInvite }: AddMemberModalProps) {
   const [role, setRole] = useState<BlisterRole>('OBSERVER');
   const [code, setCode] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const [pendingInviteAction, setPendingInviteAction] = useState<PendingInviteAction | null>(null);
+  const inviterName = useAuthStore((s) => s.user?.name ?? 'Alguien');
   const addToast = useUiStore((s) => s.addToast);
+  const inviteBusy = pendingInviteAction !== null;
 
   useEffect(() => {
     if (!open) return;
@@ -311,21 +318,25 @@ function AddMemberModal({ open, onClose, onCreateInvite }: AddMemberModalProps) 
     return () => window.clearTimeout(timeoutId);
   }, [open]);
 
+  const ensureInviteCode = async (): Promise<string> => {
+    if (code) return code;
+
+    const generated = await onCreateInvite(role);
+    setCode(generated);
+    return generated;
+  };
+
   const handleCopy = async () => {
-    setGenerating(true);
+    setPendingInviteAction('copy');
     try {
-      let generated = code;
-      if (!generated) {
-        generated = await onCreateInvite(role);
-        setCode(generated);
-      }
+      const inviteCode = await ensureInviteCode();
 
       try {
-        await navigator.clipboard.writeText(generated);
-        addToast({ message: `Código copiado: ${generated}`, variant: 'success' });
+        await navigator.clipboard.writeText(inviteCode);
+        addToast({ message: `Código copiado: ${inviteCode}`, variant: 'success' });
       } catch {
         addToast({
-          message: `Código generado: ${generated}. No se ha podido copiar automáticamente.`,
+          message: `Código generado: ${inviteCode}. No se ha podido copiar automáticamente.`,
           variant: 'info',
         });
       }
@@ -335,12 +346,40 @@ function AddMemberModal({ open, onClose, onCreateInvite }: AddMemberModalProps) 
         variant: 'error',
       });
     } finally {
-      setGenerating(false);
+      setPendingInviteAction(null);
+    }
+  };
+
+  const handleShare = async () => {
+    setPendingInviteAction('share');
+    try {
+      const inviteCode = await ensureInviteCode();
+      const message = createInviteShareMessage(inviterName, blisterName, inviteCode);
+
+      if (typeof navigator.share === 'function') {
+        await navigator.share({ title: 'Invitación a Blíster', text: message });
+        return;
+      }
+
+      await navigator.clipboard.writeText(message);
+      addToast({
+        message: 'Tu dispositivo no permite elegir app desde aquí. Mensaje copiado.',
+        variant: 'info',
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+
+      addToast({
+        message: isApiError(err) ? err.message : 'No se ha podido compartir la invitación.',
+        variant: 'error',
+      });
+    } finally {
+      setPendingInviteAction(null);
     }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Añadir a un nuevo miembro">
+    <Modal open={open} onClose={onClose} title="Añadir miembro">
       <p className="c-add-member-modal__legend">Selecciona el rol del nuevo miembro:</p>
       <div className="c-member-role-modal__roles">
         {(['OWNER', 'OBSERVER', 'CAREGIVER'] as const).map((value) => (
@@ -360,18 +399,31 @@ function AddMemberModal({ open, onClose, onCreateInvite }: AddMemberModalProps) 
           </button>
         ))}
       </div>
-      <p className="c-add-member-modal__help">
-        Copia y comparte el código de invitación con la persona a la que quieres añadir.
-      </p>
-      <button
-        type="button"
-        className="c-dashed-btn"
-        onClick={() => void handleCopy()}
-        disabled={generating}
-      >
-        <span>{code ? `Código: ${code}` : 'Copiar código de invitación'}</span>
-        <TbCopy aria-hidden="true" />
-      </button>
+      <p className="c-add-member-modal__description">{ROLE_DESCRIPTION[role]}</p>
+      <hr className="c-add-member-modal__rule" />
+      <section className="c-add-member-modal__share" aria-label="Compartir invitación">
+        <p className="c-add-member-modal__help">
+          Copia y comparte el código de invitación con la persona a la que quieres añadir.
+        </p>
+        <button
+          type="button"
+          className="c-dashed-btn"
+          onClick={() => void handleCopy()}
+          disabled={inviteBusy}
+        >
+          <span>{code ? `Copiar código ${code}` : 'Copiar código de invitación'}</span>
+          <TbCopy aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="c-dashed-btn"
+          onClick={() => void handleShare()}
+          disabled={inviteBusy}
+        >
+          <span>Compartir con...</span>
+          <TbShare3 aria-hidden="true" />
+        </button>
+      </section>
     </Modal>
   );
 }
@@ -911,10 +963,10 @@ function BlisterCard({
       />
       <AddMemberModal
         open={showAddMember}
+        blisterName={blister.name}
         onClose={() => {
           setShowAddMember(false);
           setExpanded(true);
-          void refreshMembers().then(() => onChanged());
         }}
         onCreateInvite={handleCreateInvite}
       />
