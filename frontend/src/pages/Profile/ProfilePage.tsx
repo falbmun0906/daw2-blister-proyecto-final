@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { TbChevronRight } from 'react-icons/tb';
 
 import { Avatar } from '../../components/atoms/Avatar';
+import { APP_COMMIT } from '../../constants/app-version.constants';
 import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { unsubscribeFromServerPush } from '../../lib/push-notifications';
@@ -67,6 +68,11 @@ function ProfilePage() {
       >
         Cerrar sesión
       </button>
+
+      <footer className="c-profile-page__app-meta" aria-label="Información de la aplicación">
+        <span>Código {APP_COMMIT}</span>
+        <a href="mailto:soporte@miblister.es">soporte@miblister.es</a>
+      </footer>
     </section>
   );
 }

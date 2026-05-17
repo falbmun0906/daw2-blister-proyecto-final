@@ -390,8 +390,9 @@
 
   &__menu-popover {
     position: absolute;
-    top: calc(100% + var(--space-1));
+    top: auto;
     right: 0;
+    bottom: calc(100% + var(--space-1));
     z-index: calc(var(--z-dropdown) + 1);
     display: flex;
     min-width: max-content;
