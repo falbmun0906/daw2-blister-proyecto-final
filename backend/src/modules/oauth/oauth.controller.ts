@@ -107,6 +107,7 @@ const renderAuthorizePage = (
         font-family: var(--font-display);
         font-size: var(--text-xl);
         font-weight: var(--font-weight-medium);
+        font-stretch: 96%;
         line-height: var(--leading-tight);
         color: var(--color-text);
       }
