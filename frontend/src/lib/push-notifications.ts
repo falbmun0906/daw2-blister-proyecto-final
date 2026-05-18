@@ -67,6 +67,8 @@ export const showPushNotification = async (title: string, body: string): Promise
       body,
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',
+      requireInteraction: true,
+      silent: false,
     });
     return;
   }
@@ -122,6 +124,9 @@ export const unsubscribeFromServerPush = async (): Promise<void> => {
   if (!subscription) return;
 
   const input = serializeSubscription(subscription);
-  await deletePushSubscription({ endpoint: input.endpoint });
-  await subscription.unsubscribe();
+  try {
+    await deletePushSubscription({ endpoint: input.endpoint });
+  } finally {
+    await subscription.unsubscribe();
+  }
 };

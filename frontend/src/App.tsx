@@ -12,6 +12,7 @@ import { LoginRoute } from './router/LoginRoute'
 import { OnboardingRoute } from './router/OnboardingRoute'
 import { PrivateRoute } from './router/PrivateRoute'
 import { applyUserSettings } from './lib/applyUserSettings'
+import { subscribeToServerPush } from './lib/push-notifications'
 import { useAuthStore } from './stores/auth.store'
 
 const LandingPage = lazy(() => import('./pages/Landing/LandingPage'))
@@ -61,11 +62,47 @@ function UserSettingsBootstrap() {
   return null
 }
 
+function PushSubscriptionBootstrap() {
+  const userId = useAuthStore((state) => state.user?.id)
+  const pushEnabled = useAuthStore((state) => state.user?.settings.notifications.pushEnabled)
+
+  useEffect(() => {
+    if (!userId || pushEnabled !== true || !('Notification' in window)) {
+      return
+    }
+
+    if (Notification.permission !== 'granted') {
+      return
+    }
+
+    let cancelled = false
+
+    void subscribeToServerPush()
+      .then((result) => {
+        if (!cancelled && !result.enabled) {
+          console.warn(result.reason ?? 'Web Push subscription could not be refreshed.')
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          console.warn('Web Push subscription refresh failed.', error)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [pushEnabled, userId])
+
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
       <DesktopDeviceShell>
         <UserSettingsBootstrap />
+        <PushSubscriptionBootstrap />
         <PwaUpdatePrompt />
         <Suspense fallback={null}>
           <Routes>

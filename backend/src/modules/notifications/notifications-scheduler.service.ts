@@ -2,10 +2,29 @@ import { env } from '../../config/env';
 import { notifyDueDoseReminders, notifyUpcomingAppointmentReminders } from './notifications.service';
 
 let reminderTimer: NodeJS.Timeout | null = null;
+let reminderScanRunning = false;
 
-const runReminderScan = (): void => {
-  void notifyUpcomingAppointmentReminders().catch(() => undefined);
-  void notifyDueDoseReminders().catch(() => undefined);
+const runReminderScan = async (): Promise<void> => {
+  if (reminderScanRunning) {
+    return;
+  }
+
+  reminderScanRunning = true;
+
+  try {
+    const results = await Promise.allSettled([
+      notifyUpcomingAppointmentReminders(),
+      notifyDueDoseReminders(),
+    ]);
+
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.error('Notification reminder scan failed.', result.reason);
+      }
+    }
+  } finally {
+    reminderScanRunning = false;
+  }
 };
 
 /**
@@ -16,8 +35,10 @@ export const notificationsSchedulerStart = (): void => {
     return;
   }
 
-  runReminderScan();
-  reminderTimer = setInterval(runReminderScan, env.pushReminderScanIntervalMs);
+  void runReminderScan();
+  reminderTimer = setInterval(() => {
+    void runReminderScan();
+  }, env.pushReminderScanIntervalMs);
 };
 
 /**

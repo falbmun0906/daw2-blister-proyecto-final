@@ -15,6 +15,11 @@ self.addEventListener('push', (event) => {
   const title = typeof payload.title === 'string' ? payload.title : 'Blister';
   const body = typeof payload.body === 'string' ? payload.body : '';
   const url = typeof payload.url === 'string' ? payload.url : '/notifications';
+  const type = typeof payload.type === 'string' ? payload.type : 'system';
+  const severity = typeof payload.severity === 'string' ? payload.severity : 'info';
+  const timestamp = typeof payload.createdAt === 'string'
+    ? Date.parse(payload.createdAt)
+    : Date.now();
   const notificationId = typeof payload.notificationId === 'string'
     ? payload.notificationId
     : undefined;
@@ -25,9 +30,16 @@ self.addEventListener('push', (event) => {
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',
       tag: notificationId,
+      renotify: Boolean(notificationId),
+      requireInteraction: true,
+      silent: false,
+      timestamp: Number.isNaN(timestamp) ? Date.now() : timestamp,
+      vibrate: [200, 100, 200],
       data: {
         url,
         notificationId,
+        type,
+        severity,
       },
     }),
   );

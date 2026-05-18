@@ -2,7 +2,10 @@ import webPush from 'web-push';
 import { Types } from 'mongoose';
 
 import { env } from '../../config/env';
-import { PUSH_NOTIFICATION_TTL_SECONDS } from '../../constants/domain.constants';
+import {
+  PUSH_NOTIFICATION_TTL_SECONDS,
+  PUSH_NOTIFICATION_URGENCY,
+} from '../../constants/domain.constants';
 import {
   HTTP_STATUS_SERVICE_UNAVAILABLE,
 } from '../../constants/http.constants';
@@ -276,7 +279,10 @@ export const sendPushForNotifications = async (
                 keys: subscription.keys,
               },
               payload,
-              { TTL: PUSH_NOTIFICATION_TTL_SECONDS },
+              {
+                TTL: PUSH_NOTIFICATION_TTL_SECONDS,
+                urgency: PUSH_NOTIFICATION_URGENCY,
+              },
             );
             await PushSubscriptionModel.updateOne(
               { _id: subscription._id },
@@ -285,7 +291,10 @@ export const sendPushForNotifications = async (
           } catch (error) {
             if (isExpiredSubscriptionError(error)) {
               await PushSubscriptionModel.deleteOne({ _id: subscription._id });
+              return;
             }
+
+            console.error('Failed to send Web Push notification.', error);
           }
         },
       );
