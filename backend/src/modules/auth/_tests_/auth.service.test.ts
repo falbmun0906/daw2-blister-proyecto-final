@@ -135,6 +135,35 @@ describe('auth.service', () => {
     expect(refreshed.refreshToken).not.toBe(loginResult.refreshToken);
   });
 
+  it('keeps independent refresh sessions for separate logins', async () => {
+    const registeredUser = await authRegister({
+      name: 'Ana Lopez',
+      username: 'analopez',
+      email: 'ana@example.com',
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      privacyConsent: true,
+      ageConfirmed: true,
+      inviteCode: undefined,
+    });
+    await verifyUserEmail(registeredUser.id);
+
+    const phoneLogin = await authLogin({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
+    const desktopLogin = await authLogin({
+      identifier: 'ana@example.com',
+      password: 'Password1!',
+    });
+
+    const refreshedPhone = await authRefresh({ refreshToken: phoneLogin.refreshToken });
+    const refreshedDesktop = await authRefresh({ refreshToken: desktopLogin.refreshToken });
+
+    expect(refreshedPhone.refreshToken).not.toBe(phoneLogin.refreshToken);
+    expect(refreshedDesktop.refreshToken).not.toBe(desktopLogin.refreshToken);
+  });
+
   it('rejects refresh tokens for deleted users', async () => {
     const registeredUser = await authRegister({
       name: 'Ana Lopez',

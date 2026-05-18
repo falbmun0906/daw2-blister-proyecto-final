@@ -23,12 +23,14 @@ import {
 } from '../../constants/http.constants';
 import {
   BCRYPT_SALT_ROUNDS,
+  AUTH_SESSION_USER_AGENT_MAX_LENGTH,
   EMAIL_VERIFICATION_TOKEN_BYTES,
   EMAIL_VERIFICATION_TOKEN_TTL_MS,
   MCP_TOKEN_DAY_MS,
   PASSWORD_RESET_TOKEN_BYTES,
   PASSWORD_RESET_TOKEN_TTL_MS,
 } from '../../constants/security.constants';
+import { AuthSessionModel } from '../../models/authSession.model';
 import { BlisterModel } from '../../models/blister.model';
 import { EmailVerificationTokenModel } from '../../models/emailVerificationToken.model';
 import { OAuthTokenModel } from '../../models/oauthToken.model';
@@ -42,6 +44,7 @@ import {
   type ConfirmEmailInput,
   type ForgotPasswordInput,
   type LoginInput,
+  type LogoutInput,
   type McpTokenInput,
   type RefreshTokenInput,
   type RegisterInput,
@@ -136,8 +139,8 @@ const signAccessToken = (userId: string): string =>
     expiresIn: env.jwtAccessExpiresIn as StringValue,
   });
 
-const signRefreshToken = (userId: string): string =>
-  jwt.sign(buildRefreshTokenPayload(userId), env.jwtSecret, {
+const signRefreshToken = (payload: JwtRefreshPayload): string =>
+  jwt.sign(payload, env.jwtSecret, {
     expiresIn: env.jwtRefreshExpiresIn as StringValue,
   });
 
@@ -165,14 +168,18 @@ const assertEmailVerified = (user: Pick<UserDocument, 'emailVerified'>): void =>
   });
 };
 
-const createTokens = async (userId: string): Promise<AuthTokens & { refreshTokenExpiresAt: Date }> => {
+const createTokens = async (
+  userId: string,
+): Promise<AuthTokens & { refreshTokenExpiresAt: Date; refreshTokenJti: string }> => {
   const accessToken = signAccessToken(userId);
-  const refreshToken = signRefreshToken(userId);
+  const refreshPayload = buildRefreshTokenPayload(userId);
+  const refreshToken = signRefreshToken(refreshPayload);
 
   return {
     accessToken,
     refreshToken,
     refreshTokenExpiresAt: parseJwtExpiration(refreshToken),
+    refreshTokenJti: refreshPayload.jti,
   };
 };
 
@@ -248,31 +255,59 @@ const findInviteTarget = async (inviteCode: string) => {
   return blister;
 };
 
-const persistRefreshToken = async (
-  userId: string,
-  refreshToken: string,
-  refreshTokenExpiresAt: Date,
-): Promise<void> => {
-  const result = await UserModel.updateOne(
-    { _id: userId, deletedAt: null },
+const normalizeSessionUserAgent = (userAgent?: string): string | null => {
+  const normalized = userAgent?.trim();
+  return normalized ? normalized.slice(0, AUTH_SESSION_USER_AGENT_MAX_LENGTH) : null;
+};
+
+const createRefreshSession = async ({
+  userId,
+  refreshToken,
+  refreshTokenJti,
+  refreshTokenExpiresAt,
+  userAgent,
+}: {
+  userId: string;
+  refreshToken: string;
+  refreshTokenJti: string;
+  refreshTokenExpiresAt: Date;
+  userAgent?: string;
+}): Promise<void> => {
+  await AuthSessionModel.create({
+    userId: new Types.ObjectId(userId),
+    refreshTokenHash: hashValue(refreshToken),
+    refreshTokenJti,
+    userAgent: normalizeSessionUserAgent(userAgent),
+    expiresAt: refreshTokenExpiresAt,
+    lastUsedAt: new Date(),
+  });
+};
+
+const rotateRefreshSession = async ({
+  sessionId,
+  refreshToken,
+  refreshTokenJti,
+  refreshTokenExpiresAt,
+}: {
+  sessionId: Types.ObjectId;
+  refreshToken: string;
+  refreshTokenJti: string;
+  refreshTokenExpiresAt: Date;
+}): Promise<void> => {
+  await AuthSessionModel.updateOne(
+    { _id: sessionId, revokedAt: null },
     {
       $set: {
         refreshTokenHash: hashValue(refreshToken),
-        refreshTokenExpiresAt,
+        refreshTokenJti,
+        expiresAt: refreshTokenExpiresAt,
+        lastUsedAt: new Date(),
       },
     },
   );
-
-  if (result.matchedCount === 0) {
-    throw new AppError({
-      code: 'AUTH_USER_INACTIVE',
-      message: 'Authentication session is invalid or expired.',
-      statusCode: HTTP_STATUS_UNAUTHORIZED,
-    });
-  }
 };
 
-const revokeRefreshCredentials = async (userId: string): Promise<void> => {
+const clearLegacyRefreshCredentials = async (userId: string): Promise<void> => {
   await UserModel.updateOne(
     { _id: userId, deletedAt: null },
     {
@@ -282,6 +317,56 @@ const revokeRefreshCredentials = async (userId: string): Promise<void> => {
       },
     },
   );
+};
+
+const revokeRefreshSessions = async (userId: string): Promise<void> => {
+  await AuthSessionModel.updateMany(
+    { userId: new Types.ObjectId(userId), revokedAt: null },
+    { $set: { revokedAt: new Date() } },
+  );
+};
+
+const revokeAllRefreshCredentials = async (userId: string): Promise<void> => {
+  await Promise.all([
+    clearLegacyRefreshCredentials(userId),
+    revokeRefreshSessions(userId),
+  ]);
+};
+
+const revokeRefreshSessionByToken = async (
+  userId: string,
+  refreshToken: string,
+): Promise<void> => {
+  let payload: JwtRefreshPayload;
+
+  try {
+    payload = verifyRefreshToken(refreshToken);
+  } catch {
+    await revokeAllRefreshCredentials(userId);
+    return;
+  }
+
+  if (payload.sub !== userId) {
+    await revokeAllRefreshCredentials(userId);
+    return;
+  }
+
+  const tokenHash = hashValue(refreshToken);
+  await Promise.all([
+    AuthSessionModel.updateOne(
+      {
+        userId: new Types.ObjectId(userId),
+        refreshTokenHash: tokenHash,
+        refreshTokenJti: payload.jti,
+        revokedAt: null,
+      },
+      { $set: { revokedAt: new Date() } },
+    ),
+    UserModel.updateOne(
+      { _id: userId, deletedAt: null, refreshTokenHash: tokenHash },
+      { $set: { refreshTokenHash: null, refreshTokenExpiresAt: null } },
+    ),
+  ]);
 };
 
 const createDefaultSettings = (): UserSettings => ({
@@ -390,7 +475,7 @@ const findUserForLogin = async (identifier: string) => {
 /**
  * Authenticates a user with email or username and rotates their refresh token.
  */
-export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
+export const authLogin = async (input: LoginInput, userAgent?: string): Promise<AuthResult> => {
   const user = await findUserForLogin(input.identifier);
 
   if (!user?.password) {
@@ -413,8 +498,14 @@ export const authLogin = async (input: LoginInput): Promise<AuthResult> => {
 
   assertEmailVerified(user);
 
-  const { accessToken, refreshToken, refreshTokenExpiresAt } = await createTokens(user._id.toString());
-  await persistRefreshToken(user._id.toString(), refreshToken, refreshTokenExpiresAt);
+  const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(user._id.toString());
+  await createRefreshSession({
+    userId: user._id.toString(),
+    refreshToken,
+    refreshTokenJti,
+    refreshTokenExpiresAt,
+    userAgent,
+  });
 
   return {
     user: sanitizeUser(user),
@@ -487,10 +578,9 @@ export const authResetPassword = async (input: ResetPasswordInput): Promise<void
   }
 
   user.password = await bcrypt.hash(input.password, BCRYPT_SALT_ROUNDS);
-  user.refreshTokenHash = null;
-  user.refreshTokenExpiresAt = null;
 
   await user.save();
+  await revokeAllRefreshCredentials(user._id.toString());
   await PasswordResetTokenModel.deleteOne({ _id: resetToken._id });
 };
 
@@ -593,18 +683,20 @@ export const authRefresh = async (input: RefreshTokenInput): Promise<AuthTokens>
     });
   }
 
+  const userId = new Types.ObjectId(payload.sub);
+  const tokenHash = hashValue(input.refreshToken);
+  const storedSession = await AuthSessionModel.findOne({
+    userId,
+    refreshTokenJti: payload.jti,
+    revokedAt: null,
+  }).select('+refreshTokenHash +refreshTokenJti');
   const user = await UserModel.findOne({
     _id: payload.sub,
     deletedAt: null,
   }).select('+refreshTokenHash +refreshTokenExpiresAt');
   const storedUser = user as UserAuthDocument | null;
 
-  if (
-    !storedUser?.refreshTokenHash ||
-    !storedUser.refreshTokenExpiresAt ||
-    storedUser.refreshTokenExpiresAt.getTime() <= Date.now() ||
-    storedUser.refreshTokenHash !== hashValue(input.refreshToken)
-  ) {
+  if (!storedUser) {
     throw new AppError({
       code: 'AUTH_REFRESH_INVALID',
       message: 'Refresh token is invalid or expired.',
@@ -614,8 +706,53 @@ export const authRefresh = async (input: RefreshTokenInput): Promise<AuthTokens>
 
   assertEmailVerified(storedUser);
 
-  const { accessToken, refreshToken, refreshTokenExpiresAt } = await createTokens(storedUser._id.toString());
-  await persistRefreshToken(storedUser._id.toString(), refreshToken, refreshTokenExpiresAt);
+  if (storedSession) {
+    if (
+      storedSession.expiresAt.getTime() <= Date.now() ||
+      storedSession.refreshTokenHash !== tokenHash
+    ) {
+      throw new AppError({
+        code: 'AUTH_REFRESH_INVALID',
+        message: 'Refresh token is invalid or expired.',
+        statusCode: HTTP_STATUS_UNAUTHORIZED,
+      });
+    }
+
+    const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(storedUser._id.toString());
+    await rotateRefreshSession({
+      sessionId: storedSession._id,
+      refreshToken,
+      refreshTokenJti,
+      refreshTokenExpiresAt,
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  if (
+    !storedUser.refreshTokenHash ||
+    !storedUser.refreshTokenExpiresAt ||
+    storedUser.refreshTokenExpiresAt.getTime() <= Date.now() ||
+    storedUser.refreshTokenHash !== tokenHash
+  ) {
+    throw new AppError({
+      code: 'AUTH_REFRESH_INVALID',
+      message: 'Refresh token is invalid or expired.',
+      statusCode: HTTP_STATUS_UNAUTHORIZED,
+    });
+  }
+
+  const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(storedUser._id.toString());
+  await createRefreshSession({
+    userId: storedUser._id.toString(),
+    refreshToken,
+    refreshTokenJti,
+    refreshTokenExpiresAt,
+  });
+  await clearLegacyRefreshCredentials(storedUser._id.toString());
 
   return {
     accessToken,
@@ -654,6 +791,7 @@ export const authUpdateProfile = async (
 ): Promise<PublicUser> => {
   const user = await getUserById(userId);
   const requestedEmail = input.email && input.email !== user.email ? input.email : undefined;
+  let shouldRevokeRefreshSessions = false;
 
   await ensureUniqueCredentials(requestedEmail, input.username, userId);
 
@@ -671,6 +809,7 @@ export const authUpdateProfile = async (
     user.password = await bcrypt.hash(input.newPassword, BCRYPT_SALT_ROUNDS);
     user.refreshTokenHash = null;
     user.refreshTokenExpiresAt = null;
+    shouldRevokeRefreshSessions = true;
     await OAuthTokenModel.deleteMany({ userId });
   }
 
@@ -695,6 +834,10 @@ export const authUpdateProfile = async (
 
   await user.save();
 
+  if (shouldRevokeRefreshSessions) {
+    await revokeRefreshSessions(userId);
+  }
+
   if (requestedEmail) {
     await sendEmailConfirmation(user, requestedEmail);
   }
@@ -703,10 +846,15 @@ export const authUpdateProfile = async (
 };
 
 /**
- * Clears the stored refresh token for the authenticated browser session.
+ * Clears refresh credentials for the authenticated browser session.
  */
-export const authLogout = async (userId: string): Promise<void> => {
-  await revokeRefreshCredentials(userId);
+export const authLogout = async (userId: string, input: LogoutInput = {}): Promise<void> => {
+  if (input.refreshToken) {
+    await revokeRefreshSessionByToken(userId, input.refreshToken);
+    return;
+  }
+
+  await revokeAllRefreshCredentials(userId);
 };
 
 /**
@@ -729,6 +877,7 @@ export const authDeleteAccount = async (userId: string): Promise<void> => {
   );
 
   await Promise.all([
+    AuthSessionModel.deleteMany({ userId: new Types.ObjectId(userId) }),
     EmailVerificationTokenModel.deleteMany({ userId }),
     OAuthTokenModel.deleteMany({ userId }),
     PasswordResetTokenModel.deleteMany({ userId }),

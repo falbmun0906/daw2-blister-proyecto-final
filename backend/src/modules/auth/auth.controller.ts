@@ -24,6 +24,7 @@ import {
 import {
   type ConfirmEmailInput,
   type LoginInput,
+  type LogoutInput,
   type McpTokenInput,
   type ForgotPasswordInput,
   type RefreshTokenInput,
@@ -48,7 +49,7 @@ export const authRegisterController = async (request: Request, response: Respons
  * Authenticates a user and returns a fresh session.
  */
 export const authLoginController = async (request: Request, response: Response): Promise<void> => {
-  const result = await authLogin(request.body as LoginInput);
+  const result = await authLogin(request.body as LoginInput, request.get('user-agent'));
 
   response.status(HTTP_STATUS_OK).json({
     success: true,
@@ -74,7 +75,7 @@ export const authRefreshController = async (request: Request, response: Response
 export const authLogoutController = async (request: Request, response: Response): Promise<void> => {
   const authenticatedRequest = request as AuthenticatedRequest;
 
-  await authLogout(authenticatedRequest.auth.userId);
+  await authLogout(authenticatedRequest.auth.userId, request.body as LogoutInput);
 
   response.status(HTTP_STATUS_OK).json({
     success: true,

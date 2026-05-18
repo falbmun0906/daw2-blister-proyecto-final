@@ -4,6 +4,7 @@ import {
   confirmEmailSchema,
   forgotPasswordSchema,
   loginSchema,
+  logoutSchema,
   refreshTokenSchema,
   registerSchema,
   resetPasswordSchema,
@@ -12,6 +13,7 @@ import {
   type ConfirmEmailInput,
   type ForgotPasswordInput,
   type LoginInput,
+  type LogoutInput,
   type RefreshTokenInput,
   type RegisterInput,
   type ResetPasswordInput,
@@ -55,8 +57,9 @@ export async function refresh(input: RefreshTokenInput): Promise<AuthTokens> {
 /**
  * Revokes the current stored refresh token on the backend.
  */
-export async function logout(): Promise<void> {
-  await apiClient.post('/auth/logout');
+export async function logout(refreshToken?: string): Promise<void> {
+  const payload: LogoutInput = logoutSchema.parse(refreshToken ? { refreshToken } : {});
+  await apiClient.post('/auth/logout', payload);
 }
 
 /**

@@ -87,6 +87,12 @@ describe('LoginPage', () => {
     expect(loginMock).not.toHaveBeenCalled();
   });
 
+  it('links to the password reminder flow', () => {
+    renderPage();
+
+    expect(screen.getByRole('link', { name: 'Recordar contraseña' })).toHaveAttribute('href', '/forgot-password');
+  });
+
   it('shows a neutral credential error without mutating the session', async () => {
     const user = userEvent.setup();
     loginMock.mockRejectedValue(new ApiError('Invalid credentials', { code: 'AUTH_INVALID_CREDENTIALS', status: 401 }));

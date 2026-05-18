@@ -28,11 +28,12 @@ const PROFILE_LINKS: ProfileLinkItem[] = [
 function ProfilePage() {
   usePageTitle('');
   const user = useAuthStore((s) => s.user);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const clearSession = useAuthStore((s) => s.clearSession);
   const handleLogout = async (): Promise<void> => {
     try {
       await unsubscribeFromServerPush().catch(() => undefined);
-      await logoutService();
+      await logoutService(refreshToken ?? undefined);
     } finally {
       resetAppStores();
       clearSession();
@@ -70,7 +71,7 @@ function ProfilePage() {
       </button>
 
       <footer className="c-profile-page__app-meta" aria-label="Información de la aplicación">
-        <span>Código {APP_COMMIT}</span>
+        <span>Commit {APP_COMMIT}</span>
         <a href="mailto:soporte@miblister.es">soporte@miblister.es</a>
       </footer>
     </section>

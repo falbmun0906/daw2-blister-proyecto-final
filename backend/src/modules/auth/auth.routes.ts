@@ -6,6 +6,7 @@ import {
   confirmEmailSchema,
   forgotPasswordSchema,
   loginSchema,
+  logoutSchema,
   refreshTokenSchema,
   resetPasswordSchema,
   updateProfileSchema,
@@ -376,7 +377,7 @@ authRouter.post('/refresh', validate({ body: refreshTokenSchema }), authRefreshC
  *       401:
  *         description: Missing or invalid JWT.
  */
-authRouter.post('/logout', authenticate, authLogoutController);
+authRouter.post('/logout', authenticate, validate({ body: logoutSchema }), authLogoutController);
 
 /**
  * @openapi

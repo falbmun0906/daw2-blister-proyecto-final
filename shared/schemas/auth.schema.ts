@@ -101,6 +101,10 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().trim().min(1, 'El token de refresco es obligatorio.'),
 });
 
+export const logoutSchema = z.object({
+  refreshToken: z.string().trim().min(1, 'El token de refresco es obligatorio.').optional(),
+}).default({});
+
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email('Introduce un correo electrónico válido.'),
 });
@@ -172,6 +176,7 @@ export const revokeMcpTokenSchema = z.object({});
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type LogoutInput = z.infer<typeof logoutSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>;

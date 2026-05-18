@@ -116,7 +116,7 @@ function LoginPage() {
           />
 
           <Link to={ROUTES.forgotPassword} className="c-login-page__forgot-link">
-            He olvidado mi contraseña
+            Recordar contraseña
           </Link>
 
           <Button type="submit" variant="primary" fullWidth loading={isLoading} className="c-login-page__submit">
