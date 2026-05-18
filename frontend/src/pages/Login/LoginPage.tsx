@@ -20,6 +20,28 @@ import { isApiError } from '../../types/api.types';
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+const REMEMBER_IDENTIFIER_KEY = 'blister-login-identifier';
+
+const readRememberedIdentifier = (): string => {
+  try {
+    return globalThis.localStorage?.getItem(REMEMBER_IDENTIFIER_KEY) ?? '';
+  } catch {
+    return '';
+  }
+};
+
+const writeRememberedIdentifier = (identifier: string): void => {
+  try {
+    if (identifier) {
+      globalThis.localStorage?.setItem(REMEMBER_IDENTIFIER_KEY, identifier);
+      return;
+    }
+    globalThis.localStorage?.removeItem(REMEMBER_IDENTIFIER_KEY);
+  } catch {
+    // The login flow remains functional when browser storage is unavailable.
+  }
+};
+
 const getErrorMessage = (code: string | undefined): string => {
   switch (code) {
     case 'AUTH_INVALID_CREDENTIALS':
@@ -38,8 +60,10 @@ function LoginPage() {
   const setSession = useAuthStore((state) => state.setSession);
   const addToast = useUiStore((state) => state.addToast);
   const clearToasts = useUiStore((state) => state.clearToasts);
+  const [rememberIdentifier, setRememberIdentifier] = useState(() => readRememberedIdentifier().length > 0);
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const rememberedIdentifier = readRememberedIdentifier();
 
   const {
     register,
@@ -48,7 +72,7 @@ function LoginPage() {
   } = useForm<LoginFormData>({
     resolver: createZodFormResolver(loginSchema),
     defaultValues: {
-      identifier: '',
+      identifier: rememberedIdentifier,
       password: '',
     },
   });
@@ -65,6 +89,7 @@ function LoginPage() {
         resetAppStores();
       }
       applyUserSettings(session.user.settings);
+      writeRememberedIdentifier(rememberIdentifier ? data.identifier : '');
       setSession(session);
       clearToasts();
 
@@ -115,9 +140,21 @@ function LoginPage() {
             icon={<TbLock className="c-icon c-icon--md" aria-hidden="true" />}
           />
 
-          <Link to={ROUTES.forgotPassword} className="c-login-page__forgot-link">
-            Recordar contraseña
-          </Link>
+          <div className="c-login-page__options">
+            <label className="c-login-page__remember-label">
+              <input
+                type="checkbox"
+                className="c-login-page__remember-input"
+                checked={rememberIdentifier}
+                onChange={(event) => setRememberIdentifier(event.target.checked)}
+              />
+              <span>Recordar contraseña</span>
+            </label>
+
+            <Link to={ROUTES.forgotPassword} className="c-login-page__forgot-link">
+              He olvidado la contraseña
+            </Link>
+          </div>
 
           <Button type="submit" variant="primary" fullWidth loading={isLoading} className="c-login-page__submit">
             Iniciar sesión

@@ -90,7 +90,21 @@ describe('LoginPage', () => {
   it('links to the password reminder flow', () => {
     renderPage();
 
-    expect(screen.getByRole('link', { name: 'Recordar contraseña' })).toHaveAttribute('href', '/forgot-password');
+    expect(screen.getByRole('checkbox', { name: 'Recordar contraseña' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'He olvidado la contraseña' })).toHaveAttribute('href', '/forgot-password');
+  });
+
+  it('remembers the login identifier only when the checkbox is enabled', async () => {
+    const user = userEvent.setup();
+    loginMock.mockResolvedValue(session);
+    renderPage();
+
+    await user.type(screen.getByLabelText('Usuario o correo electrónico'), 'ana@example.com');
+    await user.type(screen.getByLabelText('Contraseña'), 'Password1!');
+    await user.click(screen.getByRole('checkbox', { name: 'Recordar contraseña' }));
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+    await waitFor(() => expect(localStorage.getItem('blister-login-identifier')).toBe('ana@example.com'));
   });
 
   it('shows a neutral credential error without mutating the session', async () => {

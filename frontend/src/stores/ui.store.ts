@@ -36,38 +36,57 @@ interface PersistedUiState {
 }
 
 const UI_SESSION_KEY = 'blister-ui';
+const ONBOARDING_STORAGE_KEY = 'blister-has-seen-onboarding';
 
 const createToastId = (): string =>
   globalThis.crypto?.randomUUID?.() ?? `toast-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const readPersistedUiState = (): PersistedUiState => {
+const readLegacySessionUiState = (): Partial<PersistedUiState> => {
   try {
     const rawValue = globalThis.sessionStorage?.getItem(UI_SESSION_KEY);
 
     if (!rawValue) {
-      return {
-        hasSeenOnboarding: false,
-        canReplayOnboarding: false,
-      };
+      return {};
     }
 
     const parsed = JSON.parse(rawValue) as Partial<PersistedUiState>;
 
     return {
-      hasSeenOnboarding: parsed.hasSeenOnboarding === true,
-      canReplayOnboarding: parsed.canReplayOnboarding === true,
+      hasSeenOnboarding: parsed.hasSeenOnboarding,
+      canReplayOnboarding: parsed.canReplayOnboarding,
     };
   } catch {
-    return {
-      hasSeenOnboarding: false,
-      canReplayOnboarding: false,
-    };
+    return {};
   }
+};
+
+const readHasSeenOnboarding = (legacyState: Partial<PersistedUiState>): boolean => {
+  try {
+    const rawValue = globalThis.localStorage?.getItem(ONBOARDING_STORAGE_KEY);
+    if (rawValue === 'true') return true;
+    if (rawValue === 'false') return false;
+  } catch {
+    // Browser storage can be unavailable in private modes; legacy session state may still exist.
+  }
+
+  return legacyState.hasSeenOnboarding === true;
+};
+
+const readPersistedUiState = (): PersistedUiState => {
+  const legacyState = readLegacySessionUiState();
+
+  return {
+    hasSeenOnboarding: readHasSeenOnboarding(legacyState),
+    canReplayOnboarding: legacyState.canReplayOnboarding === true,
+  };
 };
 
 const writePersistedUiState = (state: PersistedUiState): void => {
   try {
-    globalThis.sessionStorage?.setItem(UI_SESSION_KEY, JSON.stringify(state));
+    globalThis.localStorage?.setItem(ONBOARDING_STORAGE_KEY, state.hasSeenOnboarding ? 'true' : 'false');
+    globalThis.sessionStorage?.setItem(UI_SESSION_KEY, JSON.stringify({
+      canReplayOnboarding: state.canReplayOnboarding,
+    }));
   } catch {
     // Browser storage can be unavailable in private modes; UI state remains in memory.
   }

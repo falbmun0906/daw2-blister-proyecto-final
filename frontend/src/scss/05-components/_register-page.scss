@@ -260,3 +260,43 @@
     overflow-wrap: anywhere;
   }
 }
+
+.c-register-page--sent-screen.c-auth-layout {
+  background-color: var(--color-bg);
+}
+
+.c-register-page--sent-screen {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+
+  .c-register-page__inner.c-auth-layout__inner {
+    background-color: var(--color-surface);
+  }
+
+  .c-register-page__back-btn {
+    color: var(--color-primary-mid);
+
+    &:hover { background-color: var(--color-primary-tint); }
+  }
+
+  .c-register-page__title {
+    color: var(--color-text);
+  }
+
+  .c-register-page__title-accent,
+  .c-register-page__sent-highlight {
+    color: var(--color-accent);
+  }
+
+  .c-register-page__sent-text {
+    color: var(--color-text-muted);
+  }
+
+  .c-btn--primary {
+    background-color: var(--color-primary-mid);
+    color: var(--color-text-on-primary);
+
+    &:hover  { background-color: var(--color-primary-hover); }
+    &:active { background-color: var(--color-primary-active); }
+  }
+}

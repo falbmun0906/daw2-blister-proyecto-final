@@ -281,7 +281,10 @@ function RegisterPage() {
 
   if (registeredEmail) {
     return (
-      <AuthLayout className="c-register-page" tone="brand" innerClassName="c-register-page__inner">
+      <AuthLayout
+        className="c-register-page c-register-page--sent-screen"
+        innerClassName="c-register-page__inner c-register-page__inner--sent-screen"
+      >
         <header className="c-register-page__header">
           <button
             type="button"
@@ -296,13 +299,13 @@ function RegisterPage() {
 
         <section className="c-register-page__sent" aria-labelledby="register-email-sent-title">
           <h1 id="register-email-sent-title" className="c-register-page__title">
-            Revisa tu correo
+            Revisa tu <span className="c-register-page__title-accent">correo</span>
           </h1>
           <p className="c-register-page__sent-text">
-            Te hemos enviado un correo de confirmación a <span>{registeredEmail}</span>.
+            Te hemos enviado un correo de confirmación a <span className="c-register-page__sent-highlight">{registeredEmail}</span>.
           </p>
           <p className="c-register-page__sent-text">
-            Confirma tu cuenta antes de iniciar sesión y revisa también la carpeta de <span>spam</span>.
+            Confirma tu cuenta antes de iniciar sesión y revisa también la carpeta de <span className="c-register-page__sent-highlight">spam</span>.
           </p>
           <Button type="button" variant="primary" fullWidth onClick={() => navigate(ROUTES.login)}>
             Ir a iniciar sesión

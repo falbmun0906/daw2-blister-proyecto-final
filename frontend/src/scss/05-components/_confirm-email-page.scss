@@ -44,6 +44,10 @@
     color: var(--color-text);
   }
 
+  &__title-accent {
+    color: var(--color-accent);
+  }
+
   &__message {
     margin: 0;
     color: var(--color-text-muted);

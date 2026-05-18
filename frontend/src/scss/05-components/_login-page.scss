@@ -59,13 +59,37 @@
   }
 
   &__forgot-link {
-    align-self: flex-end;
     font-size: var(--text-base);
     font-weight: var(--font-weight-regular);
     color: var(--color-primary-mid);
     text-decoration: none;
 
     &:hover { text-decoration: underline; }
+  }
+
+  &__options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  &__remember-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--space-touch-min);
+    color: var(--color-text-muted);
+    font-size: var(--text-base);
+    cursor: pointer;
+  }
+
+  &__remember-input {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+    accent-color: var(--color-primary-mid);
   }
 
   &__submit {

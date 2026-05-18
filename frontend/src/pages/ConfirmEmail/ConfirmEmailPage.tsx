@@ -68,7 +68,9 @@ function ConfirmEmailPage() {
           {confirmationState === 'error' && <TbAlertCircle className="c-icon c-icon--lg" />}
         </span>
         <h1 className="c-confirm-email-page__title">
-          {confirmationState === 'success' ? 'Correo confirmado' : 'Confirmar correo'}
+          {confirmationState === 'success' ? (
+            <>Correo <span className="c-confirm-email-page__title-accent">confirmado</span></>
+          ) : 'Confirmar correo'}
         </h1>
         <p className="c-confirm-email-page__message">{confirmationMessage}</p>
       </div>
