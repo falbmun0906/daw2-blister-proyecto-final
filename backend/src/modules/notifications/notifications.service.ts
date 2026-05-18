@@ -554,7 +554,10 @@ export const notifyAppointmentComment = async (
   blister: BlisterDocument,
   comment: AppointmentCommentDocument,
 ): Promise<void> => {
-  const recipientIds = getAllRecipientIds(blister);
+  const authorUserId = comment.userId.toString();
+  const recipientIds = getAllRecipientIds(blister).filter(
+    (userId) => userId.toString() !== authorUserId,
+  );
   const author = await UserModel.findById(comment.userId)
     .select('name')
     .lean<LeanNotificationAuthor | null>();

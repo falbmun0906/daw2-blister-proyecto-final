@@ -158,7 +158,7 @@ describe('appointments.service', () => {
     expect(cleaned.comments).toHaveLength(0);
   });
 
-  it('notifies every blister member when an appointment comment is added', async () => {
+  it('notifies blister members except the author when an appointment comment is added', async () => {
     const owner = await createUser('notifyowner');
     const caregiver = await createUser('notifycaregiver');
     const observer = await createUser('notifyobserver');
@@ -187,10 +187,9 @@ describe('appointments.service', () => {
     const notifications = await NotificationModel.find({ type: 'appointment_comment' });
     const notifiedUserIds = new Set(notifications.map((notification) => notification.userId.toString()));
 
-    expect(notifications).toHaveLength(3);
+    expect(notifications).toHaveLength(2);
     expect(notifiedUserIds).toEqual(new Set([
       owner._id.toString(),
-      caregiver._id.toString(),
       observer._id.toString(),
     ]));
     expect(notifications[0]).toMatchObject({

@@ -56,7 +56,7 @@ export function NotificationsSheet() {
   const open = useUiStore((s) => s.notificationsSheetOpen);
   const close = useUiStore((s) => s.closeNotificationsSheet);
   const addToast = useUiStore((s) => s.addToast);
-  const { notifications, unreadCount, isLoading, error, refetch, markAsRead } =
+  const { notifications, isLoading, error, refetch, markAsRead } =
     useNotifications();
 
   const [dragOffset, setDragOffset] = useState(0);
@@ -64,7 +64,11 @@ export function NotificationsSheet() {
   const startY = useRef<number | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
-  const groups = useMemo(() => groupByDate(notifications), [notifications]);
+  const visibleNotifications = useMemo(
+    () => notifications.filter((notification) => !notification.isRead),
+    [notifications],
+  );
+  const groups = useMemo(() => groupByDate(visibleNotifications), [visibleNotifications]);
   const portalTarget = open ? getPortalTarget() : null;
 
   useEffect(() => {
@@ -144,10 +148,9 @@ export function NotificationsSheet() {
   };
 
   const handleMarkAll = async () => {
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
+    if (visibleNotifications.length === 0) return;
     try {
-      await Promise.all(unread.map((n) => markAsRead(n.id)));
+      await Promise.all(visibleNotifications.map((n) => markAsRead(n.id)));
       addToast({ message: 'Notificaciones marcadas como leídas.', variant: 'success' });
     } catch (err) {
       addToast({
@@ -203,7 +206,7 @@ export function NotificationsSheet() {
 
         <header className="c-notifications-sheet__header">
           <h2 className="c-notifications-sheet__title">Notificaciones</h2>
-          {unreadCount > 0 ? (
+          {visibleNotifications.length > 0 ? (
             <button
               type="button"
               className="c-notifications-sheet__mark-all"
@@ -223,10 +226,10 @@ export function NotificationsSheet() {
             </>
           ) : error ? (
             <ErrorState message={error} onRetry={() => void refetch()} />
-          ) : notifications.length === 0 ? (
+          ) : visibleNotifications.length === 0 ? (
             <EmptyState
-              title="No tienes notificaciones"
-              description="Te avisaremos cuando haya stock bajo, tomas forzadas o cambios en CIMA."
+              title="No tienes notificaciones pendientes"
+              description="Los avisos marcados como leídos desaparecen de esta lista."
             />
           ) : (
             groups.map((group) => (
