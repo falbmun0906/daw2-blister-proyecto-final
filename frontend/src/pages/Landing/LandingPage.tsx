@@ -11,15 +11,14 @@ import { useUiStore } from '../../stores/ui.store';
 
 function LandingPage() {
     const navigate = useNavigate();
-    const enableOnboardingReplay = useUiStore((s) => s.enableOnboardingReplay);
+    const hasSeenOnboarding = useUiStore((s) => s.hasSeenOnboarding);
 
     useEffect(() => {
         return syncThemeColorWithSections()
     }, [])
 
     const handleTryNow = () => {
-        enableOnboardingReplay();
-        navigate(ROUTES.onboarding);
+        navigate(hasSeenOnboarding ? ROUTES.login : ROUTES.onboarding);
     };
 
     return (

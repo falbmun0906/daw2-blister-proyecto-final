@@ -15,15 +15,12 @@ export interface ToastItem {
 interface UiState {
   toasts: ToastItem[];
   hasSeenOnboarding: boolean;
-  canReplayOnboarding: boolean;
   notificationsSheetOpen: boolean;
   blisterSelectorOpen: boolean;
   addToast: (toast: Omit<ToastItem, 'id' | 'durationMs'> & { durationMs?: number }) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
   setHasSeenOnboarding: (value: boolean) => void;
-  enableOnboardingReplay: () => void;
-  disableOnboardingReplay: () => void;
   openNotificationsSheet: () => void;
   closeNotificationsSheet: () => void;
   toggleBlisterSelector: () => void;
@@ -32,61 +29,34 @@ interface UiState {
 
 interface PersistedUiState {
   hasSeenOnboarding: boolean;
-  canReplayOnboarding: boolean;
 }
 
-const UI_SESSION_KEY = 'blister-ui';
 const ONBOARDING_STORAGE_KEY = 'blister-has-seen-onboarding';
 
 const createToastId = (): string =>
   globalThis.crypto?.randomUUID?.() ?? `toast-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const readLegacySessionUiState = (): Partial<PersistedUiState> => {
-  try {
-    const rawValue = globalThis.sessionStorage?.getItem(UI_SESSION_KEY);
-
-    if (!rawValue) {
-      return {};
-    }
-
-    const parsed = JSON.parse(rawValue) as Partial<PersistedUiState>;
-
-    return {
-      hasSeenOnboarding: parsed.hasSeenOnboarding,
-      canReplayOnboarding: parsed.canReplayOnboarding,
-    };
-  } catch {
-    return {};
-  }
-};
-
-const readHasSeenOnboarding = (legacyState: Partial<PersistedUiState>): boolean => {
+const readHasSeenOnboarding = (): boolean => {
   try {
     const rawValue = globalThis.localStorage?.getItem(ONBOARDING_STORAGE_KEY);
     if (rawValue === 'true') return true;
     if (rawValue === 'false') return false;
   } catch {
-    // Browser storage can be unavailable in private modes; legacy session state may still exist.
+    // Browser storage can be unavailable in private modes; UI state remains in memory.
   }
 
-  return legacyState.hasSeenOnboarding === true;
+  return false;
 };
 
 const readPersistedUiState = (): PersistedUiState => {
-  const legacyState = readLegacySessionUiState();
-
   return {
-    hasSeenOnboarding: readHasSeenOnboarding(legacyState),
-    canReplayOnboarding: legacyState.canReplayOnboarding === true,
+    hasSeenOnboarding: readHasSeenOnboarding(),
   };
 };
 
 const writePersistedUiState = (state: PersistedUiState): void => {
   try {
     globalThis.localStorage?.setItem(ONBOARDING_STORAGE_KEY, state.hasSeenOnboarding ? 'true' : 'false');
-    globalThis.sessionStorage?.setItem(UI_SESSION_KEY, JSON.stringify({
-      canReplayOnboarding: state.canReplayOnboarding,
-    }));
   } catch {
     // Browser storage can be unavailable in private modes; UI state remains in memory.
   }
@@ -97,7 +67,7 @@ const setPersistedUiState = (state: PersistedUiState): PersistedUiState => {
   return state;
 };
 
-export const useUiStore = create<UiState>()((set, get) => ({
+export const useUiStore = create<UiState>()((set) => ({
   toasts: [],
   ...readPersistedUiState(),
   notificationsSheetOpen: false,
@@ -118,21 +88,6 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set(() =>
       setPersistedUiState({
         hasSeenOnboarding: value,
-        canReplayOnboarding: get().canReplayOnboarding,
-      }),
-    ),
-  enableOnboardingReplay: () =>
-    set(() =>
-      setPersistedUiState({
-        hasSeenOnboarding: get().hasSeenOnboarding,
-        canReplayOnboarding: true,
-      }),
-    ),
-  disableOnboardingReplay: () =>
-    set(() =>
-      setPersistedUiState({
-        hasSeenOnboarding: get().hasSeenOnboarding,
-        canReplayOnboarding: false,
       }),
     ),
   openNotificationsSheet: () => set({ notificationsSheetOpen: true }),

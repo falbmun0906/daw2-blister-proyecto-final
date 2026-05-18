@@ -59,10 +59,12 @@
   }
 
   &__forgot-link {
-    font-size: var(--text-base);
+    flex: 0 0 auto;
+    font-size: var(--text-sm);
     font-weight: var(--font-weight-regular);
     color: var(--color-primary-mid);
     text-decoration: none;
+    white-space: nowrap;
 
     &:hover { text-decoration: underline; }
   }
@@ -71,17 +73,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-3);
-    flex-wrap: wrap;
+    gap: var(--space-2);
+    flex-wrap: nowrap;
   }
 
   &__remember-label {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
     min-height: var(--space-touch-min);
     color: var(--color-text-muted);
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
+    white-space: nowrap;
     cursor: pointer;
   }
 

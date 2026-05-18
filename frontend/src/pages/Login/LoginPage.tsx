@@ -148,11 +148,11 @@ function LoginPage() {
                 checked={rememberIdentifier}
                 onChange={(event) => setRememberIdentifier(event.target.checked)}
               />
-              <span>Recordar contraseña</span>
+              <span>Recordarme</span>
             </label>
 
             <Link to={ROUTES.forgotPassword} className="c-login-page__forgot-link">
-              He olvidado la contraseña
+              He olvidado mi contraseña
             </Link>
           </div>
 
