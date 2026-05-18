@@ -48,10 +48,3 @@
   }
 }
 
-.c-modal__panel.c-pwa-update-prompt__panel {
-  max-height: min(calc(100vh - 2 * var(--space-4)), 50vh);
-}
-
-.c-desktop-device-shell__screen .c-modal__panel.c-pwa-update-prompt__panel {
-  max-height: min(calc(100% - 2 * var(--space-3)), 50%);
-}

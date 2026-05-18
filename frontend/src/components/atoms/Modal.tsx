@@ -9,7 +9,6 @@ interface ModalProps {
   title?: string;
   titleIcon?: ReactNode;
   titleIconClassName?: string;
-  panelClassName?: string;
   hideHeader?: boolean;
   hideCloseButton?: boolean;
   disableBackdropClose?: boolean;
@@ -28,7 +27,6 @@ export function Modal({
   title,
   titleIcon,
   titleIconClassName,
-  panelClassName,
   hideHeader,
   hideCloseButton,
   disableBackdropClose,
@@ -75,14 +73,14 @@ export function Modal({
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropKeyDown}
     >
-      <div className={['c-modal__panel', panelClassName].filter(Boolean).join(' ')}>
+      <div className="c-modal__panel">
         {!hideHeader ? (
           <header className="c-modal__header">
             {title ? (
               <span className="c-modal__title-group">
                 {titleIcon ? (
                   <span
-                    className={['c-modal__title-icon', titleIconClassName].filter(Boolean).join(' ')}
+                    className={titleIconClassName ?? 'c-modal__title-icon'}
                     aria-hidden="true"
                   >
                     {titleIcon}
