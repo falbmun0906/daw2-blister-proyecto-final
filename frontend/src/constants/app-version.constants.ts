@@ -3,8 +3,8 @@ export const APP_COMMIT = typeof __APP_COMMIT__ === 'string' && __APP_COMMIT__ ?
 export const LAST_SEEN_APP_VERSION_KEY = 'blister-last-seen-version';
 
 export const APP_RELEASE_NOTES = [
-  'La app avisa y comprueba mejor las actualizaciones disponibles de la PWA, evitando listeners duplicados.',
-  'Los modales, selectores y paneles de notificaciones son más accesibles con teclado y lectores de pantalla.',
-  'Las listas de calendario, tratamientos, botiquín y resultados CIMA usan claves y ordenaciones más estables.',
-  'Se han pulido pequeños detalles de rendimiento en búsquedas, fechas, invitaciones y notificaciones.',
+  'Las preferencias de notificaciones se actualizan al momento: al activar las push se solicita el permiso y se registra el dispositivo sin usar un botón de guardado.',
+  'Los recordatorios de tomas y citas son más resistentes a pausas del servidor y se envían con prioridad alta para mejorar la entrega en móvil.',
+  'La sesión aguanta mejor el uso diario de la PWA: cada dispositivo conserva su propia renovación y el plazo por defecto pasa a 30 días.',
+  'El inicio de sesión incorpora el acceso directo para recordar la contraseña y se ha reforzado el cierre de sesión del dispositivo actual.',
 ] as const;
