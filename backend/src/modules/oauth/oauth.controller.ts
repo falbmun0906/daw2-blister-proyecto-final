@@ -165,9 +165,8 @@ const renderAuthorizePage = (
       }
 
       .c-checkbox {
-        display: grid;
-        grid-template-columns: var(--space-touch-min) 1fr;
-        gap: var(--space-3);
+        display: flex;
+        gap: 0;
         align-items: start;
         color: var(--color-text-muted);
         font-size: var(--text-sm);
@@ -177,7 +176,8 @@ const renderAuthorizePage = (
       .c-checkbox__input {
         width: 1.25rem;
         height: 1.25rem;
-        margin: 0.2rem auto 0;
+        margin: 0.2rem var(--space-2) 0 0;
+        flex-shrink: 0;
         accent-color: var(--color-primary-mid);
       }
 
@@ -212,6 +212,28 @@ const renderAuthorizePage = (
         transition: background-color var(--transition-base), border-color var(--transition-base);
       }
 
+      .c-btn:disabled {
+        cursor: progress;
+        opacity: 0.82;
+      }
+
+      .c-btn__spinner {
+        display: none;
+        width: 1rem;
+        height: 1rem;
+        margin-left: var(--space-2);
+        border: 0.125rem solid color-mix(in srgb, var(--color-text-on-primary) 38%, transparent);
+        border-top-color: var(--color-text-on-primary);
+        border-radius: var(--radius-full);
+        animation: c-oauth-spin 700ms linear infinite;
+      }
+
+      .c-btn.is-loading .c-btn__spinner { display: inline-flex; }
+
+      @keyframes c-oauth-spin {
+        to { transform: rotate(360deg); }
+      }
+
       .c-btn:hover { background: var(--color-primary-hover); }
       .c-btn:active { background: var(--color-primary-active); }
 
@@ -243,10 +265,22 @@ const renderAuthorizePage = (
           <input class="c-checkbox__input" name="consent" type="checkbox" required />
           <span>Permitir que Claude Desktop use el endpoint MCP de Blister con mi cuenta.</span>
         </label>
-        <button class="c-btn c-btn--primary" type="submit">Autorizar conexión</button>
+        <button class="c-btn c-btn--primary" type="submit">
+          <span>Autorizar conexión</span>
+          <span class="c-btn__spinner" aria-hidden="true"></span>
+        </button>
         </form>
       </section>
     </main>
+    <script>
+      const form = document.querySelector('.c-oauth-authorize__form');
+      form?.addEventListener('submit', () => {
+        const button = form.querySelector('.c-btn');
+        button?.classList.add('is-loading');
+        button?.setAttribute('aria-busy', 'true');
+        button?.setAttribute('disabled', '');
+      });
+    </script>
   </body>
 </html>`;
 };
