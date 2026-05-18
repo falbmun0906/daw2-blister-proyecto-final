@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { TbBellRinging, TbCalendarTime } from 'react-icons/tb';
 
-import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { FormSection } from '../../components/molecules/FormSection';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -13,7 +12,7 @@ import { updateProfile } from '../../services/auth.service';
 import { useAuthStore } from '../../stores/auth.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
-import type { UserSettings } from '../../types/auth.types';
+import type { User, UserSettings } from '../../types/auth.types';
 
 type NotificationSettings = UserSettings['notifications'];
 
@@ -32,97 +31,170 @@ const DEFAULT_NOTIFICATIONS: NotificationSettings = {
 function ToggleRow({
   label,
   checked,
+  disabled,
   onChange,
 }: {
   label: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="c-notification-settings__toggle">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    <label className={['c-notification-settings__toggle', disabled && 'c-notification-settings__toggle--disabled'].filter(Boolean).join(' ')}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.checked)}
+      />
       <span className="c-notification-settings__toggle-control" aria-hidden="true" />
       <span>{label}</span>
     </label>
   );
 }
 
-export default function NotificationSettingsPage() {
-  usePageTitle('Notificaciones');
-  const user = useAuthStore((s) => s.user);
-  const updateUser = useAuthStore((s) => s.updateUser);
-  const addToast = useUiStore((s) => s.addToast);
-  const initial = useMemo(() => user?.settings.notifications ?? DEFAULT_NOTIFICATIONS, [user]);
-  const [settings, setSettings] = useState<NotificationSettings>(initial);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+const getSettingsErrorMessage = (err: unknown): string => {
+  if (err instanceof Error) {
+    return err.message;
+  }
 
-  if (!user) return null;
+  if (isApiError(err)) {
+    return err.message;
+  }
 
-  const setFlag = (key: keyof NotificationSettings, value: boolean | number | string): void => {
-    setSettings((current: NotificationSettings) => ({ ...current, [key]: value }));
-  };
+  return 'No se han podido actualizar las preferencias.';
+};
 
-  const customHoursError = settings.appointments
+const getCustomHoursError = (settings: NotificationSettings): string | null => (
+  settings.appointments
     && settings.appointmentReminderPreset === 'custom'
     && (!Number.isInteger(settings.customAppointmentReminderHours)
       || settings.customAppointmentReminderHours < 1
       || settings.customAppointmentReminderHours > 168)
     ? 'Introduce un número entero entre 1 y 168 horas.'
-    : null;
+    : null
+);
 
-  const handleSave = async (): Promise<void> => {
-    if (customHoursError) {
-      setError(null);
+interface NotificationSettingsFormProps {
+  user: User;
+  updateUser: (user: Partial<User>) => void;
+  addToast: (toast: { message: string; variant: 'success' | 'error' | 'info' }) => void;
+}
+
+function NotificationSettingsForm({
+  user,
+  updateUser,
+  addToast,
+}: NotificationSettingsFormProps) {
+  const [settings, setSettings] = useState<NotificationSettings>(user.settings.notifications ?? DEFAULT_NOTIFICATIONS);
+  const [error, setError] = useState<string | null>(null);
+  const [savingKey, setSavingKey] = useState<keyof NotificationSettings | null>(null);
+
+  const customHoursError = getCustomHoursError(settings);
+
+  const persistSettings = useCallback(async (
+    key: keyof NotificationSettings,
+    nextSettings: NotificationSettings,
+    rollbackSettings: NotificationSettings,
+  ): Promise<void> => {
+    if (!user) {
       return;
     }
 
-    setSaving(true);
+    const nextCustomHoursError = getCustomHoursError(nextSettings);
+    if (nextCustomHoursError && key !== 'customAppointmentReminderHours') {
+      setError(nextCustomHoursError);
+      return;
+    }
+
+    setSavingKey(key);
     setError(null);
     try {
-      if (settings.pushEnabled) {
+      if (key === 'pushEnabled' && nextSettings.pushEnabled) {
         const result = await subscribeToServerPush();
         if (!result.enabled) {
-          setSettings((current: NotificationSettings) => ({ ...current, pushEnabled: false }));
           throw new Error(result.reason ?? 'No se ha podido activar Web Push.');
         }
       }
+
       const updated = await updateProfile({
         settings: {
           ...user.settings,
-          notifications: settings,
+          notifications: nextSettings,
         },
       });
       updateUser(updated);
-      if (!settings.pushEnabled) {
-        await unsubscribeFromServerPush();
+
+      if (key === 'pushEnabled' && !nextSettings.pushEnabled) {
+        await unsubscribeFromServerPush().catch(() => undefined);
       }
-      addToast({ message: 'Preferencias de notificaciones guardadas.', variant: 'success' });
+
+      addToast({ message: 'Preferencia actualizada.', variant: 'success' });
     } catch (err) {
-      const message = err instanceof Error
-        ? err.message
-        : isApiError(err) ? err.message : 'No se han podido guardar las preferencias.';
-      setError(message);
+      setSettings(rollbackSettings);
+
+      if (key === 'pushEnabled' && nextSettings.pushEnabled) {
+        await unsubscribeFromServerPush().catch(() => undefined);
+      }
+
+      setError(getSettingsErrorMessage(err));
     } finally {
-      setSaving(false);
+      setSavingKey(null);
     }
+  }, [addToast, updateUser, user]);
+
+  const updateSetting = useCallback(<Key extends keyof NotificationSettings>(
+    key: Key,
+    value: NotificationSettings[Key],
+  ): void => {
+    const rollbackSettings = settings;
+    const nextSettings: NotificationSettings = { ...settings, [key]: value };
+    setSettings(nextSettings);
+    void persistSettings(key, nextSettings, rollbackSettings);
+  }, [persistSettings, settings]);
+
+  const updateCustomHours = (rawValue: string): void => {
+    const nextValue = rawValue === '' ? 0 : Number(rawValue);
+    setSettings((current) => ({
+      ...current,
+      customAppointmentReminderHours: Number.isNaN(nextValue) ? 0 : nextValue,
+    }));
   };
+
+  const persistCustomHours = (): void => {
+    if (!user) {
+      return;
+    }
+
+    if (customHoursError) {
+      setError(customHoursError);
+      return;
+    }
+
+    if (settings.customAppointmentReminderHours === user.settings.notifications.customAppointmentReminderHours) {
+      return;
+    }
+
+    void persistSettings('customAppointmentReminderHours', settings, user.settings.notifications);
+  };
+
+  const disabled = savingKey !== null;
 
   return (
     <section className="c-notification-settings" aria-label="Notificaciones">
       {error ? <ErrorState message={error} /> : null}
 
       <FormSection label="Avisos push" icon={<TbBellRinging aria-hidden="true" />}>
-        <ToggleRow label="Activar notificaciones push" checked={settings.pushEnabled} onChange={(value) => setFlag('pushEnabled', value)} />
-        <ToggleRow label="Stock bajo o agotado" checked={settings.stock} onChange={(value) => setFlag('stock', value)} />
-        <ToggleRow label="Caducidad de medicamentos" checked={settings.expiration} onChange={(value) => setFlag('expiration', value)} />
-        <ToggleRow label="Cambios oficiales CIMA" checked={settings.cima} onChange={(value) => setFlag('cima', value)} />
-        <ToggleRow label="Tomas registradas en modo forzado" checked={settings.adherence} onChange={(value) => setFlag('adherence', value)} />
-        <ToggleRow label="Hora de las tomas programadas" checked={settings.doses} onChange={(value) => setFlag('doses', value)} />
+        <ToggleRow label="Activar notificaciones push" checked={settings.pushEnabled} disabled={disabled} onChange={(value) => updateSetting('pushEnabled', value)} />
+        <ToggleRow label="Stock bajo o agotado" checked={settings.stock} disabled={disabled} onChange={(value) => updateSetting('stock', value)} />
+        <ToggleRow label="Caducidad de medicamentos" checked={settings.expiration} disabled={disabled} onChange={(value) => updateSetting('expiration', value)} />
+        <ToggleRow label="Cambios oficiales CIMA" checked={settings.cima} disabled={disabled} onChange={(value) => updateSetting('cima', value)} />
+        <ToggleRow label="Tomas registradas en modo forzado" checked={settings.adherence} disabled={disabled} onChange={(value) => updateSetting('adherence', value)} />
+        <ToggleRow label="Hora de las tomas programadas" checked={settings.doses} disabled={disabled} onChange={(value) => updateSetting('doses', value)} />
       </FormSection>
 
       <FormSection label="Citas médicas" icon={<TbCalendarTime aria-hidden="true" />}>
-        <ToggleRow label="Avisarme antes de una cita" checked={settings.appointments} onChange={(value) => setFlag('appointments', value)} />
+        <ToggleRow label="Avisarme antes de una cita" checked={settings.appointments} disabled={disabled} onChange={(value) => updateSetting('appointments', value)} />
         <div className="c-field">
           <label className="c-field__label" htmlFor="appointment-reminder-preset">
             <span className="c-field__label-text">Cuándo avisar</span>
@@ -131,8 +203,8 @@ export default function NotificationSettingsPage() {
             id="appointment-reminder-preset"
             className="c-field__select"
             value={settings.appointmentReminderPreset}
-            onChange={(event) => setFlag('appointmentReminderPreset', event.target.value)}
-            disabled={!settings.appointments}
+            onChange={(event) => updateSetting('appointmentReminderPreset', event.target.value as NotificationSettings['appointmentReminderPreset'])}
+            disabled={!settings.appointments || disabled}
           >
             <option value="3h">3 horas antes</option>
             <option value="12h">12 horas antes</option>
@@ -152,11 +224,9 @@ export default function NotificationSettingsPage() {
               min={1}
               max={168}
               value={settings.customAppointmentReminderHours}
-              onChange={(event) => {
-                const nextValue = event.target.value === '' ? 0 : Number(event.target.value);
-                setFlag('customAppointmentReminderHours', Number.isNaN(nextValue) ? 0 : nextValue);
-              }}
-              disabled={!settings.appointments}
+              onChange={(event) => updateCustomHours(event.target.value)}
+              onBlur={persistCustomHours}
+              disabled={!settings.appointments || disabled}
               aria-invalid={customHoursError ? true : undefined}
               aria-describedby={customHoursError ? 'custom-reminder-hours-error' : undefined}
               aria-errormessage={customHoursError ? 'custom-reminder-hours-error' : undefined}
@@ -169,10 +239,24 @@ export default function NotificationSettingsPage() {
           </div>
         ) : null}
       </FormSection>
-
-      <Button type="button" variant="primary" fullWidth loading={saving} onClick={() => void handleSave()}>
-        Guardar preferencias
-      </Button>
     </section>
+  );
+}
+
+export default function NotificationSettingsPage() {
+  usePageTitle('Notificaciones');
+  const user = useAuthStore((s) => s.user);
+  const updateUser = useAuthStore((s) => s.updateUser);
+  const addToast = useUiStore((s) => s.addToast);
+
+  if (!user) return null;
+
+  return (
+    <NotificationSettingsForm
+      key={user.id}
+      user={user}
+      updateUser={updateUser}
+      addToast={addToast}
+    />
   );
 }
