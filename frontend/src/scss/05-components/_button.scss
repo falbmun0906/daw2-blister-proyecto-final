@@ -183,6 +183,10 @@
   }
 }
 
+[data-font='dyslexic'] button:not([aria-label]) svg {
+  display: none;
+}
+
 @keyframes btn-spin {
   to { transform: rotate(360deg); }
 }
