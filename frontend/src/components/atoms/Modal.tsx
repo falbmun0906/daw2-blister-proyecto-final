@@ -1,15 +1,17 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
 import { TbX } from 'react-icons/tb';
 
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  titleIcon?: ReactNode;
   hideHeader?: boolean;
   hideCloseButton?: boolean;
   disableBackdropClose?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
   ariaLabel?: string;
 }
 
@@ -22,6 +24,7 @@ export function Modal({
   open,
   onClose,
   title,
+  titleIcon,
   hideHeader,
   hideCloseButton,
   disableBackdropClose,
@@ -72,9 +75,16 @@ export function Modal({
         {!hideHeader ? (
           <header className="c-modal__header">
             {title ? (
-              <h2 id="c-modal-title" className="c-modal__title">
-                {title}
-              </h2>
+              <span className="c-modal__title-group">
+                {titleIcon ? (
+                  <span className="c-modal__title-icon" aria-hidden="true">
+                    {titleIcon}
+                  </span>
+                ) : null}
+                <h2 id="c-modal-title" className="c-modal__title">
+                  {title}
+                </h2>
+              </span>
             ) : (
               <span aria-hidden="true" />
             )}

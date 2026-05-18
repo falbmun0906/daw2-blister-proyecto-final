@@ -40,4 +40,11 @@
     font-size: var(--text-sm);
     line-height: 1.5;
   }
+
+  &--release &__notes {
+    max-height: min(16rem, 38vh);
+    overflow-y: auto;
+    padding-right: var(--space-2);
+    scrollbar-gutter: stable;
+  }
 }
