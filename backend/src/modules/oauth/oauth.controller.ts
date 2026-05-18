@@ -21,6 +21,27 @@ const escapeHtml = (value: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+const OAUTH_AUTHORIZE_SCRIPT = `(() => {
+  const form = document.querySelector('.c-oauth-authorize__form');
+  const button = form?.querySelector('.c-btn');
+
+  if (!form || !button) return;
+
+  const showLoading = () => {
+    button.classList.add('is-loading');
+    button.setAttribute('aria-busy', 'true');
+  };
+
+  button.addEventListener('click', () => {
+    if (form.checkValidity()) showLoading();
+  });
+
+  form.addEventListener('submit', () => {
+    showLoading();
+    window.requestAnimationFrame(() => button.setAttribute('disabled', ''));
+  });
+})();`;
+
 const renderAuthorizePage = (
   params: ReturnType<typeof validateAuthorizeQuery>,
   errorMessage?: string,
@@ -276,26 +297,16 @@ const renderAuthorizePage = (
         </form>
       </section>
     </main>
-    <script>
-      const form = document.querySelector('.c-oauth-authorize__form');
-      const button = form?.querySelector('.c-btn');
-
-      const showLoading = () => {
-        button?.classList.add('is-loading');
-        button?.setAttribute('aria-busy', 'true');
-      };
-
-      button?.addEventListener('click', () => {
-        if (form?.checkValidity()) showLoading();
-      });
-
-      form?.addEventListener('submit', () => {
-        showLoading();
-        window.requestAnimationFrame(() => button?.setAttribute('disabled', ''));
-      });
-    </script>
+    <script src="/oauth/authorize.js" defer></script>
   </body>
 </html>`;
+};
+
+/**
+ * Serves the authorization form behavior as a same-origin script allowed by CSP.
+ */
+export const oauthAuthorizeScriptController = (_request: Request, response: Response): void => {
+  response.status(HTTP_STATUS_OK).type('application/javascript').send(OAUTH_AUTHORIZE_SCRIPT);
 };
 
 /**

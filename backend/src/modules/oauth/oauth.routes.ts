@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import {
   oauthAuthorizePageController,
+  oauthAuthorizeScriptController,
   oauthAuthorizeSubmitController,
   oauthRegisterController,
   oauthTokenController,
@@ -19,6 +20,8 @@ import {
 } from './oauth.schema';
 
 export const oauthRouter = Router();
+
+oauthRouter.get('/authorize.js', oauthAuthorizeScriptController);
 
 oauthRouter.get(
   '/authorize',

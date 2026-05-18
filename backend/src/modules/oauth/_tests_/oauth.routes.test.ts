@@ -208,6 +208,15 @@ describe('oauth.routes', () => {
     expect(response.text).toContain('claude-desktop');
     expect(response.text).toContain('code_challenge');
     expect(response.text).toContain('c-btn__spinner');
+    expect(response.text).toContain('src="/oauth/authorize.js"');
+    expect(response.text).not.toContain('<script>');
+  });
+
+  it('serves the authorization form script from the same origin', async () => {
+    const response = await request(app).get('/oauth/authorize.js');
+
+    expect(response.status).toBe(200);
+    expect(response.type).toBe('application/javascript');
     expect(response.text).toContain('aria-busy');
     expect(response.text).toContain('requestAnimationFrame');
   });
