@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { BlisterModel } from '../../../models/blister.model';
+import { NotificationModel } from '../../../models/notification.model';
 import { TreatmentModel } from '../../../models/treatment.model';
 import { UserModel } from '../../../models/user.model';
 import {
@@ -155,6 +156,53 @@ describe('appointments.service', () => {
     expect(comment.authorName).toBe(user.name);
     expect(edited.comments[0]?.text).toBe('Preparar analitica y DNI');
     expect(cleaned.comments).toHaveLength(0);
+  });
+
+  it('notifies every blister member when an appointment comment is added', async () => {
+    const owner = await createUser('notifyowner');
+    const caregiver = await createUser('notifycaregiver');
+    const observer = await createUser('notifyobserver');
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+        { userId: observer._id, role: 'OBSERVER' },
+      ],
+    });
+    const appointment = await appointmentsCreate(blister._id.toString(), 'OWNER', {
+      title: 'Revision familiar',
+      patientUserId: owner._id.toString(),
+      date: new Date('2030-12-02T10:00:00.000Z'),
+    });
+
+    const withComment = await appointmentsAddComment(
+      blister._id.toString(),
+      appointment.id,
+      caregiver._id.toString(),
+      'CAREGIVER',
+      { text: 'Llevar informe actualizado' },
+    );
+
+    const notifications = await NotificationModel.find({ type: 'appointment_comment' });
+    const notifiedUserIds = new Set(notifications.map((notification) => notification.userId.toString()));
+
+    expect(notifications).toHaveLength(3);
+    expect(notifiedUserIds).toEqual(new Set([
+      owner._id.toString(),
+      caregiver._id.toString(),
+      observer._id.toString(),
+    ]));
+    expect(notifications[0]).toMatchObject({
+      blisterId: blister._id,
+      title: 'Nuevo comentario en cita',
+      message: `${caregiver.name} ha comentado en Revision familiar.`,
+      metadata: expect.objectContaining({
+        appointmentId: appointment.id,
+        commentId: withComment.comments[0]!.id,
+        authorUserId: caregiver._id.toString(),
+      }),
+    });
   });
 
   it('prevents caregivers from editing comments written by another member', async () => {

@@ -15,6 +15,7 @@ import {
 } from '../../types/appointment.types';
 import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
 import { AppError } from '../../utils/app-error';
+import { notifyAppointmentComment } from '../notifications/notifications.service';
 import {
   type AppointmentCommentInput,
   type AppointmentsListQuery,
@@ -391,16 +392,26 @@ export const appointmentsAddComment = async (
 
   const appointment = await getAppointmentDocument(blisterId, appointmentId);
   const now = new Date();
-
-  appointment.comments.push({
+  const comment: AppointmentCommentDocument = {
     _id: new Types.ObjectId(),
     userId: new Types.ObjectId(userId),
     text: input.text,
     createdAt: now,
     updatedAt: now,
-  });
+  };
+
+  appointment.comments.push(comment);
 
   await appointment.save();
+
+  const blister = await BlisterModel.findOne({
+    _id: new Types.ObjectId(blisterId),
+    deletedAt: null,
+  });
+
+  if (blister) {
+    await notifyAppointmentComment(appointment, blister, comment);
+  }
 
   return toAppointmentViewWithAuthors(appointment);
 };

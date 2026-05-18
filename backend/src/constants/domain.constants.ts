@@ -12,6 +12,7 @@ export const NOTIFICATION_TYPES = [
   'cima_change',
   'dose_reminder',
   'appointment_reminder',
+  'appointment_comment',
   'system',
 ] as const;
 export const NOTIFICATION_SEVERITIES = ['info', 'warning', 'critical'] as const;

@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Skeleton } from '../../components/atoms/Skeleton';
-import { ConfirmDialog } from '../../components/molecules/ConfirmDialog';
 import { NotificationItem } from '../../components/organisms/NotificationItem';
 import { useNotifications } from '../../hooks/use.notifications';
 import { usePageTitle } from '../../hooks/use.page-title';
@@ -44,10 +43,9 @@ function groupByDate(items: NotificationView[]): NotificationGroup[] {
 function NotificationsPage() {
   usePageTitle('Avisos');
   const navigate = useNavigate();
-  const { notifications, unreadCount, isLoading, error, refetch, markAsRead, dismiss } =
+  const { notifications, unreadCount, isLoading, error, refetch, markAsRead } =
     useNotifications();
   const addToast = useUiStore((s) => s.addToast);
-  const [dismissCandidate, setDismissCandidate] = useState<NotificationView | null>(null);
 
   const groups = useMemo(() => groupByDate(notifications), [notifications]);
 
@@ -77,17 +75,6 @@ function NotificationsPage() {
   const handleOpenNotification = (notification: NotificationView): void => {
     const route = getNotificationTargetRoute(notification);
     if (route) navigate(route);
-  };
-
-  const handleDismiss = async (notification: NotificationView): Promise<void> => {
-    try {
-      await dismiss(notification);
-    } catch (err) {
-      const message = isApiError(err)
-        ? err.message
-        : 'No se ha podido eliminar la notificación.';
-      addToast({ message, variant: 'error' });
-    }
   };
 
   return (
@@ -132,22 +119,12 @@ function NotificationsPage() {
                   notification={notification}
                   onMarkAsRead={handleMarkAsRead}
                   onOpen={handleOpenNotification}
-                  onDismiss={setDismissCandidate}
                 />
               ))}
             </section>
           ))}
         </div>
       )}
-      <ConfirmDialog
-        open={dismissCandidate !== null}
-        message={`¿Eliminar la notificación "${dismissCandidate?.title ?? ''}"?`}
-        onCancel={() => setDismissCandidate(null)}
-        onConfirm={async () => {
-          if (dismissCandidate) await handleDismiss(dismissCandidate);
-        }}
-        ariaLabel="Confirmar eliminación de notificación"
-      />
     </section>
   );
 }

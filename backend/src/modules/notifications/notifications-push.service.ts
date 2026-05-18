@@ -96,6 +96,7 @@ const allowsPushForType = (
     case 'dose_reminder':
       return settings.notifications.doses !== false;
     case 'appointment_reminder':
+    case 'appointment_comment':
       return settings.notifications.appointments;
     case 'system':
       return true;
@@ -134,7 +135,7 @@ const getNotificationTargetUrl = (notification: NotificationDocument): string =>
     return `/blisters/${blisterId}/logs`;
   }
 
-  if (notification.type === 'appointment_reminder' && blisterId) {
+  if ((notification.type === 'appointment_reminder' || notification.type === 'appointment_comment') && blisterId) {
     return `/blisters/${blisterId}/appointments`;
   }
 

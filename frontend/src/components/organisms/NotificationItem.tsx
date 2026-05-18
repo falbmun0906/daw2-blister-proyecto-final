@@ -3,9 +3,10 @@ import {
   TbAlertTriangle,
   TbBell,
   TbCalendarTime,
+  TbCheck,
+  TbMessageCircle,
   TbPackage,
   TbPill,
-  TbX,
 } from 'react-icons/tb';
 
 import type { NotificationView } from '../../types/notification.types';
@@ -14,7 +15,7 @@ interface NotificationItemProps {
   notification: NotificationView;
   onMarkAsRead: (id: string) => void;
   onOpen?: (notification: NotificationView) => void;
-  onDismiss?: (notification: NotificationView) => void;
+  showMarkAsReadAction?: boolean;
 }
 
 const TYPE_ICONS: Record<NotificationView['type'], typeof TbBell> = {
@@ -25,6 +26,7 @@ const TYPE_ICONS: Record<NotificationView['type'], typeof TbBell> = {
   cima_change: TbAlertTriangle,
   dose_reminder: TbPill,
   appointment_reminder: TbCalendarTime,
+  appointment_comment: TbMessageCircle,
   system: TbBell,
 };
 
@@ -62,7 +64,7 @@ export function NotificationItem({
   notification,
   onMarkAsRead,
   onOpen,
-  onDismiss,
+  showMarkAsReadAction = true,
 }: NotificationItemProps) {
   const safeTitle = DOMPurify.sanitize(notification.title);
   const safeMessage = DOMPurify.sanitize(notification.message);
@@ -79,6 +81,10 @@ export function NotificationItem({
   const markAndOpenNotification = () => {
     if (!notification.isRead) onMarkAsRead(notification.id);
     onOpen?.(notification);
+  };
+
+  const markNotificationAsRead = () => {
+    if (!notification.isRead) onMarkAsRead(notification.id);
   };
 
   return (
@@ -107,14 +113,14 @@ export function NotificationItem({
           </time>
         </span>
       </button>
-      {onDismiss ? (
+      {showMarkAsReadAction && !notification.isRead ? (
         <button
           type="button"
-          className="c-notification-item__dismiss"
-          aria-label={`Eliminar notificación: ${notification.title}`}
-          onClick={() => onDismiss(notification)}
+          className="c-notification-item__mark-read"
+          aria-label={`Marcar como leída: ${notification.title}`}
+          onClick={markNotificationAsRead}
         >
-          <TbX aria-hidden="true" />
+          <TbCheck aria-hidden="true" />
         </button>
       ) : null}
     </article>

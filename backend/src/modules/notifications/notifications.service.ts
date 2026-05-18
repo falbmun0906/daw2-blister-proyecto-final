@@ -28,7 +28,10 @@ import {
   type NotificationSeverity,
   type NotificationType,
 } from '../../types/notification.types';
-import { type AppointmentDocument } from '../../types/appointment.types';
+import {
+  type AppointmentCommentDocument,
+  type AppointmentDocument,
+} from '../../types/appointment.types';
 import { type TreatmentMedicineEntry } from '../../types/treatment.types';
 import { type UserSettings } from '../../types/user.types';
 import { AppError } from '../../utils/app-error';
@@ -71,6 +74,10 @@ interface DomainNotificationInput {
   title: string;
   message: string;
   metadata?: NotificationMetadata | null;
+}
+
+interface LeanNotificationAuthor {
+  name?: string;
 }
 
 const STOCK_ALERT_ROLES: BlisterRole[] = ['OWNER', 'CAREGIVER'];
@@ -281,6 +288,31 @@ const buildAppointmentReminderNotification = ({
     reminderAt: targetAt.toISOString(),
     reminderHours,
     reminderKey: buildAppointmentReminderKey(appointment, userId, phase, targetAt),
+  },
+});
+
+const buildAppointmentCommentNotification = ({
+  userId,
+  appointment,
+  comment,
+  authorName,
+}: {
+  userId: Types.ObjectId;
+  appointment: AppointmentDocument;
+  comment: AppointmentCommentDocument;
+  authorName: string;
+}): DomainNotificationInput => ({
+  userId,
+  blisterId: appointment.blisterId,
+  type: 'appointment_comment',
+  severity: 'info',
+  title: 'Nuevo comentario en cita',
+  message: `${authorName} ha comentado en ${appointment.title}.`,
+  metadata: {
+    appointmentId: appointment._id.toString(),
+    commentId: comment._id.toString(),
+    authorUserId: comment.userId.toString(),
+    appointmentDate: appointment.date.toISOString(),
   },
 });
 
@@ -510,6 +542,32 @@ export const notifyAdherenceForced = async (
   await createNotifications(
     recipientIds.map((userId) =>
       buildForcedAdherenceNotification(userId, adherenceLog, medicine),
+    ),
+  );
+};
+
+/**
+ * Creates appointment comment notifications for every member of the blister.
+ */
+export const notifyAppointmentComment = async (
+  appointment: AppointmentDocument,
+  blister: BlisterDocument,
+  comment: AppointmentCommentDocument,
+): Promise<void> => {
+  const recipientIds = getAllRecipientIds(blister);
+  const author = await UserModel.findById(comment.userId)
+    .select('name')
+    .lean<LeanNotificationAuthor | null>();
+  const authorName = author?.name?.trim() || 'Un miembro del blíster';
+
+  await createNotifications(
+    recipientIds.map((userId) =>
+      buildAppointmentCommentNotification({
+        userId,
+        appointment,
+        comment,
+        authorName,
+      }),
     ),
   );
 };

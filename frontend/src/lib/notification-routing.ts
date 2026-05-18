@@ -24,7 +24,7 @@ export const getNotificationTargetRoute = (notification: NotificationView): stri
     return ROUTES.blisterLogs(blisterId);
   }
 
-  if (notification.type === 'appointment_reminder' && blisterId) {
+  if ((notification.type === 'appointment_reminder' || notification.type === 'appointment_comment') && blisterId) {
     return ROUTES.blisterAppointments(blisterId);
   }
 
