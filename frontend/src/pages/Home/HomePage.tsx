@@ -669,10 +669,8 @@ export default function HomePage() {
                     <TbAlertTriangle className="c-icon c-icon--sm" aria-hidden="true" />
                   </span>
                   <div className="c-home-alert__header-copy">
-                    <span className="c-home-alert__title">
-                      {alert.title}
-                      <span className="c-home-alert__context"> · {alert.context}</span>
-                    </span>
+                    <span className="c-home-alert__title">{alert.title}</span>
+                    <span className="c-home-alert__context">{alert.context}</span>
                   </div>
                   <div className="c-action-menu c-home-alert__menu">
                     <ActionMenuButton

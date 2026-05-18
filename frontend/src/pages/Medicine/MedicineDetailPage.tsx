@@ -110,7 +110,7 @@ function MedicineDetailPage() {
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';
   const { medicine, cima, error, isLoading } = state;
   const medicineImage = cima?.fotos.find((foto) => foto.url)?.url ?? null;
-  const medicineAlerts = medicine ? getMedicineAlerts(medicine) : [];
+  const medicineAlerts = medicine ? getMedicineAlerts(medicine, cima) : [];
   const medicineTreatmentUsage = useMemo<MedicineTreatmentUsage[]>(() => {
     if (!medicine) return [];
 

@@ -2,7 +2,7 @@ import {
   MEDICINE_EXPIRY_WARNING_DAYS,
   MS_PER_DAY,
 } from '../constants/medicine.constants';
-import type { Medicine } from '../types/medicine.types';
+import type { ExternalMedicineInfo, Medicine } from '../types/medicine.types';
 
 export type MedicineAlertKind =
   | 'stock-empty'
@@ -26,9 +26,16 @@ function getDaysUntilExpiry(expDate: string): number | null {
 }
 
 /** Devuelve las alertas vigentes combinando stock, caducidad y estado CIMA. */
-export function getMedicineAlerts(medicine: Medicine): MedicineAlertItem[] {
+export function getMedicineAlerts(
+  medicine: Medicine,
+  cima?: ExternalMedicineInfo | null,
+): MedicineAlertItem[] {
   const alerts: MedicineAlertItem[] = [];
   const daysUntilExpiry = getDaysUntilExpiry(medicine.expDate);
+  const hasOfficialDocuments = Boolean(cima?.docs.some((doc) => doc.url));
+  const officialDetail = hasOfficialDocuments
+    ? 'El detalle está disponible en los documentos oficiales de la ficha CIMA.'
+    : 'CIMA indica la existencia de la alerta, pero no devuelve el texto concreto en esta vista.';
 
   if (medicine.stock <= 0) {
     alerts.push({ kind: 'stock-empty', label: 'Sin stock' });
@@ -62,11 +69,11 @@ export function getMedicineAlerts(medicine: Medicine): MedicineAlertItem[] {
   }
 
   if (medicine.cimaStatus.notas) {
-    alerts.push({ kind: 'cima', label: 'Nota de seguridad CIMA', detail: 'Hay notas de seguridad oficiales asociadas al medicamento.' });
+    alerts.push({ kind: 'cima', label: 'Nota de seguridad CIMA', detail: officialDetail });
   }
 
   if (medicine.cimaStatus.materialesInf) {
-    alerts.push({ kind: 'cima', label: 'Material informativo CIMA', detail: 'Hay materiales informativos oficiales asociados al medicamento.' });
+    alerts.push({ kind: 'cima', label: 'Material informativo CIMA', detail: officialDetail });
   }
 
   if (
@@ -75,7 +82,7 @@ export function getMedicineAlerts(medicine: Medicine): MedicineAlertItem[] {
     && !medicine.cimaStatus.notas
     && !medicine.cimaStatus.materialesInf
   ) {
-    alerts.push({ kind: 'cima', label: 'Alerta CIMA', detail: 'CIMA informa de una alerta oficial vigente.' });
+    alerts.push({ kind: 'cima', label: 'Alerta CIMA', detail: officialDetail });
   }
 
   return alerts;
