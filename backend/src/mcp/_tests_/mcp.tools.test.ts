@@ -329,6 +329,23 @@ describe('MCP tools', () => {
     await expect(AppointmentModel.countDocuments({ blisterId: bosque._id })).resolves.toBe(1);
   });
 
+  it('creates MCP appointments from local civil time when a timezone is provided', async () => {
+    const { context, currentUser, bosque } = await createFixture();
+    const input = appointmentCreateInputSchema.parse({
+      blisterName: 'El Bosque',
+      patientUserId: currentUser._id.toString(),
+      title: 'Consulta en horario local',
+      date: '2031-07-10T18:00:00',
+      timeZone: 'Europe/Madrid',
+    });
+
+    const result = await appointmentCreateTool.run(context, input);
+
+    expect(result.appointment.date.toISOString()).toBe('2031-07-10T16:00:00.000Z');
+    await expect(AppointmentModel.findOne({ blisterId: bosque._id, title: 'Consulta en horario local' }))
+      .resolves.toMatchObject({ date: new Date('2031-07-10T16:00:00.000Z') });
+  });
+
   it('returns schedule assistant doses using the treatment timezone', async () => {
     const { context, currentUser, bosque, naproxeno } = await createFixture();
     await TreatmentModel.create({

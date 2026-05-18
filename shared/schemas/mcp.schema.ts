@@ -7,18 +7,21 @@ import {
   objectIdSchema,
   positiveIntegerSchema,
   positiveQuantitySchema,
+  timeZoneSchema,
 } from './common.schema';
 import { stockUnits } from './schema.constants';
 
-const mcpInputDateSchema = (fieldName: string) =>
+const mcpInputDateStringSchema = (fieldName: string) =>
   z
     .string()
     .trim()
     .min(1, `El campo ${fieldName} es obligatorio.`)
     .refine((value) => !Number.isNaN(Date.parse(value)), {
       message: `El campo ${fieldName} debe ser una fecha ISO válida.`,
-    })
-    .transform((value) => new Date(value));
+    });
+
+const mcpInputDateSchema = (fieldName: string) =>
+  mcpInputDateStringSchema(fieldName).transform((value) => new Date(value));
 
 const optionalSearchTextSchema = (fieldName: string, maxLength = 120) =>
   nonEmptyTrimmedString(fieldName, maxLength).optional();
@@ -185,7 +188,8 @@ export const appointmentCreateInputSchema = z.object({
   title: nonEmptyTrimmedString('Appointment title', 200),
   location: z.string().trim().max(200, 'El lugar no puede superar los 200 caracteres.').nullable().optional(),
   description: z.string().trim().max(600, 'La descripción no puede superar los 600 caracteres.').nullable().optional(),
-  date: mcpInputDateSchema('date'),
+  date: mcpInputDateStringSchema('date'),
+  timeZone: timeZoneSchema.optional(),
   treatmentId: objectIdSchema.nullable().optional(),
 }).superRefine(validateRequiredBlisterLocator);
 
