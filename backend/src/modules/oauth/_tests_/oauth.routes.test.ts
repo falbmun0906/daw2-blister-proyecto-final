@@ -207,6 +207,9 @@ describe('oauth.routes', () => {
     expect(response.text).toContain('Autorizar asistente');
     expect(response.text).toContain('claude-desktop');
     expect(response.text).toContain('code_challenge');
+    expect(response.text).toContain('c-btn__spinner');
+    expect(response.text).toContain('aria-busy');
+    expect(response.text).toContain('requestAnimationFrame');
   });
 
   it('exchanges an authorization code with PKCE for an MCP OAuth access token', async () => {

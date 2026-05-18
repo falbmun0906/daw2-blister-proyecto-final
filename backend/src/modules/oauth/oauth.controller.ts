@@ -228,7 +228,11 @@ const renderAuthorizePage = (
         animation: c-oauth-spin 700ms linear infinite;
       }
 
-      .c-btn.is-loading .c-btn__spinner { display: inline-flex; }
+      .c-btn:active .c-btn__spinner,
+      .c-btn.is-loading .c-btn__spinner,
+      .c-btn[aria-busy="true"] .c-btn__spinner {
+        display: inline-flex;
+      }
 
       @keyframes c-oauth-spin {
         to { transform: rotate(360deg); }
@@ -265,8 +269,8 @@ const renderAuthorizePage = (
           <input class="c-checkbox__input" name="consent" type="checkbox" required />
           <span>Permitir que Claude Desktop use el endpoint MCP de Blister con mi cuenta.</span>
         </label>
-        <button class="c-btn c-btn--primary" type="submit">
-          <span>Autorizar conexión</span>
+        <button class="c-btn c-btn--primary" type="submit" autocomplete="off">
+          <span class="c-btn__label">Autorizar conexión</span>
           <span class="c-btn__spinner" aria-hidden="true"></span>
         </button>
         </form>
@@ -274,11 +278,20 @@ const renderAuthorizePage = (
     </main>
     <script>
       const form = document.querySelector('.c-oauth-authorize__form');
-      form?.addEventListener('submit', () => {
-        const button = form.querySelector('.c-btn');
+      const button = form?.querySelector('.c-btn');
+
+      const showLoading = () => {
         button?.classList.add('is-loading');
         button?.setAttribute('aria-busy', 'true');
-        button?.setAttribute('disabled', '');
+      };
+
+      button?.addEventListener('click', () => {
+        if (form?.checkValidity()) showLoading();
+      });
+
+      form?.addEventListener('submit', () => {
+        showLoading();
+        window.requestAnimationFrame(() => button?.setAttribute('disabled', ''));
       });
     </script>
   </body>
