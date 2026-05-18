@@ -97,6 +97,14 @@ interface AppointmentDayGroup {
   appointments: Appointment[];
 }
 
+interface CalendarDoseRow {
+  dose: UpcomingDose;
+  doseKey: string;
+  time: Date;
+  createdAt: number | null;
+  canUndoDose: boolean;
+}
+
 interface DoseUndoButtonProps {
   logId: string;
   createdAt: number;
@@ -154,6 +162,7 @@ const groupAppointmentsByDay = (appointments: Appointment[]): AppointmentDayGrou
 interface MonthCalendarProps {
   cursor: Date;
   selected: Date | null;
+  today: Date;
   doseDays: Set<string>;
   appointmentDays: Set<string>;
   onSelect: (date: Date) => void;
@@ -164,13 +173,13 @@ interface MonthCalendarProps {
 function MonthCalendar({
   cursor,
   selected,
+  today,
   doseDays,
   appointmentDays,
   onSelect,
   onPrevMonth,
   onNextMonth,
 }: MonthCalendarProps) {
-  const today = new Date();
   const firstOfMonth = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const firstWeekDay = (firstOfMonth.getDay() + 6) % 7;
   const daysInMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate();
@@ -295,6 +304,7 @@ function CalendarPage() {
 
   const [view, setView] = useState<CalendarView>('appointments');
   const [cursor, setCursor] = useState(() => new Date());
+  const [today] = useState(() => startOfToday());
   const [selected, setSelected] = useState<Date | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Appointment | null>(null);
   const [confirmDeleteComment, setConfirmDeleteComment] = useState<PendingCommentDelete | null>(null);
@@ -424,10 +434,10 @@ function CalendarPage() {
     return {
       upcomingAppointments: appointments
         .filter((appointment) => new Date(appointment.date).getTime() >= now.getTime())
-        .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime()),
+        .toSorted((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime()),
       pastAppointments: appointments
         .filter((appointment) => new Date(appointment.date).getTime() < now.getTime())
-        .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime()),
+        .toSorted((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime()),
     };
   }, [appointments]);
 
@@ -452,9 +462,46 @@ function CalendarPage() {
   );
 
   const doseWindowDays = useMemo(
-    () => buildWindowDays(startOfToday(), doseVisibleDays),
-    [doseVisibleDays],
+    () => buildWindowDays(today, doseVisibleDays),
+    [doseVisibleDays, today],
   );
+  const doseRowsByDay = useMemo(() => {
+    const groups = new Map<string, CalendarDoseRow[]>();
+
+    for (const dose of calendarDoses) {
+      const time = new Date(dose.doseAt);
+      const key = dayKey(time);
+      const createdAt = dose.adherenceCreatedAt ? Date.parse(dose.adherenceCreatedAt) : null;
+      const canUndoDose = Boolean(
+        dose.adherenceLogId
+          && createdAt
+          && Number.isFinite(createdAt)
+          && undoNow - createdAt < ADHERENCE_UNDO_WINDOW_MS
+          && !expiredUndoIds.has(dose.adherenceLogId),
+      );
+      const rows = groups.get(key) ?? [];
+      rows.push({
+        dose,
+        doseKey: getDoseKey(dose),
+        time,
+        createdAt,
+        canUndoDose,
+      });
+      groups.set(key, rows);
+    }
+
+    for (const rows of groups.values()) {
+      rows.sort((left, right) => left.time.getTime() - right.time.getTime());
+    }
+
+    return groups;
+  }, [calendarDoses, expiredUndoIds, undoNow]);
+  const goToPreviousMonth = useCallback((): void => {
+    setCursor((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+  }, []);
+  const goToNextMonth = useCallback((): void => {
+    setCursor((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
+  }, []);
 
   const expireUndo = useCallback((logId: string): void => {
     setExpiredUndoIds((current) => new Set(current).add(logId));
@@ -642,6 +689,7 @@ function CalendarPage() {
           <MonthCalendar
             cursor={cursor}
             selected={selected}
+            today={today}
             doseDays={doseDays}
             appointmentDays={appointmentDays}
             onSelect={(date) => {
@@ -650,8 +698,8 @@ function CalendarPage() {
               setUpcomingVisibleCount(CALENDAR_INITIAL_VISIBLE_ITEMS);
               setCursor(date);
             }}
-            onPrevMonth={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-            onNextMonth={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
+            onPrevMonth={goToPreviousMonth}
+            onNextMonth={goToNextMonth}
           />
 
           {error ? (
@@ -765,9 +813,7 @@ function CalendarPage() {
           ) : (
             <div className="c-calendar-page__groups">
               {doseWindowDays.map((day) => {
-                const items = calendarDoses
-                  .filter((dose) => isSameDay(new Date(dose.doseAt), day))
-                  .sort((left, right) => new Date(left.doseAt).getTime() - new Date(right.doseAt).getTime());
+                const items = doseRowsByDay.get(dayKey(day)) ?? [];
 
                 if (items.length === 0) {
                   return null;
@@ -779,19 +825,8 @@ function CalendarPage() {
                       {formatDayLabel(day)}
                     </h4>
                     <ul className="c-calendar-page__doses">
-                      {items.map((dose) => {
-                        const time = new Date(dose.doseAt);
-                        const doseKey = getDoseKey(dose);
+                      {items.map(({ dose, doseKey, time, createdAt, canUndoDose }) => {
                         const logged = dose.isTaken || dose.isSkipped;
-                        const createdAt = dose.adherenceCreatedAt ? Date.parse(dose.adherenceCreatedAt) : null;
-                        const canUndoDose = Boolean(
-                          dose.adherenceLogId &&
-                          createdAt &&
-                          Number.isFinite(createdAt) &&
-                          undoNow - createdAt < ADHERENCE_UNDO_WINDOW_MS &&
-                          !expiredUndoIds.has(dose.adherenceLogId),
-                        );
-
                         return (
                           <li key={doseKey} className={`c-dose-row${dose.isTaken ? ' c-dose-row--taken' : ''}${dose.isSkipped ? ' c-dose-row--skipped' : ''}`}>
                             <time className="c-dose-row__time" dateTime={time.toISOString()}>

@@ -21,6 +21,10 @@ interface BlisterPillSelectorProps {
   resolveRole?: (blister: Blister, userId: string) => BlisterRole | null;
 }
 
+type BlisterPillSlot =
+  | { kind: 'blister'; key: string; blister: Blister }
+  | { kind: 'placeholder'; key: string };
+
 /**
  * Selector horizontal de blísters con animación de fondo deslizante.
  *
@@ -42,8 +46,14 @@ export function BlisterPillSelector({
   const listRef = useRef<HTMLUListElement>(null);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
   const placeholderCount = onCreate ? Math.max(0, 3 - blisters.length) : 0;
-  const slots = useMemo(
-    () => [...blisters, ...Array.from({ length: placeholderCount }, () => null)],
+  const slots = useMemo<BlisterPillSlot[]>(
+    () => [
+      ...blisters.map((blister) => ({ kind: 'blister' as const, key: blister._id, blister })),
+      ...Array.from({ length: placeholderCount }, (_unused, placeholderIndex) => ({
+        kind: 'placeholder' as const,
+        key: `placeholder-${blisters.length + placeholderIndex + 1}`,
+      })),
+    ],
     [blisters, placeholderCount],
   );
 
@@ -52,7 +62,7 @@ export function BlisterPillSelector({
     const animationFrameId = window.requestAnimationFrame(() => {
       const list = listRef.current;
       if (!list) return;
-      const activeIdx = slots.findIndex((b) => b?._id === activeBlisterId);
+      const activeIdx = slots.findIndex((slot) => slot.kind === 'blister' && slot.blister._id === activeBlisterId);
       if (activeIdx < 0) {
         setIndicator(null);
         return;
@@ -84,10 +94,10 @@ export function BlisterPillSelector({
           />
         ) : null}
 
-        {slots.map((blister, index) => {
-          if (!blister) {
+        {slots.map((slot) => {
+          if (slot.kind === 'placeholder') {
             return (
-              <li key={`placeholder-${index}`} className="c-blister-pill-selector__item c-blister-pill-selector__item--placeholder">
+              <li key={slot.key} className="c-blister-pill-selector__item c-blister-pill-selector__item--placeholder">
                 <button
                   type="button"
                   className="c-blister-pill-selector__placeholder"
@@ -101,6 +111,7 @@ export function BlisterPillSelector({
             );
           }
 
+          const { blister } = slot;
           const isActive = blister._id === activeBlisterId;
           const visibleMembers = blister.members.slice(0, 2);
           const hasExtra = blister.members.length >= 3;

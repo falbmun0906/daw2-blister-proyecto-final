@@ -46,6 +46,18 @@ export function Modal({
 
   if (!open || !portalTarget) return null;
 
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget || disableBackdropClose) return;
+    onClose();
+  };
+
+  const handleBackdropKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget || disableBackdropClose) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onClose();
+  };
+
   return createPortal(
     <div
       className="c-modal"
@@ -53,11 +65,10 @@ export function Modal({
       aria-modal="true"
       aria-label={!title && ariaLabel ? ariaLabel : undefined}
       aria-labelledby={title ? 'c-modal-title' : undefined}
-      onClick={() => {
-        if (!disableBackdropClose) onClose();
-      }}
+      onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
     >
-      <div className="c-modal__panel" onClick={(event) => event.stopPropagation()}>
+      <div className="c-modal__panel">
         {!hideHeader ? (
           <header className="c-modal__header">
             {title ? (

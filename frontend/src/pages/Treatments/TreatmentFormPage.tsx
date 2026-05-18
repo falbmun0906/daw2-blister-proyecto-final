@@ -102,8 +102,10 @@ const createTreatmentMedicine = (firstDoseTime = '08:00'): FormValues['medicines
 
 function normalizeDailyDoseTimes(entry: FormValues['medicines'][number]): string[] {
   return entry.dailyDoseTimes
-    .map((item) => item.time.trim())
-    .filter(Boolean)
+    .flatMap((item) => {
+      const time = item.time.trim();
+      return time ? [time] : [];
+    })
     .sort((left, right) => left.localeCompare(right));
 }
 

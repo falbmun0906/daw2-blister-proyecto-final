@@ -20,12 +20,14 @@ interface TreatmentRowProps {
 
 const MS_PER_DAY = 86_400_000;
 
+const treatmentDateFormatter = new Intl.DateTimeFormat('es-ES', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+});
+
 function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(iso));
+  return treatmentDateFormatter.format(new Date(iso));
 }
 
 function getProgress(treatment: Treatment): { percent: number; label: string; range: string } {

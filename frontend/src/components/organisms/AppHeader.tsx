@@ -13,7 +13,7 @@ export function AppHeader() {
   const openNotifications = useUiStore((state) => state.openNotificationsSheet);
 
   return (
-    <header className="c-app-header" role="banner">
+    <header className="c-app-header">
       <h1 className="c-app-header__title">Blíster</h1>
 
       <div className="c-app-header__right">

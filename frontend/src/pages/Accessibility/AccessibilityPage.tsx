@@ -60,7 +60,7 @@ function AccessibilityPage() {
 
   const handleChange = (patch: Partial<UserSettings>): void => {
     const next = { ...draft, ...patch };
-    setDraft(next);
+    setDraft((current) => (current ? { ...current, ...patch } : current));
     void persist({ theme: next.theme, font: next.font, fontSize: next.fontSize });
   };
 
@@ -70,7 +70,7 @@ function AccessibilityPage() {
 
   const confirmReset = async (): Promise<void> => {
     setIsResetModalOpen(false);
-    setDraft({ ...draft, ...DEFAULT_SETTINGS });
+    setDraft((current) => (current ? { ...current, ...DEFAULT_SETTINGS } : current));
     const saved = await persist(DEFAULT_SETTINGS);
     if (saved) {
       addToast({ message: 'Ajustes restablecidos.', variant: 'info' });

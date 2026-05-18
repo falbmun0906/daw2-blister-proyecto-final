@@ -6,7 +6,7 @@ import {
 import {
   pushSubscriptionSchema,
   type PushSubscriptionInput,
-} from '../../../shared/schemas';
+} from '../../../shared/schemas/notification.schema';
 
 export interface ServerPushSyncResult {
   enabled: boolean;

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { TbPencil } from 'react-icons/tb';
@@ -41,7 +41,7 @@ function PersonalInfoPage() {
   const addToast = useUiStore((s) => s.addToast);
   const navigate = useNavigate();
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-  const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+  const pendingRouteRef = useRef<string | null>(null);
   const editableEmail = user?.pendingEmail ?? user?.email ?? '';
 
   const {
@@ -64,7 +64,7 @@ function PersonalInfoPage() {
 
   const requestLeave = useCallback((route: string = ROUTES.editProfile): void => {
     if (isDirty) {
-      setPendingRoute(route);
+      pendingRouteRef.current = route;
       setShowUnsavedModal(true);
       return;
     }
@@ -200,7 +200,7 @@ function PersonalInfoPage() {
             <Button
               type="button"
               variant="danger"
-              onClick={() => leavePage(pendingRoute ?? ROUTES.editProfile)}
+              onClick={() => leavePage(pendingRouteRef.current ?? ROUTES.editProfile)}
             >
               Salir sin guardar
             </Button>

@@ -27,7 +27,7 @@ function TreatmentsPage() {
   const { appointments } = useAppointments(blisterId);
 
   const visible = useMemo(
-    () => [...treatments].sort((left, right) => Number(right.active) - Number(left.active)),
+    () => treatments.toSorted((left, right) => Number(right.active) - Number(left.active)),
     [treatments],
   );
   const currentBlister = useMemo(

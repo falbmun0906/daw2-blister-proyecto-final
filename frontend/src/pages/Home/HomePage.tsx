@@ -84,6 +84,11 @@ const timeFormatter = new Intl.DateTimeFormat('es-ES', {
   minute: '2-digit',
 });
 
+const todayFormatter = new Intl.DateTimeFormat('es-ES', {
+  day: 'numeric',
+  month: 'long',
+});
+
 function HomeSkeleton() {
   return (
     <div className="c-home__skeleton" aria-busy="true">
@@ -96,8 +101,7 @@ function HomeSkeleton() {
 }
 
 function formatTodayLabel(): string {
-  const formatter = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' });
-  return formatter.format(new Date());
+  return todayFormatter.format(new Date());
 }
 
 function getStartOfToday(): Date {
@@ -277,29 +281,33 @@ export default function HomePage() {
   const canSearchBlisterMutate = searchRole === 'OWNER' || searchRole === 'CAREGIVER';
 
   const alertItems = useMemo<HomeAlertItem[]>(() => {
-    const notificationAlerts = notifications
-      .filter((notification) => HOME_ALERT_NOTIFICATION_TYPES.has(notification.type))
-      .map<HomeAlertItem>((notification) => ({
-        key: `notification:${notification.id}`,
-        title: notification.title,
-        detail: getStringMetadata(notification, 'medicineName')
-          ? `${getStringMetadata(notification, 'medicineName')} · ${notification.message}`
-          : notification.message,
-        context: getNotificationContext(notification),
-        actionLabel: getNotificationActionLabel(notification),
-        actionRoute: getNotificationTargetRoute(notification) ?? ROUTES.notifications,
-        notification,
-      }));
-    const stockAlerts = homeMedicines
-      .filter((medicine) => medicine.stock <= medicine.threshold)
-      .map<HomeAlertItem>((medicine) => ({
-        key: `stock:${medicine._id}:${medicine.stock}:${medicine.threshold}`,
-        title: 'Stock bajo',
-        detail: `Quedan ${medicine.stock} ${medicine.stockUnit} de ${medicine.alias?.trim() || medicine.nombre}`,
-        context: medicine.blisterName,
-        actionLabel: 'Añadir más unidades',
-        actionRoute: ROUTES.editMedicine(medicine.blisterId, medicine._id),
-      }));
+    const notificationAlerts = notifications.flatMap<HomeAlertItem>((notification) => (
+      HOME_ALERT_NOTIFICATION_TYPES.has(notification.type)
+        ? [{
+          key: `notification:${notification.id}`,
+          title: notification.title,
+          detail: getStringMetadata(notification, 'medicineName')
+            ? `${getStringMetadata(notification, 'medicineName')} · ${notification.message}`
+            : notification.message,
+          context: getNotificationContext(notification),
+          actionLabel: getNotificationActionLabel(notification),
+          actionRoute: getNotificationTargetRoute(notification) ?? ROUTES.notifications,
+          notification,
+        }]
+        : []
+    ));
+    const stockAlerts = homeMedicines.flatMap<HomeAlertItem>((medicine) => (
+      medicine.stock <= medicine.threshold
+        ? [{
+          key: `stock:${medicine._id}:${medicine.stock}:${medicine.threshold}`,
+          title: 'Stock bajo',
+          detail: `Quedan ${medicine.stock} ${medicine.stockUnit} de ${medicine.alias?.trim() || medicine.nombre}`,
+          context: medicine.blisterName,
+          actionLabel: 'Añadir más unidades',
+          actionRoute: ROUTES.editMedicine(medicine.blisterId, medicine._id),
+        }]
+        : []
+    ));
 
     return [...notificationAlerts, ...stockAlerts]
       .filter((item) => !dismissedAlertKeys.has(item.key));
@@ -351,8 +359,8 @@ export default function HomePage() {
   );
 
   const timelineItems = useMemo<HomeTimelineItem[]>(() => {
-    const sortedDoses = [...upcomingDoses]
-      .sort((left, right) => new Date(left.doseAt).getTime() - new Date(right.doseAt).getTime());
+    const sortedDoses = upcomingDoses
+      .toSorted((left, right) => new Date(left.doseAt).getTime() - new Date(right.doseAt).getTime());
     const now = timelineNow;
     const nextDoseKey = sortedDoses
       .find((dose) => !dose.isTaken && !dose.isSkipped && new Date(dose.doseAt).getTime() >= now);
@@ -638,6 +646,10 @@ export default function HomePage() {
     );
   }
 
+  const earlyDoseDisplayTime = earlyDose
+    ? earlyDose.displayTime ?? timeFormatter.format(new Date(earlyDose.doseAt))
+    : '';
+
   return (
     <section className="c-home" aria-label="Resumen de todos tus blísteres">
       {searchBlister ? (
@@ -853,7 +865,7 @@ export default function HomePage() {
         onClose={() => setEarlyDose(null)}
       >
         <p className="c-home__modal-text">
-          Esta toma está programada para las {earlyDose ? earlyDose.displayTime ?? timeFormatter.format(new Date(earlyDose.doseAt)) : ''}.
+          Esta toma está programada para las {earlyDoseDisplayTime}.
         </p>
         <div className="c-home__modal-actions">
           <Button type="button" variant="primary-outline" onClick={() => setEarlyDose(null)}>

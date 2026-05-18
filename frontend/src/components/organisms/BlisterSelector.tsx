@@ -47,15 +47,25 @@ export function BlisterSelector({ onClose }: BlisterSelectorProps) {
     navigate(ROUTES.blisters);
   };
 
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>): void => {
+    if (event.target === event.currentTarget) onClose();
+  };
+
+  const handleBackdropKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onClose();
+  };
+
   return (
     <div
       className="c-blister-selector"
       role="dialog"
       aria-modal="true"
       aria-label="Selecciona un blíster"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+      onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
     >
       <div className="c-blister-selector__sheet">
         <div className="c-blister-selector__header">

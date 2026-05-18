@@ -182,9 +182,9 @@ const PASSWORD_REQUIREMENTS = [
 ];
 
 const getMissingPasswordRequirements = (value: string): string[] =>
-  PASSWORD_REQUIREMENTS
-    .filter((requirement) => !requirement.test(value))
-    .map((requirement) => requirement.label.toLowerCase());
+  PASSWORD_REQUIREMENTS.flatMap((requirement) =>
+    requirement.test(value) ? [] : [requirement.label.toLowerCase()],
+  );
 
 const getPasswordRequirementMessage = (value: string): string => {
   const missing = getMissingPasswordRequirements(value);
@@ -211,14 +211,15 @@ const applyApiFieldErrors = (
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const routeLocation = useLocation();
+  const routeState = routeLocation.state;
   const addToast = useUiStore((state) => state.addToast);
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const defaultValues = useMemo(
-    () => ({ ...DEFAULT_REGISTER_VALUES, ...getRegisterDraft(location.state) }),
-    [location.state],
+    () => ({ ...DEFAULT_REGISTER_VALUES, ...getRegisterDraft(routeState) }),
+    [routeState],
   );
 
   const {

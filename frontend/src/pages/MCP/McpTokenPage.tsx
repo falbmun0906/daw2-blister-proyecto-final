@@ -23,6 +23,10 @@ const EMPTY_TOKEN_STATUS: McpTokenStatus = {
 
 const TOKEN_PLACEHOLDER = 'TU_TOKEN_AQUI';
 const MCP_TOKEN_STORAGE_KEY = 'blister:mcp-token';
+const mcpDateFormatter = new Intl.DateTimeFormat('es-ES', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
 
 interface StoredMcpToken {
   token: string;
@@ -84,10 +88,7 @@ const formatMcpDate = (value: string | null): string => {
     return 'No disponible';
   }
 
-  return new Intl.DateTimeFormat('es-ES', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
+  return mcpDateFormatter.format(new Date(value));
 };
 
 function McpTokenPage() {

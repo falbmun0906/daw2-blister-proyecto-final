@@ -11,8 +11,11 @@
   &__backdrop {
     position: absolute;
     inset: 0;
+    padding: 0;
+    border: 0;
     background-color: var(--color-backdrop-soft);
     opacity: 0;
+    cursor: pointer;
     transition: opacity var(--transition-base) ease;
   }
 

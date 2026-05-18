@@ -1,4 +1,4 @@
-import { createElement, useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   TbChevronDown,
   TbChevronUp,
@@ -272,7 +272,6 @@ function RenameBlisterModal({
             setValue(event.target.value);
             setError(null);
           }}
-          autoFocus
           aria-invalid={error ? true : undefined}
           aria-describedby={errorId}
           aria-errormessage={errorId}
@@ -420,7 +419,7 @@ function AddMemberModal({ open, blisterName, onClose, onCreateInvite }: AddMembe
           onClick={() => void handleShare()}
           disabled={inviteBusy}
         >
-          <span>Compartir con...</span>
+          <span>Compartir con…</span>
           <TbShare3 aria-hidden="true" />
         </button>
       </section>
@@ -586,7 +585,7 @@ function BlisterCard({
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [name, setName] = useState(blister.name);
   const [draftAvatarKey, setDraftAvatarKey] = useState<BlisterAvatarKey | null>(
-    toBlisterAvatarKey(blister.avatarKey),
+    () => toBlisterAvatarKey(blister.avatarKey),
   );
   const [showRenameModal, setShowRenameModal] = useState(false);
 
@@ -595,8 +594,9 @@ function BlisterCard({
   const [confirmDeleteBlister, setConfirmDeleteBlister] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [inviteBaselineCount, setInviteBaselineCount] = useState<number | null>(null);
-  const [inviteJoinedNotified, setInviteJoinedNotified] = useState(false);
+  const inviteBaselineCountRef = useRef<number | null>(null);
+  const inviteJoinedNotifiedRef = useRef(false);
+  const invitePollingIdRef = useRef<number | null>(null);
 
   const editing = editingBlisterId === blister._id;
   const canStartEditing = editingBlisterId === null || editing;
@@ -617,6 +617,31 @@ function BlisterCard({
       setLoadingMembers(false);
     }
   }, [addToast, blister._id]);
+
+  const stopInvitePolling = useCallback((): void => {
+    if (invitePollingIdRef.current === null) return;
+    window.clearInterval(invitePollingIdRef.current);
+    invitePollingIdRef.current = null;
+  }, []);
+
+  const startInvitePolling = useCallback((): void => {
+    stopInvitePolling();
+    invitePollingIdRef.current = window.setInterval(() => {
+      const baselineCount = inviteBaselineCountRef.current;
+      if (baselineCount === null || inviteJoinedNotifiedRef.current) return;
+
+      void listBlisterMembers(blister._id)
+        .then(async (list) => {
+          if (list.length <= baselineCount) return;
+          setMembers(list);
+          inviteJoinedNotifiedRef.current = true;
+          stopInvitePolling();
+          addToast({ message: 'Nuevo miembro añadido al blíster.', variant: 'success' });
+          await onChanged();
+        })
+        .catch(() => undefined);
+    }, 5000);
+  }, [addToast, blister._id, onChanged, stopInvitePolling]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -641,32 +666,14 @@ function BlisterCard({
     return () => window.clearTimeout(timeoutId);
   }, [blister.avatarKey, blister.name, editing]);
 
+  useEffect(() => stopInvitePolling, [stopInvitePolling]);
+
   useEffect(() => {
-    if (!showAddMember) {
-      const timeoutId = window.setTimeout(() => {
-        setInviteBaselineCount(null);
-        setInviteJoinedNotified(false);
-      }, 0);
-      return () => window.clearTimeout(timeoutId);
-    }
-    if (inviteBaselineCount === null || inviteJoinedNotified) return;
-
-    const interval = window.setInterval(() => {
-      void listBlisterMembers(blister._id)
-        .then(async (list) => {
-          if (list.length <= inviteBaselineCount) return;
-          setMembers(list);
-          setInviteJoinedNotified(true);
-          addToast({ message: 'Nuevo miembro añadido al blíster.', variant: 'success' });
-          await onChanged();
-        })
-        .catch(() => undefined);
-    }, 5000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [addToast, blister._id, inviteBaselineCount, inviteJoinedNotified, onChanged, showAddMember]);
+    if (showAddMember) return;
+    stopInvitePolling();
+    inviteBaselineCountRef.current = null;
+    inviteJoinedNotifiedRef.current = false;
+  }, [showAddMember, stopInvitePolling]);
 
   const owner = members.find((m) => m.role === 'OWNER');
   const ownerLabel = owner ? (owner.userId === userId ? 'Tú' : owner.fullName) : '—';
@@ -750,8 +757,9 @@ function BlisterCard({
 
   const handleCreateInvite = async (role: BlisterRole) => {
     const invite = await createInvite(blister._id, { role });
-    setInviteBaselineCount(members.length);
-    setInviteJoinedNotified(false);
+    inviteBaselineCountRef.current = members.length;
+    inviteJoinedNotifiedRef.current = false;
+    startInvitePolling();
     return invite.code;
   };
 

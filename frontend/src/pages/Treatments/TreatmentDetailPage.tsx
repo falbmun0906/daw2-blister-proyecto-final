@@ -196,6 +196,8 @@ interface ActiveUndo {
 }
 
 function AppointmentCard({ appointment, isPast }: { appointment: Appointment; isPast: boolean }) {
+  const appointmentDateLabel = dateTimeFormatter.format(new Date(appointment.date));
+
   return (
     <article className={`c-treatment-detail__appointment${isPast ? ' c-treatment-detail__appointment--past' : ''}`}>
       <span className="c-treatment-detail__appointment-icon" aria-hidden="true">
@@ -204,7 +206,7 @@ function AppointmentCard({ appointment, isPast }: { appointment: Appointment; is
       <div className="c-treatment-detail__appointment-body">
         <h3 className="c-treatment-detail__appointment-title">{appointment.title}</h3>
         <p className="c-treatment-detail__appointment-meta">
-          <TbCalendar aria-hidden="true" /> {dateTimeFormatter.format(new Date(appointment.date))}
+          <TbCalendar aria-hidden="true" /> {appointmentDateLabel}
         </p>
         <p className="c-treatment-detail__appointment-meta">
           <TbMapPin aria-hidden="true" /> {appointment.location?.trim() || 'Lugar pendiente'}

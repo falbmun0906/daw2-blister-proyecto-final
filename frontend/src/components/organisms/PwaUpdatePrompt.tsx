@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 import { TbRefresh, TbSparkles } from 'react-icons/tb';
 
@@ -21,6 +21,14 @@ type UpdateServiceWorker = ReturnType<typeof registerSW>;
 interface PublishedAppVersion {
   version?: string;
   commit?: string;
+}
+
+interface RegistrationUpdateChecksOptions {
+  registration: ServiceWorkerRegistration;
+  showUpdateAvailable: () => void;
+  notifyIfPublishedAppChanged: () => Promise<void>;
+  updateCheckInFlightRef: MutableRefObject<boolean>;
+  lastUpdateCheckAtRef: MutableRefObject<number>;
 }
 
 const canUseServiceWorker = (): boolean =>
@@ -50,6 +58,62 @@ const hasPublishedAppChanged = (publishedApp: PublishedAppVersion): boolean =>
     (publishedApp.version && publishedApp.version !== APP_VERSION)
       || (publishedApp.commit && publishedApp.commit !== APP_COMMIT),
   );
+
+const attachRegistrationUpdateChecks = ({
+  registration,
+  showUpdateAvailable,
+  notifyIfPublishedAppChanged,
+  updateCheckInFlightRef,
+  lastUpdateCheckAtRef,
+}: RegistrationUpdateChecksOptions): (() => void) => {
+  const checkForUpdate = async (force = false): Promise<void> => {
+    if (!navigator.onLine || updateCheckInFlightRef.current) return;
+
+    const now = Date.now();
+    if (!force && now - lastUpdateCheckAtRef.current < UPDATE_CHECK_MIN_GAP_MS) return;
+
+    updateCheckInFlightRef.current = true;
+    lastUpdateCheckAtRef.current = now;
+
+    try {
+      await registration.update();
+
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        showUpdateAvailable();
+      }
+
+      await notifyIfPublishedAppChanged();
+    } catch {
+      // Keep the installed app usable; the next lifecycle check will retry.
+    } finally {
+      updateCheckInFlightRef.current = false;
+    }
+  };
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') void checkForUpdate();
+  };
+  const handleFocus = () => {
+    void checkForUpdate();
+  };
+  const handleOnline = () => {
+    void checkForUpdate(true);
+  };
+  const intervalId = window.setInterval(() => {
+    void checkForUpdate();
+  }, UPDATE_CHECK_INTERVAL_MS);
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('focus', handleFocus);
+  window.addEventListener('online', handleOnline);
+  void checkForUpdate(true);
+
+  return () => {
+    window.clearInterval(intervalId);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('focus', handleFocus);
+    window.removeEventListener('online', handleOnline);
+  };
+};
 
 export function PwaUpdatePrompt() {
   const addToast = useUiStore((state) => state.addToast);
@@ -118,53 +182,13 @@ export function PwaUpdatePrompt() {
 
         if (!registration) return;
 
-        const checkForUpdate = async (force = false) => {
-          if (!navigator.onLine || updateCheckInFlightRef.current) return;
-
-          const now = Date.now();
-          if (!force && now - lastUpdateCheckAtRef.current < UPDATE_CHECK_MIN_GAP_MS) return;
-
-          updateCheckInFlightRef.current = true;
-          lastUpdateCheckAtRef.current = now;
-
-          try {
-            await registration.update();
-
-            if (registration.waiting && navigator.serviceWorker.controller) {
-              showUpdateAvailable();
-            }
-
-            await notifyIfPublishedAppChanged();
-          } catch {
-            // Keep the installed app usable; the next lifecycle check will retry.
-          } finally {
-            updateCheckInFlightRef.current = false;
-          }
-        };
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === 'visible') void checkForUpdate();
-        };
-        const handleFocus = () => {
-          void checkForUpdate();
-        };
-        const handleOnline = () => {
-          void checkForUpdate(true);
-        };
-        const intervalId = window.setInterval(() => {
-          void checkForUpdate();
-        }, UPDATE_CHECK_INTERVAL_MS);
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('focus', handleFocus);
-        window.addEventListener('online', handleOnline);
-        void checkForUpdate(true);
-
-        registrationCleanupRef.current = () => {
-          window.clearInterval(intervalId);
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-          window.removeEventListener('focus', handleFocus);
-          window.removeEventListener('online', handleOnline);
-        };
+        registrationCleanupRef.current = attachRegistrationUpdateChecks({
+          registration,
+          showUpdateAvailable,
+          notifyIfPublishedAppChanged,
+          updateCheckInFlightRef,
+          lastUpdateCheckAtRef,
+        });
       },
       onRegisterError() {
         addToast({

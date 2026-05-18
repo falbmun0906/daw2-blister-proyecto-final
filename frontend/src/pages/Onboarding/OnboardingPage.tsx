@@ -64,7 +64,7 @@ const SLIDES: OnboardingSlide[] = [
   },
 ];
 
-function renderTitle(slide: OnboardingSlide) {
+function OnboardingTitle({ slide }: { slide: OnboardingSlide }) {
   const { title, highlight, headingLevel = 'h2' } = slide;
 
   if (!highlight || !title.includes(highlight)) {
@@ -191,7 +191,7 @@ function OnboardingPage() {
                         </div>
 
                         <div className="c-onboarding-page__welcome-block c-onboarding-page__welcome-block--bottom">
-                            {renderTitle(slide)}
+                            <OnboardingTitle slide={slide} />
                             <p className="c-onboarding-page__description">{slide.description}</p>
                         </div>
                     </div>
@@ -207,7 +207,7 @@ function OnboardingPage() {
                         </div>
 
                         <div className="c-onboarding-page__content">
-                            {renderTitle(slide)}
+                            <OnboardingTitle slide={slide} />
                             <p className="c-onboarding-page__description">{slide.description}</p>
                         </div>
                     </>

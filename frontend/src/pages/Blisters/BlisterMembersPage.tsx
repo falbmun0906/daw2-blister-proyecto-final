@@ -94,13 +94,14 @@ export default function BlisterMembersPage() {
     const isSelf = memberId === userId;
     setBusyId(memberId);
     try {
-      await removeBlisterMember(blisterId, memberId);
       if (isSelf) {
+        await removeBlisterMember(blisterId, memberId);
         removeBlister(blisterId);
         addToast({ message: 'Has abandonado el blíster.', variant: 'success' });
         navigate(ROUTES.blisters);
         return;
       }
+      await removeBlisterMember(blisterId, memberId);
       setMembers((current) => current.filter((m) => m.userId !== memberId));
       addToast({ message: 'Miembro eliminado.', variant: 'success' });
     } catch (err) {
@@ -134,8 +135,10 @@ export default function BlisterMembersPage() {
         {members.map((member) => {
           const initials = member.fullName
             .split(' ')
-            .map((p) => p[0])
-            .filter(Boolean)
+            .flatMap((part) => {
+              const initial = part[0];
+              return initial ? [initial] : [];
+            })
             .slice(0, 2)
             .join('')
             .toUpperCase();

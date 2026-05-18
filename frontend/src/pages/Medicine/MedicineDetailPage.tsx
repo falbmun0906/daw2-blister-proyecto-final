@@ -114,18 +114,16 @@ function MedicineDetailPage() {
   const medicineTreatmentUsage = useMemo<MedicineTreatmentUsage[]>(() => {
     if (!medicine) return [];
 
-    return treatments
-      .map((treatment) => {
-        const entry = treatment.medicines.find((item) => item.medicineId === medicine._id);
-        if (!entry) return null;
-        return {
-          id: treatment.id,
-          title: treatment.title,
-          active: treatment.active,
-          entry,
-        } satisfies MedicineTreatmentUsage;
-      })
-      .filter((item): item is MedicineTreatmentUsage => item !== null);
+    return treatments.flatMap<MedicineTreatmentUsage>((treatment) => {
+      const entry = treatment.medicines.find((item) => item.medicineId === medicine._id);
+      if (!entry) return [];
+      return {
+        id: treatment.id,
+        title: treatment.title,
+        active: treatment.active,
+        entry,
+      } satisfies MedicineTreatmentUsage;
+    });
   }, [medicine, treatments]);
 
   useEffect(() => {

@@ -123,9 +123,12 @@ export default function NotificationSettingsPage() {
 
       <FormSection label="Citas médicas" icon={<TbCalendarTime aria-hidden="true" />}>
         <ToggleRow label="Avisarme antes de una cita" checked={settings.appointments} onChange={(value) => setFlag('appointments', value)} />
-        <label className="c-field">
-          <span className="c-field__label"><span className="c-field__label-text">Cuándo avisar</span></span>
+        <div className="c-field">
+          <label className="c-field__label" htmlFor="appointment-reminder-preset">
+            <span className="c-field__label-text">Cuándo avisar</span>
+          </label>
           <select
+            id="appointment-reminder-preset"
             className="c-field__select"
             value={settings.appointmentReminderPreset}
             onChange={(event) => setFlag('appointmentReminderPreset', event.target.value)}
@@ -136,11 +139,14 @@ export default function NotificationSettingsPage() {
             <option value="1d">1 día antes</option>
             <option value="custom">Personalizar</option>
           </select>
-        </label>
+        </div>
         {settings.appointmentReminderPreset === 'custom' ? (
-          <label className={['c-field', customHoursError && 'c-field--error'].filter(Boolean).join(' ')}>
-            <span className="c-field__label"><span className="c-field__label-text">Horas antes</span></span>
+          <div className={['c-field', customHoursError && 'c-field--error'].filter(Boolean).join(' ')}>
+            <label className="c-field__label" htmlFor="custom-reminder-hours">
+              <span className="c-field__label-text">Horas antes</span>
+            </label>
             <input
+              id="custom-reminder-hours"
               className="c-field__input"
               type="number"
               min={1}
@@ -160,7 +166,7 @@ export default function NotificationSettingsPage() {
                 {customHoursError}
               </span>
             ) : null}
-          </label>
+          </div>
         ) : null}
       </FormSection>
 

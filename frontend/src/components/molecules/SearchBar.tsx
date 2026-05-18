@@ -59,8 +59,17 @@ export function SearchBar({
   const inputId = useId();
   const [internal, setInternal] = useState(value);
   const [isListening, setIsListening] = useState(false);
+  const ownInputRef = useRef<HTMLInputElement | null>(null);
   const timerRef = useRef<number | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    const timeoutId = window.setTimeout(() => {
+      ownInputRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [autoFocus]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setInternal(value), 0);
@@ -121,6 +130,7 @@ export function SearchBar({
       <input
         id={inputId}
         ref={(node) => {
+          ownInputRef.current = node;
           if (inputRef) inputRef.current = node;
         }}
         className="c-search-bar__input"
@@ -129,7 +139,6 @@ export function SearchBar({
         onChange={(e) => setInternal(e.target.value)}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        autoFocus={autoFocus}
       />
       {internal ? (
         <button

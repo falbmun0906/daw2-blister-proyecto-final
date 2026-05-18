@@ -83,7 +83,7 @@ function LandingPage() {
                             Conoce el origen y la visión funcional del proyecto.
                         </p>
 
-                        <ul className="c-landing-page__panel-list" role="list">
+                        <ul className="c-landing-page__panel-list">
                             <li>
                                 <a
                                     className="c-landing-page__panel-link"
@@ -117,7 +117,7 @@ function LandingPage() {
                             Sigue la evolución del proyecto y su desarrollo técnico.
                         </p>
 
-                        <ul className="c-landing-page__panel-list" role="list">
+                        <ul className="c-landing-page__panel-list">
                             <li>
                                 <a
                                     className="c-landing-page__panel-link"

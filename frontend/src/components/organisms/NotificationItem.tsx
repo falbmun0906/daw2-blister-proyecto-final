@@ -76,7 +76,7 @@ export function NotificationItem({
     .filter(Boolean)
     .join(' ');
 
-  const handleClick = () => {
+  const markAndOpenNotification = () => {
     if (!notification.isRead) onMarkAsRead(notification.id);
     onOpen?.(notification);
   };
@@ -86,7 +86,7 @@ export function NotificationItem({
       <button
         type="button"
         className="c-notification-item__button"
-        onClick={handleClick}
+        onClick={markAndOpenNotification}
         aria-label={
           notification.isRead
             ? `Notificación: ${notification.title}`

@@ -52,13 +52,12 @@ function InventoryPage() {
   const visible = useMemo(() => filterMedicines(medicines, ''), [medicines]);
   const treatmentCountByMedicine = useMemo(() => {
     const counts = new Map<string, number>();
-    treatments
-      .filter((treatment) => treatment.active)
-      .forEach((treatment) => {
-        treatment.medicines.forEach((entry) => {
-          counts.set(entry.medicineId, (counts.get(entry.medicineId) ?? 0) + 1);
-        });
-      });
+    for (const treatment of treatments) {
+      if (!treatment.active) continue;
+      for (const entry of treatment.medicines) {
+        counts.set(entry.medicineId, (counts.get(entry.medicineId) ?? 0) + 1);
+      }
+    }
     return counts;
   }, [treatments]);
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';

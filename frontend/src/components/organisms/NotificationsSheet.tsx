@@ -93,19 +93,16 @@ export function NotificationsSheet() {
     ].filter((target): target is HTMLElement => target !== null);
     const previous = scrollTargets.map((target) => ({
       target,
-      overflow: target.style.overflow,
-      overscrollBehavior: target.style.overscrollBehavior,
+      cssText: target.style.cssText,
     }));
 
     for (const target of scrollTargets) {
-      target.style.overflow = 'hidden';
-      target.style.overscrollBehavior = 'contain';
+      target.style.cssText = `${target.style.cssText}; overflow: hidden; overscroll-behavior: contain;`;
     }
 
     return () => {
       for (const item of previous) {
-        item.target.style.overflow = item.overflow;
-        item.target.style.overscrollBehavior = item.overscrollBehavior;
+        item.target.style.cssText = item.cssText;
       }
     };
   }, [open]);
@@ -197,7 +194,12 @@ export function NotificationsSheet() {
         className={`c-notifications-sheet${open ? ' is-open' : ''}`}
         aria-hidden={!open}
       >
-        <div className="c-notifications-sheet__backdrop" onClick={close} />
+        <button
+          type="button"
+          className="c-notifications-sheet__backdrop"
+          aria-label="Cerrar notificaciones"
+          onClick={close}
+        />
         <div
           className={`c-notifications-sheet__panel${isDragging ? ' is-dragging' : ''}`}
           style={isDragging || dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}

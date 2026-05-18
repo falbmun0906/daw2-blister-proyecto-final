@@ -24,6 +24,12 @@ import type { ExternalMedicineInfo } from '../../types/medicine.types';
 const CIMA_DOC_TYPE_FICHA_TECNICA = 1;
 const CIMA_DOC_TYPE_PROSPECTO = 2;
 
+const authDateFormatter = new Intl.DateTimeFormat('es-ES', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
 type CimaDoc = ExternalMedicineInfo['docs'][number];
 type CimaPhoto = ExternalMedicineInfo['fotos'][number];
 type CimaExcipient = ExternalMedicineInfo['excipientes'][number];
@@ -34,11 +40,7 @@ function formatAuth(iso: string | null): string {
   if (!iso) return '—';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
+  return authDateFormatter.format(date);
 }
 
 function formatPrincipio(p: ExternalMedicineInfo['principiosActivos'][number]): string {
@@ -220,8 +222,8 @@ function CimaMedicineDetailPage() {
                   <dt>Excipientes</dt>
                   <dd>
                     <ul className="c-cima-detail__bullets">
-                      {info.excipientes.map((e: CimaExcipient, i: number) => (
-                        <li key={`${e.nombre}-${i}`}>{e.nombre}</li>
+                      {info.excipientes.map((e: CimaExcipient) => (
+                        <li key={e.nombre}>{e.nombre}</li>
                       ))}
                     </ul>
                   </dd>
@@ -249,8 +251,8 @@ function CimaMedicineDetailPage() {
                   <dt>Códigos ATC</dt>
                   <dd>
                     <ul className="c-cima-detail__bullets">
-                      {info.atcs.map((a: CimaAtc, i: number) => (
-                        <li key={`${a.codigo ?? 'atc'}-${i}`}>
+                      {info.atcs.map((a: CimaAtc) => (
+                        <li key={`${a.codigo ?? 'atc'}-${a.nombre}`}>
                           {a.codigo ? <strong>{a.codigo}</strong> : null}
                           {a.codigo && a.nombre ? ' — ' : null}
                           {a.nombre}
@@ -300,9 +302,9 @@ function CimaMedicineDetailPage() {
                 Imágenes
               </h2>
               <div className="c-cima-detail__photos">
-                {fotos.map((f: CimaPhoto, i: number) => (
+                {fotos.map((f: CimaPhoto) => (
                   <a
-                    key={`${f.url}-${i}`}
+                    key={f.url}
                     href={f.url}
                     target="_blank"
                     rel="noreferrer"

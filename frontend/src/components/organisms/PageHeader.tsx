@@ -112,7 +112,7 @@ export function PageHeader() {
   };
 
   return (
-    <header className={`c-page-header${isMcpTokenPage ? ' c-page-header--mcp-token' : ''}`} role="banner">
+    <header className={`c-page-header${isMcpTokenPage ? ' c-page-header--mcp-token' : ''}`}>
       <div className="c-page-header__bar">
         <div className="c-page-header__side c-page-header__side--start">
           {isPrimarySection ? (
