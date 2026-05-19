@@ -53,15 +53,32 @@
     justify-content: space-between;
     gap: var(--space-3);
     min-height: 3.5rem;
+    width: 100%;
     padding: var(--space-3) 0;
     border-bottom: 0.0625rem solid var(--color-border-subtle);
+    border-top: 0;
+    border-right: 0;
+    border-left: 0;
+    background: transparent;
     color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
     text-decoration: none;
     transition: color var(--transition-fast);
 
     &:hover,
     &:focus-visible {
       color: var(--color-primary);
+    }
+
+    &--danger {
+      color: var(--color-danger);
+
+      &:hover,
+      &:focus-visible {
+        color: var(--color-danger);
+      }
     }
   }
 
@@ -75,36 +92,6 @@
   &__menu-chevron {
     color: var(--color-text-muted);
     flex-shrink: 0;
-  }
-
-  &__danger-zone {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: var(--space-4) 0 0;
-    border-top: 0.0625rem solid var(--color-border-subtle);
-  }
-
-  &__danger-copy {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  &__danger-title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: var(--leading-snug);
-    color: var(--color-danger);
-  }
-
-  &__danger-text {
-    margin: 0;
-    font-size: var(--text-sm);
-    line-height: var(--leading-relaxed);
-    color: var(--color-text-muted);
   }
 
   &__delete-icon {
@@ -127,6 +114,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    min-height: min(24rem, 58vh);
   }
 
   &__delete-warning {
@@ -140,21 +128,12 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+    margin-top: auto;
   }
 }
 
 @media (min-width: 48rem) {
   .c-edit-profile-page {
-    &__danger-zone {
-      flex-direction: row;
-      align-items: flex-start;
-      justify-content: space-between;
-    }
-
-    &__danger-copy {
-      max-width: 28rem;
-    }
-
     &__delete-actions {
       flex-direction: row;
       justify-content: flex-end;

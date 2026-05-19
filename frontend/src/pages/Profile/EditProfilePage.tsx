@@ -47,8 +47,8 @@ function EditProfilePage() {
   const handleDeleteAccount = async (): Promise<void> => {
     setDeleteError(null);
 
-    if (deleteConfirmation !== DELETE_ACCOUNT_CONFIRMATION_PHRASE) {
-      setDeleteError(`Escribe exactamente "${DELETE_ACCOUNT_CONFIRMATION_PHRASE}" para confirmar.`);
+      if (deleteConfirmation !== DELETE_ACCOUNT_CONFIRMATION_PHRASE) {
+        setDeleteError(`Escribe "${DELETE_ACCOUNT_CONFIRMATION_PHRASE}" para confirmar.`);
       return;
     }
 
@@ -93,21 +93,18 @@ function EditProfilePage() {
             />
           </Link>
         ))}
+        <button
+          type="button"
+          className="c-edit-profile-page__menu-item c-edit-profile-page__menu-item--danger"
+          onClick={() => setDeleteModalOpen(true)}
+        >
+          <span className="c-edit-profile-page__menu-label">Eliminar cuenta</span>
+          <TbChevronRight
+            className="c-icon c-icon--md c-edit-profile-page__menu-chevron"
+            aria-hidden="true"
+          />
+        </button>
       </nav>
-
-      <section className="c-edit-profile-page__danger-zone" aria-labelledby="delete-account-title">
-        <div className="c-edit-profile-page__danger-copy">
-          <h2 id="delete-account-title" className="c-edit-profile-page__danger-title">
-            Eliminar cuenta
-          </h2>
-          <p className="c-edit-profile-page__danger-text">
-            Se cerrarán tus sesiones, se revocarán tus tokens y abandonarás los blísteres compartidos. Los blísteres en los que seas la única persona quedarán marcados para eliminación y no hay vuelta atrás.
-          </p>
-        </div>
-        <Button type="button" variant="danger" onClick={() => setDeleteModalOpen(true)}>
-          Eliminar cuenta
-        </Button>
-      </section>
 
       <Modal
         open={deleteModalOpen}
@@ -123,7 +120,7 @@ function EditProfilePage() {
       >
         <div className="c-edit-profile-page__delete-modal">
           <p className="c-edit-profile-page__delete-warning">
-            Esta acción desactiva tu cuenta, borra tus accesos activos y retira tus datos personales de los espacios compartidos. No hay vuelta atrás.
+            Se cerrarán tus sesiones, se revocarán tus tokens y abandonarás los blísteres compartidos. Los blísteres en los que seas la única persona quedarán marcados para eliminación. No hay vuelta atrás.
           </p>
           <Input
             label="Confirmación"
@@ -131,7 +128,7 @@ function EditProfilePage() {
             onChange={(event) => setDeleteConfirmation(event.target.value)}
             disabled={isDeleting}
             autoComplete="off"
-            hint={`Escribe exactamente: ${DELETE_ACCOUNT_CONFIRMATION_PHRASE}`}
+            hint={`Escribe '${DELETE_ACCOUNT_CONFIRMATION_PHRASE}' para confirmar.`}
             error={deleteError ?? undefined}
           />
           <div className="c-edit-profile-page__delete-actions">
