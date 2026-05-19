@@ -657,7 +657,7 @@ function TreatmentDetailPage() {
 
       <ConfirmDialog
         open={confirmDeleteOpen}
-        message={`¿Eliminar el tratamiento "${treatment.title}"?`}
+        message={`¿Eliminar el tratamiento "${treatment.title}"? Se detendrán sus recordatorios, se desvinculará de las citas y el histórico de tomas se conservará.`}
         onCancel={() => setConfirmDeleteOpen(false)}
         onConfirm={handleDeleteTreatment}
         ariaLabel="Confirmar eliminación del tratamiento"

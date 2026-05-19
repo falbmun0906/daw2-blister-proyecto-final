@@ -959,13 +959,13 @@ function BlisterCard({
       />
       <ConfirmRemoveModal
         open={confirmRemove !== null}
-        message={`¿Seguro que quieres eliminar a ${confirmRemove?.fullName ?? ''} y todos sus tratamientos activos?`}
+        message={`¿Seguro que quieres expulsar a ${confirmRemove?.fullName ?? ''}? La acción se bloqueará si tiene tratamientos activos o citas futuras asignadas.`}
         onClose={() => setConfirmRemove(null)}
         onConfirm={() => handleRemoveMember(confirmRemove!.userId)}
       />
       <ConfirmRemoveModal
         open={confirmDeleteBlister}
-        message={`¿Seguro que quieres eliminar el blíster '${blister.name}'? Esta acción borrará todos los medicamentos y tratamientos activos y no es reversible.`}
+        message={`¿Seguro que quieres eliminar el blíster '${blister.name}'? Quedará desactivado durante 15 días y después se borrarán definitivamente medicamentos, tratamientos, citas, tomas y notificaciones.`}
         onClose={() => setConfirmDeleteBlister(false)}
         onConfirm={handleDeleteBlister}
       />

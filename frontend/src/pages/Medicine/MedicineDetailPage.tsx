@@ -391,7 +391,7 @@ function MedicineDetailPage() {
 
           <ConfirmDialog
             open={confirmDeleteOpen}
-            message="¿Eliminar este medicamento del botiquín?"
+            message="¿Eliminar este medicamento del botiquín? Se ocultará del inventario y se conservará el histórico. Si está en un tratamiento activo, primero tendrás que editar o finalizar esa pauta."
             onCancel={() => setConfirmDeleteOpen(false)}
             onConfirm={handleDelete}
             ariaLabel="Confirmar eliminación del medicamento"

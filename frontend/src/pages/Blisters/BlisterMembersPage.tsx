@@ -201,8 +201,8 @@ export default function BlisterMembersPage() {
         open={confirmRemoveMember !== null}
         message={
           confirmRemoveMember?.userId === userId
-            ? '¿Seguro que quieres abandonar este blíster?'
-            : `¿Expulsar a ${confirmRemoveMember?.fullName ?? 'este miembro'} del blíster?`
+            ? '¿Seguro que quieres abandonar este blíster? No podrás salir si tienes tratamientos activos o citas futuras asignadas.'
+            : `¿Expulsar a ${confirmRemoveMember?.fullName ?? 'este miembro'} del blíster? La acción se bloqueará si tiene tratamientos activos o citas futuras asignadas.`
         }
         onCancel={() => setConfirmRemoveMember(null)}
         onConfirm={async () => {

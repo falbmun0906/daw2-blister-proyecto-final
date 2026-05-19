@@ -943,7 +943,7 @@ function CalendarPage() {
       {confirmDelete ? (
         <ConfirmDialog
           open={confirmDelete !== null}
-          message={`¿Eliminar la cita "${confirmDelete.title}"?`}
+          message={`¿Eliminar la cita "${confirmDelete.title}"? Se borrarán también sus comentarios y no aparecerá en la agenda.`}
           onCancel={() => setConfirmDelete(null)}
           onConfirm={async () => {
             await handleDelete(confirmDelete);

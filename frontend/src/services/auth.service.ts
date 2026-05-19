@@ -2,6 +2,7 @@ import {
   authSessionSchema,
   authTokensSchema,
   confirmEmailSchema,
+  deleteAccountSchema,
   forgotPasswordSchema,
   loginSchema,
   logoutSchema,
@@ -11,6 +12,7 @@ import {
   updateProfileSchema,
   userSchema,
   type ConfirmEmailInput,
+  type DeleteAccountInput,
   type ForgotPasswordInput,
   type LoginInput,
   type LogoutInput,
@@ -94,4 +96,12 @@ export async function updateProfile(input: UpdateProfileInput): Promise<User> {
   const payload = updateProfileSchema.parse(input);
   const response = await apiClient.patch('/auth/profile', payload);
   return userSchema.parse(normalizeApiResponse(response));
+}
+
+/**
+ * Soft deletes the authenticated account after explicit confirmation.
+ */
+export async function deleteAccount(input: DeleteAccountInput): Promise<void> {
+  const payload = deleteAccountSchema.parse(input);
+  await apiClient.delete('/auth/account', { data: payload });
 }
