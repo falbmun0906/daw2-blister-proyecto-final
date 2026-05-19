@@ -493,17 +493,18 @@
 .c-confirm-modal {
   &__message {
     margin: 0;
-    text-align: center;
-    color: var(--color-text);
+    color: var(--color-text-muted);
   }
 
   &__actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--space-2);
-    justify-content: center;
   }
 
   &__actions--end {
+    display: flex;
+    gap: var(--space-2);
     justify-content: flex-end;
   }
 }

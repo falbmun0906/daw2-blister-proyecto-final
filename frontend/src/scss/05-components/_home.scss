@@ -138,12 +138,12 @@
   &__menu {
     position: relative;
     display: inline-flex;
-    align-self: flex-end;
+    align-self: flex-start;
     margin-left: auto;
   }
 
   &__menu-toggle {
-    align-self: flex-end;
+    align-self: flex-start;
   }
 
   &__menu-popover {

@@ -198,3 +198,54 @@ export const computeDosesInRange = (
 
   return occurrences;
 };
+
+const DEFAULT_TOLERANCE_MS = 6 * HOUR_IN_MS;
+const MIN_TOLERANCE_MS = 30 * 60 * 1000;
+const MAX_TOLERANCE_MS = 12 * HOUR_IN_MS;
+
+const parseHHmmToMinutes = (value: string): number | null => {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+};
+
+/**
+ * Devuelve la mitad del intervalo más corto de la pauta (acotado entre 30 minutos
+ * y 12 horas) para usar como ventana de tolerancia al casar logs con dosis
+ * programadas o al detectar duplicados.
+ */
+export const computeScheduleToleranceMs = (entry: DoseScheduleEntry): number => {
+  const scheduleType = entry.scheduleType ?? 'interval';
+  if (scheduleType === 'daily_times') {
+    const times = getSortedDailyTimes(entry)
+      .map((value) => parseHHmmToMinutes(value))
+      .filter((value): value is number => value !== null);
+    if (times.length < 2) {
+      return DEFAULT_TOLERANCE_MS;
+    }
+    let minGapMinutes = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < times.length; index += 1) {
+      const current = times[index];
+      const next = times[(index + 1) % times.length];
+      const rawGap = (next - current + 24 * 60) % (24 * 60);
+      if (rawGap > 0 && rawGap < minGapMinutes) {
+        minGapMinutes = rawGap;
+      }
+    }
+    if (!Number.isFinite(minGapMinutes)) {
+      return DEFAULT_TOLERANCE_MS;
+    }
+    const halfGapMs = (minGapMinutes / 2) * 60 * 1000;
+    return Math.min(MAX_TOLERANCE_MS, Math.max(MIN_TOLERANCE_MS, halfGapMs));
+  }
+
+  const frequencyHours = entry.frequencyHours ?? 0;
+  if (frequencyHours <= 0) {
+    return DEFAULT_TOLERANCE_MS;
+  }
+  const halfMs = (frequencyHours / 2) * HOUR_IN_MS;
+  return Math.min(MAX_TOLERANCE_MS, Math.max(MIN_TOLERANCE_MS, halfMs));
+};

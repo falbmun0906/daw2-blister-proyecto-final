@@ -283,6 +283,7 @@ const buildAppointmentReminderNotification = ({
     : `Tras la cita '${appointment.title}', revisa si hay algún cambio que anotar.`,
   metadata: {
     appointmentId: appointment._id.toString(),
+    appointmentTitle: appointment.title,
     treatmentId: appointment.treatmentId?.toString() ?? null,
     appointmentDate: appointment.date.toISOString(),
     reminderPhase: phase,
@@ -311,6 +312,7 @@ const buildAppointmentCommentNotification = ({
   message: `${authorName} ha comentado en ${appointment.title}.`,
   metadata: {
     appointmentId: appointment._id.toString(),
+    appointmentTitle: appointment.title,
     commentId: comment._id.toString(),
     authorUserId: comment.userId.toString(),
     appointmentDate: appointment.date.toISOString(),

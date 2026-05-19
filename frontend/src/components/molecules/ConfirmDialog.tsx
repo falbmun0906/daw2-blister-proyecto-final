@@ -8,6 +8,7 @@ interface ConfirmDialogProps {
   message: string;
   onCancel: () => void;
   onConfirm: () => Promise<void> | void;
+  title?: string;
   ariaLabel?: string;
   cancelLabel?: string;
   confirmLabel?: string;
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   message,
   onCancel,
   onConfirm,
+  title,
   ariaLabel = 'Confirmar acción',
   cancelLabel = 'Conservar',
   confirmLabel = 'Sí, eliminar',
@@ -27,7 +29,14 @@ export function ConfirmDialog({
   const [busy, setBusy] = useState(false);
 
   return (
-    <Modal open={open} onClose={onCancel} hideHeader ariaLabel={ariaLabel} disableBackdropClose={busy}>
+    <Modal
+      open={open}
+      onClose={onCancel}
+      title={title}
+      hideHeader={!title}
+      ariaLabel={ariaLabel}
+      disableBackdropClose={busy}
+    >
       <p className="c-confirm-modal__message">{message}</p>
       <div className="c-confirm-modal__actions">
         <Button type="button" variant="primary-outline" onClick={onCancel} disabled={busy}>

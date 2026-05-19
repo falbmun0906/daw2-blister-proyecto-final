@@ -78,7 +78,7 @@ export const adherenceLoggerTool: McpAdherenceLoggerTool = {
       treatmentId: log.treatmentId,
       medicineId: log.medicineId,
       status: log.status,
-      timestamp: (input.timestamp ?? log.timestamp).toISOString(),
+      timestamp: log.timestamp.toISOString(),
       isForced: log.isForced,
       stockAfter: medicine?.stock ?? 0,
       warning: log.isForced

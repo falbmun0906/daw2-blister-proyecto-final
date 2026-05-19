@@ -3,7 +3,9 @@ export const APP_COMMIT = typeof __APP_COMMIT__ === 'string' && __APP_COMMIT__ ?
 export const LAST_SEEN_APP_VERSION_KEY = 'blister-last-seen-version';
 
 export const APP_RELEASE_NOTES = [
-  'Los avisos de citas médicas muestran ahora el nombre de la cita con un texto más claro y el recordatorio previo desaparece automáticamente cuando la hora ya ha pasado.',
-  'Tras una cita, el aviso de seguimiento identifica qué cita fue para que resulte más fácil revisar si hay cambios que anotar.',
-  'El diálogo de tomas forzadas se ha actualizado con el mismo modal que el resto de confirmaciones y pide la nota explicativa de forma más clara y consistente.',
+  'Las alertas «Tras la cita» del inicio muestran ahora el nombre de la cita relacionada para identificarla de un vistazo.',
+  'Puedes marcar como tomada cualquier dosis de la línea de tiempo; si aún no es la hora, se muestra un aviso antes de descontar stock.',
+  'Los modales para eliminar medicamentos, tratamientos, citas y comentarios siguen el mismo estilo unificado que el resto de avisos del inicio.',
+  'El menú de acciones (tres puntos) en las tarjetas de avisos queda anclado arriba a la derecha para una lectura más limpia.',
+  'La integración con el agente MCP es más consistente: las tomas registradas se reconocen en el inicio y se evita restar stock dos veces para la misma dosis programada, con permisos por rol reforzados.',
 ] as const;

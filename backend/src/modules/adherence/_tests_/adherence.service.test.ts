@@ -91,11 +91,13 @@ describe('adherence.service', () => {
     await adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
       medicineId: medicine._id.toString(),
       treatmentId: treatment._id.toString(),
+      timestamp: new Date('2030-11-02T08:00:00.000Z'),
     });
     await adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
       medicineId: medicine._id.toString(),
       treatmentId: treatment._id.toString(),
       amount: 1,
+      timestamp: new Date('2030-11-02T16:00:00.000Z'),
     });
 
     const result = await adherenceLogsList(blister._id.toString(), { page: 1, limit: 1 });
@@ -420,5 +422,36 @@ describe('adherence.service', () => {
     ).rejects.toMatchObject({
       code: 'ADHERENCE_LOG_UNDO_WINDOW_EXPIRED',
     });
+  });
+
+  it('snaps off-schedule timestamps to the nearest scheduled dose within tolerance', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    const scheduled = new Date('2030-11-02T08:00:00.000Z');
+    const offBy = new Date(scheduled.getTime() + 17 * 60 * 1000);
+
+    const created = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: offBy,
+      },
+    );
+
+    expect(new Date(created.timestamp).toISOString()).toBe(scheduled.toISOString());
+
+    await expect(
+      adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date(scheduled.getTime() - 5 * 60 * 1000),
+      }),
+    ).rejects.toMatchObject({ code: 'ADHERENCE_LOG_DUPLICATE' });
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    expect(storedMedicine?.stock).toBe(8);
   });
 });

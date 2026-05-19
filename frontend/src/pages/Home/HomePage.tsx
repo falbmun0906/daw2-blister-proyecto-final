@@ -128,7 +128,10 @@ function getNotificationContext(notification: NotificationView): string {
     case 'cima_change':
       return 'CIMA';
     case 'appointment_reminder':
-      return 'Citas médicas';
+    case 'appointment_comment': {
+      const appointmentTitle = getStringMetadata(notification, 'appointmentTitle');
+      return appointmentTitle ? `Cita · ${appointmentTitle}` : 'Citas médicas';
+    }
     case 'system':
     default:
       return 'Aviso';
@@ -791,7 +794,7 @@ export default function HomePage() {
                       <span className="c-home-next__pill c-home-next__pill--taken">Tomado</span>
                     ) : item.status === 'skipped' ? (
                       <span className="c-home-next__pill c-home-next__pill--skipped">Omitida</span>
-                    ) : item.dose && (item.status === 'next' || item.status === 'missed') && (item.dose.callerRole === 'OWNER' || item.dose.callerRole === 'CAREGIVER') ? (
+                    ) : item.dose && (item.status === 'next' || item.status === 'missed' || item.status === 'pending') && (item.dose.callerRole === 'OWNER' || item.dose.callerRole === 'CAREGIVER') ? (
                       <div className="c-home-next__card-actions">
                         <button
                           type="button"

@@ -943,6 +943,7 @@ function CalendarPage() {
       {confirmDelete ? (
         <ConfirmDialog
           open={confirmDelete !== null}
+          title="Eliminar cita"
           message={`¿Eliminar la cita "${confirmDelete.title}"? Se borrarán también sus comentarios y no aparecerá en la agenda.`}
           onCancel={() => setConfirmDelete(null)}
           onConfirm={async () => {
@@ -955,6 +956,7 @@ function CalendarPage() {
       {confirmDeleteComment ? (
         <ConfirmDialog
           open={confirmDeleteComment !== null}
+          title="Eliminar comentario"
           message="¿Eliminar este comentario?"
           onCancel={() => setConfirmDeleteComment(null)}
           onConfirm={async () => {
@@ -967,6 +969,7 @@ function CalendarPage() {
       {skipDoseCandidate ? (
         <ConfirmDialog
           open={skipDoseCandidate !== null}
+          title="Omitir toma"
           message="¿Seguro que quieres omitir esta toma? Quedará registrada como omitida y no se descontará stock."
           cancelLabel="Cancelar"
           confirmLabel="Omitir toma"

@@ -4,6 +4,7 @@ import {
 } from '../../../../shared/schemas';
 import { medicinesCreate } from '../../modules/medicines/medicines.service';
 import { resolveMcpBlister } from '../blister-resolver';
+import { assertMcpWriterRole } from '../context';
 import {
   type McpBlisterContext,
   type McpInventoryItem,
@@ -45,6 +46,7 @@ export const medicineAddTool: McpMedicineAddTool = {
     'Anade una nueva entrada de medicamento a un blister desde un nregist elegido en CIMA, incluyendo stock, unidad, umbral y caducidad. Permite varias cajas del mismo medicamento.',
   run: async (context, input) => {
     const blister = resolveMcpBlister(context, input);
+    assertMcpWriterRole(blister);
     const medicine = await medicinesCreate(
       blister.blisterId,
       blister.role,

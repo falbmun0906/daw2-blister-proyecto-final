@@ -7,7 +7,7 @@ import { MedicineModel } from '../../models/medicine.model';
 import { TreatmentModel } from '../../models/treatment.model';
 import { UserModel } from '../../models/user.model';
 import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
-import { computeDosesInRange } from '../../utils/dose-schedule';
+import { computeDosesInRange, computeScheduleToleranceMs } from '../../utils/dose-schedule';
 import { formatTimeOfDayInTimeZone, getMedicationTimeZone } from '../../utils/time-zone';
 import {
   type CalendarQuery,
@@ -140,11 +140,15 @@ export const meUpcomingDoses = async (
     MedicineModel.find({ blisterId: { $in: blisterIds }, deletedAt: null }).lean(),
   ]);
   const treatmentIds = treatments.map((treatment) => treatment._id as Types.ObjectId);
+  const adherenceLogWindowMs = 12 * 60 * 60 * 1000;
   const adherenceLogs = treatmentIds.length > 0
     ? await AdherenceLogModel.find({
         blisterId: { $in: blisterIds },
         treatmentId: { $in: treatmentIds },
-        timestamp: { $gte: query.from, $lte: query.to },
+        timestamp: {
+          $gte: new Date(query.from.getTime() - adherenceLogWindowMs),
+          $lte: new Date(query.to.getTime() + adherenceLogWindowMs),
+        },
       }).lean()
     : [];
 
@@ -158,16 +162,17 @@ export const meUpcomingDoses = async (
   const patients = await buildPatientMap(
     treatments.map((treatment) => treatment.patientUserId as Types.ObjectId),
   );
-  const adherenceLogByDoseKey = new Map(
-    adherenceLogs.map((log) => [
-      [
-        (log.treatmentId as Types.ObjectId).toString(),
-        (log.medicineId as Types.ObjectId).toString(),
-        (log.timestamp as Date).getTime().toString(),
-      ].join(':'),
-      log,
-    ]),
-  );
+  const adherenceLogsByGroup = new Map<string, typeof adherenceLogs>();
+  for (const log of adherenceLogs) {
+    const groupKey = [
+      (log.treatmentId as Types.ObjectId).toString(),
+      (log.medicineId as Types.ObjectId).toString(),
+    ].join(':');
+    const bucket = adherenceLogsByGroup.get(groupKey) ?? [];
+    bucket.push(log);
+    adherenceLogsByGroup.set(groupKey, bucket);
+  }
+  const consumedAdherenceLogIds = new Set<string>();
 
   const items: UpcomingDoseItem[] = [];
   for (const treatment of treatments) {
@@ -183,21 +188,36 @@ export const meUpcomingDoses = async (
         active: Boolean(treatment.active),
         timeZone,
       };
-      const occurrences = computeDosesInRange(source, {
+      const scheduleEntry = {
         firstDoseAt: entry.firstDoseAt as Date,
         scheduleType,
         frequencyHours: (entry.frequencyHours as number | null | undefined) ?? null,
         dailyDoseTimes: (entry.dailyDoseTimes as string[] | undefined) ?? [],
         isRecurring: Boolean(entry.isRecurring),
-      }, query.from, query.to);
+      };
+      const occurrences = computeDosesInRange(source, scheduleEntry, query.from, query.to);
+      const toleranceMs = computeScheduleToleranceMs(scheduleEntry);
+      const groupKey = [
+        (treatment._id as Types.ObjectId).toString(),
+        (entry.medicineId as Types.ObjectId).toString(),
+      ].join(':');
+      const groupLogs = adherenceLogsByGroup.get(groupKey) ?? [];
 
       for (const doseAt of occurrences) {
-        const doseKey = [
-          (treatment._id as Types.ObjectId).toString(),
-          (entry.medicineId as Types.ObjectId).toString(),
-          doseAt.getTime().toString(),
-        ].join(':');
-        const adherenceLog = adherenceLogByDoseKey.get(doseKey);
+        let adherenceLog: (typeof groupLogs)[number] | undefined;
+        let bestDelta = toleranceMs + 1;
+        for (const log of groupLogs) {
+          const logId = (log._id as Types.ObjectId).toString();
+          if (consumedAdherenceLogIds.has(logId)) continue;
+          const delta = Math.abs((log.timestamp as Date).getTime() - doseAt.getTime());
+          if (delta <= toleranceMs && delta < bestDelta) {
+            bestDelta = delta;
+            adherenceLog = log;
+          }
+        }
+        if (adherenceLog) {
+          consumedAdherenceLogIds.add((adherenceLog._id as Types.ObjectId).toString());
+        }
         if (adherenceLog && !query.includeTaken) continue;
         const adherenceStatus = adherenceLog ? (adherenceLog.status ?? 'taken') : null;
 

@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { ADHERENCE_LOG_UNDO_WINDOW_MS } from '../../constants/domain.constants';
 import {
   HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_CONFLICT,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
   HTTP_STATUS_UNPROCESSABLE_ENTITY,
@@ -14,6 +15,11 @@ import { TreatmentModel } from '../../models/treatment.model';
 import { type BlisterRole } from '../../types/blister.types';
 import { type TreatmentMedicineEntry } from '../../types/treatment.types';
 import { AppError } from '../../utils/app-error';
+import {
+  computeDosesInRange,
+  computeScheduleToleranceMs,
+} from '../../utils/dose-schedule';
+import { getMedicationTimeZone } from '../../utils/time-zone';
 import {
   notifyAdherenceForced,
   notifyStockLow,
@@ -145,10 +151,10 @@ const getAdherenceLogDocument = async (blisterId: string, adherenceLogId: string
   return adherenceLog;
 };
 
-const getTreatmentMedicineAmount = (
+const getTreatmentMedicineEntry = (
   treatmentMedicines: TreatmentMedicineEntry[],
   medicineId: string,
-): number => {
+): TreatmentMedicineEntry => {
   const treatmentMedicine = treatmentMedicines.find(
     (entry) => entry.medicineId.toString() === medicineId,
   );
@@ -161,7 +167,7 @@ const getTreatmentMedicineAmount = (
     });
   }
 
-  return treatmentMedicine.amount;
+  return treatmentMedicine;
 };
 
 const resolveRequestedAmount = (inputAmount: number | undefined, treatmentAmount: number): number => {
@@ -176,6 +182,54 @@ const resolveRequestedAmount = (inputAmount: number | undefined, treatmentAmount
   }
 
   return requestedAmount;
+};
+
+interface ResolveDoseAlignmentResult {
+  effectiveTimestamp: Date;
+  toleranceMs: number;
+}
+
+/**
+ * Resolves the effective timestamp for an adherence log by snapping the request
+ * time to the closest scheduled dose (within tolerance) so that logs created by
+ * different callers (Home, MCP, manual) bind to the same scheduled occurrence.
+ */
+const resolveDoseAlignment = (
+  treatment: Awaited<ReturnType<typeof getTreatmentDocument>>,
+  treatmentMedicine: TreatmentMedicineEntry,
+  requestedTimestamp: Date,
+): ResolveDoseAlignmentResult => {
+  const scheduleType: 'interval' | 'daily_times' = treatmentMedicine.scheduleType ?? 'interval';
+  const entry = {
+    firstDoseAt: treatmentMedicine.firstDoseAt,
+    scheduleType,
+    frequencyHours: treatmentMedicine.frequencyHours ?? null,
+    dailyDoseTimes: treatmentMedicine.dailyDoseTimes ?? [],
+    isRecurring: Boolean(treatmentMedicine.isRecurring),
+  } as const;
+  const toleranceMs = computeScheduleToleranceMs(entry);
+  const source = {
+    startDate: treatmentMedicine.firstDoseAt,
+    endDate: treatment.endDate ?? null,
+    active: Boolean(treatment.active),
+    timeZone: getMedicationTimeZone(treatment.timeZone ?? null),
+  };
+  const from = new Date(requestedTimestamp.getTime() - toleranceMs);
+  const to = new Date(requestedTimestamp.getTime() + toleranceMs);
+  const occurrences = computeDosesInRange(source, entry, from, to, 16);
+  let nearest: Date | null = null;
+  let nearestDelta = Number.POSITIVE_INFINITY;
+  for (const doseAt of occurrences) {
+    const delta = Math.abs(doseAt.getTime() - requestedTimestamp.getTime());
+    if (delta < nearestDelta) {
+      nearest = doseAt;
+      nearestDelta = delta;
+    }
+  }
+  return {
+    effectiveTimestamp: nearest ?? requestedTimestamp,
+    toleranceMs,
+  };
 };
 
 /**
@@ -221,11 +275,43 @@ export const adherenceLogsCreate = async (
 
   const medicine = await getMedicineDocument(blisterId, input.medicineId);
   const treatment = await getTreatmentDocument(blisterId, input.treatmentId);
-  const treatmentAmount = getTreatmentMedicineAmount(treatment.medicines, input.medicineId);
+  const treatmentMedicine = getTreatmentMedicineEntry(treatment.medicines, input.medicineId);
+  const treatmentAmount = treatmentMedicine.amount;
   const status = input.status ?? 'taken';
   const requestedAmount = status === 'skipped'
     ? 0
     : resolveRequestedAmount(input.amount, treatmentAmount);
+
+  const requestedTimestamp = input.timestamp ?? new Date();
+  const { effectiveTimestamp, toleranceMs } = resolveDoseAlignment(
+    treatment,
+    treatmentMedicine,
+    requestedTimestamp,
+  );
+
+  const dedupeFrom = new Date(effectiveTimestamp.getTime() - toleranceMs);
+  const dedupeTo = new Date(effectiveTimestamp.getTime() + toleranceMs);
+  const existingLog = await AdherenceLogModel.findOne({
+    blisterId: new Types.ObjectId(blisterId),
+    treatmentId: new Types.ObjectId(input.treatmentId),
+    medicineId: new Types.ObjectId(input.medicineId),
+    timestamp: { $gte: dedupeFrom, $lte: dedupeTo },
+  })
+    .sort({ timestamp: 1 })
+    .lean();
+
+  if (existingLog) {
+    throw new AppError({
+      code: 'ADHERENCE_LOG_DUPLICATE',
+      message: 'This scheduled dose is already logged.',
+      statusCode: HTTP_STATUS_CONFLICT,
+      details: [
+        `adherenceLogId=${(existingLog._id as Types.ObjectId).toString()}`,
+        `status=${existingLog.status ?? 'taken'}`,
+        `timestamp=${(existingLog.timestamp as Date).toISOString()}`,
+      ],
+    });
+  }
 
   const remainingStock = medicine.stock - requestedAmount;
   if (status === 'taken' && remainingStock < 0 && !input.force) {
@@ -252,7 +338,7 @@ export const adherenceLogsCreate = async (
     amount: deductedAmount,
     isForced,
     notes: input.notes ?? null,
-    timestamp: input.timestamp ?? new Date(),
+    timestamp: effectiveTimestamp,
   });
 
   const blister = await getBlisterDocument(blisterId);
