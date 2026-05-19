@@ -7,7 +7,7 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  titleIcon?: ReactNode;
+  headerIcon?: ReactNode;
   hideHeader?: boolean;
   hideCloseButton?: boolean;
   disableBackdropClose?: boolean;
@@ -24,7 +24,7 @@ export function Modal({
   open,
   onClose,
   title,
-  titleIcon,
+  headerIcon,
   hideHeader,
   hideCloseButton,
   disableBackdropClose,
@@ -73,14 +73,12 @@ export function Modal({
     >
       <div className="c-modal__panel">
         {!hideHeader ? (
-          <header className="c-modal__header">
+          <header className={headerIcon ? 'c-modal__header c-modal__header--with-icon' : 'c-modal__header'}>
+            {headerIcon}
             {title ? (
-              <span className="c-modal__title-group">
-                {titleIcon}
-                <h2 id="c-modal-title" className="c-modal__title">
-                  {title}
-                </h2>
-              </span>
+              <h2 id="c-modal-title" className="c-modal__title">
+                {title}
+              </h2>
             ) : (
               <span aria-hidden="true" />
             )}

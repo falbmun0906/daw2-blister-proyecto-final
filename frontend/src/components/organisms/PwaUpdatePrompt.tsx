@@ -229,14 +229,16 @@ export function PwaUpdatePrompt() {
       <Modal
         open={updateAvailable}
         title="Hay una nueva versión disponible"
+        headerIcon={(
+          <span className="c-pwa-update-prompt__icon" aria-hidden="true">
+            <TbRefresh />
+          </span>
+        )}
         onClose={() => undefined}
         hideCloseButton
         disableBackdropClose
       >
         <div className="c-pwa-update-prompt">
-          <span className="c-pwa-update-prompt__icon" aria-hidden="true">
-            <TbRefresh />
-          </span>
           <p className="c-pwa-update-prompt__text">
             Actualiza para cargar la última versión de Blíster y evitar seguir usando archivos antiguos.
           </p>
@@ -249,14 +251,16 @@ export function PwaUpdatePrompt() {
       <Modal
         open={!updateAvailable && releaseNotesOpen}
         title="Novedades de Blíster"
-        onClose={handleReleaseNotesClose}
-      >
-        <div className="c-pwa-update-prompt">
+        headerIcon={(
           <span className="c-pwa-update-prompt__icon" aria-hidden="true">
             <TbSparkles />
           </span>
+        )}
+        onClose={handleReleaseNotesClose}
+      >
+        <div className="c-pwa-update-prompt c-pwa-update-prompt--release">
           <p className="c-pwa-update-prompt__version">
-            Versión {APP_VERSION} - Código {APP_COMMIT}
+            Versión {APP_VERSION} - Commit {APP_COMMIT}
           </p>
           <ul className="c-pwa-update-prompt__notes">
             {APP_RELEASE_NOTES.map((note) => (

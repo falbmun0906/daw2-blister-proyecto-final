@@ -32,12 +32,13 @@
   }
 }
 
-.c-modal__header .c-pwa-update-prompt__icon {
+.c-modal__header > .c-pwa-update-prompt__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2rem;
   height: 2rem;
+  flex-shrink: 0;
   border-radius: var(--radius-full);
   background-color: var(--color-primary-tint);
   color: var(--color-primary-mid);
