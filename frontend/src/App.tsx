@@ -45,6 +45,7 @@ const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage'))
 const EditProfilePage = lazy(() => import('./pages/Profile/EditProfilePage'))
 const PersonalInfoPage = lazy(() => import('./pages/Profile/PersonalInfoPage'))
 const ChangePasswordPage = lazy(() => import('./pages/Profile/ChangePasswordPage'))
+const DeleteAccountPage = lazy(() => import('./pages/Profile/DeleteAccountPage'))
 const AvatarPage = lazy(() => import('./pages/Profile/AvatarPage'))
 const NotificationSettingsPage = lazy(() => import('./pages/Profile/NotificationSettingsPage'))
 const AccessibilityPage = lazy(() => import('./pages/Accessibility/AccessibilityPage'))
@@ -174,6 +175,7 @@ function App() {
                 <Route path={ROUTES.editProfile} element={<EditProfilePage />} />
                 <Route path={ROUTES.personalInfo} element={<PersonalInfoPage />} />
                 <Route path={ROUTES.changePassword} element={<ChangePasswordPage />} />
+                <Route path={ROUTES.deleteAccount} element={<DeleteAccountPage />} />
                 <Route path={ROUTES.profileAvatar} element={<AvatarPage />} />
                 <Route path={ROUTES.notificationSettings} element={<NotificationSettingsPage />} />
                 <Route path={ROUTES.accessibility} element={<AccessibilityPage />} />

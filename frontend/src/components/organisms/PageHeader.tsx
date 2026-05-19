@@ -81,7 +81,7 @@ const resolveParentRoute = (
   ) {
     return ROUTES.profile;
   }
-  if (pathname === ROUTES.personalInfo) return ROUTES.editProfile;
+  if (pathname === ROUTES.personalInfo || pathname === ROUTES.deleteAccount) return ROUTES.editProfile;
   if (pathname === ROUTES.mcpTokenRevoke) return ROUTES.mcpToken;
   if (pathname === ROUTES.profile) return ROUTES.home;
 

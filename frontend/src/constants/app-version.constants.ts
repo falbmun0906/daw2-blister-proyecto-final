@@ -3,6 +3,7 @@ export const APP_COMMIT = typeof __APP_COMMIT__ === 'string' && __APP_COMMIT__ ?
 export const LAST_SEEN_APP_VERSION_KEY = 'blister-last-seen-version';
 
 export const APP_RELEASE_NOTES = [
-  'Los borrados de medicamentos, tratamientos, miembros y blísteres aplican ahora reglas de ciclo de vida que protegen el histórico y evitan referencias activas incoherentes.',
-  'La edición de perfil incorpora la eliminación de cuenta con aviso explícito, frase de confirmación exacta y cierre de sesiones y accesos vinculados.',
+  'La eliminación de cuenta tiene ahora su propia pantalla dentro de Editar perfil, con un aviso previo antes de abrir la confirmación final.',
+  'Cambiar contraseña comparte ya la misma profundidad de navegación que la información personal dentro de Editar perfil.',
+  'Las actualizaciones pendientes se anuncian con un único aviso mientras la app prepara la nueva versión.',
 ] as const;

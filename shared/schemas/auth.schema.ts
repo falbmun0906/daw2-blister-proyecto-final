@@ -176,7 +176,7 @@ export const revokeMcpTokenSchema = z.object({});
 
 export const deleteAccountSchema = z.object({
   confirmation: z.literal(DELETE_ACCOUNT_CONFIRMATION_PHRASE, {
-    error: `Escribe exactamente "${DELETE_ACCOUNT_CONFIRMATION_PHRASE}" para confirmar la eliminación.`,
+    error: `Escribe "${DELETE_ACCOUNT_CONFIRMATION_PHRASE}" para confirmar la eliminación.`,
   }),
 });
 
