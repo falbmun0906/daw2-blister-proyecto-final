@@ -779,6 +779,7 @@ export const notifyDueDoseReminders = async (
   const to = referenceDate;
   const treatments = await TreatmentModel.find({
     active: true,
+    deletedAt: null,
     startDate: { $lte: to },
     $or: [{ endDate: null }, { endDate: { $exists: false } }, { endDate: { $gte: from } }],
   });
@@ -802,7 +803,10 @@ export const notifyDueDoseReminders = async (
       _id: { $in: blisterIds.map((id) => new Types.ObjectId(id)) },
       deletedAt: null,
     }),
-    MedicineModel.find({ _id: { $in: medicineIds.map((id) => new Types.ObjectId(id)) } }),
+    MedicineModel.find({
+      _id: { $in: medicineIds.map((id) => new Types.ObjectId(id)) },
+      deletedAt: null,
+    }),
     AdherenceLogModel.find({
       treatmentId: { $in: treatmentIds },
       timestamp: { $gte: from, $lte: to },
@@ -936,6 +940,10 @@ export const notifyExpirationWarningsForMedicines = async (
   );
 
   for (const medicine of medicines) {
+    if (medicine.deletedAt) {
+      continue;
+    }
+
     const expirationDay = Date.UTC(
       medicine.expDate.getUTCFullYear(),
       medicine.expDate.getUTCMonth(),

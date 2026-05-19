@@ -226,7 +226,7 @@ describe('treatments.service', () => {
     });
   });
 
-  it('deletes treatments and unlinks related appointments', async () => {
+  it('archives treatments and unlinks related appointments', async () => {
     const { user, blister, medicine } = await createBlisterWithMedicine();
     const treatment = await treatmentsCreate(blister._id.toString(), 'OWNER', {
       title: 'Temporal',
@@ -247,6 +247,12 @@ describe('treatments.service', () => {
     await treatmentsDelete(blister._id.toString(), treatment.id, 'OWNER');
 
     const storedAppointment = await AppointmentModel.findById(appointment._id);
+    const storedTreatment = await TreatmentModel.findById(treatment.id);
+    const listed = await treatmentsList(blister._id.toString(), { page: 1, limit: 10 });
+
     expect(storedAppointment?.treatmentId).toBeNull();
+    expect(storedTreatment?.active).toBe(false);
+    expect(storedTreatment?.deletedAt).toBeInstanceOf(Date);
+    expect(listed.treatments).toHaveLength(0);
   });
 });

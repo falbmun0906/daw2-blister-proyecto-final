@@ -6,10 +6,16 @@ import {
 } from '../../constants/domain.constants';
 import { AdherenceLogModel } from '../../models/adherenceLog.model';
 import { AppointmentModel } from '../../models/appointment.model';
+import { AuthSessionModel } from '../../models/authSession.model';
 import { BlisterModel } from '../../models/blister.model';
+import { EmailVerificationTokenModel } from '../../models/emailVerificationToken.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { NotificationModel } from '../../models/notification.model';
+import { OAuthTokenModel } from '../../models/oauthToken.model';
+import { PasswordResetTokenModel } from '../../models/passwordResetToken.model';
+import { PushSubscriptionModel } from '../../models/pushSubscription.model';
 import { TreatmentModel } from '../../models/treatment.model';
+import { UserModel } from '../../models/user.model';
 
 let privacyPurgeTimer: NodeJS.Timeout | null = null;
 
@@ -41,8 +47,39 @@ export const purgeExpiredDeletedBlisters = async (): Promise<number> => {
   return result.deletedCount ?? 0;
 };
 
+export const purgeExpiredDeletedUsers = async (): Promise<number> => {
+  const cutoff = new Date(Date.now() - BLISTER_RESTORE_WINDOW_MS);
+  const users = await UserModel.find({
+    deletedAt: { $lte: cutoff },
+  })
+    .select('_id')
+    .lean();
+  const userIds = users.map((user) => user._id as Types.ObjectId);
+  const userIdStrings = userIds.map((id) => id.toString());
+
+  if (userIds.length === 0) {
+    return 0;
+  }
+
+  await Promise.all([
+    AuthSessionModel.deleteMany({ userId: { $in: userIds } }),
+    EmailVerificationTokenModel.deleteMany({ userId: { $in: userIdStrings } }),
+    NotificationModel.deleteMany({ userId: { $in: userIds } }),
+    OAuthTokenModel.deleteMany({ userId: { $in: userIdStrings } }),
+    PasswordResetTokenModel.deleteMany({ userId: { $in: userIdStrings } }),
+    PushSubscriptionModel.deleteMany({ userId: { $in: userIds } }),
+  ]);
+
+  const result = await UserModel.deleteMany({ _id: { $in: userIds } });
+
+  return result.deletedCount ?? 0;
+};
+
 const runPrivacyPurge = (): void => {
-  void purgeExpiredDeletedBlisters().catch(() => undefined);
+  void Promise.all([
+    purgeExpiredDeletedBlisters(),
+    purgeExpiredDeletedUsers(),
+  ]).catch(() => undefined);
 };
 
 /**

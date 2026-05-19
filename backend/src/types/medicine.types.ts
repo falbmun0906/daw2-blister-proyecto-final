@@ -34,4 +34,5 @@ export interface MedicineDocument {
   threshold: number;
   expDate: Date;
   cimaStatus: MedicineCimaStatus;
+  deletedAt?: Date | null;
 }

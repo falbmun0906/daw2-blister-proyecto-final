@@ -46,10 +46,12 @@ export const medicineLookupTool: McpMedicineLookupTool = {
     const blisterById = new Map(targetBlisters.map((blister) => [blister.blisterId, blister]));
     const filter: {
       blisterId: { $in: Types.ObjectId[] };
+      deletedAt: null;
       _id?: Types.ObjectId;
       nregist?: string;
     } = {
       blisterId: { $in: targetBlisters.map((blister) => new Types.ObjectId(blister.blisterId)) },
+      deletedAt: null,
     };
 
     if (input.medicineId) {

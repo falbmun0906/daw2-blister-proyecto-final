@@ -79,6 +79,7 @@ const getMedicineDocument = async (blisterId: string, medicineId: string) => {
   const medicine = await MedicineModel.findOne({
     _id: new Types.ObjectId(medicineId),
     blisterId: new Types.ObjectId(blisterId),
+    deletedAt: null,
   });
 
   if (!medicine) {
@@ -96,6 +97,7 @@ const getTreatmentDocument = async (blisterId: string, treatmentId: string) => {
   const treatment = await TreatmentModel.findOne({
     _id: new Types.ObjectId(treatmentId),
     blisterId: new Types.ObjectId(blisterId),
+    deletedAt: null,
   });
 
   if (!treatment) {

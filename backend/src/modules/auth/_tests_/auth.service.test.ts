@@ -2,10 +2,14 @@ import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
 
 import { env } from '../../../config/env';
+import { AppointmentModel } from '../../../models/appointment.model';
 import { BlisterModel } from '../../../models/blister.model';
+import { NotificationModel } from '../../../models/notification.model';
+import { TreatmentModel } from '../../../models/treatment.model';
 import { UserModel } from '../../../models/user.model';
 import {
   authCreateMcpToken,
+  authDeleteAccount,
   authGetMcpTokenStatus,
   authLogin,
   authLogout,
@@ -41,6 +45,21 @@ describe('auth.service', () => {
   const verifyUserEmail = async (userId: string): Promise<void> => {
     await UserModel.updateOne({ _id: userId }, { $set: { emailVerified: true } });
   };
+
+  const createPersistedUser = async (suffix: string) =>
+    UserModel.create({
+      name: `Usuario ${suffix}`,
+      username: `usuario${suffix}`,
+      email: `usuario${suffix}@example.com`,
+      password:
+        '$2b$12$123456789012345678901uY7LwQ3xVw2Cl5EKeosFVJeFt3PcTJS.',
+      emailVerified: true,
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
 
   it('hashes passwords and sends confirmation email on register', async () => {
     const sendVerificationEmailSpy = jest.mocked(authEmailService.sendEmailVerificationEmail);
@@ -293,5 +312,84 @@ describe('auth.service', () => {
 
     expect(result.user.email).toBe('ana@example.com');
     expect(result.accessToken).toBeTruthy();
+  });
+
+  it('soft deletes accounts, detaches memberships and removes patient-owned care data', async () => {
+    const owner = await createPersistedUser('account1');
+    const caregiver = await createPersistedUser('account2');
+    const personalBlister = await BlisterModel.create({
+      name: 'Personal',
+      members: [{ userId: owner._id, role: 'OWNER' }],
+    });
+    const sharedBlister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+      ],
+      inviteCode: {
+        code: 'ZZZ123',
+        exp: new Date(Date.now() + 60_000),
+        role: 'OBSERVER',
+      },
+    });
+    const treatment = await TreatmentModel.create({
+      blisterId: sharedBlister._id,
+      patientUserId: owner._id,
+      title: 'Paciente eliminado',
+      medicines: [{
+        medicineId: new Types.ObjectId(),
+        amount: 1,
+        firstDoseAt: new Date('2030-01-01T08:00:00.000Z'),
+        scheduleType: 'interval',
+        frequencyHours: 24,
+        dailyDoseTimes: [],
+        isRecurring: true,
+      }],
+      startDate: new Date('2030-01-01T00:00:00.000Z'),
+      active: true,
+    });
+    await AppointmentModel.create({
+      blisterId: sharedBlister._id,
+      patientUserId: owner._id,
+      title: 'Revision',
+      date: new Date('2030-01-02T10:00:00.000Z'),
+    });
+    await NotificationModel.create({
+      userId: caregiver._id,
+      blisterId: sharedBlister._id,
+      type: 'dose_reminder',
+      severity: 'info',
+      title: 'Toma pendiente',
+      message: 'Recordatorio de paciente eliminado.',
+      metadata: {
+        patientUserId: owner._id.toString(),
+        treatmentId: treatment._id.toString(),
+      },
+    });
+
+    await authDeleteAccount(owner._id.toString());
+
+    const deletedUser = await UserModel.findById(owner._id);
+    const deletedPersonalBlister = await BlisterModel.findById(personalBlister._id);
+    const updatedSharedBlister = await BlisterModel.findById(sharedBlister._id);
+    const archivedTreatment = await TreatmentModel.findById(treatment._id);
+
+    expect(deletedUser?.deletedAt).toBeInstanceOf(Date);
+    expect(deletedUser?.name).toBe('Cuenta eliminada');
+    expect(deletedUser?.username).toBe(`del-${owner._id.toString()}`);
+    expect(deletedUser?.email).toBe(`deleted-${owner._id.toString()}@deleted.invalid`);
+    expect(deletedPersonalBlister?.deletedAt).toBeInstanceOf(Date);
+    expect(updatedSharedBlister?.members).toEqual([
+      expect.objectContaining({
+        userId: caregiver._id,
+        role: 'OWNER',
+      }),
+    ]);
+    expect(updatedSharedBlister?.inviteCode).toBeNull();
+    expect(archivedTreatment?.active).toBe(false);
+    expect(archivedTreatment?.deletedAt).toBeInstanceOf(Date);
+    await expect(AppointmentModel.countDocuments({ patientUserId: owner._id })).resolves.toBe(0);
+    await expect(NotificationModel.countDocuments()).resolves.toBe(0);
   });
 });

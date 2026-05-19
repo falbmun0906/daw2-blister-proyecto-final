@@ -31,11 +31,15 @@ import {
   PASSWORD_RESET_TOKEN_TTL_MS,
 } from '../../constants/security.constants';
 import { AuthSessionModel } from '../../models/authSession.model';
+import { AdherenceLogModel } from '../../models/adherenceLog.model';
+import { AppointmentModel } from '../../models/appointment.model';
 import { BlisterModel } from '../../models/blister.model';
 import { EmailVerificationTokenModel } from '../../models/emailVerificationToken.model';
+import { NotificationModel } from '../../models/notification.model';
 import { OAuthTokenModel } from '../../models/oauthToken.model';
 import { PasswordResetTokenModel } from '../../models/passwordResetToken.model';
 import { PushSubscriptionModel } from '../../models/pushSubscription.model';
+import { TreatmentModel } from '../../models/treatment.model';
 import { UserModel } from '../../models/user.model';
 import { type AuthTokens, type JwtAccessPayload, type JwtRefreshPayload } from '../../types/auth.types';
 import { type UserDocument, type UserSettings } from '../../types/user.types';
@@ -96,9 +100,15 @@ type UserMcpDocument = UserDocument & {
   mcpTokenLastUsedAt?: Date | null;
 };
 
+type BlisterLifecycleMember = {
+  userId: Types.ObjectId;
+  role: (typeof BLISTER_ROLES)[number];
+};
+
 const hashValue = (value: string): string => createHash('sha256').update(value).digest('hex');
 
 const MCP_TOKEN_SELECT = '+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt +mcpTokenLastUsedAt';
+const DELETED_ACCOUNT_NAME = 'Cuenta eliminada';
 
 const emptyMcpTokenStatus = (): McpTokenStatus => ({
   hasToken: false,
@@ -122,6 +132,109 @@ const sanitizeUser = (user: UserDocument): PublicUser => ({
   pendingEmail: user.pendingEmail ?? null,
   settings: user.settings,
 });
+
+const buildDeletedAccountUsername = (userId: string): string => `del-${userId}`;
+
+const buildDeletedAccountEmail = (userId: string): string => `deleted-${userId}@deleted.invalid`;
+
+const selectPromotedOwner = (members: BlisterLifecycleMember[]): BlisterLifecycleMember => {
+  const promotedMember = members.find((member) => member.role === 'CAREGIVER') ?? members[0];
+
+  if (!promotedMember) {
+    throw new Error('Expected at least one remaining blister member.');
+  }
+
+  return promotedMember;
+};
+
+const detachDeletedUserFromBlisters = async (
+  userObjectId: Types.ObjectId,
+  deletedAt: Date,
+): Promise<void> => {
+  const blisters = await BlisterModel.find({
+    deletedAt: null,
+    members: {
+      $elemMatch: {
+        userId: userObjectId,
+      },
+    },
+  });
+
+  await Promise.all(blisters.map(async (blister) => {
+    const remainingMembers: BlisterLifecycleMember[] = blister.members
+      .filter((member: { userId: Types.ObjectId }) => member.userId.toString() !== userObjectId.toString())
+      .map((member: { userId: Types.ObjectId; role: (typeof BLISTER_ROLES)[number] }) => ({
+        userId: member.userId,
+        role: member.role,
+      }));
+
+    if (remainingMembers.length === 0) {
+      await BlisterModel.updateOne(
+        { _id: blister._id },
+        {
+          $set: {
+            deletedAt,
+            inviteCode: null,
+          },
+        },
+      );
+      return;
+    }
+
+    if (!remainingMembers.some((member) => member.role === 'OWNER')) {
+      selectPromotedOwner(remainingMembers).role = 'OWNER';
+    }
+
+    await BlisterModel.updateOne(
+      { _id: blister._id },
+      {
+        $set: {
+          members: remainingMembers,
+          inviteCode: null,
+        },
+      },
+    );
+  }));
+};
+
+const removeDeletedUserCareData = async (
+  userObjectId: Types.ObjectId,
+  deletedAt: Date,
+): Promise<void> => {
+  const patientTreatments = await TreatmentModel.find({
+    patientUserId: userObjectId,
+    deletedAt: null,
+  })
+    .select('_id')
+    .lean();
+  const treatmentIds = patientTreatments.map((treatment) => treatment._id as Types.ObjectId);
+  const treatmentIdStrings = treatmentIds.map((id) => id.toString());
+
+  await Promise.all([
+    treatmentIds.length > 0
+      ? TreatmentModel.updateMany(
+          { _id: { $in: treatmentIds } },
+          {
+            $set: {
+              active: false,
+              deletedAt,
+            },
+          },
+        )
+      : Promise.resolve(),
+    AppointmentModel.deleteMany({ patientUserId: userObjectId }),
+    treatmentIds.length > 0
+      ? AdherenceLogModel.deleteMany({ treatmentId: { $in: treatmentIds } })
+      : Promise.resolve(),
+    NotificationModel.deleteMany({
+      $or: [
+        { userId: userObjectId },
+        { 'metadata.patientUserId': userObjectId.toString() },
+        ...(treatmentIdStrings.length > 0 ? [{ 'metadata.treatmentId': { $in: treatmentIdStrings } }] : []),
+      ],
+    }),
+  ]);
+};
 
 const buildAccessTokenPayload = (userId: string): JwtAccessPayload => ({
   sub: userId,
@@ -858,14 +971,33 @@ export const authLogout = async (userId: string, input: LogoutInput = {}): Promi
 };
 
 /**
- * Marks a user account as deleted and revokes session, MCP and reset credentials.
+ * Marks a user account as deleted, anonymizes identity, detaches memberships and revokes credentials.
  */
 export const authDeleteAccount = async (userId: string): Promise<void> => {
+  const userObjectId = new Types.ObjectId(userId);
+  const user = await UserModel.findOne({ _id: userObjectId, deletedAt: null }).select('_id').lean();
+
+  if (!user) {
+    return;
+  }
+
+  const deletedAt = new Date();
+  const deletedPassword = await bcrypt.hash(randomBytes(32).toString('hex'), BCRYPT_SALT_ROUNDS);
+
+  await detachDeletedUserFromBlisters(userObjectId, deletedAt);
+  await removeDeletedUserCareData(userObjectId, deletedAt);
+
   await UserModel.updateOne(
-    { _id: userId, deletedAt: null },
+    { _id: userObjectId, deletedAt: null },
     {
       $set: {
-        deletedAt: new Date(),
+        name: DELETED_ACCOUNT_NAME,
+        username: buildDeletedAccountUsername(userId),
+        email: buildDeletedAccountEmail(userId),
+        emailVerified: false,
+        pendingEmail: null,
+        password: deletedPassword,
+        deletedAt,
         refreshTokenHash: null,
         refreshTokenExpiresAt: null,
         mcpToken: null,
@@ -877,11 +1009,11 @@ export const authDeleteAccount = async (userId: string): Promise<void> => {
   );
 
   await Promise.all([
-    AuthSessionModel.deleteMany({ userId: new Types.ObjectId(userId) }),
+    AuthSessionModel.deleteMany({ userId: userObjectId }),
     EmailVerificationTokenModel.deleteMany({ userId }),
     OAuthTokenModel.deleteMany({ userId }),
     PasswordResetTokenModel.deleteMany({ userId }),
-    PushSubscriptionModel.deleteMany({ userId: new Types.ObjectId(userId) }),
+    PushSubscriptionModel.deleteMany({ userId: userObjectId }),
   ]);
 };
 

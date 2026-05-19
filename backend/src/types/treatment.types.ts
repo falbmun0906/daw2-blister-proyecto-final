@@ -22,4 +22,5 @@ export interface TreatmentDocument {
   startDate: Date;
   endDate?: Date | null;
   active: boolean;
+  deletedAt?: Date | null;
 }

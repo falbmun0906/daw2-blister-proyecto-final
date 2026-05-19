@@ -8,6 +8,7 @@ import {
 import { AppointmentModel } from '../../models/appointment.model';
 import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
+import { NotificationModel } from '../../models/notification.model';
 import { TreatmentModel } from '../../models/treatment.model';
 import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
 import { type TreatmentMedicineEntry } from '../../types/treatment.types';
@@ -106,6 +107,7 @@ const getTreatmentDocument = async (blisterId: string, treatmentId: string) => {
   const treatment = await TreatmentModel.findOne({
     _id: new Types.ObjectId(treatmentId),
     blisterId: new Types.ObjectId(blisterId),
+    deletedAt: null,
   });
 
   if (!treatment) {
@@ -126,6 +128,7 @@ const ensureMedicinesBelongToBlister = async (
   const medicineIds = [...new Set(medicines.map((entry) => entry.medicineId))];
   const totalMatches = await MedicineModel.countDocuments({
     blisterId: new Types.ObjectId(blisterId),
+    deletedAt: null,
     _id: {
       $in: medicineIds.map((medicineId) => new Types.ObjectId(medicineId)),
     },
@@ -186,6 +189,7 @@ export const treatmentsList = async (
   const { page, limit } = query;
   const filter = {
     blisterId: new Types.ObjectId(blisterId),
+    deletedAt: null,
   };
   const [treatments, total] = await Promise.all([
     TreatmentModel.find(filter)
@@ -292,7 +296,7 @@ export const treatmentsUpdate = async (
 };
 
 /**
- * Deletes a treatment and unlinks it from existing appointments in the same blister.
+ * Archives a treatment and unlinks it from existing appointments in the same blister.
  */
 export const treatmentsDelete = async (
   blisterId: string,
@@ -302,6 +306,7 @@ export const treatmentsDelete = async (
   ensureWriterRole(blisterRole);
 
   const treatment = await getTreatmentDocument(blisterId, treatmentId);
+  const now = new Date();
 
   await AppointmentModel.updateMany(
     {
@@ -315,5 +320,14 @@ export const treatmentsDelete = async (
     },
   );
 
-  await treatment.deleteOne();
+  treatment.active = false;
+  treatment.deletedAt = now;
+  await treatment.save();
+
+  await NotificationModel.deleteMany({
+    blisterId: new Types.ObjectId(blisterId),
+    dismissedAt: null,
+    type: { $in: ['dose_reminder', 'appointment_reminder'] },
+    'metadata.treatmentId': treatmentId,
+  });
 };

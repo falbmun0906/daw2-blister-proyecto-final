@@ -31,7 +31,7 @@ export const officialSourceLinkerTool: McpOfficialSourceLinkerTool = {
     let medicine = null as Awaited<ReturnType<typeof MedicineModel.findOne>> | null;
 
     if (input.medicineId) {
-      medicine = await MedicineModel.findById(input.medicineId).lean();
+      medicine = await MedicineModel.findOne({ _id: input.medicineId, deletedAt: null }).lean();
 
       if (!medicine) {
         throw new AppError({
@@ -59,6 +59,7 @@ export const officialSourceLinkerTool: McpOfficialSourceLinkerTool = {
     } else if (input.nregist) {
       const candidates = await MedicineModel.find({
         nregist: input.nregist,
+        deletedAt: null,
         ...(targetBlister ? { blisterId: targetBlister.blisterId } : {}),
       }).lean();
 

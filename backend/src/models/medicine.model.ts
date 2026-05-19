@@ -120,8 +120,13 @@ const medicineSchema = new Schema<MedicineDocument>({
     required: true,
     default: () => ({}),
   },
+  deletedAt: {
+    type: Date,
+    default: null,
+  },
 });
 
 medicineSchema.index({ blisterId: 1, nregist: 1 });
+medicineSchema.index({ blisterId: 1, deletedAt: 1 });
 
 export const MedicineModel = models.Medicine ?? model<MedicineDocument>('Medicine', medicineSchema);

@@ -14,6 +14,7 @@ import {
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
+import { AppointmentModel } from '../../models/appointment.model';
 import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { TreatmentModel } from '../../models/treatment.model';
@@ -232,6 +233,36 @@ const ensureOwnerProtection = (
   }
 };
 
+const ensureMemberHasNoBlockingCareData = async (
+  blisterId: string,
+  targetUserId: string,
+): Promise<void> => {
+  const targetObjectId = new Types.ObjectId(targetUserId);
+  const blisterObjectId = new Types.ObjectId(blisterId);
+  const now = new Date();
+  const [activeTreatments, futureAppointments] = await Promise.all([
+    TreatmentModel.countDocuments({
+      blisterId: blisterObjectId,
+      patientUserId: targetObjectId,
+      active: true,
+      deletedAt: null,
+    }),
+    AppointmentModel.countDocuments({
+      blisterId: blisterObjectId,
+      patientUserId: targetObjectId,
+      date: { $gte: now },
+    }),
+  ]);
+
+  if (activeTreatments > 0 || futureAppointments > 0) {
+    throw new AppError({
+      code: 'BLISTER_MEMBER_HAS_ACTIVE_CARE_DATA',
+      message: 'No puedes retirar a este miembro mientras tenga tratamientos activos o citas futuras en el blíster.',
+      statusCode: HTTP_STATUS_CONFLICT,
+    });
+  }
+};
+
 /**
  * Lists all active blisters available to the authenticated user, including
  * counts of active treatments and medicines for the dashboard list view.
@@ -271,8 +302,8 @@ export const blistersList = async (userId: string): Promise<BlisterView[]> => {
     blisters.map(async (blister) => {
       const blisterId = blister._id;
       const [treatmentsCount, medicinesCount] = await Promise.all([
-        TreatmentModel.countDocuments({ blisterId, active: true }),
-        MedicineModel.countDocuments({ blisterId }),
+        TreatmentModel.countDocuments({ blisterId, active: true, deletedAt: null }),
+        MedicineModel.countDocuments({ blisterId, deletedAt: null }),
       ]);
       return {
         ...toBlisterView(blister, userById),
@@ -511,6 +542,7 @@ export const blistersRemoveMember = async (
   }
 
   ensureOwnerProtection(blister, targetUserId);
+  await ensureMemberHasNoBlockingCareData(blisterId, targetUserId);
   await createSafetyBlisterIfNeeded(targetUserId, blisterId);
 
   blister.members = blister.members.filter(

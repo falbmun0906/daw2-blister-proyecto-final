@@ -36,6 +36,7 @@ export const authSessionSchema = authTokensSchema.extend({
 });
 
 export const authProfileSchema = userSchema;
+export const DELETE_ACCOUNT_CONFIRMATION_PHRASE = 'quiero borrar mi cuenta';
 
 const passwordSchema = z
   .string()
@@ -173,6 +174,12 @@ export const mcpTokenSchema = z.object({
 
 export const revokeMcpTokenSchema = z.object({});
 
+export const deleteAccountSchema = z.object({
+  confirmation: z.literal(DELETE_ACCOUNT_CONFIRMATION_PHRASE, {
+    error: `Escribe exactamente "${DELETE_ACCOUNT_CONFIRMATION_PHRASE}" para confirmar la eliminación.`,
+  }),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
@@ -182,6 +189,7 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type McpTokenInput = z.infer<typeof mcpTokenSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
 export type UserInput = z.infer<typeof userSchema>;
 export type AuthTokensInput = z.infer<typeof authTokensSchema>;
 export type AuthSessionInput = z.infer<typeof authSessionSchema>;

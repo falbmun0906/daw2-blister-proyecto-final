@@ -2,11 +2,14 @@ import { Types } from 'mongoose';
 
 import { type BlisterRole } from '../../types/blister.types';
 import {
+  HTTP_STATUS_CONFLICT,
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
 import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
+import { NotificationModel } from '../../models/notification.model';
+import { TreatmentModel } from '../../models/treatment.model';
 import { AppError } from '../../utils/app-error';
 import {
   externalGetMedicineInfo,
@@ -79,6 +82,7 @@ const getMedicineDocument = async (blisterId: string, medicineId: string) => {
   const medicine = await MedicineModel.findOne({
     _id: new Types.ObjectId(medicineId),
     blisterId: new Types.ObjectId(blisterId),
+    deletedAt: null,
   });
 
   if (!medicine) {
@@ -155,6 +159,7 @@ export const medicinesList = async (
   const { page, limit } = query;
   const filter = {
     blisterId: new Types.ObjectId(blisterId),
+    deletedAt: null,
   };
   const [medicines, total] = await Promise.all([
     MedicineModel.find(filter)
@@ -253,7 +258,7 @@ export const medicinesUpdate = async (
 };
 
 /**
- * Physically deletes a medicine from the blister inventory for owners only.
+ * Archives a medicine from the blister inventory for owners only.
  */
 export const medicinesDelete = async (
   blisterId: string,
@@ -263,5 +268,32 @@ export const medicinesDelete = async (
   ensureWriterRole(blisterRole, ['OWNER']);
 
   const medicine = await getMedicineDocument(blisterId, medicineId);
-  await medicine.deleteOne();
+  const activeTreatments = await TreatmentModel.countDocuments({
+    blisterId: new Types.ObjectId(blisterId),
+    active: true,
+    deletedAt: null,
+    medicines: {
+      $elemMatch: {
+        medicineId: medicine._id,
+      },
+    },
+  });
+
+  if (activeTreatments > 0) {
+    throw new AppError({
+      code: 'MEDICINE_IN_ACTIVE_TREATMENT',
+      message: 'No puedes eliminar un medicamento asignado a tratamientos activos. Finaliza o edita esas pautas antes de eliminarlo.',
+      statusCode: HTTP_STATUS_CONFLICT,
+    });
+  }
+
+  medicine.deletedAt = new Date();
+  await medicine.save();
+
+  await NotificationModel.deleteMany({
+    blisterId: new Types.ObjectId(blisterId),
+    dismissedAt: null,
+    type: { $in: ['stock_low', 'stock_depleted', 'expiration_warning', 'dose_reminder'] },
+    'metadata.medicineId': medicineId,
+  });
 };

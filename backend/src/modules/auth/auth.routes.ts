@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import {
   registerSchema,
   confirmEmailSchema,
+  deleteAccountSchema,
   forgotPasswordSchema,
   loginSchema,
   logoutSchema,
@@ -438,6 +439,17 @@ authRouter.patch(
  *       - Auth
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [confirmation]
+ *             properties:
+ *               confirmation:
+ *                 type: string
+ *                 example: quiero borrar mi cuenta
  *     responses:
  *       200:
  *         description: Account marked for deletion.
@@ -450,7 +462,12 @@ authRouter.patch(
  *         description: Missing or invalid JWT.
  */
 
-authRouter.delete('/account', authenticate, authDeleteAccountController);
+authRouter.delete(
+  '/account',
+  authenticate,
+  validate({ body: deleteAccountSchema }),
+  authDeleteAccountController,
+);
 
 /**
  * @openapi

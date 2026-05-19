@@ -105,7 +105,7 @@ const buildPatientMap = async (userIds: Types.ObjectId[]): Promise<Map<string, P
   if (userIds.length === 0) {
     return new Map();
   }
-  const users = await UserModel.find({ _id: { $in: userIds } })
+  const users = await UserModel.find({ _id: { $in: userIds }, deletedAt: null })
     .select('name settings.avatarKey')
     .lean();
   return new Map(
@@ -136,8 +136,8 @@ export const meUpcomingDoses = async (
 
   const blisterIds = blisters.map((blister) => blister.id);
   const [treatments, medicines] = await Promise.all([
-    TreatmentModel.find({ blisterId: { $in: blisterIds }, active: true }).lean(),
-    MedicineModel.find({ blisterId: { $in: blisterIds } }).lean(),
+    TreatmentModel.find({ blisterId: { $in: blisterIds }, active: true, deletedAt: null }).lean(),
+    MedicineModel.find({ blisterId: { $in: blisterIds }, deletedAt: null }).lean(),
   ]);
   const treatmentIds = treatments.map((treatment) => treatment._id as Types.ObjectId);
   const adherenceLogs = treatmentIds.length > 0

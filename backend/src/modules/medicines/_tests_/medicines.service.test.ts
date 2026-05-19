@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 
 import { BlisterModel } from '../../../models/blister.model';
 import { MedicineModel } from '../../../models/medicine.model';
+import { TreatmentModel } from '../../../models/treatment.model';
 import { UserModel } from '../../../models/user.model';
 import {
   clearTestDatabase,
@@ -242,7 +243,7 @@ describe('medicines.service', () => {
     expect(result.threshold).toBe(5);
   });
 
-  it('requires owner role to delete medicines', async () => {
+  it('requires owner role to archive medicines', async () => {
     const caregiver = await createUser('35');
     const owner = await createUser('36');
     const blister = await BlisterModel.create({
@@ -275,6 +276,49 @@ describe('medicines.service', () => {
     await medicinesDelete(blister._id.toString(), medicine._id.toString(), 'OWNER');
 
     const stored = await MedicineModel.findById(medicine._id);
-    expect(stored).toBeNull();
+    expect(stored?.deletedAt).toBeInstanceOf(Date);
+  });
+
+  it('blocks archiving medicines assigned to active treatments', async () => {
+    const owner = await createUser('37');
+    const blister = await createBlister(owner._id);
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: '121212',
+      nombre: 'Enalapril',
+      pactivos: 'Enalapril',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '10 mg',
+      iconType: 'pill',
+      stock: 28,
+      stockUnit: 'pastillas',
+      threshold: 4,
+      expDate: new Date('2030-06-01T00:00:00.000Z'),
+    });
+    await TreatmentModel.create({
+      blisterId: blister._id,
+      patientUserId: owner._id,
+      title: 'Tension',
+      medicines: [{
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-06-02T08:00:00.000Z'),
+        scheduleType: 'interval',
+        frequencyHours: 24,
+        dailyDoseTimes: [],
+        isRecurring: true,
+      }],
+      startDate: new Date('2030-06-02T00:00:00.000Z'),
+      active: true,
+    });
+
+    await expect(
+      medicinesDelete(blister._id.toString(), medicine._id.toString(), 'OWNER'),
+    ).rejects.toMatchObject({
+      code: 'MEDICINE_IN_ACTIVE_TREATMENT',
+    });
+
+    const stored = await MedicineModel.findById(medicine._id);
+    expect(stored?.deletedAt).toBeNull();
   });
 });
