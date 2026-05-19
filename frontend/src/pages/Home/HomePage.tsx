@@ -15,6 +15,7 @@ import { useBlisters } from '../../hooks/use.blisters';
 import { useNotifications, useRefreshNotifications } from '../../hooks/use.notifications';
 import { ADHERENCE_UNDO_WINDOW_MS } from '../../constants/ui.constants';
 import { ROUTES } from '../../constants/routes';
+import { isExpiredAppointmentReminderAlert } from '../../lib/home-alerts';
 import { getNotificationTargetRoute } from '../../lib/notification-routing';
 import { listMedicines } from '../../services/medicines.service';
 import { getUpcomingDoses, type UpcomingDose } from '../../services/me.service';
@@ -283,6 +284,7 @@ export default function HomePage() {
   const alertItems = useMemo<HomeAlertItem[]>(() => {
     const notificationAlerts = notifications.flatMap<HomeAlertItem>((notification) => (
       HOME_ALERT_NOTIFICATION_TYPES.has(notification.type)
+        && !isExpiredAppointmentReminderAlert(notification, timelineNow)
         ? [{
           key: `notification:${notification.id}`,
           title: notification.title,
@@ -311,7 +313,7 @@ export default function HomePage() {
 
     return [...notificationAlerts, ...stockAlerts]
       .filter((item) => !dismissedAlertKeys.has(item.key));
-  }, [dismissedAlertKeys, homeMedicines, notifications]);
+  }, [dismissedAlertKeys, homeMedicines, notifications, timelineNow]);
   const showAlertZone = !homeMedicinesLoading && alertItems.length > 0;
   const alertDismissCandidate = alertDismissCandidateKey
     ? alertItems.find((item) => item.key === alertDismissCandidateKey) ?? null

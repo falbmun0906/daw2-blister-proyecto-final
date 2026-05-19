@@ -244,6 +244,9 @@ const getAppointmentReminderHours = (settings: UserSettings): number => {
   }
 };
 
+const formatAppointmentReminderWindow = (reminderHours: number): string =>
+  `en menos de ${reminderHours} ${reminderHours === 1 ? 'hora' : 'horas'}`;
+
 const buildAppointmentReminderKey = (
   appointment: AppointmentDocument,
   userId: Types.ObjectId,
@@ -274,12 +277,10 @@ const buildAppointmentReminderNotification = ({
   blisterId: appointment.blisterId,
   type: 'appointment_reminder',
   severity: 'info',
-  title: phase === 'before' ? 'Cita medica proxima' : '¿Qué tal ha ido la cita?',
+  title: phase === 'before' ? 'Cita médica próxima' : '¿Qué tal ha ido la cita?',
   message: phase === 'before'
-    ? `Tienes ${appointment.title} dentro de ${reminderHours} h.`
-    : appointment.treatmentId
-      ? 'Tras la cita, revisa si hay cambios que aplicar al tratamiento.'
-      : 'Tras la cita, revisa si hay algun cambio que anotar.',
+    ? `Tienes ${appointment.title} ${formatAppointmentReminderWindow(reminderHours)}.`
+    : `Tras la cita '${appointment.title}', revisa si hay algún cambio que anotar.`,
   metadata: {
     appointmentId: appointment._id.toString(),
     treatmentId: appointment.treatmentId?.toString() ?? null,
@@ -384,6 +385,20 @@ export const notificationsList = async (
   query: NotificationsListQuery,
 ): Promise<NotificationsListResult> => {
   const { page, limit } = query;
+  const now = new Date();
+
+  await NotificationModel.updateMany({
+    userId: new Types.ObjectId(userId),
+    dismissedAt: null,
+    type: 'appointment_reminder',
+    'metadata.reminderPhase': 'before',
+    'metadata.appointmentDate': { $lte: now.toISOString() },
+  }, {
+    $set: {
+      dismissedAt: now,
+    },
+  });
+
   const filter = {
     userId: new Types.ObjectId(userId),
     dismissedAt: null,

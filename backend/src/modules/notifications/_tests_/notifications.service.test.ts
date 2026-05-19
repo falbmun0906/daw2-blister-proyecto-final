@@ -106,6 +106,47 @@ describe('notifications.service', () => {
     });
   });
 
+  it('auto-dismisses expired pre-appointment reminders when listing the inbox', async () => {
+    const owner = await createUser('notify-expired-appointment-owner');
+    const blister = await BlisterModel.create({
+      name: 'Familia',
+      members: [{ userId: owner._id, role: 'OWNER' }],
+    });
+    const expiredReminder = await NotificationModel.create({
+      userId: owner._id,
+      blisterId: blister._id,
+      type: 'appointment_reminder',
+      severity: 'info',
+      title: 'Cita médica próxima',
+      message: 'Tienes Revisión anual en menos de 3 horas.',
+      metadata: {
+        appointmentId: 'appointment-expired',
+        appointmentDate: '2000-01-01T10:00:00.000Z',
+        reminderPhase: 'before',
+      },
+    });
+    await NotificationModel.create({
+      userId: owner._id,
+      blisterId: blister._id,
+      type: 'appointment_reminder',
+      severity: 'info',
+      title: '¿Qué tal ha ido la cita?',
+      message: "Tras la cita 'Revisión anual', revisa si hay algún cambio que anotar.",
+      metadata: {
+        appointmentId: 'appointment-follow-up',
+        appointmentDate: '2000-01-01T10:00:00.000Z',
+        reminderPhase: 'after',
+      },
+    });
+
+    const result = await notificationsList(owner._id.toString(), { page: 1, limit: 20 });
+    const storedExpiredReminder = await NotificationModel.findById(expiredReminder._id);
+
+    expect(storedExpiredReminder?.dismissedAt).toBeInstanceOf(Date);
+    expect(result.notifications).toHaveLength(1);
+    expect(result.notifications[0]?.title).toBe('¿Qué tal ha ido la cita?');
+  });
+
   it('marks only the owner notification as read', async () => {
     const owner = await createUser('notify-read-owner');
     const otherUser = await createUser('notify-read-other');
@@ -306,9 +347,10 @@ describe('notifications.service', () => {
     const after = notifications.find((item) => item.metadata?.reminderPhase === 'after');
 
     expect(notifications).toHaveLength(2);
-    expect(before?.title).toBe('Cita medica proxima');
+    expect(before?.title).toBe('Cita médica próxima');
+    expect(before?.message).toBe('Tienes Consulta cardiologia en menos de 3 horas.');
     expect(after?.title).toBe('¿Qué tal ha ido la cita?');
-    expect(after?.message).toBe('Tras la cita, revisa si hay algun cambio que anotar.');
+    expect(after?.message).toBe("Tras la cita 'Consulta digestivo', revisa si hay algún cambio que anotar.");
   });
 
   it('does not recreate dismissed appointment reminders while the scheduler window is still open', async () => {

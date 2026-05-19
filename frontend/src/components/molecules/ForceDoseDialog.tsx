@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
+import { Modal } from '../atoms/Modal';
 
 interface ForceDoseDialogProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface ForceDoseDialogProps {
  */
 export function ForceDoseDialog({ isOpen, onConfirm, onCancel }: ForceDoseDialogProps) {
   if (!isOpen) return null;
+
   return <ForceDoseDialogContent onConfirm={onConfirm} onCancel={onCancel} />;
 }
 
@@ -42,12 +44,8 @@ function ForceDoseDialogContent({
   };
 
   return (
-    <div className="c-force-dose-dialog" role="dialog" aria-modal="true" aria-labelledby="force-dose-title">
-      <div className="c-force-dose-dialog__backdrop" onClick={onCancel} aria-hidden="true" />
-      <div className="c-force-dose-dialog__panel">
-        <h2 id="force-dose-title" className="c-force-dose-dialog__title">
-          Stock insuficiente
-        </h2>
+    <Modal open onClose={onCancel} title="Stock insuficiente">
+      <div className="c-force-dose-dialog">
         <p className="c-force-dose-dialog__message">
           No queda suficiente stock para esta toma. Puedes registrarla igualmente
           dejando una nota explicativa para el equipo.
@@ -56,19 +54,24 @@ function ForceDoseDialogContent({
           ref={inputRef}
           label="Motivo (obligatorio)"
           value={notes}
-          onChange={(event) => setNotes(event.target.value)}
+          onChange={(event) => {
+            setNotes(event.target.value);
+            if (error) setError(null);
+          }}
           error={error ?? undefined}
+          hint="Ejemplo: se ha tomado fuera de casa y el stock aún no se había actualizado."
+          placeholder="Añade una nota breve para el equipo"
           maxLength={500}
         />
         <div className="c-force-dose-dialog__actions">
-          <Button variant="ghost" className="c-btn--card" onClick={onCancel}>
+          <Button variant="primary-outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button variant="danger" className="c-btn--card" onClick={handleConfirm}>
+          <Button variant="danger" onClick={handleConfirm}>
             Registrar igualmente
           </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

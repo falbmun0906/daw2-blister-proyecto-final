@@ -1,40 +1,12 @@
 .c-force-dose-dialog {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4);
-
-  &__backdrop {
-    position: absolute;
-    inset: 0;
-    background-color: var(--color-backdrop-strong);
-  }
-
-  &__panel {
-    position: relative;
-    width: 100%;
-    max-width: 28rem;
-    background-color: var(--color-surface);
-    border-radius: var(--radius-md);
-    padding: var(--space-4);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    box-shadow: var(--shadow-dialog);
-  }
-
-  &__title {
-    margin: 0;
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-semibold);
-  }
+  flex-direction: column;
+  gap: var(--space-3);
 
   &__message {
     margin: 0;
     font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
     color: var(--color-text-muted);
   }
 
@@ -45,6 +17,7 @@
 
     .c-btn {
       width: 100%;
+      min-height: var(--space-touch-min);
     }
   }
 }
