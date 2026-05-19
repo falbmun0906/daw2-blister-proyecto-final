@@ -3,7 +3,7 @@ export const APP_COMMIT = typeof __APP_COMMIT__ === 'string' && __APP_COMMIT__ ?
 export const LAST_SEEN_APP_VERSION_KEY = 'blister-last-seen-version';
 
 export const APP_RELEASE_NOTES = [
-  'La eliminación de cuenta tiene ahora su propia pantalla dentro de Editar perfil, con un aviso previo antes de abrir la confirmación final.',
-  'Cambiar contraseña comparte ya la misma profundidad de navegación que la información personal dentro de Editar perfil.',
-  'Las actualizaciones pendientes se anuncian con un único aviso mientras la app prepara la nueva versión.',
+  'El asistente ya puede descubrir tratamientos activos y sus horarios a partir del medicamento para registrar tomas sin depender de IDs internos opacos.',
+  'Registrar tomas por MCP es ahora más flexible: si un medicamento solo pertenece a un tratamiento activo, Blíster resuelve ese tratamiento automáticamente.',
+  'Las tools de adherencia devuelven mejor contexto cuando hay varias pautas posibles y permiten indicar de forma explícita el estado de la toma.',
 ] as const;

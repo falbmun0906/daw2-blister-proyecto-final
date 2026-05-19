@@ -9,7 +9,7 @@ import {
   positiveQuantitySchema,
   timeZoneSchema,
 } from './common.schema';
-import { stockUnits } from './schema.constants';
+import { adherenceLogStatuses, stockUnits } from './schema.constants';
 
 const mcpInputDateStringSchema = (fieldName: string) =>
   z
@@ -112,7 +112,8 @@ export const medicineAddInputSchema = z.object({
 export const adherenceLoggerInputSchema = z.object({
   ...blisterLocatorShape,
   medicineId: objectIdSchema,
-  treatmentId: objectIdSchema,
+  treatmentId: objectIdSchema.optional(),
+  status: z.enum(adherenceLogStatuses).default('taken'),
   amount: positiveQuantitySchema('Amount').optional(),
   forced: z.boolean().default(false),
   timestamp: mcpInputDateSchema('timestamp').optional(),
@@ -128,6 +129,17 @@ export const adherenceLoggerInputSchema = z.object({
     });
   }
 });
+
+export const treatmentLookupInputSchema = z.object({
+  ...blisterLocatorShape,
+  treatmentId: objectIdSchema.optional(),
+  medicineId: objectIdSchema.optional(),
+  treatmentText: optionalSearchTextSchema('Treatment text'),
+  medicineText: optionalSearchTextSchema('Medicine text'),
+  activeOnly: z.boolean().default(true),
+  page: positiveIntegerSchema('Page').max(100).default(1),
+  limit: positiveIntegerSchema('Limit').max(100).default(20),
+}).superRefine(validateSingleBlisterLocator);
 
 export const stockModifierInputSchema = z.object({
   ...blisterLocatorShape,
@@ -252,6 +264,7 @@ export type MedicineLookupInput = z.infer<typeof medicineLookupInputSchema>;
 export type MedicineCatalogSearchInput = z.infer<typeof medicineCatalogSearchInputSchema>;
 export type MedicineAddInput = z.infer<typeof medicineAddInputSchema>;
 export type AdherenceLoggerInput = z.infer<typeof adherenceLoggerInputSchema>;
+export type TreatmentLookupInput = z.infer<typeof treatmentLookupInputSchema>;
 export type StockModifierInput = z.infer<typeof stockModifierInputSchema>;
 export type ScheduleAssistantInput = z.infer<typeof scheduleAssistantInputSchema>;
 export type AppointmentManagerInput = z.infer<typeof appointmentManagerInputSchema>;

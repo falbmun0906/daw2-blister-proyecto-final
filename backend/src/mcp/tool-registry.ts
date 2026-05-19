@@ -15,6 +15,7 @@ import {
   officialSourceLinkerInputSchema,
   scheduleAssistantInputSchema,
   stockModifierInputSchema,
+  treatmentLookupInputSchema,
 } from '../../../shared/schemas';
 import { AppError } from '../utils/app-error';
 import {
@@ -31,6 +32,7 @@ import {
   officialSourceLinkerTool,
   scheduleAssistantTool,
   stockModifierTool,
+  treatmentLookupTool,
 } from './tools';
 import { type McpAuthContext } from './types';
 
@@ -97,6 +99,7 @@ export const createMcpServerForContext = (context: McpAuthContext): McpServer =>
   registerTool(server, context, medicineCatalogSearchTool, medicineCatalogSearchInputSchema);
   registerTool(server, context, medicineLookupTool, medicineLookupInputSchema);
   registerTool(server, context, medicineAddTool, medicineAddInputSchema);
+  registerTool(server, context, treatmentLookupTool, treatmentLookupInputSchema);
   registerTool(server, context, adherenceLoggerTool, adherenceLoggerInputSchema);
   registerTool(server, context, stockModifierTool, stockModifierInputSchema);
   registerTool(server, context, scheduleAssistantTool, scheduleAssistantInputSchema);

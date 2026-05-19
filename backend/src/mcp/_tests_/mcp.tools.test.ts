@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import {
+  adherenceLoggerInputSchema,
   appointmentCreateInputSchema,
   appointmentCommentManagerInputSchema,
   appointmentManagerInputSchema,
@@ -9,7 +10,9 @@ import {
   medicineCatalogSearchInputSchema,
   medicineLookupInputSchema,
   scheduleAssistantInputSchema,
+  treatmentLookupInputSchema,
 } from '../../../../shared/schemas';
+import { AdherenceLogModel } from '../../models/adherenceLog.model';
 import { AppointmentModel } from '../../models/appointment.model';
 import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
@@ -23,6 +26,7 @@ import {
 import * as externalService from '../../modules/external/external.service';
 import { type McpAuthContext } from '../types';
 import {
+  adherenceLoggerTool,
   appointmentCreateTool,
   appointmentCommentManagerTool,
   appointmentManagerTool,
@@ -33,6 +37,7 @@ import {
   medicineCatalogSearchTool,
   medicineLookupTool,
   scheduleAssistantTool,
+  treatmentLookupTool,
 } from '../tools';
 
 describe('MCP tools', () => {
@@ -86,6 +91,36 @@ describe('MCP tools', () => {
         estado: 1,
         hasAlerts: false,
       },
+    });
+
+  const createTreatment = async (
+    blisterId: Types.ObjectId,
+    patientUserId: Types.ObjectId,
+    title: string,
+    medicineId: Types.ObjectId,
+    dailyDoseTimes: string[] = ['15:30'],
+  ) =>
+    TreatmentModel.create({
+      blisterId,
+      patientUserId,
+      title,
+      description: null,
+      timeZone: 'Europe/Madrid',
+      startDate: new Date('2030-12-01T08:00:00.000Z'),
+      endDate: null,
+      active: true,
+      medicines: [
+        {
+          medicineId,
+          amount: 1,
+          firstDoseAt: new Date('2030-12-01T08:00:00.000Z'),
+          scheduleType: 'daily_times',
+          frequencyHours: null,
+          dailyDoseTimes,
+          isRecurring: true,
+          note: null,
+        },
+      ],
     });
 
   const createFixture = async () => {
@@ -377,6 +412,77 @@ describe('MCP tools', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].nextDoseAt.toISOString()).toBe('2030-06-02T08:00:00.000Z');
+  });
+
+  it('looks up active treatments by medicine text with schedules ready for MCP logging', async () => {
+    const { context, currentUser, bosque } = await createFixture();
+    const zinc = await createMedicine(bosque._id, 'Zinc Solaray', 10, '920001');
+    const treatment = await createTreatment(
+      bosque._id,
+      currentUser._id,
+      'Hierbas y suplementos',
+      zinc._id,
+      ['15:30'],
+    );
+    const input = treatmentLookupInputSchema.parse({
+      blisterName: 'El Bosque',
+      medicineText: 'zinc',
+    });
+
+    const result = await treatmentLookupTool.run(context, input);
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      blisterName: 'El Bosque',
+      treatmentId: treatment._id.toString(),
+      title: 'Hierbas y suplementos',
+    });
+    expect(result.items[0].medicines).toEqual([
+      expect.objectContaining({
+        medicineId: zinc._id.toString(),
+        medicineName: 'Zinc Solaray',
+        dailyDoseTimes: ['15:30'],
+      }),
+    ]);
+  });
+
+  it('registers taken doses without treatmentId when the medicine belongs to a single active treatment', async () => {
+    const { context, currentUser, bosque } = await createFixture();
+    const zinc = await createMedicine(bosque._id, 'Zinc Solaray', 10, '920002');
+    const treatment = await createTreatment(bosque._id, currentUser._id, 'Zinc diario', zinc._id, ['15:30']);
+    const input = adherenceLoggerInputSchema.parse({
+      blisterName: 'El Bosque',
+      medicineId: zinc._id.toString(),
+      status: 'taken',
+    });
+
+    const result = await adherenceLoggerTool.run(context, input);
+
+    expect(result).toMatchObject({
+      blisterId: bosque._id.toString(),
+      medicineId: zinc._id.toString(),
+      treatmentId: treatment._id.toString(),
+      status: 'taken',
+      isForced: false,
+      stockAfter: 9,
+      warning: null,
+    });
+    await expect(AdherenceLogModel.countDocuments({ blisterId: bosque._id })).resolves.toBe(1);
+  });
+
+  it('rejects adherence logs without treatmentId when multiple active treatments match the same medicine', async () => {
+    const { context, currentUser, bosque } = await createFixture();
+    const zinc = await createMedicine(bosque._id, 'Zinc Solaray', 10, '920003');
+    await createTreatment(bosque._id, currentUser._id, 'Zinc desayuno', zinc._id, ['09:00']);
+    await createTreatment(bosque._id, currentUser._id, 'Zinc comida', zinc._id, ['15:30']);
+    const input = adherenceLoggerInputSchema.parse({
+      blisterName: 'El Bosque',
+      medicineId: zinc._id.toString(),
+    });
+
+    await expect(adherenceLoggerTool.run(context, input)).rejects.toMatchObject({
+      code: 'MCP_TREATMENT_AMBIGUOUS',
+    });
   });
 
   it('blocks appointment creation through MCP for observer role', async () => {

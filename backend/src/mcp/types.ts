@@ -14,6 +14,7 @@ import {
   type OfficialSourceLinkerInput,
   type ScheduleAssistantInput,
   type StockModifierInput,
+  type TreatmentLookupInput,
 } from '../../../shared/schemas';
 
 export interface McpBlisterContext {
@@ -92,6 +93,35 @@ export interface McpScheduleItem {
   medicineName: string;
   amount: number;
   nextDoseAt: Date;
+}
+
+export interface McpTreatmentLookupMedicine {
+  medicineId: string;
+  medicineName: string;
+  medicineAlias: string | null;
+  amount: number;
+  scheduleType: 'interval' | 'daily_times';
+  frequencyHours: number | null;
+  dailyDoseTimes: string[];
+  isRecurring: boolean;
+  note: string | null;
+  scheduleSummary: string;
+  nextDoseAt: Date | null;
+}
+
+export interface McpTreatmentLookupItem {
+  blisterId: string;
+  blisterName: string;
+  role: BlisterRole;
+  treatmentId: string;
+  patientUserId: string;
+  title: string;
+  description: string | null;
+  timeZone: string;
+  startDate: Date;
+  endDate: Date | null;
+  active: boolean;
+  medicines: McpTreatmentLookupMedicine[];
 }
 
 export interface McpAppointmentItem {
@@ -198,10 +228,21 @@ export type McpAdherenceLoggerTool = McpToolDefinition<AdherenceLoggerInput, {
   blisterId: string;
   treatmentId: string;
   medicineId: string;
+  status: 'taken' | 'skipped';
   timestamp: string;
   isForced: boolean;
   stockAfter: number;
   warning: string | null;
+}>;
+
+export type McpTreatmentLookupTool = McpToolDefinition<TreatmentLookupInput, {
+  items: McpTreatmentLookupItem[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }>;
 
 export type McpStockModifierTool = McpToolDefinition<StockModifierInput, McpStockModifierResult>;

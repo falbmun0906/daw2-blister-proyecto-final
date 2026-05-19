@@ -11,3 +11,4 @@ export * from './medicine-lookup.tool';
 export * from './official-source-linker.tool';
 export * from './schedule-assistant.tool';
 export * from './stock-modifier.tool';
+export * from './treatment-lookup.tool';
