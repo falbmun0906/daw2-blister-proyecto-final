@@ -10,7 +10,7 @@ import { OAuthTokenModel } from '../../../models/oauthToken.model';
 import { UserModel } from '../../../models/user.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../../types/auth.types';
 import * as authEmailService from '../../auth/auth-email.service';
-import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID } from '../oauth.constants';
+import { CLAUDE_WEB_ORIGIN, OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID } from '../oauth.constants';
 import { clearOAuthAuthorizationCodes } from '../oauth.service';
 import {
   clearTestDatabase,
@@ -140,6 +140,16 @@ describe('oauth.routes', () => {
     expect(response.headers['access-control-allow-origin']).toBe('http://localhost:49152');
   });
 
+  it('allows claude.ai on OAuth discovery responses with credentials', async () => {
+    const response = await request(app)
+      .get('/.well-known/oauth-authorization-server')
+      .set('Origin', CLAUDE_WEB_ORIGIN);
+
+    expect(response.status).toBe(200);
+    expect(response.headers['access-control-allow-origin']).toBe(CLAUDE_WEB_ORIGIN);
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
+  });
+
   it('handles OAuth preflight requests from Claude Desktop localhost origins', async () => {
     const response = await request(app)
       .options('/oauth/token')
@@ -210,6 +220,17 @@ describe('oauth.routes', () => {
     expect(response.text).toContain('c-btn__spinner');
     expect(response.text).toContain('src="/oauth/authorize.js"');
     expect(response.text).not.toContain('<script>');
+  });
+
+  it('relaxes cross-origin policies for the OAuth authorization popup', async () => {
+    const response = await request(app)
+      .get('/oauth/authorize')
+      .set('Origin', CLAUDE_WEB_ORIGIN)
+      .query(createAuthorizePayload());
+
+    expect(response.status).toBe(200);
+    expect(response.headers['cross-origin-opener-policy']).toBe('same-origin-allow-popups');
+    expect(response.headers['cross-origin-resource-policy']).toBe('cross-origin');
   });
 
   it('serves the authorization form script from the same origin', async () => {

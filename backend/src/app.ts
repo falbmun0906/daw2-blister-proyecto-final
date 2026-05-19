@@ -1,5 +1,5 @@
 import cors, { type CorsOptions, type CorsOptionsDelegate } from 'cors';
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
@@ -22,6 +22,7 @@ import {
   oauthMetadataController,
   oauthProtectedResourceMetadataController,
 } from './modules/oauth/oauth.controller';
+import { CLAUDE_WEB_ORIGIN } from './modules/oauth/oauth.constants';
 import { oauthRouter } from './modules/oauth/oauth.routes';
 import { treatmentsRouter } from './modules/treatments/treatments.routes';
 
@@ -38,6 +39,7 @@ const OAUTH_CORS_PATHS = [
   '/.well-known/openid-configuration',
   '/oauth',
 ];
+const OAUTH_ALLOWED_CROSS_ORIGIN_ORIGINS = new Set([CLAUDE_WEB_ORIGIN]);
 
 const isOAuthCorsPath = (path: string): boolean =>
   OAUTH_CORS_PATHS.some((oauthPath) => path === oauthPath || path.startsWith(`${oauthPath}/`));
@@ -54,13 +56,29 @@ const isLocalhostOrigin = (origin: string): boolean => {
   }
 };
 
+const isTrustedOAuthOrigin = (origin: string): boolean =>
+  OAUTH_ALLOWED_CROSS_ORIGIN_ORIGINS.has(normalizeOrigin(origin)) || isLocalhostOrigin(origin);
+
+const applyOAuthCrossOriginHeaders = (
+  request: Request,
+  response: Response,
+  next: NextFunction,
+): void => {
+  if (isOAuthCorsPath(request.path)) {
+    response.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+
+  next();
+};
+
 const createCorsOptionsDelegate = (clientOrigins: readonly string[]): CorsOptionsDelegate<Request> =>
   (request, callback) => {
     const requestOrigin = request.header('Origin');
     const allowedOrigins = new Set(clientOrigins.map(normalizeOrigin));
     const allowedOrigin = requestOrigin !== undefined && (
       allowedOrigins.has(normalizeOrigin(requestOrigin))
-      || (isOAuthCorsPath(request.path) && isLocalhostOrigin(requestOrigin))
+      || (isOAuthCorsPath(request.path) && isTrustedOAuthOrigin(requestOrigin))
     );
     const options: CorsOptions = {
       origin: requestOrigin === undefined ? true : allowedOrigin,
@@ -95,6 +113,7 @@ export const createApp = ({
       },
     }),
   );
+  app.use(applyOAuthCrossOriginHeaders);
   app.use(cors(createCorsOptionsDelegate(allowedClientOrigins)));
 
   if (mcpServerEnabled) {

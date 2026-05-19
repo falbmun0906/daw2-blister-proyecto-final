@@ -44,6 +44,14 @@ describe('app infrastructure', () => {
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
+  it('keeps strict cross-origin policies on non-OAuth routes', async () => {
+    const response = await request(app).get('/api/v1/health');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['cross-origin-opener-policy']).toBe('same-origin');
+    expect(response.headers['cross-origin-resource-policy']).toBe('same-origin');
+  });
+
   it('exposes the generated OpenAPI specification', async () => {
     const response = await request(app).get('/api/v1/docs.json');
 
