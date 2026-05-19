@@ -21,7 +21,7 @@
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
-    max-height: min(calc(100vh - 2 * var(--space-4)), 50vh);
+    max-height: min(calc(100vh - 2 * var(--space-4)), 80vh);
     overflow: hidden;
     animation: c-modal-pop var(--transition-base) ease-out;
   }
@@ -80,7 +80,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    overflow-y: auto;
+    min-height: 0;
   }
 }
 
@@ -89,7 +89,7 @@
   padding: var(--space-3);
 
   &__panel {
-    max-height: min(calc(100% - 2 * var(--space-3)), 50%);
+    max-height: min(calc(100% - 2 * var(--space-3)), 80%);
   }
 }
 
