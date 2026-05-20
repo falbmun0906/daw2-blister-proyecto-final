@@ -131,9 +131,10 @@ describe('notifications.service', () => {
       type: 'appointment_reminder',
       severity: 'info',
       title: '¿Qué tal ha ido la cita?',
-      message: "Tras la cita 'Revisión anual', revisa si hay algún cambio que anotar.",
+      message: "Tras la cita 'Revisión anual', revisa si hay cambios que aplicar al tratamiento.",
       metadata: {
         appointmentId: 'appointment-follow-up',
+        appointmentTitle: 'Revisión anual',
         appointmentDate: '2000-01-01T10:00:00.000Z',
         reminderPhase: 'after',
       },
@@ -349,8 +350,10 @@ describe('notifications.service', () => {
     expect(notifications).toHaveLength(2);
     expect(before?.title).toBe('Cita médica próxima');
     expect(before?.message).toBe('Tienes Consulta cardiologia en menos de 3 horas.');
+    expect(before?.metadata?.appointmentTitle).toBe('Consulta cardiologia');
     expect(after?.title).toBe('¿Qué tal ha ido la cita?');
-    expect(after?.message).toBe("Tras la cita 'Consulta digestivo', revisa si hay algún cambio que anotar.");
+    expect(after?.message).toBe("Tras la cita 'Consulta digestivo', revisa si hay cambios que aplicar al tratamiento.");
+    expect(after?.metadata?.appointmentTitle).toBe('Consulta digestivo');
   });
 
   it('does not recreate dismissed appointment reminders while the scheduler window is still open', async () => {

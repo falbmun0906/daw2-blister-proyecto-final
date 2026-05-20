@@ -199,9 +199,10 @@ export const computeDosesInRange = (
   return occurrences;
 };
 
-const DEFAULT_TOLERANCE_MS = 6 * HOUR_IN_MS;
-const MIN_TOLERANCE_MS = 30 * 60 * 1000;
-const MAX_TOLERANCE_MS = 12 * HOUR_IN_MS;
+const DEFAULT_ALIGNMENT_WINDOW_MS = 6 * HOUR_IN_MS;
+const MAX_ALIGNMENT_WINDOW_MS = 12 * HOUR_IN_MS;
+const ALIGNMENT_BOUNDARY_MARGIN_MS = 1;
+const SAME_SCHEDULED_DOSE_TOLERANCE_MS = 0;
 
 const parseHHmmToMinutes = (value: string): number | null => {
   const match = /^(\d{2}):(\d{2})$/.exec(value);
@@ -212,40 +213,61 @@ const parseHHmmToMinutes = (value: string): number | null => {
   return hours * 60 + minutes;
 };
 
+const computeShortestDailyGapMs = (times: number[]): number | null => {
+  let minGapMinutes = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < times.length; index += 1) {
+    const current = times[index];
+    const next = times[(index + 1) % times.length];
+    const rawGap = (next - current + 24 * 60) % (24 * 60);
+    if (rawGap > 0 && rawGap < minGapMinutes) {
+      minGapMinutes = rawGap;
+    }
+  }
+
+  return Number.isFinite(minGapMinutes) ? minGapMinutes * 60 * 1000 : null;
+};
+
+const getDailyTimeMinutes = (entry: DoseScheduleEntry): number[] =>
+  getSortedDailyTimes(entry)
+    .map((value) => parseHHmmToMinutes(value))
+    .filter((value): value is number => value !== null);
+
 /**
- * Devuelve la mitad del intervalo más corto de la pauta (acotado entre 30 minutos
- * y 12 horas) para usar como ventana de tolerancia al casar logs con dosis
- * programadas o al detectar duplicados.
+ * Devuelve la ventana usada para alinear una peticion con la dosis programada
+ * mas cercana. En pautas con varias horas exactas, la ventana nunca invade la
+ * hora vecina para que tomas muy proximas sigan siendo identidades distintas.
  */
-export const computeScheduleToleranceMs = (entry: DoseScheduleEntry): number => {
+export const computeScheduleAlignmentWindowMs = (entry: DoseScheduleEntry): number => {
   const scheduleType = entry.scheduleType ?? 'interval';
   if (scheduleType === 'daily_times') {
-    const times = getSortedDailyTimes(entry)
-      .map((value) => parseHHmmToMinutes(value))
-      .filter((value): value is number => value !== null);
+    const times = getDailyTimeMinutes(entry);
     if (times.length < 2) {
-      return DEFAULT_TOLERANCE_MS;
+      return DEFAULT_ALIGNMENT_WINDOW_MS;
     }
-    let minGapMinutes = Number.POSITIVE_INFINITY;
-    for (let index = 0; index < times.length; index += 1) {
-      const current = times[index];
-      const next = times[(index + 1) % times.length];
-      const rawGap = (next - current + 24 * 60) % (24 * 60);
-      if (rawGap > 0 && rawGap < minGapMinutes) {
-        minGapMinutes = rawGap;
-      }
+    const shortestGapMs = computeShortestDailyGapMs(times);
+    if (shortestGapMs === null) {
+      return DEFAULT_ALIGNMENT_WINDOW_MS;
     }
-    if (!Number.isFinite(minGapMinutes)) {
-      return DEFAULT_TOLERANCE_MS;
-    }
-    const halfGapMs = (minGapMinutes / 2) * 60 * 1000;
-    return Math.min(MAX_TOLERANCE_MS, Math.max(MIN_TOLERANCE_MS, halfGapMs));
+    return Math.min(
+      MAX_ALIGNMENT_WINDOW_MS,
+      Math.max(0, shortestGapMs / 2 - ALIGNMENT_BOUNDARY_MARGIN_MS),
+    );
   }
 
   const frequencyHours = entry.frequencyHours ?? 0;
   if (frequencyHours <= 0) {
-    return DEFAULT_TOLERANCE_MS;
+    return DEFAULT_ALIGNMENT_WINDOW_MS;
   }
   const halfMs = (frequencyHours / 2) * HOUR_IN_MS;
-  return Math.min(MAX_TOLERANCE_MS, Math.max(MIN_TOLERANCE_MS, halfMs));
+  return Math.min(MAX_ALIGNMENT_WINDOW_MS, Math.max(0, halfMs - ALIGNMENT_BOUNDARY_MARGIN_MS));
+};
+
+/**
+ * Devuelve la tolerancia de identidad entre un log y una dosis programada.
+ * Los logs nuevos se guardan con la hora programada exacta, por lo que la
+ * identidad debe ser exacta para no mezclar tomas editadas o muy cercanas.
+ */
+export const computeScheduleToleranceMs = (entry: DoseScheduleEntry): number => {
+  const alignmentWindowMs = computeScheduleAlignmentWindowMs(entry);
+  return Math.min(SAME_SCHEDULED_DOSE_TOLERANCE_MS, alignmentWindowMs);
 };

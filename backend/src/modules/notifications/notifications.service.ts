@@ -280,7 +280,7 @@ const buildAppointmentReminderNotification = ({
   title: phase === 'before' ? 'Cita médica próxima' : '¿Qué tal ha ido la cita?',
   message: phase === 'before'
     ? `Tienes ${appointment.title} ${formatAppointmentReminderWindow(reminderHours)}.`
-    : `Tras la cita '${appointment.title}', revisa si hay algún cambio que anotar.`,
+    : `Tras la cita '${appointment.title}', revisa si hay cambios que aplicar al tratamiento.`,
   metadata: {
     appointmentId: appointment._id.toString(),
     appointmentTitle: appointment.title,

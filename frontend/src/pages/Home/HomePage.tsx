@@ -160,6 +160,23 @@ function getStringMetadata(notification: NotificationView, key: string): string 
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function getNotificationDetail(notification: NotificationView): string {
+  const medicineName = getStringMetadata(notification, 'medicineName');
+  let message = notification.message;
+
+  if (
+    notification.type === 'appointment_reminder'
+    && getStringMetadata(notification, 'reminderPhase') === 'after'
+  ) {
+    const appointmentTitle = getStringMetadata(notification, 'appointmentTitle');
+    if (appointmentTitle) {
+      message = `Tras la cita '${appointmentTitle}', revisa si hay cambios que aplicar al tratamiento.`;
+    }
+  }
+
+  return medicineName ? `${medicineName} · ${message}` : message;
+}
+
 function formatRemaining(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -291,9 +308,7 @@ export default function HomePage() {
         ? [{
           key: `notification:${notification.id}`,
           title: notification.title,
-          detail: getStringMetadata(notification, 'medicineName')
-            ? `${getStringMetadata(notification, 'medicineName')} · ${notification.message}`
-            : notification.message,
+          detail: getNotificationDetail(notification),
           context: getNotificationContext(notification),
           actionLabel: getNotificationActionLabel(notification),
           actionRoute: getNotificationTargetRoute(notification) ?? ROUTES.notifications,

@@ -17,6 +17,7 @@ import { type TreatmentMedicineEntry } from '../../types/treatment.types';
 import { AppError } from '../../utils/app-error';
 import {
   computeDosesInRange,
+  computeScheduleAlignmentWindowMs,
   computeScheduleToleranceMs,
 } from '../../utils/dose-schedule';
 import { getMedicationTimeZone } from '../../utils/time-zone';
@@ -207,6 +208,7 @@ const resolveDoseAlignment = (
     dailyDoseTimes: treatmentMedicine.dailyDoseTimes ?? [],
     isRecurring: Boolean(treatmentMedicine.isRecurring),
   } as const;
+  const alignmentWindowMs = computeScheduleAlignmentWindowMs(entry);
   const toleranceMs = computeScheduleToleranceMs(entry);
   const source = {
     startDate: treatmentMedicine.firstDoseAt,
@@ -214,8 +216,8 @@ const resolveDoseAlignment = (
     active: Boolean(treatment.active),
     timeZone: getMedicationTimeZone(treatment.timeZone ?? null),
   };
-  const from = new Date(requestedTimestamp.getTime() - toleranceMs);
-  const to = new Date(requestedTimestamp.getTime() + toleranceMs);
+  const from = new Date(requestedTimestamp.getTime() - alignmentWindowMs);
+  const to = new Date(requestedTimestamp.getTime() + alignmentWindowMs);
   const occurrences = computeDosesInRange(source, entry, from, to, 16);
   let nearest: Date | null = null;
   let nearestDelta = Number.POSITIVE_INFINITY;

@@ -454,4 +454,106 @@ describe('adherence.service', () => {
     const storedMedicine = await MedicineModel.findById(medicine._id);
     expect(storedMedicine?.stock).toBe(8);
   });
+
+  it('allows edited daily dose times to be logged as new scheduled doses', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    treatment.medicines = [
+      {
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['09:00'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    await adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+      timestamp: new Date('2030-11-02T08:00:00.000Z'),
+    });
+
+    treatment.medicines = [
+      {
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-11-02T08:03:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['09:03'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    const created = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:03:00.000Z'),
+      },
+    );
+
+    expect(new Date(created.timestamp).toISOString()).toBe('2030-11-02T08:03:00.000Z');
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    expect(storedMedicine?.stock).toBe(8);
+  });
+
+  it('treats close daily dose times in the same treatment as distinct doses', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    treatment.medicines = [
+      {
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-11-02T08:03:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['09:03', '09:06'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    const firstLog = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:03:00.000Z'),
+      },
+    );
+    const secondLog = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:06:00.000Z'),
+      },
+    );
+
+    expect(new Date(firstLog.timestamp).toISOString()).toBe('2030-11-02T08:03:00.000Z');
+    expect(new Date(secondLog.timestamp).toISOString()).toBe('2030-11-02T08:06:00.000Z');
+    await expect(
+      adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:06:00.000Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'ADHERENCE_LOG_DUPLICATE' });
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    expect(storedMedicine?.stock).toBe(8);
+  });
 });

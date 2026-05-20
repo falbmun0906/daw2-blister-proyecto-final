@@ -144,4 +144,49 @@ describe('me.service', () => {
 
     expect(result.map((dose) => dose.displayTime)).toEqual(['02:02', '04:05']);
   });
+
+  it('does not carry adherence logs across edited or adjacent daily dose times', async () => {
+    const { user, blister, medicine, treatment } = await createContext();
+    await AdherenceLogModel.create({
+      blisterId: blister._id,
+      medicineId: medicine._id,
+      treatmentId: treatment._id,
+      userId: user._id,
+      status: 'taken',
+      amount: 1,
+      timestamp: new Date('2030-11-02T08:00:00.000Z'),
+    });
+    const firstCurrentLog = await AdherenceLogModel.create({
+      blisterId: blister._id,
+      medicineId: medicine._id,
+      treatmentId: treatment._id,
+      userId: user._id,
+      status: 'taken',
+      amount: 1,
+      timestamp: new Date('2030-11-02T08:03:00.000Z'),
+    });
+
+    treatment.medicines = [
+      {
+        ...treatment.medicines[0],
+        firstDoseAt: new Date('2030-11-02T08:03:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['09:03', '09:06'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    const result = await meUpcomingDoses(user._id.toString(), {
+      from: new Date('2030-11-02T08:00:00.000Z'),
+      to: new Date('2030-11-02T08:10:00.000Z'),
+      includeTaken: true,
+    });
+
+    expect(result.map((dose) => dose.displayTime)).toEqual(['09:03', '09:06']);
+    expect(result.map((dose) => dose.isTaken)).toEqual([true, false]);
+    expect(result[0]?.adherenceLogId).toBe(firstCurrentLog._id.toString());
+    expect(result[1]?.adherenceLogId).toBeNull();
+  });
 });
