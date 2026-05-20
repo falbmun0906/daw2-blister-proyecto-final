@@ -2,6 +2,8 @@
 
 El despliegue de Blíster evolucionó en tres fases: primero se dockerizó el sistema completo para validar portabilidad; después se publicó backend y frontend en Render usando MongoDB Atlas; finalmente se trasladó el backend a una VPS de Ionos con Docker, Nginx y HTTPS, manteniendo el frontend en Render. Este capítulo documenta esa evolución y la configuración técnica resultante.
 
+> Para la parte específica de evaluación del módulo (criterios 7 y 8 sobre artefactos y verificación de red), véase [08-despliegue-eval.md](08-despliegue-eval.md).
+
 ## Índice
 
 1. [Visión general](#1-visión-general)
@@ -246,7 +248,7 @@ La exposición del contenedor se limita a la máquina. El usuario final no consu
 Estructura del backend en la VPS:
 
 ```text
-/opt/blister/
+/home/fran/apps/daw2-blister-proyecto-final/
 ├── backend/.env
 ├── docker-compose.backend.yml
 ├── backend/Dockerfile
@@ -254,6 +256,8 @@ Estructura del backend en la VPS:
 ├── shared/
 └── package files del monorepo
 ```
+
+La ruta real del proyecto en la VPS es `~/apps/daw2-blister-proyecto-final`, propiedad del usuario `fran`. El despliegue automatizado (sección 7) y el redespliegue manual operan siempre desde ese directorio.
 
 El archivo `.env` de producción debe tener permisos restrictivos y no debe copiarse al repositorio. Si se necesita compartir configuración, se documentan nombres de variables, no valores reales.
 
@@ -315,23 +319,59 @@ Respuesta esperada:
 
 ### 4.5 Nginx como reverse proxy
 
-Se creó el subdominio `api.miblister.es` apuntando a la IP pública de la VPS mediante un registro A. En el servidor se configuró Nginx como proxy hacia el contenedor mediante un site específico en `/etc/nginx/sites-available/miblister-api`:
+Se creó el subdominio `api.miblister.es` apuntando a la IP pública de la VPS mediante un registro A. En el servidor se configuró Nginx como proxy hacia el contenedor mediante un site específico en `/etc/nginx/sites-available/miblister-api`. La configuración real, después de pasar Certbot y ajustarla para soportar correctamente OAuth y el transporte Streamable HTTP de MCP, es la siguiente:
 
 ```nginx
 server {
-    listen 80;
     server_name api.miblister.es;
 
     location / {
         proxy_pass http://127.0.0.1:3001;
+
         proxy_http_version 1.1;
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 1. Permitir que el Bearer token de Claude/MCP llegue al backend
+        proxy_set_header Authorization $http_authorization;
+        proxy_pass_header  Authorization;
+
+        # 2. Configuración necesaria para MCP (Streamable HTTP / SSE)
+        proxy_set_header Connection '';
+        proxy_cache off;
+        proxy_buffering off;
+        proxy_read_timeout 86400s;
     }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate     /etc/letsencrypt/live/api.miblister.es/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/api.miblister.es/privkey.pem;   # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf;                          # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;                            # managed by Certbot
+}
+
+server {
+    if ($host = api.miblister.es) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name api.miblister.es;
+    return 404; # managed by Certbot
 }
 ```
+
+Los dos bloques `server` se complementan: el primero termina TLS y reenvía a `127.0.0.1:3001`; el segundo escucha en HTTP y redirige cualquier acceso a `http://api.miblister.es` hacia HTTPS. Las directivas añadidas a `location /` son específicas del proyecto:
+
+| Directiva | Motivo |
+| :--- | :--- |
+| `proxy_set_header Authorization` y `proxy_pass_header Authorization` | Garantizan que el Bearer token de OAuth/MCP llegue íntegro al backend Express. |
+| `proxy_set_header Connection ''` | Evita el cierre prematuro de la conexión cuando MCP usa el transporte Streamable HTTP. |
+| `proxy_cache off`, `proxy_buffering off` | Desactivan buffer y caché de Nginx para que los eventos se entreguen en streaming. |
+| `proxy_read_timeout 86400s` | Permite mantener abiertas sesiones MCP largas sin que Nginx corte por inactividad. |
 
 Activación y comprobación:
 
@@ -440,18 +480,29 @@ La integración continua valida el repositorio antes de desplegar. Render mantie
 
 | Proceso | Estado |
 | :--- | :--- |
-| Backend CI | Lint, tests, coverage y build en GitHub Actions. |
-| Frontend CI | Lint, Vitest y build en GitHub Actions. |
+| Backend CI | Lint, tests, coverage y build en GitHub Actions (`.github/workflows/ci.yml`). |
+| Frontend CI | Lint, Vitest y build en GitHub Actions (`.github/workflows/ci.yml`). |
 | E2E frontend | Playwright en PR hacia `main`. |
 | Frontend Render | Redeploy automático desde repositorio. |
-| Backend VPS | Redeploy manual con `git pull` y `docker compose up -d --build`. |
+| Backend VPS | Redeploy automático por SSH al hacer push a `dev` (`.github/workflows/deploy-vps.yml`). |
 
-Una automatización futura puede conectar GitHub Actions con la VPS por SSH para ejecutar el pull y reconstrucción del contenedor tras un push controlado.
+El despliegue continuo del backend está implementado con `appleboy/ssh-action` y se dispara con cada push a la rama `dev` (también es invocable manualmente con `workflow_dispatch`). Usa los secretos `VPS_HOST`, `VPS_USER` y `VPS_SSH_KEY`, entra en `~/apps/daw2-blister-proyecto-final`, hace `git pull --rebase origin dev`, reconstruye el contenedor y limpia imágenes huérfanas:
 
-El redespliegue manual del backend sigue una secuencia corta y repetible:
+```yaml
+script: |
+  set -euo pipefail
+  cd ~/apps/daw2-blister-proyecto-final
+  git checkout dev
+  git pull --rebase origin dev
+  docker compose -f docker-compose.backend.yml up -d --build
+  docker image prune -f
+```
+
+Para intervenciones puntuales o para validar manualmente un cambio en la VPS, la secuencia equivalente ejecutada por SSH es:
 
 ```bash
-git pull
+cd ~/apps/daw2-blister-proyecto-final
+git pull --rebase origin dev
 docker compose -f docker-compose.backend.yml up -d --build
 docker compose -f docker-compose.backend.yml logs -f backend
 curl https://api.miblister.es/api/v1/health
