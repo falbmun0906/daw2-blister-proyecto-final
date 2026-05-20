@@ -22,9 +22,9 @@ Blíster concluye como una aplicación web progresiva funcional para gestionar m
 
 ## 1. Balance general
 
-El proyecto ha evolucionado desde una idea de organización del botiquín hasta una plataforma full-stack con multitenencia, roles, integración oficial CIMA/AEMPS, PWA, notificaciones, recuperación de contraseña, privacidad RGPD, MCP y despliegue real.
+El proyecto partió de la idea de una aplicación sencilla para recordar tomas de medicación y terminó cubriendo bastantes más áreas: multitenencia por blísteres compartidos, roles, integración con la API oficial CIMA/AEMPS, PWA con notificaciones push, recuperación de contraseña, política RGPD, servidor MCP y despliegue en VPS con dominio propio. El alcance se fue ampliando a medida que se añadían piezas que el dominio pedía de forma natural.
 
-El resultado no se limita a recordar tomas. Blíster relaciona inventario, tratamiento, paciente, cita, stock, caducidad, autoría y permisos. Esa relación es la parte más valiosa del proyecto, porque refleja cómo se organiza realmente la medicación en un hogar compartido.
+Blíster no se limita a recordar tomas: relaciona inventario, tratamiento, paciente, cita, stock, caducidad, autoría y permisos. Esa relación es la que vertebra la aplicación, porque la medicación en un hogar compartido no funciona como una lista plana de recordatorios.
 
 ## 2. Cumplimiento de objetivos
 
@@ -69,11 +69,11 @@ Los objetivos iniciales se han cubierto en tres planos: funcional, técnico y de
 
 ## 3. Evaluación crítica del alcance
 
-El alcance final es ambicioso para un proyecto individual, pero mantiene coherencia porque las funcionalidades giran alrededor de un mismo núcleo: la medicación doméstica. Las piezas no se añaden como módulos aislados, sino que se conectan entre sí.
+El alcance final ha sido amplio para un proyecto individual y eso ha condicionado el ritmo de trabajo. Las funcionalidades giran alrededor de un mismo núcleo —la medicación doméstica—, lo que ha permitido que las piezas encajen entre sí, aunque no siempre fue evidente desde el principio cómo dimensionar cada módulo. En una segunda iteración mantendría el núcleo (botiquín, tratamientos, adherencia, citas, blísteres) y dejaría notificaciones push y MCP para una fase posterior, ya con el resto cubierto por pruebas de navegador.
 
-El punto más logrado es la integración entre inventario y adherencia. Registrar una toma no solo cambia una pantalla: crea historial, descuenta stock, puede generar notificaciones y mantiene autoría. También destaca la multitenencia por blísteres, que permite modelar casos familiares reales con permisos distintos.
+La zona donde más capas se conectan es la integración entre inventario y adherencia. Registrar una toma no solo cambia una pantalla: crea historial, descuenta stock, puede generar notificaciones y mantiene autoría. La multitenencia por blísteres también atraviesa toda la aplicación, ya que cada endpoint y cada vista filtran por blíster activo y por rol del usuario.
 
-El punto que requiere más evolución es la cobertura de interfaz en navegador real. El backend y los contratos compartidos tienen una base de pruebas amplia, mientras que el frontend automatizado todavía debe crecer en formularios complejos y flujos autenticados.
+Queda fuera del alcance ampliar la cobertura de pruebas de interfaz en navegador real. El backend y los contratos compartidos cuentan con una base de pruebas amplia, mientras que las pruebas E2E del frontend están centradas en flujos públicos y de accesibilidad. Ampliar la cobertura a formularios complejos y flujos autenticados queda como continuación natural del trabajo.
 
 ## 4. Aprendizajes técnicos
 
@@ -83,13 +83,13 @@ El proyecto ha reforzado competencias de desarrollo web profesional.
 
 Se ha trabajado con separación entre rutas, controladores, servicios y modelos. Esta estructura facilita mantener reglas de negocio complejas sin convertir los controladores en bloques monolíticos.
 
-La decisión de usar Zod en `shared` ha sido especialmente útil. Permite que un cambio en un contrato se refleje en frontend y backend y reduce errores por duplicación de validaciones.
+Los esquemas Zod compartidos en `shared` permiten que un cambio en un contrato se refleje en frontend y backend desde un único punto, lo que reduce duplicación y desincronización de validaciones.
 
 ### 4.2 Seguridad aplicada
 
 Blíster maneja datos sensibles relacionados con salud. Por ello se han aplicado medidas como tokens hasheados, recuperación con respuesta neutra, CORS controlado, sanitización, validación de ObjectId, permisos por rol y revocación de accesos externos.
 
-La seguridad no se ha tratado como una capa final, sino como una condición de cada flujo: login, recuperación, blísteres, MCP, OAuth y borrado.
+La seguridad se aborda en cada flujo —login, recuperación, blísteres, MCP, OAuth y borrado— y no como una capa añadida al final.
 
 ### 4.3 Producto y experiencia de usuario
 
@@ -119,7 +119,7 @@ Las mayores dificultades del proyecto aparecieron en los puntos donde varias cap
 | Privacidad de datos sensibles | Política RGPD, borrado lógico y purga programada. |
 | Consistencia CSS | ITCSS, BEM y tokens centralizados. |
 
-El servidor MCP fue uno de los bloques más exigentes porque no se trataba solo de exponer una ruta. Había que definir qué acciones podía ejecutar un cliente externo, cómo autorizarlo, cómo aislarlo por usuario y blíster, cómo revocar tokens y cómo mantener la seguridad del sistema al permitir acceso desde asistentes de IA.
+El servidor MCP requirió definir qué acciones podía ejecutar un cliente externo, cómo autorizarlo, cómo aislarlo por usuario y blíster, cómo revocar tokens y cómo encajar el flujo OAuth con el resto del sistema.
 
 Las notificaciones también generaron una dificultad doble. Por un lado, la aplicación necesitaba notificaciones internas coherentes con citas, tratamientos, stock y preferencias. Por otro, las notificaciones push dependían del navegador, del service worker, de permisos explícitos, de claves VAPID y de un despliegue HTTPS correcto. Esta combinación hizo que el comportamiento tuviera que validarse tanto desde código como desde el entorno real.
 
