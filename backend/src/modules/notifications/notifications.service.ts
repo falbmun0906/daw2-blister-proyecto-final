@@ -90,20 +90,99 @@ const HOUR_MS = 60 * 60 * 1000;
 
 type AppointmentReminderPhase = 'before' | 'after';
 
+interface NotificationAppointmentSummary {
+  title: string;
+  treatmentId: string | null;
+}
+
+const getNotificationMetadataString = (
+  notification: PersistedNotification,
+  key: string,
+): string | null => {
+  const value = notification.metadata?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+};
+
+const loadNotificationAppointments = async (
+  notifications: PersistedNotification[],
+): Promise<Map<string, NotificationAppointmentSummary>> => {
+  const appointmentIds = [...new Set(
+    notifications
+      .filter((notification) => (
+        notification.type === 'appointment_reminder'
+        || notification.type === 'appointment_comment'
+      ))
+      .map((notification) => getNotificationMetadataString(notification, 'appointmentId'))
+      .filter((appointmentId): appointmentId is string => (
+        appointmentId !== null && Types.ObjectId.isValid(appointmentId)
+      )),
+  )];
+
+  if (appointmentIds.length === 0) {
+    return new Map();
+  }
+
+  const appointments = await AppointmentModel.find({
+    _id: { $in: appointmentIds.map((appointmentId) => new Types.ObjectId(appointmentId)) },
+    deletedAt: null,
+  })
+    .select({ _id: 1, title: 1, treatmentId: 1 })
+    .lean<Array<{ _id: Types.ObjectId; title: string; treatmentId?: Types.ObjectId | null }>>();
+
+  return new Map(
+    appointments.map((appointment) => [
+      appointment._id.toString(),
+      {
+        title: appointment.title,
+        treatmentId: appointment.treatmentId?.toString() ?? null,
+      },
+    ]),
+  );
+};
+
 const toNotificationView = (
   notification: PersistedNotification,
-): NotificationView => ({
-  id: notification._id.toString(),
-  userId: notification.userId.toString(),
-  blisterId: notification.blisterId?.toString() ?? null,
-  type: notification.type,
-  severity: notification.severity,
-  title: notification.title,
-  message: notification.message,
-  metadata: notification.metadata ?? null,
-  isRead: notification.isRead,
-  createdAt: notification.createdAt,
-});
+  appointmentsById: Map<string, NotificationAppointmentSummary> = new Map(),
+): NotificationView => {
+  const appointmentId = getNotificationMetadataString(notification, 'appointmentId');
+  const appointment = appointmentId ? appointmentsById.get(appointmentId) ?? null : null;
+  const metadata = notification.metadata
+    ? { ...notification.metadata }
+    : null;
+
+  if (metadata && appointment) {
+    if (typeof metadata.appointmentTitle !== 'string' || metadata.appointmentTitle.length === 0) {
+      metadata.appointmentTitle = appointment.title;
+    }
+    if (metadata.treatmentId == null) {
+      metadata.treatmentId = appointment.treatmentId;
+    }
+  }
+
+  const reminderPhase = metadata?.reminderPhase;
+  const appointmentTitle = typeof metadata?.appointmentTitle === 'string'
+    ? metadata.appointmentTitle
+    : null;
+
+  const message = notification.type === 'appointment_reminder'
+    && reminderPhase === 'after'
+    && appointmentTitle
+    ? `Tras la cita '${appointmentTitle}', revisa si hay cambios que aplicar al tratamiento.`
+    : notification.message;
+
+  return {
+    id: notification._id.toString(),
+    userId: notification.userId.toString(),
+    blisterId: notification.blisterId?.toString() ?? null,
+    type: notification.type,
+    severity: notification.severity,
+    title: notification.title,
+    message,
+    metadata,
+    isRead: notification.isRead,
+    createdAt: notification.createdAt,
+  };
+};
 
 const getRecipientIdsByRoles = (
   blister: BlisterDocument,
@@ -412,9 +491,10 @@ export const notificationsList = async (
       .limit(limit),
     NotificationModel.countDocuments(filter),
   ]);
+  const appointmentsById = await loadNotificationAppointments(notifications);
 
   return {
-    notifications: notifications.map((notification) => toNotificationView(notification)),
+    notifications: notifications.map((notification) => toNotificationView(notification, appointmentsById)),
     meta: {
       page,
       limit,
@@ -448,7 +528,9 @@ export const notificationsMarkAsRead = async (
   notification.isRead = true;
   await notification.save();
 
-  return toNotificationView(notification);
+  const appointmentsById = await loadNotificationAppointments([notification]);
+
+  return toNotificationView(notification, appointmentsById);
 };
 
 /**
