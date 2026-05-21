@@ -275,9 +275,9 @@ Evidencia visual del workflow:
 | CI en verde | GitHub → Actions → workflow `CI` → último run correcto en `dev` o `main`; capturar el resumen con los jobs Backend, Frontend y Frontend E2E cuando aparezcan en verde. |
 | Deploy VPS en verde | GitHub → Actions → workflow `Deploy backend VPS` → último run correcto en `dev`; capturar el resumen del job `deploy`. |
 
-![Captura. Último run correcto del workflow CI con jobs en verde](assets/evidence/github-actions-ci-run.png)
+<img width="2557" height="1082" alt="image" src="https://github.com/user-attachments/assets/8418ea38-d911-459e-afe5-55a6c543a182" />
 
-![Captura. Último run correcto del workflow Deploy backend VPS](assets/evidence/github-actions-deploy-vps-run.png)
+<img width="1322" height="497" alt="image" src="https://github.com/user-attachments/assets/ed6af8ee-7fad-42b9-bbb7-6c130095317e" />
 
 La última batería local verificada antes de la entrega se ejecutó sobre la rama `dev` y obtuvo estos resultados:
 
