@@ -85,7 +85,7 @@ drwxrwxr-x  fran fran   docs
 -rw-rw-r--  fran fran   README.md
 ```
 
-[Captura 1. Salida de `pwd` y `ls -la` dentro de `~/apps/daw2-blister-proyecto-final` en la VPS]
+![Captura 1. Salida de `pwd` y `ls -la` dentro de `~/apps/daw2-blister-proyecto-final` en la VPS](./assets/despliegue/despliegue-eval-captura-1.png)
 
 Esta evidencia demuestra que el proyecto está clonado en la ruta esperada y que en raíz conviven el `compose.yaml` general (heredado de la fase Docker local) y el `docker-compose.backend.yml` realmente usado en producción.
 
@@ -173,7 +173,7 @@ NAME                                                 IMAGE                      
 daw2-blister-proyecto-final-backend-1                daw2-blister-proyecto-final-backend                "docker-entrypoint.s…"   backend   2 days ago   Up 2 days (healthy)   0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
 ```
 
-[Captura 2. Salida de `docker compose -f docker-compose.backend.yml ps` con el contenedor `(healthy)` y el mapeo `3001->3000`]
+![Captura 2. Salida de `docker compose -f docker-compose.backend.yml ps` con el contenedor `(healthy)` y el mapeo `3001->3000`](./assets/despliegue/despliegue-eval-captura-2.png)
 
 Esta evidencia demuestra dos cosas: el contenedor lleva tiempo activo con `restart: unless-stopped`, y el único puerto publicado en la VPS es `3001`, que es a donde apunta Nginx. El `3000` queda confinado al contenedor.
 
@@ -215,7 +215,7 @@ PUSH_REMINDER_SCAN_INTERVAL_MS=<REDACTADO>
 RESEND_API_KEY=<REDACTADO>
 ```
 
-[Captura 3. Salida del `grep | sed` mostrando los nombres de variable con `<REDACTADO>`]
+![Captura 3. Salida del `grep | sed` mostrando los nombres de variable con `<REDACTADO>`](./assets/despliegue/despliegue-eval-captura-3.png)
 
 Esta evidencia demuestra que las variables esperadas existen en el entorno de producción sin revelar ningún valor sensible. La plantilla `backend/.env.example`, ya en el repositorio, documenta cada variable y su uso para que el despliegue sea reproducible.
 
@@ -277,7 +277,7 @@ ls -l /etc/nginx/sites-enabled/
 lrwxrwxrwx  miblister-api -> /etc/nginx/sites-available/miblister-api
 ```
 
-[Captura 4. Contenido de `/etc/nginx/sites-available/miblister-api` junto al `ls -l` de `sites-enabled`]
+![Captura 4. Contenido de `/etc/nginx/sites-available/miblister-api` junto al `ls -l` de `sites-enabled`](./assets/despliegue/despliegue-eval-captura-4.png)
 
 Esta evidencia demuestra que el dominio `api.miblister.es` está servido por un único site dedicado, que incluye HTTPS gestionado por Certbot, redirección 80→443 y los ajustes específicos para que MCP funcione correctamente con OAuth y Streamable HTTP.
 
@@ -342,7 +342,7 @@ tcp   LISTEN  0  511   [::]:80        [::]:*     users:(("nginx",...))
 tcp   LISTEN  0  511   [::]:443       [::]:*     users:(("nginx",...))
 ```
 
-[Captura 5. Salida de `sudo ss -tulpn` filtrada para `80|443|3000|3001`]
+![Captura 5. Salida de `sudo ss -tulpn` filtrada para `80|443|3000|3001`](./assets/despliegue/despliegue-eval-captura-5.png)
 
 Esta evidencia demuestra el reparto: Nginx escucha en `80` y `443` (acceso público), Docker publica `3001` (acceso local) y `3000` no aparece porque vive solo dentro del contenedor.
 
@@ -396,7 +396,9 @@ Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 {"success":true,"data":{"status":"ok"}}
 ```
 
-[Captura 6. Comparativa de la salida de `curl -i` contra `127.0.0.1:3001` y contra `https://api.miblister.es/api/v1/health`]
+![Captura 6-1. Comparativa de la salida de `curl -i` contra `127.0.0.1:3001` y contra `https://api.miblister.es/api/v1/health`](./assets/despliegue/despliegue-eval-captura-6-1.png)
+
+![Captura 6-2. Comparativa de la salida de `curl -i` contra `127.0.0.1:3001` y contra `https://api.miblister.es/api/v1/health`](./assets/despliegue/despliegue-eval-captura-6-2.png)
 
 Esta evidencia demuestra que la misma respuesta JSON se obtiene por dos rutas distintas: la primera (`127.0.0.1:3001`) prueba que el contenedor responde; la segunda (HTTPS pública) prueba que Nginx + Certbot + reverse proxy + DNS están funcionando juntos. Que ambas respuestas coincidan confirma que el proxy no altera el contenido.
 
@@ -438,7 +440,7 @@ Certificate Name: api.miblister.es
   Private Key Path: /etc/letsencrypt/live/api.miblister.es/privkey.pem
 ```
 
-[Captura 7. Salida de `sudo nginx -t` y de `sudo certbot certificates` mostrando el certificado de `api.miblister.es` válido]
+![Captura 7. Salida de `sudo nginx -t` y de `sudo certbot certificates` mostrando el certificado de `api.miblister.es` válido](./assets/despliegue/despliegue-eval-captura-7.png)
 
 Esta evidencia demuestra que la configuración Nginx es sintácticamente correcta y que el certificado emitido por Let's Encrypt está activo y vinculado al dominio público. La renovación es automática mediante el timer de Certbot.
 
@@ -483,6 +485,6 @@ backend  | [info] GET /api/v1/health 200
 backend  | [info] GET /api/v1/medicines/search 200
 ```
 
-[Captura 8. Combinación de `docker compose ps` y los últimos logs del backend con peticiones reales servidas con `200`]
+![Captura 8. Combinación de `docker compose ps` y los últimos logs del backend con peticiones reales servidas con `200`](./assets/despliegue/despliegue-eval-captura-8.png)
 
-Esta evidencia demuestra que el contenedor está marcado como `healthy` por el propio Docker, que la conexión a MongoDB Atlas se establece al arranque, que el servidor MCP queda registrado en `/mcp` y que las peticiones reales contra el dominio público terminan llegando al backend con código `200`. Con eso queda cubierta la verificación de red completa: dominio, proxy, contenedor, base de datos y rutas principales.
+Esta evidencia demuestra que el contenedor está Up y escuchando en el puerto 3000 (mapeado al 3001 del host), que las variables de entorno se inyectan correctamente desde .env al arranque, y que las peticiones reales procedentes de IPs externas llegan al backend a través del proxy nginx, confirmando que el enrutamiento dominio → nginx → contenedor funciona de extremo a extremo.

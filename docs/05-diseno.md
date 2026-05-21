@@ -5,6 +5,7 @@ Este capítulo describe el diseño técnico de Blíster: modelo de datos, casos 
 ## Índice
 
 1. [Modelo de datos](#1-modelo-de-datos)
+    - 1.1 [Esquemas de las colecciones principales](#11-esquemas-de-las-colecciones-principales)
 2. [Diagrama entidad-relación](#2-diagrama-entidad-relación)
 3. [Casos de uso](#3-casos-de-uso)
 4. [Flujos de procesos principales](#4-flujos-de-procesos-principales)
@@ -47,6 +48,100 @@ Blíster usa MongoDB con Mongoose. Aunque la base de datos es documental, el dom
 | `oauthTokens` | Refresh tokens OAuth con expiración. | Referencia usuario y cliente externo. |
 | `cimaChangeLogs` | Cambios detectados en información oficial CIMA. | Referencia medicamento opcional y `nregist`. |
 | `systemMetas` | Estado de procesos internos. | Clave-valor para sincronizaciones o tareas. |
+
+### 1.1 Esquemas de las colecciones principales
+
+Las tablas siguientes describen los campos, tipos y restricciones más relevantes de las siete colecciones del dominio principal. Los modelos completos se encuentran en `backend/src/models/`.
+
+**`users`**
+
+| Campo | Tipo | Notas |
+| :--- | :--- | :--- |
+| `name` | String | Requerido. |
+| `username` | String | Único, minúsculas. |
+| `email` | String | Único, normalizado. |
+| `passwordHash` | String | bcrypt coste 12. Excluido de proyecciones. |
+| `emailVerified` | Boolean | Por defecto `false`. |
+| `settings` | Object | `{ theme, font, fontSize, avatarKey }`. |
+| `mcpToken` | String | Hash SHA-256 del token MCP. Índice sparse único. |
+| `deletedAt` | Date | Soft delete. Purga a los 30 días. |
+
+**`blisters`**
+
+| Campo | Tipo | Notas |
+| :--- | :--- | :--- |
+| `name` | String | Requerido, máximo 60 caracteres. |
+| `avatarKey` | String | Enum de claves visuales. |
+| `members` | Array | `[{ userId: ObjectId, role: OWNER\|CAREGIVER\|OBSERVER }]`. Mínimo 1. |
+| `inviteCode` | Object | `{ code: String, expiresAt: Date }`. Caduca a las 48h. |
+| `deletedAt` | Date | Soft delete. Purga a los 15 días. |
+
+**`medicines`**
+
+| Campo | Tipo | Notas |
+| :--- | :--- | :--- |
+| `blisterId` | ObjectId | Referencia a `blisters`. |
+| `nregist` | String | Número de registro CIMA/AEMPS. Único por blíster. |
+| `nombre` | String | Nombre oficial CIMA. |
+| `alias` | String | Nombre personalizado opcional. |
+| `pactivos` | String | Principios activos CIMA. |
+| `iconType` | String | Derivado de la forma farmacéutica. |
+| `stock` | Number | Cantidad actual; mínimo 0. |
+| `stockUnit` | String | Enum: `pastillas`, `ml`, `gotas`, `dosis`, `sobres`, `g`. |
+| `threshold` | Number | Umbral de alerta. Por defecto 5. |
+| `expDate` | Date | Caducidad informada por el usuario. |
+| `cimaStatus` | Object | `{ estado, hasAlerts, psum }`. Sincronizado periódicamente. |
+
+**`treatments`**
+
+| Campo | Tipo | Notas |
+| :--- | :--- | :--- |
+| `blisterId` | ObjectId | Referencia a `blisters`. |
+| `patientUserId` | ObjectId | Miembro del blíster receptor de la pauta. |
+| `title` | String | Requerido. |
+| `medicines` | Array | `[{ medicineId, amount, stockUnit, frequencyHours, firstDoseAt }]`. |
+| `startDate` | Date | Requerida. |
+| `endDate` | Date | Opcional. |
+| `active` | Boolean | Por defecto `true`. |
+
+**`adherenceLogs`**
+
+| Campo | Tipo | Notas |
+| :--- | :--- | :--- |
+| `blisterId` | ObjectId | Referencia a `blisters`. |
+| `medicineId` | ObjectId | Referencia a `medicines`. |
+| `userId` | ObjectId | Autor de la toma. Inmutable. |
+| `treatmentId` | ObjectId | Nullable. Tratamiento en curso. |
+| `timestamp` | Date | Momento de la toma. Por defecto `Date.now`. |
+| `amount` | Number | Cantidad consumida. |
+| `stockUnit` | String | Unidad usada en la toma. |
+| `isForced` | Boolean | `true` si se registró con stock ≤ 0. |
+| `notes` | String | Requerido si `isForced`. |
+
+**`appointments`**
+
+| Campo | Tipo | Notas |
+| :--- | :--- | :--- |
+| `blisterId` | ObjectId | Referencia a `blisters`. |
+| `patientId` | ObjectId | Miembro del blíster. |
+| `treatmentId` | ObjectId | Nullable. |
+| `title` | String | Requerido. |
+| `date` | Date | Fecha y hora de la cita. |
+| `location` | String | Opcional. |
+| `comments` | Array | `[{ authorId, text, createdAt, updatedAt }]`. |
+
+**`notifications`**
+
+| Campo | Tipo | Notas |
+| :--- | :--- | :--- |
+| `userId` | ObjectId | Destinatario. |
+| `blisterId` | ObjectId | Nullable. |
+| `type` | String | Enum: `stock_low`, `stock_depleted`, `expiration_warning`, `adherence_forced`, `cima_change`, `dose_reminder`, `appointment_reminder`, `system`. |
+| `severity` | String | Enum: `info`, `warning`, `critical`. |
+| `title` | String | Requerido. |
+| `message` | String | Requerido. |
+| `isRead` | Boolean | Por defecto `false`. |
+| `dismissedAt` | Date | Nullable. TTL de 30 días tras lectura. |
 
 ## 2. Diagrama entidad-relación
 
@@ -407,6 +502,8 @@ flowchart TB
 | Model | Define persistencia Mongoose e índices. |
 | Middleware | Autenticación, autorización, validación, sanitización y errores. |
 
+Tanto los controladores REST como las tools del servidor MCP invocan los mismos archivos de servicio en `backend/src/modules/*/service.ts`. Esto garantiza que las reglas de negocio —descuento de stock, generación de notificaciones, permisos por rol— se aplican de forma idéntica con independencia de si la petición entra por `/api/v1` o por `/mcp`.
+
 ### 5.2 Capas del frontend
 
 | Capa | Responsabilidad |
@@ -597,6 +694,9 @@ Códigos HTTP usados de forma habitual:
 | `422` | Regla de negocio no cumplida, como stock insuficiente sin confirmación. |
 | `429` | Rate limit. |
 | `500` | Error interno controlado por middleware global. |
+| `410` | Token de recuperación expirado o ya utilizado. |
+| `502` | Error en servicio externo (CIMA/AEMPS). |
+| `503` | Servicio o configuración no disponible (push VAPID, servicio externo). |
 
 ## 9. Decisiones de diseño técnico
 
