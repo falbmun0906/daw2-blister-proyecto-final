@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# daw2-blister-proyecto-final
-=======
 <div style="margin: 0 0 32px; padding: 48px 36px; background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%); color: #3b3b3b; font-family: Nunito, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; box-shadow: 0 12px 32px rgba(15, 56, 53, 0.10);">
 	<div style="max-width: 820px;">
 		<h1 style="margin: 0; font-family: Overpass, Nunito, system-ui, sans-serif; font-size: clamp(2.25rem, 5vw, 4.75rem); font-weight: 500; line-height: 1; color: #3b3b3b;">
@@ -218,4 +215,3 @@ Proyecto final del ciclo formativo de grado superior **Desarrollo de Aplicacione
 ## Licencia
 
 Trabajo académico de uso educativo. Todos los derechos reservados al autor salvo indicación expresa en archivos concretos.
->>>>>>> origin/dev
