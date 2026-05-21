@@ -1,0 +1,162 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Sistema de toasts: pila inferior centrada con animaciones de entrada/salida
+// y barra de progreso. Variantes con borde lateral coloreado e icono.
+// ─────────────────────────────────────────────────────────────────────────────
+
+.c-toaster {
+  position: fixed;
+  inset: auto 0 calc(env(safe-area-inset-bottom, 0) + 5rem) 0;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-screen-x, var(--space-4));
+  pointer-events: none;
+}
+
+.c-toast {
+  --toast-accent: var(--color-accent);
+  --toast-soft: color-mix(in srgb, var(--color-accent) 76%, var(--color-surface));
+
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+  max-width: 25rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--toast-accent);
+  color: var(--color-text-on-primary);
+  box-shadow:
+    0 0.75rem 1.5rem -0.5rem color-mix(in srgb, var(--color-text) 18%, transparent),
+    0 0.125rem 0.25rem color-mix(in srgb, var(--color-text) 6%, transparent);
+  overflow: hidden;
+  animation: c-toast-enter 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  will-change: transform, opacity;
+
+  &.is-leaving {
+    animation: c-toast-exit 0.22s ease-in both;
+  }
+
+  &__icon {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-full);
+    background-color: color-mix(in srgb, var(--color-text-on-primary) 16%, transparent);
+    color: var(--color-text-on-primary);
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  &__message {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    color: var(--color-text-on-primary);
+    position: relative;
+    z-index: 1;
+    word-break: break-word;
+  }
+
+  &__close {
+    position: relative;
+    z-index: 1;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-on-primary);
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+
+    svg { width: 1rem; height: 1rem; }
+
+    &:hover { background-color: color-mix(in srgb, var(--color-text-on-primary) 16%, transparent); color: var(--color-text-on-primary); }
+    &:focus-visible {
+      outline: 0.125rem solid var(--toast-accent);
+      outline-offset: 0.125rem;
+    }
+  }
+
+  &__progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background-color: var(--toast-soft);
+    opacity: 0.32;
+    transform-origin: left center;
+    z-index: 0;
+    animation-name: c-toast-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
+  &--success {
+    --toast-accent: var(--color-accent);
+  }
+  &--error {
+    --toast-accent: var(--color-accent);
+  }
+  &--warning {
+    --toast-accent: var(--color-accent);
+  }
+  &--info {
+    --toast-accent: var(--color-accent);
+  }
+}
+
+@keyframes c-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes c-toast-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.4rem) scale(0.98);
+  }
+}
+
+@keyframes c-toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c-toast,
+  .c-toast.is-leaving,
+  .c-toast__progress {
+    animation: none;
+  }
+}

@@ -1,0 +1,213 @@
+.c-medicine-card {
+  --medicine-card-media-size: 9.25rem;
+
+  height: var(--medicine-card-media-size);
+  min-height: var(--medicine-card-media-size);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-card-soft);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast);
+
+  &:hover,
+  &:focus-within {
+    box-shadow: var(--shadow-md);
+  }
+
+  &__link {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--medicine-card-media-size) minmax(0, 1fr);
+    align-items: stretch;
+    gap: var(--space-3);
+    height: 100%;
+    min-height: var(--medicine-card-media-size);
+    padding: 0;
+    color: var(--color-text);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.1875rem;
+    }
+  }
+
+  &__media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--medicine-card-media-size);
+    margin: 0;
+    height: 100%;
+    min-height: var(--medicine-card-media-size);
+    aspect-ratio: 1;
+    background-color: var(--color-primary-tint);
+    color: var(--color-primary-mid);
+    overflow: hidden;
+
+    svg {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background-color: var(--color-surface);
+  }
+
+  &__body {
+    min-width: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-content: stretch;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-3) var(--space-3) 0;
+    overflow: hidden;
+  }
+
+  &__copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--space-1) / 2);
+    overflow: hidden;
+  }
+
+  &__alias {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+  }
+
+  &__real-name {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+  }
+
+  &__summary {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--space-1) / 2);
+    margin: 0;
+    align-self: end;
+    padding: 0;
+    list-style: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+  }
+
+  &__summary-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+    color: var(--color-text-muted);
+
+    & > svg,
+    .c-medicine-card__summary-icon {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+      color: currentColor;
+      stroke-width: 1.8;
+    }
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &--alert {
+      color: var(--color-text-muted);
+    }
+  }
+
+  &__chevron {
+    position: absolute;
+    top: 50%;
+    right: var(--space-3);
+    width: 1.35rem;
+    height: 1.35rem;
+    transform: translateY(-50%);
+    color: var(--color-text);
+    stroke-width: 2.25;
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 48rem) {
+  .c-medicine-card {
+    --medicine-card-media-size: 8.5rem;
+
+    &__link {
+      gap: var(--space-2);
+    }
+
+    &__body {
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: calc(var(--space-1) / 2);
+      padding-block: 0.625rem;
+      padding-inline-end: var(--space-3);
+    }
+
+    &__alias {
+      font-size: 0.85rem;
+      line-height: 1.05;
+    }
+
+    &__real-name {
+      font-size: 0.72rem;
+      line-height: 1.05;
+    }
+
+    &__summary {
+      gap: 0.125rem;
+      font-size: 0.72rem;
+      line-height: 1.1;
+    }
+
+    &__summary-item {
+      gap: calc(var(--space-1) / 2);
+
+      & > svg,
+      .c-medicine-card__summary-icon {
+        width: 0.9rem;
+        height: 0.9rem;
+      }
+    }
+
+    &__chevron {
+      right: var(--space-2);
+    }
+  }
+}

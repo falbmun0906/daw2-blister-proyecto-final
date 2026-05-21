@@ -1,0 +1,597 @@
+// =============================================================================
+// BlisterCard — tarjeta abatible de la lista "Mis blísters". Plana, blanca,
+// con sombra moderna y sin bordes sólidos.
+// =============================================================================
+
+@use '../01-tools/mixins' as *;
+
+.c-blister-card {
+  list-style: none;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-blister-card);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  &[role='button'] {
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.1875rem;
+    }
+  }
+
+  // ── Cabecera (icono · título · stack avatares · marca de edición) ──────
+  &__row {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__open {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background-color: var(--color-primary-soft, var(--color-primary-tint));
+    color: var(--color-primary-strong, var(--color-primary-mid));
+
+    & svg { width: 1.2rem; height: 1.2rem; }
+  }
+
+  &__icon-wrapper {
+    position: relative;
+    display: inline-flex;
+  }
+
+  &__avatar-edit {
+    position: absolute;
+    right: -0.25rem;
+    bottom: -0.25rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 0.125rem solid var(--color-surface);
+    background-color: var(--color-primary-mid);
+    color: var(--color-text-on-primary);
+    cursor: pointer;
+    padding: 0;
+
+    & svg { width: 0.7rem; height: 0.7rem; }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+
+  &__open--editing {
+    display: flex;
+    justify-content: space-between;
+    cursor: default;
+    align-items: flex-start;
+  }
+
+  &__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    @include truncate;
+  }
+
+  &__owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+
+    & svg { width: 0.85rem; height: 0.85rem; }
+  }
+
+  &__stack {
+    display: inline-flex;
+    align-items: center;
+    justify-self: end;
+    margin-left: auto;
+
+    & > * + * { margin-left: -0.5rem; }
+  }
+
+  &__stack-extra {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    margin-left: -0.5rem;
+    background-color: var(--color-bg-muted);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__edit-mark {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    align-self: flex-start;
+    margin-top: var(--space-1);
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-primary-mid);
+    cursor: pointer;
+
+    & svg { width: 1.1rem; height: 1.1rem; }
+
+    &:hover {
+      background-color: var(--color-primary-tint);
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+  }
+
+  // ── Contadores ─────────────────────────────────────────────────────────
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+
+    & p {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+    }
+
+    & svg {
+      width: 1rem;
+      height: 1rem;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+  }
+
+  // ── Detalles desplegables (lista de miembros) ──────────────────────────
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__details-title {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__members {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__member {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__member-name {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+  }
+
+  &__member-role {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  // ── Pie (acciones · toggle) ────────────────────────────────────────────
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+
+    & .c-btn {
+      flex: 0 0 auto;
+      min-height: var(--space-touch-min);
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--text-sm);
+    }
+  }
+
+  &__toggle {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: transparent;
+    color: var(--color-primary-mid);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+
+    & svg { width: 1.4rem; height: 1.4rem; }
+
+    &:hover { background-color: var(--color-primary-tint); }
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+  }
+}
+
+// ── Botón hueco con borde discontinuo (Añadir blíster, Añadir miembro) ────
+.c-dashed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 0.09375rem dashed var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+
+  &:hover { background-color: var(--color-primary-tint); }
+  &:focus-visible {
+    outline: 0.125rem solid var(--color-primary-mid);
+    outline-offset: 0.125rem;
+  }
+
+  &__plus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--color-bg-muted);
+    color: var(--color-text-muted);
+
+    & svg { width: 1rem; height: 1rem; }
+  }
+}
+
+// ── Botón con sólo icono (lápiz junto a cada miembro) ─────────────────────
+.c-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  color: var(--color-primary-mid);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+
+  & svg { width: 1.1rem; height: 1.1rem; }
+
+  &:hover { background-color: var(--color-primary-tint); }
+  &:focus-visible {
+    outline: 0.125rem solid var(--color-primary-mid);
+    outline-offset: 0.125rem;
+  }
+}
+
+// ── Lista de blísteres + botón añadir ─────────────────────────────────────
+.c-blister-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  &__cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__add {
+    margin-top: var(--space-1);
+    min-height: 7rem;
+    border-width: 0.125rem;
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in srgb, var(--color-surface) 70%, transparent);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+
+    .c-dashed-btn__plus {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: var(--text-xl);
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-primary-mid);
+      background-color: var(--color-primary-tint);
+      color: var(--color-primary);
+    }
+  }
+}
+
+// ── Modales locales ───────────────────────────────────────────────────────
+.c-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 0.09375rem solid var(--color-primary-mid);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-primary-mid);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  width: 100%;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+
+  & svg { width: 1rem; height: 1rem; }
+
+  &.is-active {
+    background-color: var(--color-primary-mid);
+    color: var(--color-on-primary);
+  }
+
+  &:focus-visible {
+    outline: 0.125rem solid var(--color-primary-mid);
+    outline-offset: 0.125rem;
+  }
+}
+
+.c-pill-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  border: 0.09375rem solid var(--color-primary-mid);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+
+  &::placeholder { color: var(--color-text-muted); }
+  &:focus-visible {
+    outline: 0.125rem solid var(--color-primary-mid);
+    outline-offset: 0.125rem;
+  }
+}
+
+.c-member-role-modal {
+  &__header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__name {
+    margin: 0;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+  }
+
+  &__current-role {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  &__rule {
+    border: 0;
+    border-top: 0.0625rem solid var(--color-border-subtle);
+    margin: 0;
+  }
+
+  &__legend {
+    margin: 0;
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__roles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__description {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+
+    .c-btn {
+      min-height: var(--space-touch-min);
+      font-size: var(--text-sm);
+    }
+  }
+}
+
+.c-confirm-modal {
+  &__message {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  &__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  &__actions--end {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+  }
+}
+
+.c-add-member-modal {
+  &__legend {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  &__description {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  &__rule {
+    border: 0;
+    border-top: 0.0625rem solid var(--color-border-subtle);
+    margin: 0;
+  }
+
+  &__share {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  &__help {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+}
+
+.c-new-blister-modal {
+  &__label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  &__or {
+    margin: 0;
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+}
+
+// ── Selector de icono de blíster ──────────────────────────────────────────
+.c-blister-avatar-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+
+  &__option {
+    aspect-ratio: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: 0.09375rem solid var(--color-border-subtle);
+    background-color: var(--color-primary-tint);
+    color: var(--color-primary-mid);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+
+    & svg { width: 1.5rem; height: 1.5rem; }
+
+    &:hover { border-color: var(--color-primary-mid); }
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+
+    &.is-selected {
+      border-color: var(--color-primary-mid);
+      background-color: var(--color-primary-mid);
+      color: var(--color-text-on-primary);
+    }
+
+    &:disabled { opacity: 0.5; cursor: progress; }
+  }
+}

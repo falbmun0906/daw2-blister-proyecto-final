@@ -1,0 +1,91 @@
+// =============================================================================
+// Stepper — selector numérico con botones ± (cantidad / umbral).
+// =============================================================================
+
+.c-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  &__label {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__control {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-full);
+    padding: var(--space-1);
+  }
+
+  &__btn {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 0;
+    background-color: var(--color-primary-mid);
+    color: var(--color-on-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+
+    & svg {
+      width: 1.1rem;
+      height: 1.1rem;
+      stroke-width: 2;
+    }
+
+    &:hover:not(:disabled) { filter: brightness(0.95); }
+
+    &:disabled {
+      background-color: var(--color-border-subtle);
+      color: var(--color-text-muted);
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    text-align: center;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  &__unit {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    padding-right: var(--space-2);
+  }
+
+  &__error {
+    color: var(--color-danger);
+    font-size: var(--text-sm);
+  }
+}

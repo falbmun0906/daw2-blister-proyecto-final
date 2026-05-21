@@ -1,0 +1,61 @@
+// components/_icons.scss
+//
+// Sistema de iconos basado en react-icons.
+// Tamaño con clases CSS, color heredado de currentColor.
+
+.c-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: currentColor;
+    line-height: 1;
+
+    &--sm {
+        font-size: var(--space-5);
+    }
+
+    &--md {
+        font-size: var(--space-6);
+    }
+
+    &--lg {
+        font-size: var(--space-7, 1.75rem);
+    }
+
+    &--xl {
+        font-size: var(--space-9, 2.5rem);
+    }
+
+    &--success {
+        color: var(--color-success, var(--color-primary-mid));
+    }
+
+    &--danger {
+        color: var(--color-error);
+    }
+
+    &--warning {
+        color: var(--color-warning);
+    }
+
+    &--info {
+        color: var(--color-info, var(--color-primary-mid));
+    }
+
+    &--muted {
+        color: var(--color-text-muted);
+    }
+
+    &--primary {
+        color: var(--color-primary);
+    }
+}
+
+.c-icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}

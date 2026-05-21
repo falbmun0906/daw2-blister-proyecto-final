@@ -1,0 +1,23 @@
+.c-force-dose-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  &__message {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text-muted);
+  }
+
+  &__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+
+    .c-btn {
+      width: 100%;
+      min-height: var(--space-touch-min);
+    }
+  }
+}

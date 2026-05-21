@@ -1,0 +1,455 @@
+@use '../01-tools/mixins';
+
+// ── Calendario (Pastillero / Citas médicas) ──────────────────────────────
+.c-calendar-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-12);
+
+  &__tabs {
+    display: inline-flex;
+    align-self: center;
+    padding: 0.25rem;
+    background-color: var(--color-surface-alt, var(--color-surface));
+    border: 0.0625rem solid var(--color-border-subtle);
+    border-radius: var(--radius-full);
+    gap: 0.25rem;
+  }
+
+  &__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.5rem 1rem;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+
+    & svg { width: 1rem; height: 1rem; }
+
+    &:hover { color: var(--color-text); }
+
+    &.is-active {
+      background-color: var(--color-primary-mid);
+      color: var(--color-text-on-primary);
+    }
+  }
+
+  &__day {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__appointment-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  &__section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  &__day-title {
+    margin: 0;
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__clear-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--space-touch-min);
+    padding: var(--space-2) 0;
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary-hover);
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+  }
+
+  &__list,
+  &__doses {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__groups,
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__group {
+    padding-block: var(--space-2);
+  }
+
+  &__group-title {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &__pillbox {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__fab {
+    position: fixed;
+    right: var(--space-4);
+    bottom: calc(var(--bottom-nav-height, 4rem) + var(--space-8));
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    border: 0;
+    background-color: var(--color-primary-mid);
+    color: var(--color-text-on-primary);
+    box-shadow: var(--shadow-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+
+    & svg { width: 1.5rem; height: 1.5rem; }
+
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.1875rem;
+    }
+  }
+}
+
+// ── Calendario mensual ───────────────────────────────────────────────────
+.c-month-calendar {
+  background-color: var(--color-surface);
+  border: 0.0625rem solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    &:hover { background-color: var(--color-surface-alt, var(--color-surface)); color: var(--color-text); }
+
+    & svg { width: 1.1rem; height: 1.1rem; }
+  }
+
+  &__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    padding: 0 0.25rem;
+
+    & > span { text-transform: uppercase; letter-spacing: 0.05em; }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+  }
+
+  &__cell {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+
+    &:hover { background-color: var(--color-primary-tint); }
+
+    &.is-outside { color: var(--color-text-muted); opacity: 0.45; }
+
+    &.is-today { font-weight: 700; color: var(--color-primary-mid); }
+
+    &.is-selected {
+      background-color: var(--color-text);
+      color: var(--color-surface);
+      &:hover { background-color: var(--color-text); }
+    }
+
+    &.is-marked .c-month-calendar__markers { display: inline-flex; }
+  }
+
+  &__markers {
+    position: absolute;
+    bottom: 0.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.18rem;
+  }
+
+  &__dot {
+    display: inline-block;
+    width: 0.3rem;
+    height: 0.3rem;
+    border-radius: 50%;
+
+    &--dose { background-color: var(--color-success); }
+    &--appointment { background-color: var(--color-accent); }
+  }
+
+  &__cell.is-selected .c-month-calendar__dot {
+    box-shadow: 0 0 0 0.0625rem var(--color-surface);
+  }
+
+  &__legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    padding-top: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+  }
+}
+
+// ── Filas de dosis (vista pastillero) ────────────────────────────────────
+.c-dose-row {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-surface);
+  border: 0.0625rem solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+
+  &__time {
+    flex-shrink: 0;
+    width: 3.5rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--text-md);
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  &__meta {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    line-height: var(--leading-snug);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  &__action-menu {
+    position: relative;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  &__menu-popover {
+    position: absolute;
+    top: auto;
+    right: 0;
+    bottom: calc(100% + var(--space-1));
+    z-index: var(--z-dropdown);
+    display: flex;
+    min-width: max-content;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0.0625rem solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-md);
+  }
+
+  &__menu-popover button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--space-touch-min);
+    padding: var(--space-2) var(--space-3);
+    white-space: nowrap;
+    border: 0;
+    background-color: transparent;
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-tint);
+    }
+  }
+
+  &__status {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--space-touch-min);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+
+    &--taken {
+      background-color: var(--color-success-subtle);
+      color: var(--color-success);
+    }
+
+    &--skipped {
+      background-color: var(--color-dose-skipped-bg);
+      color: var(--color-dose-skipped);
+    }
+  }
+
+  &__btn {
+    flex: 1 1 auto;
+    min-height: var(--space-touch-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    border: 0.09375rem solid var(--color-primary-mid);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: progress;
+    }
+
+    &--solid {
+      background-color: var(--color-primary-mid);
+      color: var(--color-text-on-primary);
+    }
+
+    &--ghost {
+      background-color: transparent;
+      color: var(--color-primary-mid);
+    }
+
+    &--undo {
+      background-color: var(--color-primary-mid);
+      color: var(--color-text-on-primary);
+    }
+  }
+
+  &--taken,
+  &--skipped {
+    border-color: color-mix(in srgb, var(--color-primary-mid) 20%, transparent);
+  }
+}

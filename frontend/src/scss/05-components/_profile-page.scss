@@ -1,0 +1,113 @@
+// Pantalla de perfil (022). Estructura plana, sin cajas:
+// avatar centrado + identidad + lista de accesos + logout pill.
+
+.c-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-top: var(--space-2);
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  &__name {
+    margin: var(--space-2) 0 0;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-text);
+    text-align: center;
+  }
+
+  &__email {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-muted);
+    text-align: center;
+    word-break: break-all;
+  }
+
+  &__menu {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-2);
+  }
+
+  &__menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 3.5rem;
+    padding: var(--space-3) 0;
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__menu-label {
+    flex: 1;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--leading-snug);
+  }
+
+  &__menu-chevron {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  &__logout {
+    align-self: stretch;
+    margin-top: auto;
+    min-height: 3rem;
+    padding: var(--space-3) var(--space-5);
+    background-color: var(--color-error-subtle);
+    border: 0;
+    border-radius: var(--radius-full);
+    color: var(--color-error);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--tracking-normal);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: color-mix(in srgb, var(--color-error-subtle) 80%, var(--color-error));
+    }
+  }
+
+  &__app-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+    text-align: center;
+  }
+
+  &__app-meta a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+}

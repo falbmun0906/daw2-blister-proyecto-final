@@ -1,0 +1,74 @@
+// Pantalla 26 — Información personal. Avatar con lápiz + form pill.
+
+.c-personal-info-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-2);
+
+  &__avatar {
+    position: relative;
+    align-self: center;
+    width: max-content;
+  }
+
+  &__avatar-edit {
+    position: absolute;
+    right: -0.25rem;
+    bottom: -0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+    transition: color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    border-top: 0.0625rem solid var(--color-border-subtle);
+    padding-top: var(--space-4);
+  }
+
+  &__submit {
+    margin-top: var(--space-4);
+    min-height: 3rem;
+    padding-block: var(--space-3);
+  }
+
+  &__pending-email {
+    margin: calc(var(--space-2) * -1) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+
+  &__unsaved {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    p {
+      margin: 0;
+      color: var(--color-text-muted);
+    }
+  }
+
+  &__unsaved-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+}

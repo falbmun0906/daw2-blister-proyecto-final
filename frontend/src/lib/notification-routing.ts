@@ -1,0 +1,37 @@
+import { ROUTES } from '../constants/routes';
+import type { NotificationView } from '../types/notification.types';
+
+const getStringMetadata = (notification: NotificationView, key: string): string | null => {
+  const value = notification.metadata?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : null;
+};
+
+export const getNotificationTargetRoute = (notification: NotificationView): string | null => {
+  const blisterId = notification.blisterId;
+  const medicineId = getStringMetadata(notification, 'medicineId');
+
+  if ((notification.type === 'stock_low' || notification.type === 'stock_depleted' || notification.type === 'expiration_warning') && blisterId && medicineId) {
+    return ROUTES.editMedicine(blisterId, medicineId);
+  }
+
+  if (notification.type === 'cima_change') {
+    const nregist = getStringMetadata(notification, 'nregist');
+    if (nregist) return ROUTES.cimaMedicineDetail(nregist);
+    if (blisterId && medicineId) return ROUTES.medicineDetail(blisterId, medicineId);
+  }
+
+  if (notification.type === 'adherence_forced' && blisterId) {
+    return ROUTES.blisterLogs(blisterId);
+  }
+
+  if ((notification.type === 'appointment_reminder' || notification.type === 'appointment_comment') && blisterId) {
+    return ROUTES.blisterAppointments(blisterId);
+  }
+
+  if (notification.type === 'dose_reminder' && blisterId) {
+    const treatmentId = getStringMetadata(notification, 'treatmentId');
+    if (treatmentId) return ROUTES.treatmentDetail(blisterId, treatmentId);
+  }
+
+  return null;
+};

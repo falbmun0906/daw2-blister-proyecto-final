@@ -1,0 +1,24 @@
+.c-mcp-token-revoke-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+
+  &__title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  &__description {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    line-height: var(--leading-normal);
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-3);
+  }
+}

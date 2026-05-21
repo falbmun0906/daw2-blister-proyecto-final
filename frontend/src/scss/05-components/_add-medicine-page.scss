@@ -1,0 +1,47 @@
+.c-add-medicine-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  // Espacio inferior para que el contenido no quede oculto detrás del CTA sticky.
+  padding-bottom: 5rem;
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  &__selected {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+
+    &-name { margin: 0; font-weight: var(--font-weight-semibold); color: var(--color-text); }
+    &-meta { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+  }
+
+  // Selector de unidad inline (chips) usado dentro de la sección "Cantidad".
+  &__unit-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  &__placeholder {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  // CTA sticky en el borde inferior de la pantalla para confirmar el alta.
+  &__sticky-cta {
+    position: sticky;
+    bottom: var(--space-3);
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sticky-cta);
+    z-index: 5;
+  }
+}
+

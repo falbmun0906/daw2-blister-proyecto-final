@@ -1,0 +1,119 @@
+.c-login-page {
+  color: var(--color-text);
+
+  // Un único verde en toda la pantalla: el del botón primario.
+  .c-field__label,
+  .c-field__label-icon {
+    color: var(--color-primary-mid);
+  }
+
+  // Labels más grandes y con peso regular.
+  .c-field__label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-regular);
+  }
+
+  // Inputs con bordes prácticamente redondos como los botones.
+  .c-field__input,
+  .c-field__select,
+  .c-field__textarea {
+    border-radius: var(--radius-full);
+    padding-inline: var(--space-5);
+  }
+
+  &__inner {
+    gap: var(--space-5);
+  }
+
+  // Cuerpo: ocupa el espacio disponible y centra el formulario un poco
+  // por encima del centro real.
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-bottom: var(--space-8);
+    gap: var(--space-6);
+  }
+
+  // Título grande, centrado sobre el formulario, estilo landing.
+  &__title {
+    margin: 0 0 var(--space-6) 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);
+    font-weight: var(--font-weight-medium);
+    line-height: 1;
+    letter-spacing: var(--tracking-xtight);
+    color: var(--color-text);
+  }
+
+  &__title-accent {
+    color: var(--color-accent);
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  &__forgot-link {
+    flex: 0 0 auto;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-primary-mid);
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  &__options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    flex-wrap: nowrap;
+  }
+
+  &__remember-label {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--space-touch-min);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  &__remember-input {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+    accent-color: var(--color-primary-mid);
+  }
+
+  &__submit {
+    margin-top: var(--space-3);
+  }
+
+  &__footer {
+    margin: 0;
+    margin-top: auto;
+    padding-top: var(--space-4);
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  &__register-link {
+    color: var(--color-primary-mid);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+}

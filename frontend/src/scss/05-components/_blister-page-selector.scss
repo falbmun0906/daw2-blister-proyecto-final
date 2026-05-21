@@ -1,0 +1,30 @@
+.c-blister-page-selector {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  overflow: hidden;
+  transition:
+    grid-template-rows var(--transition-base) cubic-bezier(0.16, 1, 0.3, 1),
+    margin-bottom var(--transition-base) cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 0;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg);
+
+  &.is-open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    overflow: visible;
+  }
+
+  &__inner {
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 0 var(--space-1);
+    margin: 0;
+  }
+
+  &.is-open &__inner {
+    overflow: visible;
+  }
+}

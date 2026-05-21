@@ -1,0 +1,559 @@
+import { Types } from 'mongoose';
+
+import { AdherenceLogModel } from '../../../models/adherenceLog.model';
+import { BlisterModel } from '../../../models/blister.model';
+import { MedicineModel } from '../../../models/medicine.model';
+import { NotificationModel } from '../../../models/notification.model';
+import { TreatmentModel } from '../../../models/treatment.model';
+import { UserModel } from '../../../models/user.model';
+import {
+  clearTestDatabase,
+  connectTestDatabase,
+  disconnectTestDatabase,
+} from '../../auth/_tests_/auth-test.utils';
+import {
+  adherenceLogsCreate,
+  adherenceLogsDelete,
+  adherenceLogsList,
+} from '../adherence.service';
+
+describe('adherence.service', () => {
+  beforeAll(async () => {
+    await connectTestDatabase();
+  });
+
+  afterEach(async () => {
+    await clearTestDatabase();
+  });
+
+  afterAll(async () => {
+    await disconnectTestDatabase();
+  });
+
+  const createUser = async (suffix: string) =>
+    UserModel.create({
+      name: `User ${suffix}`,
+      username: `user${suffix}`,
+      email: `user${suffix}@example.com`,
+      password:
+        '$2b$12$123456789012345678901uY7LwQ3xVw2Cl5EKeosFVJeFt3PcTJS.',
+      settings: {
+        theme: 'system',
+        font: 'standard',
+        fontSize: 'normal',
+      },
+    });
+
+  const createAdherenceContext = async (
+    role: 'OWNER' | 'CAREGIVER' | 'OBSERVER' = 'OWNER',
+    stock = 10,
+  ) => {
+    const user = await createUser(`a${Math.random().toString(16).slice(2, 8)}`);
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [{ userId: user._id, role }],
+    });
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: `${Math.floor(Math.random() * 900000 + 100000)}`,
+      nombre: 'Paracetamol',
+      pactivos: 'Paracetamol',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '500 mg',
+      iconType: 'pill',
+      stock,
+      stockUnit: 'pastillas',
+      threshold: 2,
+      expDate: new Date('2030-11-01T00:00:00.000Z'),
+    });
+    const treatment = await TreatmentModel.create({
+      blisterId: blister._id,
+      patientUserId: user._id,
+      title: 'Tratamiento base',
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
+          frequencyHours: 8,
+          isRecurring: true,
+        },
+      ],
+      startDate: new Date('2030-11-02T00:00:00.000Z'),
+    });
+
+    return { user, blister, medicine, treatment };
+  };
+
+  it('lists adherence logs with pagination metadata', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext();
+
+    await adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+      timestamp: new Date('2030-11-02T08:00:00.000Z'),
+    });
+    await adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+      amount: 1,
+      timestamp: new Date('2030-11-02T16:00:00.000Z'),
+    });
+
+    const result = await adherenceLogsList(blister._id.toString(), { page: 1, limit: 1 });
+
+    expect(result.logs).toHaveLength(1);
+    expect(result.meta).toEqual({
+      page: 1,
+      limit: 1,
+      total: 2,
+      totalPages: 2,
+    });
+  });
+
+  it('creates adherence logs and decrements stock for writer roles', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('CAREGIVER');
+
+    const result = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'CAREGIVER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+      },
+    );
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+
+    expect(result.isForced).toBe(false);
+    expect(result.amount).toBe(2);
+    expect(storedMedicine?.stock).toBe(8);
+  });
+
+  it('supports half-dose adherence logs and fractional stock', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('CAREGIVER', 10.5);
+
+    const result = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'CAREGIVER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        amount: 0.5,
+      },
+    );
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+
+    expect(result.amount).toBe(0.5);
+    expect(storedMedicine?.stock).toBe(10);
+  });
+
+  it('creates skipped adherence logs without decrementing stock', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('CAREGIVER', 3);
+
+    const result = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'CAREGIVER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        status: 'skipped',
+        timestamp: new Date('2030-11-02T08:00:00.000Z'),
+      },
+    );
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    const notifications = await NotificationModel.find({});
+
+    expect(result.status).toBe('skipped');
+    expect(result.amount).toBe(0);
+    expect(result.isForced).toBe(false);
+    expect(storedMedicine?.stock).toBe(3);
+    expect(notifications).toHaveLength(0);
+  });
+
+  it('creates stock-low notifications for owner and caregiver when stock reaches threshold', async () => {
+    const owner = await createUser(`o${Math.random().toString(16).slice(2, 8)}`);
+    const caregiver = await createUser(`cg${Math.random().toString(16).slice(2, 8)}`);
+    const observer = await createUser(`ob${Math.random().toString(16).slice(2, 8)}`);
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+        { userId: observer._id, role: 'OBSERVER' },
+      ],
+    });
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: `${Math.floor(Math.random() * 900000 + 100000)}`,
+      nombre: 'Ibuprofeno',
+      pactivos: 'Ibuprofeno',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '400 mg',
+      iconType: 'pill',
+      stock: 4,
+      stockUnit: 'pastillas',
+      threshold: 2,
+      expDate: new Date('2030-11-01T00:00:00.000Z'),
+    });
+    const treatment = await TreatmentModel.create({
+      blisterId: blister._id,
+      patientUserId: owner._id,
+      title: 'Tratamiento umbral',
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
+          frequencyHours: 8,
+          isRecurring: true,
+        },
+      ],
+      startDate: new Date('2030-11-02T00:00:00.000Z'),
+    });
+
+    await adherenceLogsCreate(blister._id.toString(), caregiver._id.toString(), 'CAREGIVER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+    });
+
+    const notifications = await NotificationModel.find({}).sort({ userId: 1 });
+
+    expect(notifications).toHaveLength(2);
+    expect(notifications.map((notification) => notification.type)).toEqual([
+      'stock_low',
+      'stock_low',
+    ]);
+    expect(notifications.map((notification) => notification.userId.toString()).sort()).toEqual(
+      [caregiver._id.toString(), owner._id.toString()].sort(),
+    );
+  });
+
+  it('requires force when stock would go below zero', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER', 1);
+
+    await expect(
+      adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+      }),
+    ).rejects.toMatchObject({
+      code: 'ADHERENCE_STOCK_INSUFFICIENT',
+    });
+  });
+
+  it('allows forced logs and clamps stock to zero', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER', 1);
+
+    const result = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        force: true,
+        notes: 'Dose taken but stock not updated yet',
+      },
+    );
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+
+    expect(result.isForced).toBe(true);
+    expect(result.amount).toBe(1);
+    expect(storedMedicine?.stock).toBe(0);
+  });
+
+  it('creates forced-adherence and stock-depleted notifications for writer roles', async () => {
+    const owner = await createUser(`fo${Math.random().toString(16).slice(2, 8)}`);
+    const caregiver = await createUser(`fc${Math.random().toString(16).slice(2, 8)}`);
+    const observer = await createUser(`fb${Math.random().toString(16).slice(2, 8)}`);
+    const blister = await BlisterModel.create({
+      name: 'Compartido',
+      members: [
+        { userId: owner._id, role: 'OWNER' },
+        { userId: caregiver._id, role: 'CAREGIVER' },
+        { userId: observer._id, role: 'OBSERVER' },
+      ],
+    });
+    const medicine = await MedicineModel.create({
+      blisterId: blister._id,
+      nregist: `${Math.floor(Math.random() * 900000 + 100000)}`,
+      nombre: 'Amoxicilina',
+      pactivos: 'Amoxicilina',
+      formaOficial: 'COMPRIMIDO',
+      dosisOficial: '500 mg',
+      iconType: 'pill',
+      stock: 1,
+      stockUnit: 'pastillas',
+      threshold: 2,
+      expDate: new Date('2030-11-01T00:00:00.000Z'),
+    });
+    const treatment = await TreatmentModel.create({
+      blisterId: blister._id,
+      patientUserId: owner._id,
+      title: 'Tratamiento forzado',
+      medicines: [
+        {
+          medicineId: medicine._id,
+          amount: 2,
+          firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
+          frequencyHours: 8,
+          isRecurring: true,
+        },
+      ],
+      startDate: new Date('2030-11-02T00:00:00.000Z'),
+    });
+
+    await adherenceLogsCreate(blister._id.toString(), caregiver._id.toString(), 'CAREGIVER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+      force: true,
+      notes: 'Se tomo la dosis aunque el stock estaba desactualizado',
+    });
+
+    const notifications = await NotificationModel.find({}).sort({ type: 1, userId: 1 });
+
+    expect(notifications).toHaveLength(4);
+    expect(
+      notifications.filter((notification) => notification.type === 'adherence_forced'),
+    ).toHaveLength(2);
+    expect(
+      notifications.filter((notification) => notification.type === 'stock_depleted'),
+    ).toHaveLength(2);
+    expect(
+      notifications.every(
+        (notification) => notification.userId.toString() !== observer._id.toString(),
+      ),
+    ).toBe(true);
+  });
+
+  it('blocks observer writes', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OBSERVER');
+
+    await expect(
+      adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OBSERVER', {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+      }),
+    ).rejects.toMatchObject({
+      code: 'BLISTER_ROLE_FORBIDDEN',
+    });
+  });
+
+  it('undoes logs by the same author and restores stock', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    const created = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+      },
+    );
+
+    await adherenceLogsDelete(blister._id.toString(), created.id, user._id.toString());
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    const storedLog = await AdherenceLogModel.findById(created.id);
+
+    expect(storedMedicine?.stock).toBe(10);
+    expect(storedLog).toBeNull();
+  });
+
+  it('rejects undo when requester is not the author', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+    const caregiver = await createUser(`c${Math.random().toString(16).slice(2, 8)}`);
+    blister.members.push({
+      userId: caregiver._id as Types.ObjectId,
+      role: 'CAREGIVER',
+    });
+    await blister.save();
+
+    const created = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+      },
+    );
+
+    await expect(
+      adherenceLogsDelete(blister._id.toString(), created.id, caregiver._id.toString()),
+    ).rejects.toMatchObject({
+      code: 'ADHERENCE_LOG_AUTHOR_FORBIDDEN',
+    });
+  });
+
+  it('rejects undo when log is older than the allowed window', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    const created = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+      },
+    );
+
+    await AdherenceLogModel.collection.updateOne(
+      { _id: new Types.ObjectId(created.id) },
+      {
+        $set: {
+          timestamp: new Date(Date.now() - (11 * 60 * 1000)),
+          createdAt: new Date(Date.now() - (11 * 60 * 1000)),
+        },
+      },
+    );
+
+    await expect(
+      adherenceLogsDelete(blister._id.toString(), created.id, user._id.toString()),
+    ).rejects.toMatchObject({
+      code: 'ADHERENCE_LOG_UNDO_WINDOW_EXPIRED',
+    });
+  });
+
+  it('snaps off-schedule timestamps to the nearest scheduled dose within tolerance', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    const scheduled = new Date('2030-11-02T08:00:00.000Z');
+    const offBy = new Date(scheduled.getTime() + 17 * 60 * 1000);
+
+    const created = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: offBy,
+      },
+    );
+
+    expect(new Date(created.timestamp).toISOString()).toBe(scheduled.toISOString());
+
+    await expect(
+      adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date(scheduled.getTime() - 5 * 60 * 1000),
+      }),
+    ).rejects.toMatchObject({ code: 'ADHERENCE_LOG_DUPLICATE' });
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    expect(storedMedicine?.stock).toBe(8);
+  });
+
+  it('allows edited daily dose times to be logged as new scheduled doses', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    treatment.medicines = [
+      {
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-11-02T08:00:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['09:00'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    await adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+      medicineId: medicine._id.toString(),
+      treatmentId: treatment._id.toString(),
+      timestamp: new Date('2030-11-02T08:00:00.000Z'),
+    });
+
+    treatment.medicines = [
+      {
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-11-02T08:03:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['09:03'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    const created = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:03:00.000Z'),
+      },
+    );
+
+    expect(new Date(created.timestamp).toISOString()).toBe('2030-11-02T08:03:00.000Z');
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    expect(storedMedicine?.stock).toBe(8);
+  });
+
+  it('treats close daily dose times in the same treatment as distinct doses', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER');
+
+    treatment.medicines = [
+      {
+        medicineId: medicine._id,
+        amount: 1,
+        firstDoseAt: new Date('2030-11-02T08:03:00.000Z'),
+        scheduleType: 'daily_times',
+        frequencyHours: null,
+        dailyDoseTimes: ['09:03', '09:06'],
+        isRecurring: true,
+      },
+    ];
+    await treatment.save();
+
+    const firstLog = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:03:00.000Z'),
+      },
+    );
+    const secondLog = await adherenceLogsCreate(
+      blister._id.toString(),
+      user._id.toString(),
+      'OWNER',
+      {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:06:00.000Z'),
+      },
+    );
+
+    expect(new Date(firstLog.timestamp).toISOString()).toBe('2030-11-02T08:03:00.000Z');
+    expect(new Date(secondLog.timestamp).toISOString()).toBe('2030-11-02T08:06:00.000Z');
+    await expect(
+      adherenceLogsCreate(blister._id.toString(), user._id.toString(), 'OWNER', {
+        medicineId: medicine._id.toString(),
+        treatmentId: treatment._id.toString(),
+        timestamp: new Date('2030-11-02T08:06:00.000Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'ADHERENCE_LOG_DUPLICATE' });
+
+    const storedMedicine = await MedicineModel.findById(medicine._id);
+    expect(storedMedicine?.stock).toBe(8);
+  });
+});

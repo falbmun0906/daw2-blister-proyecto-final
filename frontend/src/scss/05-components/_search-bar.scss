@@ -1,0 +1,81 @@
+.c-search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  &:focus-within {
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 var(--space-1) var(--color-primary-tint), var(--shadow-md);
+  }
+
+  &__icon {
+    display: inline-flex;
+    color: var(--color-primary-mid);
+  }
+
+  &__input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    font-size: var(--text-base);
+    font-family: var(--font-body);
+    color: var(--color-text);
+    min-height: var(--space-touch-min);
+
+    &:focus { outline: none; }
+    &::placeholder { color: var(--color-text-faint); }
+    &::-webkit-search-cancel-button { appearance: none; display: none; }
+    &::-webkit-search-decoration { appearance: none; }
+    &::-ms-clear { display: none; }
+  }
+
+  &__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-tinted);
+    color: var(--color-text-muted);
+    font-size: var(--text-base);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  &__voice {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-primary-mid);
+    cursor: pointer;
+    transition: background-color var(--transition-fast),
+                color var(--transition-fast);
+
+    &:hover { background-color: var(--color-primary-tint); }
+
+    &.is-listening {
+      background-color: var(--color-error-subtle);
+      color: var(--color-error);
+      animation: c-search-bar-pulse 1.2s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes c-search-bar-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}

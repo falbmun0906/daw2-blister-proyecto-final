@@ -1,0 +1,52 @@
+.c-appointment-form-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+
+  &__header {
+    display: grid;
+    grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  &__back {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-size: var(--text-lg);
+    min-width: var(--space-touch-min);
+    min-height: var(--space-touch-min);
+    cursor: pointer;
+  }
+
+  &__title {
+    margin: 0;
+    text-align: center;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__select-label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  &__select {
+    min-height: var(--space-touch-min);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    border: 0.0625rem solid var(--color-border, var(--color-surface-tinted));
+    background-color: var(--color-surface);
+    font: inherit;
+  }
+}

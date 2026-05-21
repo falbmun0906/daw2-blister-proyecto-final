@@ -1,0 +1,113 @@
+// settings/_spacing.scss
+//
+// Sistema de espaciado de Blíster.
+//
+// BASE:
+//   Unidad mínima de 4px. Toda propiedad de espaciado (margin, padding, gap)
+//   referencia estos tokens. Prohibido usar valores px o rem arbitrarios.
+//
+// CONTEXTO:
+//   Proyecto mobile-first. La escala está optimizada para pantallas de 375–430px.
+//   Los valores de layout (--space-section, --space-screen) reflejan las
+//   proporciones visuales del prototipo Figma para iOS.
+//
+// TOUCH TARGETS:
+//   Todo elemento interactivo tiene un área táctil mínima de 44px (2.75rem).
+//   Usar --space-touch-min como padding o min-height en botones, toggles e iconos.
+//
+// LAYOUT PRINCIPAL:
+//   --space-screen-x  Margen horizontal de la pantalla (gutter lateral global)
+//   --space-section   Separación vertical entre secciones de una misma pantalla
+//   --space-stack     Separación vertical entre ítems de una lista o stack
+
+:root {
+
+  // ─── ESCALA BASE ─────────────────────────────────────────────────────────
+
+  --space-1:   0.25rem;   //  4px
+  --space-2:   0.5rem;    //  8px
+  --space-3:   0.75rem;   // 12px
+  --space-4:   1rem;      // 16px
+  --space-5:   1.25rem;   // 20px
+  --space-6:   1.5rem;    // 24px
+  --space-8:   2rem;      // 32px
+  --space-10:  2.5rem;    // 40px
+  --space-12:  3rem;      // 48px
+  --space-16:  4rem;      // 64px
+  --space-20:  5rem;      // 80px
+
+
+  // ─── TOUCH ───────────────────────────────────────────────────────────────
+  //
+  //  --space-touch-min   Área táctil mínima WCAG 2.2 (44px).
+  //                      Usar como min-height y min-width en todo elemento
+  //                      interactivo: botones, toggles, ítems de lista,
+  //                      iconos de navegación.
+  //  --space-touch-comfortable  Área táctil cómoda para usuarios con baja
+  //                             destreza motora o temblores (pantalla 23,
+  //                             accesibilidad). Aplicar cuando el espacio
+  //                             lo permita.
+
+  --space-touch-min:          2.75rem;   // 44px
+  --space-touch-comfortable:  3.5rem;    // 56px — FAB, botones primarios
+
+
+  // ─── LAYOUT DE PANTALLA ──────────────────────────────────────────────────
+  //
+  //  --space-screen-x    Gutter lateral global. Aplicar como padding-inline
+  //                      en el contenedor raíz de cada pantalla.
+  //  --space-screen-top  Separación entre la cabecera y el primer contenido.
+  //  --space-section     Separación vertical entre bloques de contenido
+  //                      diferenciados dentro de una misma pantalla.
+  //  --space-stack       Separación entre ítems consecutivos de un mismo
+  //                      bloque (lista de medicamentos, lista de tomas).
+
+  --space-screen-x:    1.25rem;   // 20px — gutter lateral
+  --space-screen-top:  1rem;      // 16px — separación cabecera / contenido
+  --space-section:     2rem;      // 32px — entre secciones de la pantalla
+  --space-stack:       0.75rem;   // 12px — entre ítems de lista
+
+
+  // ─── COMPONENTES ─────────────────────────────────────────────────────────
+  //
+  //  --space-card-x      Padding horizontal interno de una card
+  //  --space-card-y      Padding vertical interno de una card
+  //  --space-card-gap    Separación entre cards en un listado vertical
+  //  --space-input-x     Padding horizontal de campos de formulario
+  //  --space-input-y     Padding vertical de campos de formulario
+  //  --space-badge       Padding interno de badges y chips de estado
+
+  --space-card-x:    1rem;      // 16px
+  --space-card-y:    1rem;      // 16px
+  --space-card-gap:  0.75rem;   // 12px
+
+  --space-input-x:   1rem;      // 16px
+  --space-input-y:   0.875rem;  // 14px
+
+  --space-badge:     0.25rem 0.625rem;  // 4px 10px
+
+
+  // ─── NAVEGACIÓN INFERIOR (bottom nav) ────────────────────────────────────
+  //
+  //  Altura fija de la barra de navegación inferior.
+  //  Usada para calcular el padding-bottom del contenido principal
+  //  y evitar que quede oculto bajo la barra.
+  //  En dispositivos con home indicator (iPhone con notch), añadir
+  //  env(safe-area-inset-bottom) al padding-bottom del contenido.
+
+  --space-bottom-nav-height:  4.75rem;   // 76px
+
+
+  // ─── SAFE AREAS (iOS/Android) ────────────────────────────────────────────
+  //
+  //  Valores de reserva para dispositivos con notch o home indicator.
+  //  Usar con env() en los contextos que corresponda:
+  //
+  //    padding-bottom: calc(var(--space-bottom-nav-height) + env(safe-area-inset-bottom));
+  //    padding-top: env(safe-area-inset-top);
+
+  --space-safe-top:    env(safe-area-inset-top,    0px);
+  --space-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --space-safe-left:   env(safe-area-inset-left,   0px);
+  --space-safe-right:  env(safe-area-inset-right,  0px);
+}

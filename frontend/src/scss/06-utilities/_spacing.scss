@@ -1,0 +1,15 @@
+// utilities/_spacing.scss
+//
+// Clases de utilidad para ajustes puntuales de espaciado.
+// Usar con criterio: el espaciado estructural pertenece a los
+// objetos (o-stack, o-container) y componentes BEM.
+// Estas clases cubren excepciones que no justifican un modificador BEM.
+
+.u-mt-auto { margin-top: auto; }
+.u-mb-auto { margin-bottom: auto; }
+.u-ml-auto { margin-left: auto; }
+.u-mr-auto { margin-right: auto; }
+.u-mx-auto { margin-inline: auto; }
+
+.u-mt-0 { margin-top: 0; }
+.u-mb-0 { margin-bottom: 0 ; }

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "strict": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "zod": ["../backend/node_modules/zod"]
+    },
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": [
+      "../backend/node_modules/@types/node",
+      "../backend/node_modules/@types/jest"
+    ]
+  },
+  "include": ["schemas/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}

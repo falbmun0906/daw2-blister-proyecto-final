@@ -1,0 +1,76 @@
+.c-treatments-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  &__undo-stack {
+    position: fixed;
+    inset: auto 0 calc(env(safe-area-inset-bottom, 0) + 5rem) 0;
+    z-index: 95;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-screen-x, var(--space-4));
+
+    > * { width: 100%; max-width: 28rem; }
+  }
+
+  &__new-card {
+    width: 100%;
+    min-height: 7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    border: 0.125rem dashed var(--color-border);
+    border-radius: 1.5rem;
+    background-color: color-mix(in srgb, var(--color-surface) 68%, transparent);
+    color: var(--color-text-muted);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-accent);
+      background-color: var(--color-primary-tint);
+      color: var(--color-primary);
+    }
+  }
+
+  &__new-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-tinted);
+    color: var(--color-text-muted);
+    font-size: var(--text-xl);
+    line-height: 1;
+  }
+}

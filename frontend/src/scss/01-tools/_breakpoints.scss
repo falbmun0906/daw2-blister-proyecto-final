@@ -1,0 +1,79 @@
+@use 'sass:map';
+
+// tools/_breakpoints.scss
+//
+// Mixins de breakpoints para Blíster.
+// Requiere que settings/_breakpoints.scss esté cargado previamente.
+//
+// MIXINS DISPONIBLES:
+//
+//   bp-up($name)     min-width: breakpoint. Uso principal en este proyecto.
+//   bp-down($name)   max-width: breakpoint - 1px. Usar con criterio.
+//   bp-only($name)   Entre el breakpoint actual y el siguiente.
+//
+// EJEMPLO:
+//
+//   .medicine-card {
+//     padding: var(--space-card-y) var(--space-card-x);
+//
+//     @include bp-up(md) {
+//       display: grid;
+//       grid-template-columns: 1fr 1fr;
+//     }
+//   }
+
+$breakpoints: (
+  'xs': 375px,
+  'sm': 390px,
+  'md': 768px,
+  'lg': 1024px,
+  'xl': 1280px,
+);
+
+@mixin bp-up($name) {
+  $value: map.get($breakpoints, $name);
+
+  @if $value == null {
+    @error "Breakpoint '#{$name}' no existe en $breakpoints.";
+  }
+
+  @media (min-width: #{$value}) {
+    @content;
+  }
+}
+
+@mixin bp-down($name) {
+  $value: map.get($breakpoints, $name);
+
+  @if $value == null {
+    @error "Breakpoint '#{$name}' no existe en $breakpoints.";
+  }
+
+  @media (max-width: #{$value - 1px}) {
+    @content;
+  }
+}
+
+@mixin bp-only($name) {
+  $keys: map.keys($breakpoints);
+  $index: index($keys, $name);
+
+  @if $index == null {
+    @error "Breakpoint '#{$name}' no existe en $breakpoints.";
+  }
+
+  $min: map.get($breakpoints, $name);
+
+  @if $index < length($keys) {
+    $next-key: nth($keys, $index + 1);
+    $max: map.get($breakpoints, $next-key);
+
+    @media (min-width: #{$min}) and (max-width: #{$max - 1px}) {
+      @content;
+    }
+  } @else {
+    @media (min-width: #{$min}) {
+      @content;
+    }
+  }
+}

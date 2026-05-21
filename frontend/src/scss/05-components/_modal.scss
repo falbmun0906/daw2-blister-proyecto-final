@@ -1,0 +1,104 @@
+// =============================================================================
+// Modal — diálogo centrado accesible (atomo).
+// =============================================================================
+
+.c-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background-color: var(--color-backdrop);
+  animation: c-modal-fade var(--transition-fast) ease-out;
+
+  &__panel {
+    width: 100%;
+    max-width: min(100%, 50vh);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    max-height: min(calc(100vh - 2 * var(--space-4)), 80vh);
+    overflow: hidden;
+    animation: c-modal-pop var(--transition-base) ease-out;
+  }
+
+  &__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
+
+    &--with-icon {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+  }
+
+  &__title {
+    margin: 0;
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+  }
+
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+
+    & svg { width: 1.1rem; height: 1.1rem; }
+    &:hover { background-color: var(--color-primary-tint); }
+    &:focus-visible {
+      outline: 0.125rem solid var(--color-primary-mid);
+      outline-offset: 0.125rem;
+    }
+  }
+
+  &__close-spacer {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  &__body {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 0;
+  }
+}
+
+.c-desktop-device-shell__screen .c-modal {
+  position: absolute;
+  padding: var(--space-3);
+
+  &__panel {
+    max-height: min(calc(100% - 2 * var(--space-3)), 80%);
+  }
+}
+
+@keyframes c-modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes c-modal-pop {
+  from { transform: translateY(0.5rem) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}

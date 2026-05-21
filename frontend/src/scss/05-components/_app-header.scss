@@ -1,0 +1,89 @@
+@use '../01-tools/mixins' as *;
+
+.c-app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--size-header-height);
+  padding: var(--space-3) var(--space-screen-x);
+  padding-top: calc(var(--space-3) + var(--space-safe-top));
+  background-color: var(--color-bg);
+  border-bottom: 0;
+
+  &__right {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  &__title {
+    margin: 0;
+    text-align: left;
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-semibold);
+    font-size: clamp(1.45rem, 6vw, 1.95rem);
+    letter-spacing: var(--tracking-xtight);
+    line-height: 1;
+    color: var(--color-text);
+  }
+
+  &__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  &__action {
+    @include touch-target;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--color-primary-mid);
+    cursor: pointer;
+    position: relative;
+    padding: var(--space-1);
+    text-decoration: none;
+    transition: background-color var(--transition-fast);
+
+    &:hover {
+      background-color: var(--color-primary-tint);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  &__action-icon {
+    width: 1.6rem;
+    height: 1.6rem;
+    display: block;
+    stroke-width: 1.5;
+  }
+
+  &__action--avatar {
+    text-decoration: none;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+
+  &__badge {
+    position: absolute;
+    top: var(--space-1);
+    right: var(--space-1);
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-error);
+    border: 0.125rem solid var(--color-surface);
+  }
+}

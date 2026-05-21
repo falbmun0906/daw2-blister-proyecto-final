@@ -1,0 +1,29 @@
+// settings/_breakpoints.scss
+//
+// Breakpoints del sistema de diseño de Blíster.
+//
+// FILOSOFÍA:
+//   Proyecto mobile-first. El diseño base corresponde a 375px (iPhone SE).
+//   Los breakpoints amplían la experiencia hacia pantallas mayores;
+//   no son el destino principal del diseño.
+//
+// USO CON MIXINS (definidos en tools/_breakpoints.scss):
+//
+//   @include bp-up(md) { ... }   // min-width: 768px y superior
+//   @include bp-down(sm) { ... } // max-width: 767px e inferior
+//
+// REFERENCIA DE DISPOSITIVOS:
+//
+//   xs   375px   iPhone SE, dispositivos compactos
+//   sm   390px   iPhone 14 / 15, la mayoría de Android modernos
+//   md   768px   iPad vertical, tablets Android
+//   lg   1024px  iPad horizontal, laptops pequeños
+//   xl   1280px  Escritorio — caso de uso anecdótico en Blíster
+
+:root {
+  --bp-xs:   375px;
+  --bp-sm:   390px;
+  --bp-md:   768px;
+  --bp-lg:  1024px;
+  --bp-xl:  1280px;
+}

@@ -1,0 +1,25 @@
+.c-empty-state {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  border: 0.0625rem solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+
+  &__title {
+    font-family: var(--font-body);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-snug);
+    color: var(--color-text);
+  }
+
+  &__description {
+    max-width: 34rem;
+    color: var(--color-text-muted);
+    line-height: var(--leading-relaxed);
+  }
+}

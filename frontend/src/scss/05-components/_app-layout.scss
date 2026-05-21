@@ -1,0 +1,33 @@
+// components/_app-layout.scss
+//
+// Layout autenticado: header sticky + contenido scrollable + bottom nav fijo.
+
+.c-app-layout {
+  min-height: var(--size-app-viewport-height);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+
+  &__main {
+    flex: 1 1 auto;
+    padding-inline: var(--space-screen-x);
+    padding-top: var(--space-screen-top);
+    padding-bottom: var(--space-6);
+
+    &--with-bottom-nav {
+      padding-bottom: calc(
+        var(--space-bottom-nav-height) + var(--space-safe-bottom) + var(--space-6)
+      );
+    }
+
+    // Home page: flex column, timeline handles its own bottom padding
+    &--home {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 0;
+      min-height: 0;
+      overflow: visible;
+      padding-bottom: 0;
+    }
+  }
+}

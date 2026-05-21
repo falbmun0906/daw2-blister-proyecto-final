@@ -1,0 +1,98 @@
+// components/_bottom-nav.scss
+//
+// Navegación inferior fija de la app autenticada.
+// Items: Inicio, Botiquín, Tratamientos, Calendario.
+
+@use '../01-tools/mixins' as *;
+
+.c-bottom-nav {
+  --bottom-nav-selected: var(--color-text-on-primary);
+  --bottom-nav-muted: var(--color-text-on-primary);
+
+  position: fixed;
+  inset-inline: 0;
+  bottom: -0.0625rem;
+  z-index: var(--z-sticky);
+
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+
+  background-color: var(--color-primary-mid);
+  color: var(--color-text-on-primary);
+  box-shadow: var(--shadow-md);
+
+  padding-bottom: calc(var(--space-safe-bottom) + 0.0625rem);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  overflow: hidden;
+
+  &__item {
+    @include touch-target;
+    flex: 1;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+
+    min-height: var(--size-bottom-nav-height);
+    padding: var(--space-2) var(--space-1);
+
+    color: var(--bottom-nav-muted);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 1;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--transition-fast);
+
+    &:hover,
+    &:active {
+      color: var(--bottom-nav-selected);
+      background: transparent;
+    }
+    &:focus-visible { @include focus-ring(var(--color-text-on-primary), 0.125rem); }
+
+    &.is-active {
+      color: var(--bottom-nav-selected);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    &.is-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+
+  &__icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: block;
+  }
+
+  &__icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      stroke-width: 1.65;
+    }
+
+    .c-icon {
+      display: block;
+    }
+  }
+
+  &__label {
+    line-height: 1;
+  }
+}

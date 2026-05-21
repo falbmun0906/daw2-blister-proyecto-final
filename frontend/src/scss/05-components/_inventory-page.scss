@@ -1,0 +1,69 @@
+// La página conserva su padding horizontal propio y hereda el espacio superior
+// del AppLayout para alinear el buscador con Home.
+.c-app-layout:has(.c-inventory-page) .c-app-layout__main {
+  padding-inline: 0;
+}
+
+.c-inventory-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 0 var(--space-screen-x) var(--space-4);
+
+  &__header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    display: grid;
+    grid-template-columns: var(--space-touch-min) 1fr var(--space-touch-min);
+    align-items: center;
+    gap: var(--space-3);
+    margin-inline: calc(var(--space-screen-x) * -1);
+    padding: var(--space-3) var(--space-screen-x);
+    padding-top: calc(var(--space-3) + var(--space-safe-top));
+    background-color: var(--color-surface);
+    border-bottom: 0.0625rem solid var(--color-border-subtle);
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-touch-min);
+    height: var(--space-touch-min);
+    color: var(--color-primary-mid);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--text-2xl);
+    line-height: 1;
+    letter-spacing: var(--tracking-xtight);
+    color: var(--color-text);
+    text-align: center;
+  }
+
+  &__spacer { display: block; }
+
+  &__section-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-xtight);
+    color: var(--color-text);
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__item { margin: 0; }
+}

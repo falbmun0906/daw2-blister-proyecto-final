@@ -1,0 +1,25 @@
+// objects/_grid.scss
+//
+// Sistema de rejilla para layouts de dos columnas puntuales.
+// En Blíster el uso de grid es limitado: la mayoría de pantallas
+// son listas verticales de una columna. Este objeto cubre los
+// casos específicos del prototipo donde aparece un layout de dos
+// columnas (selector de Blíster, grid de accesos rápidos en Home).
+//
+// USO:
+//   <div class="o-grid"> ... </div>
+//   <div class="o-grid o-grid--3"> ... </div>
+
+.o-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+
+  &--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  &--auto {
+    grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
+  }
+}

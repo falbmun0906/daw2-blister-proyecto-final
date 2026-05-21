@@ -1,0 +1,34 @@
+// objects/_container.scss
+//
+// Contenedor principal de pantalla.
+// Aplica el gutter lateral definido en settings y centra
+// el contenido en viewports superiores a mobile.
+//
+// USO:
+//   <div class="o-container"> ... </div>
+//
+// VARIANTES:
+//   .o-container--flush   Sin padding lateral (contenido full-bleed)
+//   .o-container--narrow  Ancho máximo reducido (formularios, onboarding)
+
+@use '../01-tools/breakpoints' as bp;
+
+.o-container {
+  width: 100%;
+  max-width: var(--size-container-mobile);
+  margin-inline: auto;
+  padding-inline: var(--space-screen-x);
+
+  @include bp.bp-up(md) {
+    max-width: var(--size-container-tablet);
+    padding-inline: var(--space-6);
+  }
+
+  &--flush {
+    padding-inline: 0;
+  }
+
+  &--narrow {
+    max-width: var(--size-container-narrow);
+  }
+}

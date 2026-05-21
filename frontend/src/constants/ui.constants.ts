@@ -1,0 +1,3 @@
+export const ADHERENCE_UNDO_WINDOW_MS = 3 * 60 * 1000;
+
+export const TOAST_DURATION_MS = 4000;
