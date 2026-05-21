@@ -158,9 +158,13 @@ El repositorio incluye una configuración Docker para levantar frontend, backend
 
 ```bash
 cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 docker compose up -d --build
 curl http://localhost:8080/api/v1/health
 ```
+
+Compose utiliza el `.env` de raíz para la configuración general y carga también `backend/.env` y `frontend/.env` mediante `env_file`, por lo que los tres archivos deben existir antes del arranque.
 
 Tras el arranque, la PWA queda accesible en `http://localhost:8080`, la API en `http://localhost:8080/api/v1`, Swagger en `http://localhost:8080/api/v1/docs` y el endpoint MCP en `http://localhost:8080/mcp`.
 
