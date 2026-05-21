@@ -238,12 +238,12 @@ services:
       NODE_ENV: production
       PORT: 3000
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
 ```
 
-El backend escucha internamente en `3000` y se publica en el puerto `3001` de la VPS para que Nginx pueda reenviar tráfico local.
+El backend escucha internamente en `3000` y se publica solo en `127.0.0.1:3001` de la VPS para que Nginx pueda reenviar tráfico local.
 
-La exposición del contenedor se limita a la máquina. El usuario final no consume `:3001`; entra siempre por HTTPS y por el dominio público. Esta separación permite cambiar el puerto interno sin modificar el frontend, siempre que Nginx siga reenviando al destino correcto.
+La exposición del contenedor se limita al loopback de la máquina. El usuario final no consume `:3001`; entra siempre por HTTPS y por el dominio público. Esta separación permite cambiar el puerto interno sin modificar el frontend, siempre que Nginx siga reenviando al destino correcto.
 
 Estructura del backend en la VPS:
 
@@ -510,6 +510,17 @@ curl https://api.miblister.es/api/v1/health
 
 El diagnóstico de despliegue se organiza en tres puntos: salida de build, logs del contenedor y estado de Nginx. En cambios críticos, el commit anterior identificado permite volver temporalmente con `git checkout <commit>` y reconstruir.
 
+Evidencias de CI/CD:
+
+| Captura | Cómo obtenerla |
+| :--- | :--- |
+| CI en verde | GitHub → Actions → workflow `CI` → último run correcto en `dev` o `main`; capturar el resumen del run con los jobs en verde. |
+| Deploy backend VPS en verde | GitHub → Actions → workflow `Deploy backend VPS` → último run correcto tras un push a `dev`; capturar el job `deploy` completado. |
+
+![Captura. Workflow CI completado correctamente](assets/evidence/github-actions-ci-run.png)
+
+![Captura. Workflow Deploy backend VPS completado correctamente](assets/evidence/github-actions-deploy-vps-run.png)
+
 ## 8. Verificación posterior al despliegue
 
 Comprobaciones mínimas:
@@ -535,6 +546,8 @@ El despliegue queda respaldado por evidencias funcionales y operativas:
 | Docker VPS | Salida de `docker ps` con el contenedor backend. |
 | Certificado | Captura del candado HTTPS o salida de Certbot. |
 | Flujo real | Capturas de login, botiquín, tratamiento y calendario. |
+| Logs de Nginx | `sudo grep '/api/v1/health' /var/log/nginx/access.log | tail -n 20`. |
+| Prueba ligera de carga | Bucle controlado de `curl` contra el healthcheck público, con resumen de códigos y tiempos. |
 
 ## 9. URLs y evidencias
 

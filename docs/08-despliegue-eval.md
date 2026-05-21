@@ -47,7 +47,7 @@ flowchart LR
 
 Este criterio exige identificar qué ficheros componen el despliegue, dónde están y para qué sirve cada uno. En el caso de Blíster los artefactos se reparten entre el repositorio (todo lo reproducible) y la VPS (configuración con secretos y certificados). El siguiente desglose explica cada uno.
 
-#### 3.1 Ruta del proyecto en la VPS
+#### 2.1 Ruta del proyecto en la VPS
 
 El backend está desplegado en la VPS Ubuntu bajo el usuario `fran`, dentro del directorio `~/apps/daw2-blister-proyecto-final`, que se corresponde con la ruta absoluta `/home/fran/apps/daw2-blister-proyecto-final`. El despliegue automatizado descrito en la sección 3.8 trabaja siempre desde esa ruta.
 
@@ -93,6 +93,7 @@ Salida obtenida:
 ./.env.example
 ./backend/Dockerfile
 ./backend/.env.example
+./frontend/.env.example
 ./frontend/Dockerfile
 ```
 
@@ -103,6 +104,7 @@ Salida obtenida:
 | `backend/Dockerfile` | Build multi-stage Node 22 Alpine que compila TypeScript y arranca `dist/backend/src/index.js`. |
 | `frontend/Dockerfile` | Build Vite + Nginx, usado únicamente para validación local. |
 | `backend/.env.example` | Plantilla de variables documentada y versionada, sin secretos. |
+| `frontend/.env.example` | Plantilla de variables Vite para indicar URL de API y MCP en desarrollo. |
 | `.env.example` | Variables de ejemplo del Compose general. |
 
 #### 2.3 Dockerfile del backend
@@ -145,7 +147,7 @@ services:
       NODE_ENV: production
       PORT: 3000
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
 ```
 
 Comprobación del estado y de la configuración resuelta:
@@ -156,12 +158,12 @@ docker compose -f docker-compose.backend.yml ps
 
 ```text
 NAME                                                 IMAGE                                              COMMAND                  SERVICE   CREATED      STATUS                PORTS
-daw2-blister-proyecto-final-backend-1                daw2-blister-proyecto-final-backend                "docker-entrypoint.s…"   backend   2 days ago   Up 2 days (healthy)   0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+daw2-blister-proyecto-final-backend-1                daw2-blister-proyecto-final-backend                "docker-entrypoint.s…"   backend   2 days ago   Up 2 days (healthy)   127.0.0.1:3001->3000/tcp
 ```
 
-![Captura 2. Salida de `docker compose -f docker-compose.backend.yml ps` con el contenedor `(healthy)` y el mapeo `3001->3000`](./assets/despliegue/despliegue-eval-captura-2.png)
+![Captura 2. Salida de `docker compose -f docker-compose.backend.yml ps` con el contenedor `(healthy)` y el mapeo `127.0.0.1:3001->3000`](./assets/despliegue/despliegue-eval-captura-2.png)
 
-Esta evidencia demuestra dos cosas: el contenedor lleva tiempo activo con `restart: unless-stopped`, y el único puerto publicado en la VPS es `3001`, que es a donde apunta Nginx. El `3000` queda confinado al contenedor.
+Esta evidencia demuestra dos cosas: el contenedor lleva tiempo activo con `restart: unless-stopped`, y el único puerto publicado en la VPS es `127.0.0.1:3001`, que es a donde apunta Nginx. El `3000` queda confinado al contenedor.
 
 `docker compose config` se usa para inspeccionar la configuración efectiva (con variables expandidas) sin tocar el contenedor:
 
@@ -284,7 +286,7 @@ Este criterio exige demostrar que el despliegue es accesible y entender los par�
 | :--- | :--- |
 | Dominio público | `api.miblister.es` (registro A → IP pública de la VPS). |
 | Puertos abiertos al exterior | `80` (redirección 301) y `443` (HTTPS). |
-| Puerto Docker publicado en la VPS | `3001` solo accesible desde `127.0.0.1` mediante Nginx. |
+| Puerto Docker publicado en la VPS | `127.0.0.1:3001`, ligado a loopback para uso exclusivo de Nginx. |
 | Puerto interno del contenedor | `3000` (Express). |
 | Healthcheck | `GET /api/v1/health`. |
 | Documentación | `GET /api/v1/docs` (Swagger UI). |
@@ -303,14 +305,14 @@ Salida típica:
 ```text
 tcp   LISTEN  0  511   0.0.0.0:80     0.0.0.0:*  users:(("nginx",pid=...,fd=6))
 tcp   LISTEN  0  511   0.0.0.0:443    0.0.0.0:*  users:(("nginx",pid=...,fd=7))
-tcp   LISTEN  0  4096  0.0.0.0:3001   0.0.0.0:*  users:(("docker-proxy",pid=...,fd=4))
+tcp   LISTEN  0  4096  127.0.0.1:3001 0.0.0.0:*  users:(("docker-proxy",pid=...,fd=4))
 tcp   LISTEN  0  511   [::]:80        [::]:*     users:(("nginx",...))
 tcp   LISTEN  0  511   [::]:443       [::]:*     users:(("nginx",...))
 ```
 
 ![Captura 5. Salida de `sudo ss -tulpn` filtrada para `80|443|3000|3001`](./assets/despliegue/despliegue-eval-captura-5.png)
 
-Esta evidencia demuestra el reparto: Nginx escucha en `80` y `443` (acceso público), Docker publica `3001` (acceso local) y `3000` no aparece porque vive solo dentro del contenedor.
+Esta evidencia demuestra el reparto: Nginx escucha en `80` y `443` (acceso público), Docker publica `127.0.0.1:3001` (acceso local) y `3000` no aparece porque vive solo dentro del contenedor.
 
 El firewall de la VPS también deja claro qué tráfico se permite:
 
@@ -330,7 +332,7 @@ To                         Action      From
 80,443/tcp (Nginx Full v6) ALLOW IN    Anywhere (v6)
 ```
 
-El puerto `3001` no está permitido desde el exterior, lo que confirma que no se puede saltar a Express directamente: el tráfico público obliga a pasar por Nginx.
+El puerto `3001` queda ligado a `127.0.0.1` y no se permite desde el exterior, lo que confirma que no se puede saltar a Express directamente: el tráfico público obliga a pasar por Nginx.
 
 #### 3.3 Healthcheck local y público
 
@@ -402,7 +404,7 @@ sudo certbot certificates
 
 Esta evidencia demuestra que la configuración Nginx es sintácticamente correcta y que el certificado emitido por Let's Encrypt está activo y vinculado al dominio público. La renovación es automática mediante el timer de Certbot.
 
-#### 3.5 Comunicación end-to-end y diferencia entre acceso público y local
+#### 3.5 Comunicación end-to-end y diferencia entre acceso público, local e interno
 
 El recorrido completo de una petición es:
 
@@ -419,9 +421,21 @@ El recorrido completo de una petición es:
 | Local en la VPS | `http://127.0.0.1:3001/api/v1/health` | Docker → Express | Sirve para depurar sin pasar por Nginx; no accesible desde fuera. |
 | Interno al contenedor | `http://localhost:3000/api/v1/health` | Express | Solo tiene sentido dentro del propio contenedor. |
 
-Que las tres rutas devuelvan el mismo JSON es lo que demuestra que el proxy no rompe el flujo y que cada capa cumple su papel.
+La ruta interna se comprueba entrando al contenedor, ya que `localhost:3000` desde la VPS host no apunta al proceso Express:
 
-#### 4.6 Estado del contenedor y logs
+```bash
+docker compose -f docker-compose.backend.yml exec backend wget -qO- http://127.0.0.1:3000/api/v1/health
+```
+
+```text
+{"success":true,"data":{"status":"ok"}}
+```
+
+![Captura 6-3. Salida del healthcheck interno ejecutado dentro del contenedor backend](./assets/despliegue/despliegue-eval-captura-6-3.png)
+
+Que las rutas pública, local e interna devuelvan el mismo JSON demuestra que el proxy no rompe el flujo y que cada capa cumple su papel.
+
+#### 3.6 Estado del contenedor y logs
 
 La última comprobación combina el estado del servicio con sus logs recientes para confirmar que no hay errores al servir tráfico real:
 
@@ -435,3 +449,32 @@ Salida resumida (extracto):
 ![Captura 8. Combinación de `docker compose ps` y los últimos logs del backend con peticiones reales servidas con `200`](./assets/despliegue/despliegue-eval-captura-8.png)
 
 Esta evidencia demuestra que el contenedor está Up y escuchando en el puerto 3000 (mapeado al 3001 del host), que las variables de entorno se inyectan correctamente desde .env al arranque, y que las peticiones reales procedentes de IPs externas llegan al backend a través del proxy nginx, confirmando que el enrutamiento dominio → nginx → contenedor funciona de extremo a extremo.
+
+#### 3.7 Logs de Nginx
+
+Después de ejecutar el healthcheck público, se comprueba que Nginx registra la petición real en el `access.log`:
+
+```bash
+curl -i https://api.miblister.es/api/v1/health
+sudo grep '/api/v1/health' /var/log/nginx/access.log | tail -n 20
+```
+
+![Captura 9. Extracto de `/var/log/nginx/access.log` con peticiones al healthcheck público](./assets/despliegue/despliegue-eval-captura-9.png)
+
+Esta evidencia completa la prueba de reverse proxy: no solo se valida la respuesta del backend, también queda registrado que la petición entró por Nginx en el dominio público.
+
+#### 3.8 Prueba ligera de carga del healthcheck
+
+La prueba de carga se limita al endpoint ligero de salud para no alterar datos de producción. Ejecuta 20 peticiones secuenciales y resume códigos HTTP y tiempos:
+
+```bash
+for i in $(seq 1 20); do
+  curl -s -o /dev/null -w "%{http_code} %{time_total}\n" https://api.miblister.es/api/v1/health
+done | tee /tmp/blister-health-load.txt
+
+awk '{count[$1]++; sum+=$2; if ($2>max) max=$2} END {printf "total=%d 200=%d avg=%.3fs max=%.3fs\n", NR, count[200], sum/NR, max}' /tmp/blister-health-load.txt
+```
+
+![Captura 10. Prueba ligera de carga con 20 peticiones al healthcheck y resumen de tiempos](./assets/despliegue/despliegue-eval-captura-10.png)
+
+Esta comprobación demuestra que el servidor de aplicaciones responde de forma estable a varias peticiones consecutivas sin errores HTTP ni reinicios del contenedor.

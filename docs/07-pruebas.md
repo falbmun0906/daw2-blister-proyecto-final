@@ -268,6 +268,17 @@ El informe de pruebas se compone de evidencias generadas por la integración con
 | Playwright | Reporte HTML o salida de consola. |
 | Docker Compose | `docker compose ps` y healthcheck. |
 
+Evidencia visual del workflow:
+
+| Captura | Cómo obtenerla |
+| :--- | :--- |
+| CI en verde | GitHub → Actions → workflow `CI` → último run correcto en `dev` o `main`; capturar el resumen con los jobs Backend, Frontend y Frontend E2E cuando aparezcan en verde. |
+| Deploy VPS en verde | GitHub → Actions → workflow `Deploy backend VPS` → último run correcto en `dev`; capturar el resumen del job `deploy`. |
+
+![Captura. Último run correcto del workflow CI con jobs en verde](assets/evidence/github-actions-ci-run.png)
+
+![Captura. Último run correcto del workflow Deploy backend VPS](assets/evidence/github-actions-deploy-vps-run.png)
+
 La última batería local verificada antes de la entrega se ejecutó sobre la rama `dev` y obtuvo estos resultados:
 
 | Paquete | Comando | Resultado |

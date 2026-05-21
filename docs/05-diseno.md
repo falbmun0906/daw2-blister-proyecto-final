@@ -686,6 +686,7 @@ Códigos HTTP usados de forma habitual:
 | :---: | :--- |
 | `200` | Lectura, actualización o acción completada. |
 | `201` | Recurso creado. |
+| `204` | Acción completada sin cuerpo de respuesta, como operaciones de descarte o eliminación de suscripciones. |
 | `400` | Petición inválida. |
 | `401` | Falta autenticación o token inválido. |
 | `403` | Rol insuficiente o acceso no permitido. |
