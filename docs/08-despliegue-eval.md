@@ -5,9 +5,8 @@ Este documento complementa a [08-despliegue.md](08-despliegue.md) y se centra ex
 ## Índice
 
 1. [Resumen del despliegue actual](#1-resumen-del-despliegue-actual)
-2. [Relación con los criterios evaluados](#2-relación-con-los-criterios-evaluados)
-3. [Criterio 7 - Gestión básica de ficheros y artefactos del despliegue](#3-criterio-7---gestión-básica-de-ficheros-y-artefactos-del-despliegue)
-4. [Criterio 8 - Verificación básica de red del despliegue](#4-criterio-8---verificación-básica-de-red-del-despliegue)
+2. [Criterio 7 - Gestión básica de ficheros y artefactos del despliegue](#3-criterio-7---gestión-básica-de-ficheros-y-artefactos-del-despliegue)
+3. [Criterio 8 - Verificación básica de red del despliegue](#4-criterio-8---verificación-básica-de-red-del-despliegue)
 
 ## Despliegue de la aplicación web
 
@@ -43,19 +42,6 @@ flowchart LR
     N -->|HTTP 127.0.0.1:3001| B[Backend Docker Express :3000]
     B -->|TLS| A[(MongoDB Atlas)]
 ```
-
-### 2. Relación con los criterios evaluados
-
-La tabla siguiente resume cómo se cubren los criterios obligatorios y los criterios previos a los que estos se apoyan.
-
-| Criterio | RA | Qué se evidencia | Dónde está implementado | Cómo se verifica |
-| :--- | :--- | :--- | :--- | :--- |
-| C2. Control de versiones + CI/CD | RA1 | Workflow CI en verde y CD por SSH a la VPS. | `.github/workflows/ci.yml`, `.github/workflows/deploy-vps.yml` | Pestaña Actions de GitHub y push a `dev`. |
-| C4. Implementación Docker (Compose, Dockerfile, redes/puertos, env) | RA2 | Backend dockerizado, Compose dedicado y `.env.example` versionado. | `backend/Dockerfile`, `docker-compose.backend.yml`, `backend/.env.example` | `docker compose ps`, `docker compose config`. |
-| C5. Servidor web como front (reverse proxy + HTTPS) | RA4 | Nginx termina TLS y reenvía al contenedor; redirección 80→443. | `/etc/nginx/sites-available/miblister-api` | `sudo nginx -t`, `curl -i https://api.miblister.es/api/v1/health`. |
-| C6. Servidor de aplicaciones (contextos, logs, pruebas) | RA5 | Express en contenedor con healthcheck, logs y rutas montadas en `/api/v1` y `/mcp`. | `backend/src/app.ts`, `backend/src/index.ts` | `docker compose logs --tail=80 backend`, `curl` a `/api/v1/health`. |
-| **C7. Gestión básica de ficheros y artefactos** | **RA4** | Identificación de Compose, Dockerfile, `.env`, configuración Nginx e imagen Docker. | Repositorio (`compose.yaml`, `docker-compose.backend.yml`, `backend/.env.example`) y VPS (`backend/.env`, site Nginx). | Apartado [3](#3-criterio-7---gestión-básica-de-ficheros-y-artefactos-del-despliegue). |
-| **C8. Verificación básica de red** | **RA5** | URL pública, puertos, healthcheck y comprobación del flujo Nginx → backend → Atlas. | VPS (`ss`, `ufw`, `nginx`, `certbot`) y dominio público. | Apartado [4](#4-criterio-8---verificación-básica-de-red-del-despliegue). |
 
 ### 3. Criterio 7 - Gestión básica de ficheros y artefactos del despliegue
 
@@ -194,26 +180,6 @@ grep -v '^#' backend/.env | sed -E 's/=.*/=<REDACTADO>/'
 ```
 
 Salida resumida (orden y nombres reales del fichero, valores ocultos):
-
-```text
-NODE_ENV=<REDACTADO>
-PORT=<REDACTADO>
-MONGODB_URI=<REDACTADO>
-BACKEND_URL=<REDACTADO>
-CLIENT_ORIGIN=<REDACTADO>
-CLIENT_ORIGINS=<REDACTADO>
-CIMA_BASE_URL=<REDACTADO>
-JWT_SECRET=<REDACTADO>
-JWT_ACCESS_EXPIRES_IN=<REDACTADO>
-JWT_REFRESH_EXPIRES_IN=<REDACTADO>
-MCP_TOKEN_TTL_DAYS=<REDACTADO>
-MCP_SERVER_ENABLED=<REDACTADO>
-WEB_PUSH_VAPID_PUBLIC_KEY=<REDACTADO>
-WEB_PUSH_VAPID_PRIVATE_KEY=<REDACTADO>
-WEB_PUSH_VAPID_SUBJECT=<REDACTADO>
-PUSH_REMINDER_SCAN_INTERVAL_MS=<REDACTADO>
-RESEND_API_KEY=<REDACTADO>
-```
 
 ![Captura 3. Salida del `grep | sed` mostrando los nombres de variable con `<REDACTADO>`](./assets/despliegue/despliegue-eval-captura-3.png)
 
@@ -432,14 +398,6 @@ El certificado HTTPS se inspecciona con Certbot:
 sudo certbot certificates
 ```
 
-```text
-Certificate Name: api.miblister.es
-  Domains: api.miblister.es
-  Expiry Date: 2026-... (VALID)
-  Certificate Path: /etc/letsencrypt/live/api.miblister.es/fullchain.pem
-  Private Key Path: /etc/letsencrypt/live/api.miblister.es/privkey.pem
-```
-
 ![Captura 7. Salida de `sudo nginx -t` y de `sudo certbot certificates` mostrando el certificado de `api.miblister.es` válido](./assets/despliegue/despliegue-eval-captura-7.png)
 
 Esta evidencia demuestra que la configuración Nginx es sintácticamente correcta y que el certificado emitido por Let's Encrypt está activo y vinculado al dominio público. La renovación es automática mediante el timer de Certbot.
@@ -473,17 +431,6 @@ docker compose -f docker-compose.backend.yml logs --tail=80 backend
 ```
 
 Salida resumida (extracto):
-
-```text
-NAME                                       STATUS                PORTS
-daw2-blister-proyecto-final-backend-1      Up 2 days (healthy)   0.0.0.0:3001->3000/tcp
-
-backend  | [info] MongoDB connected (Atlas)
-backend  | [info] HTTP server listening on port 3000
-backend  | [info] MCP server enabled at /mcp
-backend  | [info] GET /api/v1/health 200
-backend  | [info] GET /api/v1/medicines/search 200
-```
 
 ![Captura 8. Combinación de `docker compose ps` y los últimos logs del backend con peticiones reales servidas con `200`](./assets/despliegue/despliegue-eval-captura-8.png)
 
