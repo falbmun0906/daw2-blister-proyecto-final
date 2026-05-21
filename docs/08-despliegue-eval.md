@@ -5,8 +5,8 @@ Este documento complementa a [08-despliegue.md](08-despliegue.md) y se centra ex
 ## Índice
 
 1. [Resumen del despliegue actual](#1-resumen-del-despliegue-actual)
-2. [Criterio 7 - Gestión básica de ficheros y artefactos del despliegue](#3-criterio-7---gestión-básica-de-ficheros-y-artefactos-del-despliegue)
-3. [Criterio 8 - Verificación básica de red del despliegue](#4-criterio-8---verificación-básica-de-red-del-despliegue)
+2. [Criterio 7 - Gestión básica de ficheros y artefactos del despliegue](#2-criterio-7---gestión-básica-de-ficheros-y-artefactos-del-despliegue)
+3. [Criterio 8 - Verificación básica de red del despliegue](#3-criterio-8---verificación-básica-de-red-del-despliegue)
 
 ## Despliegue de la aplicación web
 
@@ -43,7 +43,7 @@ flowchart LR
     B -->|TLS| A[(MongoDB Atlas)]
 ```
 
-### 3. Criterio 7 - Gestión básica de ficheros y artefactos del despliegue
+### 2. Criterio 7 - Gestión básica de ficheros y artefactos del despliegue
 
 Este criterio exige identificar qué ficheros componen el despliegue, dónde están y para qué sirve cada uno. En el caso de Blíster los artefactos se reparten entre el repositorio (todo lo reproducible) y la VPS (configuración con secretos y certificados). El siguiente desglose explica cada uno.
 
@@ -75,7 +75,7 @@ drwxrwxr-x  fran fran   docs
 
 Esta evidencia demuestra que el proyecto está clonado en la ruta esperada y que en raíz conviven el `compose.yaml` general (heredado de la fase Docker local) y el `docker-compose.backend.yml` realmente usado en producción.
 
-#### 3.2 Ficheros importantes localizados en el repositorio
+#### 2.2 Ficheros importantes localizados en el repositorio
 
 Para detectar de un vistazo los artefactos clave se usa un único `find`:
 
@@ -105,7 +105,7 @@ Salida obtenida:
 | `backend/.env.example` | Plantilla de variables documentada y versionada, sin secretos. |
 | `.env.example` | Variables de ejemplo del Compose general. |
 
-#### 3.3 Dockerfile del backend
+#### 2.3 Dockerfile del backend
 
 ```dockerfile
 FROM node:22-alpine AS builder
@@ -128,7 +128,7 @@ CMD ["node", "dist/backend/src/index.js"]
 
 El multi-stage separa build (con devDependencies y código TypeScript) y runtime (solo `dist`, `node_modules` ya purgados con `npm prune --omit=dev` y package.json). El contenedor expone únicamente el puerto `3000` interno.
 
-#### 3.4 Compose real usado en producción
+#### 2.4 Compose real usado en producción
 
 El fichero `docker-compose.backend.yml` es el que realmente levanta el servicio en la VPS. No incluye Mongo porque la base de datos vive en Atlas, ni frontend porque está en Render.
 
@@ -171,7 +171,7 @@ docker compose -f docker-compose.backend.yml config
 
 Esto resulta útil para verificar que `env_file` se aplica correctamente y que ninguna variable obligatoria queda sin valor.
 
-#### 3.5 Variables de entorno en producción
+#### 2.5 Variables de entorno en producción
 
 El fichero `backend/.env` vive solo en la VPS, fuera del repositorio. Para aportar evidencia de su contenido sin exponer secretos se usa una redacción automática:
 
@@ -185,7 +185,7 @@ Salida resumida (orden y nombres reales del fichero, valores ocultos):
 
 Esta evidencia demuestra que las variables esperadas existen en el entorno de producción sin revelar ningún valor sensible. La plantilla `backend/.env.example`, ya en el repositorio, documenta cada variable y su uso para que el despliegue sea reproducible.
 
-#### 3.6 Configuración Nginx
+#### 2.6 Configuración Nginx
 
 La configuración real del site `api.miblister.es` se encuentra en la VPS en `/etc/nginx/sites-available/miblister-api` y está enlazada desde `sites-enabled`:
 
@@ -247,7 +247,7 @@ lrwxrwxrwx  miblister-api -> /etc/nginx/sites-available/miblister-api
 
 Esta evidencia demuestra que el dominio `api.miblister.es` está servido por un único site dedicado, que incluye HTTPS gestionado por Certbot, redirección 80→443 y los ajustes específicos para que MCP funcione correctamente con OAuth y Streamable HTTP.
 
-#### 3.7 Imágenes, volúmenes y persistencia
+#### 2.7 Imágenes, volúmenes y persistencia
 
 | Artefacto | Origen | Notas |
 | :--- | :--- | :--- |
@@ -258,7 +258,7 @@ Esta evidencia demuestra que el dominio `api.miblister.es` está servido por un 
 
 El Compose general `compose.yaml` sí declara el volumen `mongo-data` para uso local, pero ese servicio no se utiliza en producción.
 
-#### 3.8 Ficheros excluidos del repositorio y reconstrucción
+#### 2.8 Ficheros excluidos del repositorio y reconstrucción
 
 Los siguientes ficheros nunca deben subirse al repositorio porque contienen secretos o estado local:
 
@@ -274,11 +274,11 @@ El redespliegue se realiza de dos formas equivalentes:
 1. **Automático (CD):** push a la rama `dev` dispara `.github/workflows/deploy-vps.yml`, que entra por SSH y ejecuta `git pull --rebase`, `docker compose -f docker-compose.backend.yml up -d --build` y `docker image prune -f`.
 2. **Manual:** ejecutando esos mismos comandos por SSH desde `~/apps/daw2-blister-proyecto-final` cuando interesa intervenir directamente.
 
-### 4. Criterio 8 - Verificación básica de red del despliegue
+### 3. Criterio 8 - Verificación básica de red del despliegue
 
 Este criterio exige demostrar que el despliegue es accesible y entender los parámetros de red implicados: dominio, puertos, rutas, proxy y comunicación entre servicios. Las siguientes evidencias se obtienen directamente sobre la VPS y sobre la URL pública.
 
-#### 4.1 URL pública, puertos y rutas
+#### 3.1 URL pública, puertos y rutas
 
 | Elemento | Valor |
 | :--- | :--- |
@@ -290,7 +290,7 @@ Este criterio exige demostrar que el despliegue es accesible y entender los par�
 | Documentación | `GET /api/v1/docs` (Swagger UI). |
 | MCP Streamable HTTP | `GET/POST/DELETE /mcp`. |
 
-#### 4.2 Estado de puertos en escucha
+#### 3.2 Estado de puertos en escucha
 
 Para evidenciar qué procesos escuchan en cada puerto:
 
@@ -332,7 +332,7 @@ To                         Action      From
 
 El puerto `3001` no está permitido desde el exterior, lo que confirma que no se puede saltar a Express directamente: el tráfico público obliga a pasar por Nginx.
 
-#### 4.3 Healthcheck local y público
+#### 3.3 Healthcheck local y público
 
 Comprobación local en la VPS, contra el puerto del contenedor:
 
@@ -379,7 +379,7 @@ HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ```
 
-#### 4.4 Comprobación de Nginx y certificado
+#### 3.4 Comprobación de Nginx y certificado
 
 Antes de cualquier recarga se valida la sintaxis de Nginx:
 
@@ -402,7 +402,7 @@ sudo certbot certificates
 
 Esta evidencia demuestra que la configuración Nginx es sintácticamente correcta y que el certificado emitido por Let's Encrypt está activo y vinculado al dominio público. La renovación es automática mediante el timer de Certbot.
 
-#### 4.5 Comunicación end-to-end y diferencia entre acceso público y local
+#### 3.5 Comunicación end-to-end y diferencia entre acceso público y local
 
 El recorrido completo de una petición es:
 
