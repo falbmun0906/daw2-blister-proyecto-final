@@ -298,16 +298,9 @@ La organización de commits busca que la revisión del histórico sea comprensib
 
 La planificación se apoya en tareas por bloques funcionales: autenticación, blísteres, botiquín, tratamientos, calendario, notificaciones, integraciones, despliegue, pruebas y documentación. El seguimiento del proyecto se representa mediante sprint, estado, prioridad, estimación y categoría, de acuerdo con la metodología indicada en el enunciado.
 
-Evidencias de seguimiento:
+<img width="2556" height="1240" alt="image" src="https://github.com/user-attachments/assets/cea07518-4f52-4f7f-aa39-94d6e9e9e656" />
 
-| Evidencia | Cómo obtenerla |
-| :--- | :--- |
-| Tablero de planificación | Captura del GitHub Project con las tareas agrupadas por estado y con los campos de sprint, prioridad, estimación y categoría visibles. |
-| Vista de sprint | Captura del filtro o vista del Project correspondiente al último sprint cerrado o al sprint de entrega. |
-
-![Captura. Tablero de GitHub Projects con estados y campos de planificación](assets/evidence/github-project-board.png)
-
-![Captura. Vista de sprint o iteración final en GitHub Projects](assets/evidence/github-project-sprint.png)
+<img width="2557" height="220" alt="image" src="https://github.com/user-attachments/assets/ed9e0d4a-d731-4bc4-8822-b938cb5486af" />
 
 La integración continua se define en `.github/workflows/ci.yml` con tres jobs:
 
