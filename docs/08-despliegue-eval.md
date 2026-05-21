@@ -153,7 +153,7 @@ services:
 Comprobación del estado y de la configuración resuelta:
 
 ```bash
-docker compose -f docker-compose.backend.yml ps
+cd ~/apps/daw2-blister-proyecto-final && docker compose -f docker-compose.backend.yml ps
 ```
 
 ```text
@@ -168,7 +168,7 @@ Esta evidencia demuestra dos cosas: el contenedor lleva tiempo activo con `resta
 `docker compose config` se usa para inspeccionar la configuración efectiva (con variables expandidas) sin tocar el contenedor:
 
 ```bash
-docker compose -f docker-compose.backend.yml config
+cd ~/apps/daw2-blister-proyecto-final && docker compose -f docker-compose.backend.yml config
 ```
 
 Esto resulta útil para verificar que `env_file` se aplica correctamente y que ninguna variable obligatoria queda sin valor.
@@ -424,7 +424,7 @@ El recorrido completo de una petición es:
 La ruta interna se comprueba entrando al contenedor, ya que `localhost:3000` desde la VPS host no apunta al proceso Express:
 
 ```bash
-docker compose -f docker-compose.backend.yml exec backend wget -qO- http://127.0.0.1:3000/api/v1/health
+cd ~/apps/daw2-blister-proyecto-final && docker compose -f docker-compose.backend.yml exec backend wget -qO- http://127.0.0.1:3000/api/v1/health
 ```
 
 ```text
@@ -440,8 +440,8 @@ Que las rutas pública, local e interna devuelvan el mismo JSON demuestra que el
 La última comprobación combina el estado del servicio con sus logs recientes para confirmar que no hay errores al servir tráfico real:
 
 ```bash
-docker compose -f docker-compose.backend.yml ps
-docker compose -f docker-compose.backend.yml logs --tail=80 backend
+cd ~/apps/daw2-blister-proyecto-final && docker compose -f docker-compose.backend.yml ps
+cd ~/apps/daw2-blister-proyecto-final && docker compose -f docker-compose.backend.yml logs --tail=80 backend
 ```
 
 Salida resumida (extracto):

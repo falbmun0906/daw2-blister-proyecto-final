@@ -300,6 +300,7 @@ Una configuración incorrecta de CORS suele manifestarse como error en navegador
 ### 4.4 Construcción y arranque
 
 ```bash
+cd ~/apps/daw2-blister-proyecto-final
 docker compose -f docker-compose.backend.yml up -d --build
 docker ps
 docker compose -f docker-compose.backend.yml logs -f backend
@@ -508,18 +509,11 @@ docker compose -f docker-compose.backend.yml logs -f backend
 curl https://api.miblister.es/api/v1/health
 ```
 
-El diagnóstico de despliegue se organiza en tres puntos: salida de build, logs del contenedor y estado de Nginx. En cambios críticos, el commit anterior identificado permite volver temporalmente con `git checkout <commit>` y reconstruir.
+El diagnóstico de despliegue se organiza en tres puntos: salida de build, logs del contenedor y estado de Nginx. En cambios críticos, el commit anterior identificado permite volver temporalmente con `git checkout <commit>` y reconstruir. La evidencia visual del flujo de integración y despliegue se recoge en las capturas siguientes.
 
-Evidencias de CI/CD:
+![Workflow CI completado correctamente](./assets/despliegue/github-actions-ci-run.png)
 
-| Captura | Cómo obtenerla |
-| :--- | :--- |
-| CI en verde | GitHub → Actions → workflow `CI` → último run correcto en `dev` o `main`; capturar el resumen del run con los jobs en verde. |
-| Deploy backend VPS en verde | GitHub → Actions → workflow `Deploy backend VPS` → último run correcto tras un push a `dev`; capturar el job `deploy` completado. |
-
-![Captura. Workflow CI completado correctamente](assets/evidence/github-actions-ci-run.png)
-
-![Captura. Workflow Deploy backend VPS completado correctamente](assets/evidence/github-actions-deploy-vps-run.png)
+![Workflow Deploy backend VPS completado correctamente](./assets/despliegue/github-actions-deploy-vps-run.png)
 
 ## 8. Verificación posterior al despliegue
 
@@ -538,16 +532,16 @@ Comprobaciones mínimas:
 
 El despliegue queda respaldado por evidencias funcionales y operativas:
 
-| Evidencia | Cómo obtenerla |
+| Evidencia | Verificación documentada |
 | :--- | :--- |
-| Healthcheck público | Captura o salida de `curl https://api.miblister.es/api/v1/health`. |
-| Swagger | Captura de `/api/v1/docs`. |
-| Frontend Render | Captura de la URL pública cargando la PWA. |
-| Docker VPS | Salida de `docker ps` con el contenedor backend. |
-| Certificado | Captura del candado HTTPS o salida de Certbot. |
-| Flujo real | Capturas de login, botiquín, tratamiento y calendario. |
-| Logs de Nginx | `sudo grep '/api/v1/health' /var/log/nginx/access.log | tail -n 20`. |
-| Prueba ligera de carga | Bucle controlado de `curl` contra el healthcheck público, con resumen de códigos y tiempos. |
+| Healthcheck público | Respuesta `200` del endpoint `/api/v1/health` por HTTPS. |
+| Swagger | Publicación de `/api/v1/docs` en el dominio de producción. |
+| Frontend Render | Carga correcta de la PWA pública. |
+| Docker VPS | Contenedor backend en ejecución en la VPS. |
+| Certificado | Certificado activo de Let's Encrypt para `api.miblister.es`. |
+| Flujo real | Recorrido funcional sobre login, botiquín, tratamiento y calendario. |
+| Logs de Nginx | Registro en `access.log` de peticiones atendidas por el proxy. |
+| Prueba ligera de carga | Serie controlada de peticiones al healthcheck con resumen de tiempos y códigos. |
 
 ## 9. URLs y evidencias
 

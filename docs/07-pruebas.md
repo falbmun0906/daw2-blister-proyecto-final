@@ -260,20 +260,15 @@ La cobertura backend se publica como artefacto del workflow. El porcentaje exact
 
 El informe de pruebas se compone de evidencias generadas por la integración continua y por ejecuciones locales verificables:
 
-| Evidencia | Dónde obtenerla |
+| Evidencia | Referencia |
 | :--- | :--- |
-| Estado del workflow | Pestaña Actions del repositorio. |
+| Estado del workflow | Ejecuciones correctas de GitHub Actions. |
 | Cobertura backend | Artefacto generado por `npm run test:coverage`. |
-| Build frontend | Log del job Frontend o ejecución local. |
-| Playwright | Reporte HTML o salida de consola. |
-| Docker Compose | `docker compose ps` y healthcheck. |
+| Build frontend | Job Frontend de CI y ejecución local verificada. |
+| Playwright | Reporte HTML o salida de consola de la suite E2E. |
+| Docker Compose | Estado de servicios y healthcheck de la pila integrada. |
 
-Evidencia visual del workflow:
-
-| Captura | Cómo obtenerla |
-| :--- | :--- |
-| CI en verde | GitHub → Actions → workflow `CI` → último run correcto en `dev` o `main`; capturar el resumen con los jobs Backend, Frontend y Frontend E2E cuando aparezcan en verde. |
-| Deploy VPS en verde | GitHub → Actions → workflow `Deploy backend VPS` → último run correcto en `dev`; capturar el resumen del job `deploy`. |
+La evidencia visual del flujo de integración y despliegue queda recogida en las capturas siguientes: una ejecución correcta del workflow `CI` y una ejecución correcta del workflow `Deploy backend VPS`.
 
 <img width="2557" height="1082" alt="image" src="https://github.com/user-attachments/assets/8418ea38-d911-459e-afe5-55a6c543a182" />
 
