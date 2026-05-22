@@ -34,16 +34,18 @@
     align-items: center;
     gap: var(--space-1);
     padding: var(--space-1) var(--space-3);
-    border: none;
+    border: 0.0625rem solid transparent;
     border-radius: var(--radius-full);
-    background-color: var(--color-primary-mid);
-    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+    color: var(--color-text-on-primary);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     line-height: 1.2;
     text-decoration: none;
     cursor: pointer;
-    transition: filter var(--transition-fast);
+    transition: background-color var(--transition-base),
+          color            var(--transition-base),
+          border-color     var(--transition-base);
     white-space: nowrap;
 
     & svg {
@@ -52,7 +54,17 @@
       flex-shrink: 0;
     }
 
-    &:hover { filter: brightness(0.95); }
+    &:hover {
+      background-color: var(--color-primary-hover);
+      border-color: transparent;
+      color: var(--color-text-on-primary);
+    }
+
+    &:active {
+      background-color: var(--color-primary-active);
+      border-color: transparent;
+      color: var(--color-text-on-primary);
+    }
     &:focus-visible {
       outline: 0.125rem solid var(--color-primary-mid);
       outline-offset: 0.125rem;

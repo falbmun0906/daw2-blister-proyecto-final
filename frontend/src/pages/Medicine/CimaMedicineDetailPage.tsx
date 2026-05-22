@@ -23,6 +23,7 @@ import type { ExternalMedicineInfo } from '../../types/medicine.types';
 
 const CIMA_DOC_TYPE_FICHA_TECNICA = 1;
 const CIMA_DOC_TYPE_PROSPECTO = 2;
+const CIMA_DOCHTML_BASE_URL = 'https://cima.aemps.es/cima/dochtml';
 
 const authDateFormatter = new Intl.DateTimeFormat('es-ES', {
   day: '2-digit',
@@ -46,6 +47,10 @@ function formatAuth(iso: string | null): string {
 function formatPrincipio(p: ExternalMedicineInfo['principiosActivos'][number]): string {
   const cantidad = p.cantidad ? `${p.cantidad}${p.unidad ? ` ${p.unidad}` : ''}` : null;
   return cantidad ? `${p.nombre} (${cantidad})` : p.nombre;
+}
+
+function buildProspectoUrl(nregist: string): string {
+  return `${CIMA_DOCHTML_BASE_URL}/p/${encodeURIComponent(nregist)}/Prospecto.html`;
 }
 
 function CimaMedicineDetailPage() {
@@ -85,6 +90,7 @@ function CimaMedicineDetailPage() {
 
   const fichaTecnica = info?.docs.find((d: CimaDoc) => d.tipo === CIMA_DOC_TYPE_FICHA_TECNICA && d.url);
   const prospecto = info?.docs.find((d: CimaDoc) => d.tipo === CIMA_DOC_TYPE_PROSPECTO && d.url);
+  const prospectoUrl = prospecto?.url && info ? buildProspectoUrl(info.nregist) : null;
   const fotos = info?.fotos.filter((f: CimaPhoto) => f.url) ?? [];
 
   const canMutate = activeRole === 'OWNER' || activeRole === 'CAREGIVER';
@@ -136,10 +142,10 @@ function CimaMedicineDetailPage() {
                 <span>Ficha técnica</span>
               </a>
             ) : null}
-            {prospecto?.url ? (
+            {prospectoUrl ? (
               <a
                 className="c-cima-detail__chip"
-                href={prospecto.url}
+                href={prospectoUrl}
                 target="_blank"
                 rel="noreferrer"
               >
