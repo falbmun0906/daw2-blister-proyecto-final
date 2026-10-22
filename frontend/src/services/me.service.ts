@@ -22,6 +22,10 @@ export const upcomingDoseSchema = z.object({
   medicineId: objectIdSchema,
   medicineName: z.string(),
   amount: positiveQuantityValueSchema,
+  stockUnit: z.string().default('unidades'),
+  timeZone: z.string().default('Europe/Madrid'),
+  scheduledTime: z.string().nullable().default(null),
+  isTimeAdjusted: z.boolean().default(false),
   isTaken: z.boolean().default(false),
   isSkipped: z.boolean().default(false),
   takenAt: z.string().nullable().default(null),
@@ -79,6 +83,17 @@ export async function getUpcomingDoses(query: RangeQuery): Promise<UpcomingDose[
 }
 
 export async function getCalendar(query: CalendarQuery): Promise<CalendarPayload> {
+  const maxWindow = 42 * 24 * 60 * 60 * 1000;
+  if (query.to.getTime() - query.from.getTime() > maxWindow) {
+    const appointments = new Map<string, CalendarAppointment>();
+    const doses = new Map<string, UpcomingDose>();
+    for (let start = query.from.getTime(); start < query.to.getTime(); start += maxWindow) {
+      const part = await getCalendar({ ...query, from: new Date(start), to: new Date(Math.min(start + maxWindow, query.to.getTime())) });
+      part.appointments.forEach((item) => appointments.set(item.id, item));
+      part.doses.forEach((item) => doses.set(`${item.treatmentId}:${item.medicineId}:${item.doseAt}`, item));
+    }
+    return { appointments: [...appointments.values()], doses: [...doses.values()] };
+  }
   const response = await apiClient.get('/me/calendar', {
     params: {
       ...toRangeParams(query),

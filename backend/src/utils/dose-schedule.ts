@@ -5,6 +5,7 @@ import {
   maxCivilDateKey,
   zonedTimeToDate,
 } from './time-zone';
+import { AppError } from './app-error';
 
 const HOUR_IN_MS = 60 * 60 * 1000;
 const MAX_DAILY_TIME_LOOKAHEAD_DAYS = 366 * 10;
@@ -26,6 +27,14 @@ export interface DoseScheduleEntry {
 
 const getSortedDailyTimes = (entry: DoseScheduleEntry): string[] =>
   [...(entry.dailyDoseTimes ?? [])].sort((left, right) => left.localeCompare(right));
+
+const getDailyOccurrences = (day: string, times: string[], zone: string): Date[] => {
+  const dates = times.map((time) => zonedTimeToDate(day, time, zone)).sort((a, b) => a.getTime() - b.getTime());
+  if (new Set(dates.map((date) => date.getTime())).size !== dates.length) {
+    throw new AppError({ code: 'SCHEDULE_DST_COLLISION', message: `El cambio horario del ${day} hace coincidir dos tomas. Revisa la pauta antes de registrarlas.`, statusCode: 422 });
+  }
+  return dates;
+};
 
 /**
  * Calcula la próxima dosis posterior o igual a `lowerBound` para una pauta
@@ -70,8 +79,7 @@ const computeNextDailyTimeDose = (
   let dayCursor = firstDay;
 
   while (dayCursor <= lastDay) {
-    for (const timeOfDay of dailyTimes) {
-      const doseAt = zonedTimeToDate(dayCursor, timeOfDay, timeZone);
+    for (const doseAt of getDailyOccurrences(dayCursor, dailyTimes, timeZone)) {
       if (doseAt < source.startDate || doseAt < lowerBound) {
         continue;
       }
@@ -131,7 +139,7 @@ export const computeDosesInRange = (
   entry: DoseScheduleEntry,
   from: Date,
   to: Date,
-  maxOccurrences = 200,
+  maxOccurrences = 1500,
 ): Date[] => {
   if (!source.active || from > to) {
     return [];
@@ -165,8 +173,7 @@ export const computeDosesInRange = (
     let dayCursor = firstDay;
 
     while (dayCursor <= lastDay && occurrences.length < maxOccurrences) {
-      for (const timeOfDay of dailyTimes) {
-        const doseAt = zonedTimeToDate(dayCursor, timeOfDay, timeZone);
+      for (const doseAt of getDailyOccurrences(dayCursor, dailyTimes, timeZone)) {
         if (doseAt < source.startDate || doseAt < from || doseAt.getTime() > cutoff) {
           continue;
         }

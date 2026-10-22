@@ -14,6 +14,9 @@ const optionalBooleanQuerySchema = z
   .transform((value) => value === true || value === 'true' || value === '1');
 
 const refineRange = (value: { from: Date; to: Date }, ctx: z.RefinementCtx): void => {
+  if (value.to.getTime() - value.from.getTime() > 42 * 24 * 60 * 60 * 1000) {
+    ctx.addIssue({ code: 'custom', path: ['to'], message: 'Consulta el calendario en rangos de hasta 42 días.' });
+  }
   if (value.to <= value.from) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

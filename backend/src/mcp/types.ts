@@ -85,6 +85,12 @@ export interface McpBlisterMember {
 }
 
 export interface McpScheduleItem {
+  stockUnit: string;
+  patientUserId: string;
+  patientName: string;
+  timeZone: string;
+  scheduledTime: string | null;
+  isTimeAdjusted: boolean;
   blisterId: string;
   blisterName: string;
   treatmentId: string;

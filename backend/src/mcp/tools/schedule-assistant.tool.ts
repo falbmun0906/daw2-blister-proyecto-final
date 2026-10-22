@@ -1,71 +1,34 @@
-import { treatmentsList } from '../../modules/treatments/treatments.service';
-import { medicinesList } from '../../modules/medicines/medicines.service';
-import { computeNextDose } from '../../utils/dose-schedule';
+import { upcomingDosesQuerySchema } from '../../../../shared/schemas';
+import { meUpcomingDoses } from '../../modules/me/me.service';
 import { type McpScheduleAssistantTool } from '../types';
 import { resolveMcpBlisterTargets } from '../blister-resolver';
 
 export const scheduleAssistantTool: McpScheduleAssistantTool = {
   name: 'schedule_assistant',
-  description:
-    'Calcula proximas dosis por tratamiento activo, con posibilidad de filtrar por blisterId o blisterName y rango temporal.',
+  description: 'Calcula la próxima dosis pendiente de cada pauta activa, con paciente, unidad y ajuste horario; excluye tomas registradas y omitidas.',
   run: async (context, input) => {
-    const now = new Date();
-    const from = input.from ?? now;
-    const to = input.to ?? new Date(from.getTime() + input.lookAheadHours * 60 * 60 * 1000);
-
-    const targetBlisters = resolveMcpBlisterTargets(context, input);
-
-    const items = await Promise.all(
-      targetBlisters.map(async (blister) => {
-        const [treatmentsResult, medicinesResult] = await Promise.all([
-          treatmentsList(blister.blisterId, { page: 1, limit: 100 }),
-          medicinesList(blister.blisterId, { page: 1, limit: 100 }),
-        ]);
-
-        const medicinesById = new Map(
-          medicinesResult.medicines.map((medicine) => [medicine.id, medicine.alias ?? medicine.nombre]),
-        );
-
-        return treatmentsResult.treatments
-          .filter((treatment) => treatment.active)
-          .flatMap((treatment) =>
-            treatment.medicines
-              .map((entry) => {
-                const nextDoseAt = computeNextDose({
-                  startDate: entry.firstDoseAt,
-                  endDate: treatment.endDate,
-                  active: treatment.active,
-                  timeZone: treatment.timeZone,
-                }, {
-                  firstDoseAt: entry.firstDoseAt,
-                  scheduleType: entry.scheduleType,
-                  frequencyHours: entry.frequencyHours,
-                  dailyDoseTimes: entry.dailyDoseTimes,
-                  isRecurring: entry.isRecurring,
-                }, from);
-
-                if (!nextDoseAt || nextDoseAt < from || nextDoseAt > to) {
-                  return null;
-                }
-
-                return {
-                  blisterId: blister.blisterId,
-                  blisterName: blister.blisterName,
-                  treatmentId: treatment.id,
-                  treatmentTitle: treatment.title,
-                  medicineId: entry.medicineId,
-                  medicineName: medicinesById.get(entry.medicineId) ?? 'Medicamento',
-                  amount: entry.amount,
-                  nextDoseAt,
-                };
-              })
-              .filter((value): value is NonNullable<typeof value> => value !== null),
-          );
-      }),
-    );
-
-    return {
-      items: items.flat().sort((left, right) => left.nextDoseAt.getTime() - right.nextDoseAt.getTime()),
-    };
+    const from = input.from ?? new Date();
+    const to = input.to ?? new Date(from.getTime() + input.lookAheadHours * 3_600_000);
+    const blisters = resolveMcpBlisterTargets(context, input);
+    const groups = await Promise.all(blisters.map(async (blister) => {
+      const query = upcomingDosesQuerySchema.parse({ from, to, blisterId: blister.blisterId, includeTaken: false });
+      const doses = await meUpcomingDoses(context.userId, query);
+      const seen = new Set<string>();
+      return doses.filter((dose) => {
+        const key = `${dose.treatmentId}:${dose.medicineId}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).map((dose) => ({
+        blisterId: dose.blisterId, blisterName: dose.blisterName,
+        treatmentId: dose.treatmentId, treatmentTitle: dose.treatmentTitle,
+        medicineId: dose.medicineId, medicineName: dose.medicineName,
+        amount: dose.amount, stockUnit: dose.stockUnit,
+        patientUserId: dose.patientUserId, patientName: dose.patientName,
+        nextDoseAt: dose.doseAt, timeZone: dose.timeZone,
+        scheduledTime: dose.scheduledTime, isTimeAdjusted: dose.isTimeAdjusted,
+      }));
+    }));
+    return { items: groups.flat().sort((left, right) => left.nextDoseAt.getTime() - right.nextDoseAt.getTime()) };
   },
 };

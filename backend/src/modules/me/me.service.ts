@@ -8,7 +8,7 @@ import { TreatmentModel } from '../../models/treatment.model';
 import { UserModel } from '../../models/user.model';
 import { type BlisterMember, type BlisterRole } from '../../types/blister.types';
 import { computeDosesInRange, computeScheduleToleranceMs } from '../../utils/dose-schedule';
-import { formatTimeOfDayInTimeZone, getMedicationTimeZone } from '../../utils/time-zone';
+import { formatTimeOfDayInTimeZone, getCivilDateKey, getMedicationTimeZone, zonedTimeToDate } from '../../utils/time-zone';
 import {
   type CalendarQuery,
   type UpcomingDosesQuery,
@@ -28,6 +28,10 @@ export interface UpcomingDoseItem {
   medicineId: string;
   medicineName: string;
   amount: number;
+  stockUnit: string;
+  timeZone: string;
+  scheduledTime: string | null;
+  isTimeAdjusted: boolean;
   isTaken: boolean;
   isSkipped: boolean;
   takenAt: Date | null;
@@ -156,7 +160,7 @@ export const meUpcomingDoses = async (
   const medicineById = new Map(
     medicines.map((medicine) => [
       medicine._id.toString(),
-      (medicine.alias as string | undefined) ?? medicine.nombre,
+      { name: (medicine.alias as string | undefined) ?? medicine.nombre, stockUnit: medicine.stockUnit },
     ]),
   );
   const patients = await buildPatientMap(
@@ -220,9 +224,16 @@ export const meUpcomingDoses = async (
         }
         if (adherenceLog && !query.includeTaken) continue;
         const adherenceStatus = adherenceLog ? (adherenceLog.status ?? 'taken') : null;
+        const actualTime = formatTimeOfDayInTimeZone(doseAt, timeZone);
+        const scheduledTime = scheduleType === 'daily_times'
+          ? scheduleEntry.dailyDoseTimes.find((time) => zonedTimeToDate(getCivilDateKey(doseAt, timeZone), time, timeZone).getTime() === doseAt.getTime()) ?? actualTime
+          : null;
 
         items.push({
           doseAt,
+          timeZone,
+          scheduledTime,
+          isTimeAdjusted: scheduledTime !== null && scheduledTime !== actualTime,
           displayTime: scheduleType === 'daily_times' ? formatTimeOfDayInTimeZone(doseAt, timeZone) : null,
           blisterId: blister.id.toString(),
           blisterName: blister.name,
@@ -235,7 +246,8 @@ export const meUpcomingDoses = async (
           treatmentId: (treatment._id as Types.ObjectId).toString(),
           treatmentTitle: treatment.title as string,
           medicineId: (entry.medicineId as Types.ObjectId).toString(),
-          medicineName: medicineById.get((entry.medicineId as Types.ObjectId).toString()) ?? 'Medicamento',
+          medicineName: medicineById.get((entry.medicineId as Types.ObjectId).toString())?.name ?? 'Medicamento',
+          stockUnit: medicineById.get((entry.medicineId as Types.ObjectId).toString())?.stockUnit ?? 'unidades',
           amount: entry.amount,
           isTaken: adherenceStatus === 'taken',
           isSkipped: adherenceStatus === 'skipped',
