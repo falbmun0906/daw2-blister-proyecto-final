@@ -79,7 +79,7 @@ const runPrivacyPurge = (): void => {
   void Promise.all([
     purgeExpiredDeletedBlisters(),
     purgeExpiredDeletedUsers(),
-  ]).catch(() => undefined);
+  ]).catch(() => console.error('Privacy purge failed. Pending records will be retried on the next scan.'));
 };
 
 /**

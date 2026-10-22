@@ -2,6 +2,7 @@ import cors, { type CorsOptions, type CorsOptionsDelegate } from 'cors';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
 
 import { API_PREFIX, AUTH_PREFIX, HEALTH_PATH } from './constants/http.constants';
 import { registerSwagger } from './config/swagger';
@@ -208,6 +209,18 @@ export const createApp = ({
         status: 'ok',
       },
     });
+  });
+  app.get(`${API_PREFIX}/ready`, async (_request: Request, response: Response) => {
+    try {
+      if (mongoose.connection.readyState !== 1 || !mongoose.connection.db) throw new Error('Database unavailable');
+      const topology = await mongoose.connection.db.command({ hello: 1 }, { timeoutMS: 1500 });
+      if ((!topology.setName && topology.msg !== 'isdbgrid') || !topology.isWritablePrimary) {
+        throw new Error('Transactional database unavailable');
+      }
+      response.status(200).json({ success: true, data: { status: 'ready' } });
+    } catch {
+      response.status(503).json({ success: false, error: { code: 'NOT_READY', message: 'Service is not ready.' } });
+    }
   });
   /**
    * @openapi

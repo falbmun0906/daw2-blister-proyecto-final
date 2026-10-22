@@ -10,7 +10,15 @@ permissions:
   contents: read
 
 jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/dev'
+    concurrency:
+      group: deploy-backend-vps
+      cancel-in-progress: false
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +35,9 @@ jobs:
             cd ~/apps/daw2-blister-proyecto-final
 
             git checkout dev
-            git pull --rebase origin dev
+            git fetch origin dev
+            git merge --ff-only ${{ github.sha }}
+            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
 
             docker compose -f docker-compose.backend.yml up -d --build
 

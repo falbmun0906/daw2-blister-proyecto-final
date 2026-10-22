@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches: [main, dev]
   pull_request:
@@ -38,6 +39,9 @@ jobs:
 
       - name: Run backend tests
         run: npm run test:coverage
+
+      - name: Run backend E2E tests
+        run: npm run test:e2e
 
       - name: Upload backend coverage
         uses: actions/upload-artifact@v5
@@ -83,7 +87,6 @@ jobs:
   frontend-e2e:
     name: Frontend E2E and accessibility
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     defaults:
       run:
         working-directory: frontend

@@ -3,6 +3,7 @@ import { createServer, type Server } from 'node:http';
 import { createApp } from './app';
 import { connectDb, disconnectDb } from './config/db';
 import { env } from './config/env';
+import { closeMcpSessions } from './mcp/server';
 import {
   notificationsSchedulerStart,
   notificationsSchedulerStop,
@@ -54,9 +55,12 @@ const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
   // eslint-disable-next-line no-console
   console.log(`Received ${signal}. Shutting down gracefully.`);
 
-  await closeServer(server);
   notificationsSchedulerStop();
   privacyPurgeSchedulerStop();
+  const deadline = setTimeout(() => { server.closeAllConnections(); process.exit(1); }, 15_000);
+  deadline.unref();
+  await closeMcpSessions();
+  await closeServer(server);
   await disconnectDb().catch((error: unknown) => {
     // eslint-disable-next-line no-console
     console.error('Failed to close MongoDB connection', error);

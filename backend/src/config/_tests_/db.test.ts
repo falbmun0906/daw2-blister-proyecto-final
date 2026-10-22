@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 import { connectDb, disconnectDb } from '../db';
+import { AdherenceLogModel } from '../../models/adherenceLog.model';
+import { NotificationModel } from '../../models/notification.model';
+
+jest.mock('../../models/adherenceLog.model', () => ({ AdherenceLogModel: { init: jest.fn().mockResolvedValue(undefined) } }));
+jest.mock('../../models/notification.model', () => ({ NotificationModel: { init: jest.fn().mockResolvedValue(undefined) } }));
 
 jest.mock('mongoose', () => ({
   __esModule: true,
@@ -31,6 +36,8 @@ describe('database configuration', () => {
     await connectDb('mongodb://localhost:27017/blister-test');
 
     expect(mockedMongoose.connect).toHaveBeenCalledWith('mongodb://localhost:27017/blister-test');
+    expect(AdherenceLogModel.init).toHaveBeenCalledTimes(1);
+    expect(NotificationModel.init).toHaveBeenCalledTimes(1);
   });
 
   it('skips a new connection when mongoose is already connected', async () => {
