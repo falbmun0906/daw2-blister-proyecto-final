@@ -1,3 +1,4 @@
+import { listCollection } from './pagination';
 import {
   appointmentCommentBodySchema,
   appointmentSchema,
@@ -21,12 +22,7 @@ export async function listAppointments(
   blisterId: string,
   options: ListOptions = {},
 ): Promise<Appointment[]> {
-  const { page = 1, limit = 100 } = options;
-  const response = await apiClient.get(`/blisters/${blisterId}/appointments`, {
-    params: { page, limit },
-  });
-  const raw = normalizeApiResponse<unknown[]>(response);
-  return raw.map((item) => appointmentSchema.parse(item));
+  return listCollection(`/blisters/${blisterId}/appointments`, (item) => appointmentSchema.parse(item), options);
 }
 
 /** Crea una cita. Requiere OWNER o CAREGIVER. */

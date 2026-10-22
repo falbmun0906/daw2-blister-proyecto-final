@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { captureRequestContext } from '../lib/request-context';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { listMedicines } from '../services/medicines.service';
 import { useBlisterStore } from '../stores/blister.store';
@@ -27,29 +28,42 @@ export function useMedicines(blisterIdOverride?: string | null): UseMedicinesRes
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const requestSequence = useRef(0);
+  const visibleItems = useMemo(() => medicines.filter((item) => item.blisterId === blisterId), [medicines, blisterId]);
+
   const refetch = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    if (blisterId && blisterId !== activeBlisterId) return;
+    const contextIsCurrent = captureRequestContext('medicines');
+    const isCurrent = () => contextIsCurrent() && sequence === requestSequence.current;
     if (!blisterId) {
       clear();
+      setIsLoading(false);
+      setError(null);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
       const list = await listMedicines(blisterId);
-      setMedicines(list);
+      if (isCurrent()) setMedicines(list);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(isApiError(err) ? err.message : 'No se ha podido cargar el botiquín.');
     } finally {
-      setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
-  }, [blisterId, clear, setMedicines]);
+  }, [blisterId, activeBlisterId, clear, setMedicines]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void refetch();
     }, 0);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      requestSequence.current += 1;
+    };
   }, [refetch]);
 
-  return { medicines, isLoading, error, refetch };
+  return { medicines: visibleItems, isLoading, error, refetch };
 }

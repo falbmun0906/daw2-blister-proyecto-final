@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { captureRequestContext } from '../lib/request-context';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   createTreatment as createTreatmentRequest,
@@ -38,30 +39,43 @@ export function useTreatments(blisterIdOverride?: string | null): UseTreatmentsR
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const requestSequence = useRef(0);
+  const visibleItems = useMemo(() => treatments.filter((item) => item.blisterId === blisterId), [treatments, blisterId]);
+
   const refetch = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    if (blisterId && blisterId !== activeBlisterId) return;
+    const contextIsCurrent = captureRequestContext('treatments');
+    const isCurrent = () => contextIsCurrent() && sequence === requestSequence.current;
     if (!blisterId) {
       clear();
+      setIsLoading(false);
+      setError(null);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
       const list = await listTreatments(blisterId);
-      setTreatments(list);
+      if (isCurrent()) setTreatments(list);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(
         isApiError(err) ? err.message : 'No se han podido cargar los tratamientos.',
       );
     } finally {
-      setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
-  }, [blisterId, clear, setTreatments]);
+  }, [blisterId, activeBlisterId, clear, setTreatments]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void refetch();
     }, 0);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      requestSequence.current += 1;
+    };
   }, [refetch]);
 
   const createTreatment = useCallback(
@@ -69,8 +83,9 @@ export function useTreatments(blisterIdOverride?: string | null): UseTreatmentsR
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const created = await createTreatmentRequest(blisterId, input);
-      upsert(created);
+      if (isCurrent()) upsert(created);
       return created;
     },
     [blisterId, upsert],
@@ -81,8 +96,9 @@ export function useTreatments(blisterIdOverride?: string | null): UseTreatmentsR
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const updated = await updateTreatmentRequest(blisterId, id, input);
-      upsert(updated);
+      if (isCurrent()) upsert(updated);
       return updated;
     },
     [blisterId, upsert],
@@ -91,14 +107,15 @@ export function useTreatments(blisterIdOverride?: string | null): UseTreatmentsR
   const removeTreatment = useCallback(
     async (id: string) => {
       if (!blisterId) return;
+      const isCurrent = captureRequestContext();
       await removeTreatmentRequest(blisterId, id);
-      remove(id);
+      if (isCurrent()) remove(id);
     },
     [blisterId, remove],
   );
 
   return {
-    treatments,
+    treatments: visibleItems,
     isLoading,
     error,
     refetch,

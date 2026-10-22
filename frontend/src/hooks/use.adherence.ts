@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { captureRequestContext } from '../lib/request-context';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   listAdherenceLogs,
@@ -52,28 +53,41 @@ export function useAdherence(blisterIdOverride?: string | null): UseAdherenceRes
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const requestSequence = useRef(0);
+  const visibleItems = useMemo(() => logs.filter((item) => item.blisterId === blisterId), [logs, blisterId]);
+
   const refetch = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    if (blisterId && blisterId !== activeBlisterId) return;
+    const contextIsCurrent = captureRequestContext('adherence');
+    const isCurrent = () => contextIsCurrent() && sequence === requestSequence.current;
     if (!blisterId) {
       clear();
+      setIsLoading(false);
+      setError(null);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
       const list = await listAdherenceLogs(blisterId);
-      setLogs(list);
+      if (isCurrent()) setLogs(list);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(isApiError(err) ? err.message : 'No se ha podido cargar el historial.');
     } finally {
-      setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
-  }, [blisterId, clear, setLogs]);
+  }, [blisterId, activeBlisterId, clear, setLogs]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void refetch();
     }, 0);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      requestSequence.current += 1;
+    };
   }, [refetch]);
 
   const logDose = useCallback(
@@ -81,8 +95,9 @@ export function useAdherence(blisterIdOverride?: string | null): UseAdherenceRes
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const created = await logDoseRequest(blisterId, input);
-      addLog(created);
+      if (isCurrent()) addLog(created);
       return created;
     },
     [blisterId, addLog],
@@ -90,8 +105,9 @@ export function useAdherence(blisterIdOverride?: string | null): UseAdherenceRes
 
   const logDoseInBlister = useCallback(
     async (targetBlisterId: string, input: CreateAdherenceLogInput) => {
+      const isCurrent = captureRequestContext();
       const created = await logDoseRequest(targetBlisterId, input);
-      addLog(created);
+      if (isCurrent() && targetBlisterId === useBlisterStore.getState().activeBlisterId) addLog(created);
       return created;
     },
     [addLog],
@@ -100,22 +116,24 @@ export function useAdherence(blisterIdOverride?: string | null): UseAdherenceRes
   const undoLog = useCallback(
     async (logId: string) => {
       if (!blisterId) return;
+      const isCurrent = captureRequestContext();
       await undoLogRequest(blisterId, logId);
-      removeLog(logId);
+      if (isCurrent()) removeLog(logId);
     },
     [blisterId, removeLog],
   );
 
   const undoLogInBlister = useCallback(
     async (targetBlisterId: string, logId: string) => {
+      const isCurrent = captureRequestContext();
       await undoLogRequest(targetBlisterId, logId);
-      removeLog(logId);
+      if (isCurrent()) removeLog(logId);
     },
     [removeLog],
   );
 
   return {
-    logs,
+    logs: visibleItems,
     isLoading,
     error,
     refetch,

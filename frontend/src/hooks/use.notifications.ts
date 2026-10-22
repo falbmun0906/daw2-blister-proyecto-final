@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { captureRequestContext } from '../lib/request-context';
 
 import {
   deleteNotification,
@@ -44,20 +45,25 @@ export function useNotifications(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const requestSequence = useRef(0);
   const refetch = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    const isCurrent = captureRequestContext('notifications', false);
     setIsLoading(true);
     setError(null);
     try {
       const result = await listNotifications(page, limit);
+      if (!isCurrent()) return;
       setNotifications(result.notifications);
       setMeta(result.meta);
     } catch (err) {
+      if (!isCurrent()) return;
       const message = isApiError(err)
         ? err.message
         : 'No se han podido cargar las notificaciones.';
       setError(message);
     } finally {
-      setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
   }, [page, limit, setNotifications]);
 
@@ -70,11 +76,13 @@ export function useNotifications(
 
   const markAsRead = useCallback(
     async (id: string) => {
+      const isCurrent = captureRequestContext(undefined, false);
       const previous = useNotificationsStore.getState().notifications;
       markRead(id);
       try {
         await markNotificationAsRead(id);
       } catch (err) {
+        if (!isCurrent()) throw err;
         setNotifications(previous);
         const message = isApiError(err)
           ? err.message
@@ -88,12 +96,14 @@ export function useNotifications(
 
   const dismiss = useCallback(
     async (notification: NotificationView) => {
+      const isCurrent = captureRequestContext(undefined, false);
       const previous = useNotificationsStore.getState().notifications;
       removeNotification(notification.id);
 
       try {
         await deleteNotification(notification.id);
       } catch (err) {
+        if (!isCurrent()) throw err;
         setNotifications(previous);
         const message = isApiError(err)
           ? err.message
@@ -127,7 +137,8 @@ export function useRefreshNotifications(): () => Promise<void> {
   const setNotifications = useNotificationsStore((s) => s.setNotifications);
 
   return useCallback(async () => {
+    const isCurrent = captureRequestContext('notifications', false);
     const result = await listNotifications(1, 20);
-    setNotifications(result.notifications);
+    if (isCurrent()) setNotifications(result.notifications);
   }, [setNotifications]);
 }

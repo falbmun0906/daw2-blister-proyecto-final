@@ -1,3 +1,4 @@
+import { listCollection } from './pagination';
 import {
   createTreatmentSchema,
   treatmentSchema,
@@ -19,12 +20,7 @@ export async function listTreatments(
   blisterId: string,
   options: ListOptions = {},
 ): Promise<Treatment[]> {
-  const { page = 1, limit = 100 } = options;
-  const response = await apiClient.get(`/blisters/${blisterId}/treatments`, {
-    params: { page, limit },
-  });
-  const raw = normalizeApiResponse<unknown[]>(response);
-  return raw.map((item) => treatmentSchema.parse(item));
+  return listCollection(`/blisters/${blisterId}/treatments`, (item) => treatmentSchema.parse(item), options);
 }
 
 /** Crea un tratamiento. Requiere OWNER o CAREGIVER. */

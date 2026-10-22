@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { captureRequestContext } from '../lib/request-context';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   addAppointmentComment as addAppointmentCommentRequest,
@@ -49,28 +50,41 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const requestSequence = useRef(0);
+  const visibleItems = useMemo(() => appointments.filter((item) => item.blisterId === blisterId), [appointments, blisterId]);
+
   const refetch = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    if (blisterId && blisterId !== activeBlisterId) return;
+    const contextIsCurrent = captureRequestContext('appointments');
+    const isCurrent = () => contextIsCurrent() && sequence === requestSequence.current;
     if (!blisterId) {
       clear();
+      setIsLoading(false);
+      setError(null);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
       const list = await listAppointments(blisterId);
-      setAppointments(list);
+      if (isCurrent()) setAppointments(list);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(isApiError(err) ? err.message : 'No se han podido cargar las citas.');
     } finally {
-      setIsLoading(false);
+      if (sequence === requestSequence.current) setIsLoading(false);
     }
-  }, [blisterId, clear, setAppointments]);
+  }, [blisterId, activeBlisterId, clear, setAppointments]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void refetch();
     }, 0);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      requestSequence.current += 1;
+    };
   }, [refetch]);
 
   const createAppointment = useCallback(
@@ -78,8 +92,9 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const created = await createAppointmentRequest(blisterId, input);
-      upsert(created);
+      if (isCurrent()) upsert(created);
       return created;
     },
     [blisterId, upsert],
@@ -90,8 +105,9 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const updated = await updateAppointmentRequest(blisterId, id, input);
-      upsert(updated);
+      if (isCurrent()) upsert(updated);
       return updated;
     },
     [blisterId, upsert],
@@ -100,8 +116,9 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
   const removeAppointment = useCallback(
     async (id: string) => {
       if (!blisterId) return;
+      const isCurrent = captureRequestContext();
       await removeAppointmentRequest(blisterId, id);
-      remove(id);
+      if (isCurrent()) remove(id);
     },
     [blisterId, remove],
   );
@@ -111,8 +128,9 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const updated = await addAppointmentCommentRequest(blisterId, id, input);
-      upsert(updated);
+      if (isCurrent()) upsert(updated);
       return updated;
     },
     [blisterId, upsert],
@@ -123,8 +141,9 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const updated = await updateAppointmentCommentRequest(blisterId, id, commentId, input);
-      upsert(updated);
+      if (isCurrent()) upsert(updated);
       return updated;
     },
     [blisterId, upsert],
@@ -135,15 +154,16 @@ export function useAppointments(blisterIdOverride?: string | null): UseAppointme
       if (!blisterId) {
         throw new Error('No hay blíster activo.');
       }
+      const isCurrent = captureRequestContext();
       const updated = await removeAppointmentCommentRequest(blisterId, id, commentId);
-      upsert(updated);
+      if (isCurrent()) upsert(updated);
       return updated;
     },
     [blisterId, upsert],
   );
 
   return {
-    appointments,
+    appointments: visibleItems,
     isLoading,
     error,
     refetch,

@@ -1,3 +1,4 @@
+import { listCollection } from './pagination';
 import {
   createMedicineSchema,
   medicineSchema,
@@ -13,11 +14,7 @@ import { apiClient, normalizeApiResponse } from './api.client';
 
 /** Lista el botiquín completo del blíster activo. */
 export async function listMedicines(blisterId: string): Promise<Medicine[]> {
-  const response = await apiClient.get(`/blisters/${blisterId}/medicines`, {
-    params: { page: 1, limit: 100 },
-  });
-  const raw = normalizeApiResponse<unknown[]>(response);
-  return raw.map((item) => medicineSchema.parse(item));
+  return listCollection(`/blisters/${blisterId}/medicines`, (item) => medicineSchema.parse(item));
 }
 
 /** Crea una entrada de medicamento desde CIMA en el botiquín. */

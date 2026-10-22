@@ -1,3 +1,4 @@
+import { listCollection } from './pagination';
 import {
   adherenceLogSchema,
   createAdherenceLogSchema,
@@ -17,12 +18,7 @@ export async function listAdherenceLogs(
   blisterId: string,
   options: ListOptions = {},
 ): Promise<AdherenceLog[]> {
-  const { page = 1, limit = 50 } = options;
-  const response = await apiClient.get(`/blisters/${blisterId}/logs`, {
-    params: { page, limit },
-  });
-  const raw = normalizeApiResponse<unknown[]>(response);
-  return raw.map((item) => adherenceLogSchema.parse(item));
+  return listCollection(`/blisters/${blisterId}/logs`, (item) => adherenceLogSchema.parse(item), options);
 }
 
 /**
