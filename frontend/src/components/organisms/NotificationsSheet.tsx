@@ -6,6 +6,7 @@ import { EmptyState } from '../atoms/EmptyState';
 import { ErrorState } from '../atoms/ErrorState';
 import { Skeleton } from '../atoms/Skeleton';
 import { useNotifications } from '../../hooks/use.notifications';
+import { useDialogFocus } from '../../hooks/use.dialog-focus';
 import { getNotificationTargetRoute } from '../../lib/notification-routing';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
@@ -63,6 +64,8 @@ export function NotificationsSheet() {
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef<number | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useDialogFocus(dialogRef, open, close);
 
   const visibleNotifications = useMemo(
     () => notifications.filter((notification) => !notification.isRead),
@@ -79,11 +82,6 @@ export function NotificationsSheet() {
       }, 0);
       return () => window.clearTimeout(timeoutId);
     }
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close();
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
   }, [open, close]);
 
   useEffect(() => {
@@ -193,6 +191,8 @@ export function NotificationsSheet() {
         className={`c-notifications-sheet__panel${isDragging ? ' is-dragging' : ''}`}
         style={isDragging || dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
         role="dialog"
+        ref={dialogRef}
+        tabIndex={-1}
         aria-modal="true"
         aria-label="Notificaciones"
         onPointerDown={handlePointerDown}

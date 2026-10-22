@@ -43,11 +43,14 @@ export function AdherenceLogItem({ log, medicines, currentUserId, onUndo }: Adhe
         </time>
       </header>
       <p className="c-adherence-log-item__meta">
-        Cantidad: <strong>{log.amount}</strong>
+        Cantidad: <strong>{log.amount} {log.stockUnit ?? medicines.find((medicine) => medicine._id === log.medicineId)?.stockUnit}</strong>
         {log.isForced ? (
           <span className="c-adherence-log-item__badge">Forzada</span>
         ) : null}
       </p>
+      {log.isForced && log.deductedAmount !== undefined ? (
+        <p className="c-adherence-log-item__notes">Descontado del inventario: {log.deductedAmount} {log.stockUnit}</p>
+      ) : null}
       {log.isForced && log.notes ? (
         <p className="c-adherence-log-item__notes">{log.notes}</p>
       ) : null}

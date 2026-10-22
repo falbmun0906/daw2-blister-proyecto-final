@@ -67,8 +67,8 @@ function getMedicineName(medicine: Medicine | null): string {
   return medicine.alias?.trim() || medicine.nombre;
 }
 
-function formatQuantity(amount: number): string {
-  return `${quantityFormatter.format(amount)} ${amount === 1 ? 'unidad' : 'unidades'}`;
+function formatQuantity(amount: number, unit = 'unidades'): string {
+  return `${quantityFormatter.format(amount)} ${unit}`;
 }
 
 function formatMedicineSchedule(entry: TreatmentMedicineEntry): string {
@@ -141,7 +141,7 @@ function TreatmentMedicineCard({
         <div className="c-treatment-detail__medicine-summary">
           <h3 className="c-treatment-detail__medicine-name">{name}</h3>
           <span className="c-treatment-detail__medicine-dose">
-            {formatQuantity(entry.amount)} · {formatMedicineSchedule(entry)}
+            {formatQuantity(entry.amount, medicine?.stockUnit)} · {formatMedicineSchedule(entry)}
           </span>
         </div>
       </header>

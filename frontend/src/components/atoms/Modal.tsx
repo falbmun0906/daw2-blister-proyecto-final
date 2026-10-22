@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useId, useRef } from 'react';
+import { useDialogFocus } from '../../hooks/use.dialog-focus';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { TbX } from 'react-icons/tb';
@@ -32,20 +33,9 @@ export function Modal({
   ariaLabel,
 }: ModalProps) {
   const portalTarget = open ? getPortalTarget() : null;
-
-  useEffect(() => {
-    if (!open) return;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKey);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useDialogFocus(dialogRef, open, onClose);
 
   if (!open || !portalTarget) return null;
 
@@ -64,10 +54,12 @@ export function Modal({
   return createPortal(
     <div
       className="c-modal"
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-label={!title && ariaLabel ? ariaLabel : undefined}
-      aria-labelledby={title ? 'c-modal-title' : undefined}
+      aria-label={hideHeader || !title ? ariaLabel ?? title : undefined}
+      aria-labelledby={title && !hideHeader ? titleId : undefined}
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropKeyDown}
     >
@@ -76,7 +68,7 @@ export function Modal({
           <header className={headerIcon ? 'c-modal__header c-modal__header--with-icon' : 'c-modal__header'}>
             {headerIcon}
             {title ? (
-              <h2 id="c-modal-title" className="c-modal__title">
+              <h2 id={titleId} className="c-modal__title">
                 {title}
               </h2>
             ) : (

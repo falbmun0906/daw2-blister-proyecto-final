@@ -1,3 +1,4 @@
+import { captureRequestContext } from '../../lib/request-context';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { TbCalendar, TbCheck, TbChevronLeft, TbChevronRight, TbPill, TbPlus } from 'react-icons/tb';
@@ -229,7 +230,7 @@ function MonthCalendar({
         ))}
       </div>
 
-      <div className="c-month-calendar__grid" role="grid">
+      <div className="c-month-calendar__grid" role="group" aria-label={formatMonthTitle(cursor)}>
         {cells.map(({ date, outside }) => {
           const key = dayKey(date);
           const isToday = isSameDay(date, today);
@@ -251,11 +252,18 @@ function MonthCalendar({
             <button
               key={key}
               type="button"
-              role="gridcell"
+              aria-current={isToday ? 'date' : undefined}
               aria-pressed={isSelected}
               aria-label={formatDayLabel(date)}
               className={className}
               onClick={() => onSelect(date)}
+              onKeyDown={(event) => {
+                const steps: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+                if (!(event.key in steps)) return;
+                const buttons = [...event.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>('button')];
+                const next = buttons[buttons.indexOf(event.currentTarget) + steps[event.key]];
+                if (next) { event.preventDefault(); next.focus(); }
+              }}
             >
               <span>{date.getDate()}</span>
               {isMarked ? (
@@ -308,8 +316,8 @@ function CalendarPage() {
   const [selected, setSelected] = useState<Date | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Appointment | null>(null);
   const [confirmDeleteComment, setConfirmDeleteComment] = useState<PendingCommentDelete | null>(null);
-  const [calendarDoses, setCalendarDoses] = useState<UpcomingDose[]>([]);
-  const [monthDoseMarkers, setMonthDoseMarkers] = useState<UpcomingDose[]>([]);
+  const [allCalendarDoses, setCalendarDoses] = useState<UpcomingDose[]>([]);
+  const [allMonthDoseMarkers, setMonthDoseMarkers] = useState<UpcomingDose[]>([]);
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [loggingDoseKey, setLoggingDoseKey] = useState<string | null>(null);
@@ -333,28 +341,35 @@ function CalendarPage() {
   const role = routeRole ?? (blisterId === activeBlisterId ? activeRole : null);
   const canMutate = role === 'OWNER' || role === 'CAREGIVER';
 
+  const calendarDoses = useMemo(() => allCalendarDoses.filter((dose) => dose.blisterId === blisterId), [allCalendarDoses, blisterId]);
+  const monthDoseMarkers = useMemo(() => allMonthDoseMarkers.filter((dose) => dose.blisterId === blisterId), [allMonthDoseMarkers, blisterId]);
+  const currentDay = new Date(undoNow).setHours(0, 0, 0, 0);
+
   const refreshCalendarDoses = useCallback(async () => {
+    const isCurrent = captureRequestContext('calendar-doses', false);
     if (!blisterId) {
       setCalendarDoses([]);
       return;
     }
 
-    const from = startOfToday();
+    const from = new Date(currentDay);
     const to = addDays(from, doseVisibleDays);
     setCalendarLoading(true);
     setCalendarError(null);
 
     try {
       const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'], includeTaken: true });
-      setCalendarDoses(payload.doses);
+      if (isCurrent()) setCalendarDoses(payload.doses);
     } catch (err) {
+      if (!isCurrent()) return;
       setCalendarError(isApiError(err) ? err.message : 'No se ha podido cargar el pastillero.');
     } finally {
-      setCalendarLoading(false);
+      if (isCurrent()) setCalendarLoading(false);
     }
-  }, [blisterId, doseVisibleDays]);
+  }, [blisterId, doseVisibleDays, currentDay]);
 
   const refreshMonthDoseMarkers = useCallback(async () => {
+    const isCurrent = captureRequestContext('calendar-markers', false);
     if (!blisterId) {
       setMonthDoseMarkers([]);
       return;
@@ -371,9 +386,9 @@ function CalendarPage() {
 
     try {
       const payload = await getCalendar({ from, to, blisterId, kinds: ['doses'], includeTaken: true });
-      setMonthDoseMarkers(payload.doses);
+      if (isCurrent()) setMonthDoseMarkers(payload.doses);
     } catch {
-      setMonthDoseMarkers([]);
+      if (isCurrent()) setMonthDoseMarkers([]);
     }
   }, [blisterId, cursor]);
 
@@ -837,7 +852,8 @@ function CalendarPage() {
                                 <div className="c-dose-row__heading">
                                   <p className="c-dose-row__title">{dose.medicineName}</p>
                                   <p className="c-dose-row__meta">
-                                    {dose.amount} unidad(es) · {dose.treatmentTitle} · {dose.blisterName}
+                                    {dose.patientName} · {dose.amount} {dose.stockUnit} · {dose.treatmentTitle} · {dose.blisterName}
+                                    {dose.isTimeAdjusted ? ` · Cambio horario: ${dose.scheduledTime} → ${dose.displayTime} (${dose.timeZone})` : ''}
                                   </p>
                                 </div>
                                 <span title={dose.patientName || dose.blisterName}>

@@ -210,9 +210,7 @@ export function PwaUpdatePrompt() {
                         <TbRefresh />
                     </span>
                 )}
-                onClose={() => undefined}
-                hideCloseButton
-                disableBackdropClose
+                onClose={() => setUpdateAvailable(false)}
             >
                 <div className="c-pwa-update-prompt">
                     <p className="c-pwa-update-prompt__text">
@@ -220,6 +218,9 @@ export function PwaUpdatePrompt() {
                     </p>
                     <Button fullWidth onClick={handleUpdateNow} loading={isUpdating}>
                         Actualizar ahora
+                    </Button>
+                    <Button fullWidth variant="primary-outline" onClick={() => setUpdateAvailable(false)}>
+                        Más tarde
                     </Button>
                 </div>
             </Modal>

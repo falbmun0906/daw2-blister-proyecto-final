@@ -12,14 +12,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ZodError } from 'zod';
 import { TbCalendar, TbClock, TbPill, TbStethoscope, TbToggleRight, TbUserHeart } from 'react-icons/tb';
 
-import {
-  createTreatmentSchema,
-  type CreateTreatmentInput,
-  type Treatment,
-  updateTreatmentSchema,
-  type UpdateTreatmentInput,
-} from '../../../../shared/schemas/treatment.schema';
-import { DEFAULT_MEDICATION_TIME_ZONE } from '../../../../shared/schemas/schema.constants';
+import { buildCreatePayload, buildUpdatePayload, createTreatmentMedicine, toFormValues, type FormValues } from '../../lib/treatment-form';
 import { Button } from '../../components/atoms/Button';
 import { ErrorState } from '../../components/atoms/ErrorState';
 import { Input } from '../../components/atoms/Input';
@@ -35,26 +28,6 @@ import { useBlisterStore } from '../../stores/blister.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 
-interface FormValues {
-  patientUserId: string;
-  title: string;
-  description: string;
-  timeZone: string;
-  startDate: string;
-  endDate: string;
-  active: boolean;
-  medicines: Array<{
-    medicineId: string;
-    amount: number;
-    firstDoseTime: string;
-    frequencyHours: number;
-    scheduleType: 'interval' | 'daily_times';
-    dailyDoseTimes: Array<{ time: string }>;
-    isRecurring: boolean;
-    note: string;
-  }>;
-}
-
 interface TreatmentMedicineFieldsProps {
   index: number;
   medicines: ReturnType<typeof useMedicines>['medicines'];
@@ -64,96 +37,6 @@ interface TreatmentMedicineFieldsProps {
   setValue: UseFormSetValue<FormValues>;
   errors: FieldErrors<FormValues>;
   onRemove: (index: number) => void;
-}
-
-function toLocalParts(value: Date): { date: string; time: string } {
-  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60 * 1000);
-  return {
-    date: local.toISOString().slice(0, 10),
-    time: local.toISOString().slice(11, 16),
-  };
-}
-
-function defaultStartParts(): { date: string; time: string } {
-  const now = new Date();
-  return toLocalParts(now);
-}
-
-function getBrowserTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_MEDICATION_TIME_ZONE;
-}
-
-function toLocalDateTime(date: string, time: string): Date {
-  const [year, month, day] = date.split('-').map(Number);
-  const [hours, minutes] = time.split(':').map(Number);
-  return new Date(year, month - 1, day, hours, minutes, 0, 0);
-}
-
-const createTreatmentMedicine = (firstDoseTime = '08:00'): FormValues['medicines'][number] => ({
-  medicineId: '',
-  amount: 1,
-  firstDoseTime,
-  frequencyHours: 8,
-  scheduleType: 'interval',
-  dailyDoseTimes: [{ time: firstDoseTime }],
-  isRecurring: true,
-  note: '',
-});
-
-function normalizeDailyDoseTimes(entry: FormValues['medicines'][number]): string[] {
-  return entry.dailyDoseTimes
-    .flatMap((item) => {
-      const time = item.time.trim();
-      return time ? [time] : [];
-    })
-    .sort((left, right) => left.localeCompare(right));
-}
-
-function buildTreatmentMedicinePayload(
-  entry: FormValues['medicines'][number],
-  startDate: string,
-) {
-  const exactDailyTimes = normalizeDailyDoseTimes(entry);
-  const firstDoseTime = entry.isRecurring && entry.scheduleType === 'daily_times'
-    ? (exactDailyTimes[0] || entry.firstDoseTime || '08:00')
-    : entry.firstDoseTime || exactDailyTimes[0] || '08:00';
-
-  return {
-    medicineId: entry.medicineId,
-    amount: entry.amount,
-    firstDoseAt: toLocalDateTime(startDate, firstDoseTime),
-    scheduleType: entry.isRecurring ? entry.scheduleType : 'interval',
-    frequencyHours: entry.isRecurring && entry.scheduleType === 'interval' ? entry.frequencyHours : null,
-    dailyDoseTimes: entry.isRecurring && entry.scheduleType === 'daily_times' ? exactDailyTimes : [],
-    isRecurring: entry.isRecurring,
-    note: entry.note || undefined,
-  };
-}
-
-function buildCreatePayload(values: FormValues): CreateTreatmentInput {
-  return createTreatmentSchema.parse({
-    patientUserId: values.patientUserId,
-    title: values.title,
-    description: values.description || undefined,
-    timeZone: values.timeZone || getBrowserTimeZone(),
-    startDate: toLocalDateTime(values.startDate, '00:00'),
-    endDate: values.endDate ? toLocalDateTime(values.endDate, '23:59') : undefined,
-    active: values.active,
-    medicines: values.medicines.map((entry) => buildTreatmentMedicinePayload(entry, values.startDate)),
-  });
-}
-
-function buildUpdatePayload(values: FormValues): UpdateTreatmentInput {
-  return updateTreatmentSchema.parse({
-    patientUserId: values.patientUserId,
-    title: values.title,
-    description: values.description || undefined,
-    timeZone: values.timeZone || getBrowserTimeZone(),
-    startDate: toLocalDateTime(values.startDate, '00:00'),
-    endDate: values.endDate ? toLocalDateTime(values.endDate, '23:59') : null,
-    active: values.active,
-    medicines: values.medicines.map((entry) => buildTreatmentMedicinePayload(entry, values.startDate)),
-  });
 }
 
 function getTreatmentIssueMessage(path: string, message: string): string {
@@ -364,47 +247,6 @@ function TreatmentMedicineFields({
   );
 }
 
-function toFormValues(
-  treatment: ReturnType<typeof useTreatments>['treatments'][number] | null,
-  fallbackPatientUserId = '',
-): FormValues {
-  if (!treatment) {
-    const start = defaultStartParts();
-    return {
-      patientUserId: fallbackPatientUserId,
-      title: '',
-      description: '',
-      timeZone: getBrowserTimeZone(),
-      startDate: start.date,
-      endDate: '',
-      active: true,
-      medicines: [createTreatmentMedicine(start.time)],
-    };
-  }
-  const start = toLocalParts(new Date(treatment.startDate));
-  return {
-    patientUserId: treatment.patientUserId,
-    title: treatment.title,
-    description: treatment.description ?? '',
-    timeZone: treatment.timeZone || getBrowserTimeZone(),
-    startDate: start.date,
-    endDate: treatment.endDate ? toLocalParts(new Date(treatment.endDate)).date : '',
-    active: treatment.active,
-    medicines: treatment.medicines.map((entry: Treatment['medicines'][number]) => ({
-      medicineId: entry.medicineId,
-      amount: entry.amount,
-      firstDoseTime: toLocalParts(new Date(entry.firstDoseAt)).time,
-      frequencyHours: entry.frequencyHours ?? 8,
-      scheduleType: entry.scheduleType,
-      dailyDoseTimes: (entry.dailyDoseTimes.length > 0
-        ? entry.dailyDoseTimes
-        : [toLocalParts(new Date(entry.firstDoseAt)).time]).map((time) => ({ time })),
-      isRecurring: entry.isRecurring,
-      note: entry.note ?? '',
-    })),
-  };
-}
-
 function TreatmentFormPage() {
   usePageTitle('Tratamiento');
   const navigate = useNavigate();
@@ -476,7 +318,7 @@ function TreatmentFormPage() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       if (isEditing && treatmentId) {
-        const payload = buildUpdatePayload(values);
+        const payload = buildUpdatePayload(values, target);
         await updateTreatment(treatmentId, payload);
         addToast({ message: 'Tratamiento actualizado.', variant: 'success' });
       } else {

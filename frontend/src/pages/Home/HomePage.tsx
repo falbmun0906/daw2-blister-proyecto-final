@@ -1,3 +1,4 @@
+import { captureRequestContext } from '../../lib/request-context';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TbAlertTriangle, TbCheck } from 'react-icons/tb';
@@ -103,16 +104,6 @@ function HomeSkeleton() {
 
 function formatTodayLabel(): string {
   return todayFormatter.format(new Date());
-}
-
-function getStartOfToday(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-function getEndOfToday(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 }
 
 function getDoseKey(entry: { treatmentId: string; medicineId: string; doseAt: string }): string {
@@ -288,7 +279,8 @@ export default function HomePage() {
   const [openAlertMenuKey, setOpenAlertMenuKey] = useState<string | null>(null);
   const [openDoseMenu, setOpenDoseMenu] = useState<DoseActionMenu | null>(null);
 
-  const todayLabel = useMemo(() => formatTodayLabel(), []);
+  const todayLabel = formatTodayLabel();
+  const currentDay = new Date(timelineNow).setHours(0, 0, 0, 0);
   const searchBlister = useMemo(
     () => blisters.find((blister) => blister._id === activeBlisterId) ?? blisters[0] ?? null,
     [activeBlisterId, blisters],
@@ -403,7 +395,7 @@ export default function HomePage() {
         status,
         timeLabel: dose.displayTime ?? timeFormatter.format(new Date(dose.doseAt)),
         medicineName: dose.medicineName,
-        detail: `${dose.amount} unidad(es) · ${dose.treatmentTitle} · ${dose.blisterName}`,
+        detail: `${dose.patientName} · ${dose.amount} ${dose.stockUnit} · ${dose.treatmentTitle} · ${dose.blisterName}${dose.isTimeAdjusted ? ` · Cambio horario: ${dose.scheduledTime} → ${dose.displayTime} (${dose.timeZone})` : ''}`,
         avatarName: dose.patientName || dose.blisterName,
         avatarKey: dose.patientAvatarKey,
         avatarTooltip: dose.patientName || dose.blisterName,
@@ -416,6 +408,7 @@ export default function HomePage() {
   const nextTimelineItemKey = timelineItems.find((item) => item.status === 'next')?.key ?? null;
 
   const refreshHomeMedicines = useCallback(async () => {
+    const isCurrent = captureRequestContext('home-medicines', false);
     if (blisters.length === 0) {
       setHomeMedicines([]);
       return;
@@ -432,14 +425,15 @@ export default function HomePage() {
           }));
         }),
       );
-      setHomeMedicines(results.flat());
+      if (isCurrent()) setHomeMedicines(results.flat());
     } catch (err) {
+      if (!isCurrent()) return;
       addToast({
         message: isApiError(err) ? err.message : 'No se han podido cargar las alertas del botiquín.',
         variant: 'error',
       });
     } finally {
-      setHomeMedicinesLoading(false);
+      if (isCurrent()) setHomeMedicinesLoading(false);
     }
   }, [addToast, blisters]);
 
@@ -451,24 +445,27 @@ export default function HomePage() {
   }, [refreshHomeMedicines]);
 
   const refreshUpcoming = useCallback(async () => {
+    const isCurrent = captureRequestContext('home-upcoming', false);
     if (blisters.length === 0) {
       setUpcomingDoses([]);
       return;
     }
 
-    const from = getStartOfToday();
-    const to = getEndOfToday();
+    const from = new Date(currentDay);
+    const to = new Date(currentDay);
+    to.setHours(23, 59, 59, 999);
     setUpcomingLoading(true);
     setUpcomingError(null);
     try {
       const list = await getUpcomingDoses({ from, to, includeTaken: true });
-      setUpcomingDoses(list);
+      if (isCurrent()) setUpcomingDoses(list);
     } catch (err) {
+      if (!isCurrent()) return;
       setUpcomingError(isApiError(err) ? err.message : 'No se han podido cargar las próximas tomas.');
     } finally {
-      setUpcomingLoading(false);
+      if (isCurrent()) setUpcomingLoading(false);
     }
-  }, [blisters.length]);
+  }, [blisters, currentDay]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -481,7 +478,13 @@ export default function HomePage() {
     const updateCurrentTime = () => setTimelineNow(Date.now());
     updateCurrentTime();
     const intervalId = window.setInterval(updateCurrentTime, 60 * 1000);
-    return () => window.clearInterval(intervalId);
+    document.addEventListener('visibilitychange', updateCurrentTime);
+    window.addEventListener('focus', updateCurrentTime);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', updateCurrentTime);
+      window.removeEventListener('focus', updateCurrentTime);
+    };
   }, []);
 
   useEffect(() => {
@@ -615,9 +618,9 @@ export default function HomePage() {
   const handleUndo = async (logId: string): Promise<void> => {
     const undo = activeUndoByLogId.get(logId);
     if (!undo) return;
-    dismissUndoToast(logId);
     try {
       await undoLogInBlister(undo.blisterId, logId);
+      dismissUndoToast(logId);
       await Promise.all([refreshHomeMedicines(), refreshUpcoming(), refreshNotifications()]);
       addToast({ message: 'Toma deshecha.', variant: 'success' });
     } catch (err) {

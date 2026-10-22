@@ -67,7 +67,8 @@ const PRIVACY_SECTIONS: PrivacyPolicySection[] = [
     title: 'Conservación y borrado',
     paragraphs: [
       'Los datos se conservan mientras la cuenta o el blíster estén activos y sean necesarios para el servicio. Las credenciales y tokens temporales tienen caducidad y se guardan hasheados cuando procede.',
-      'El borrado de cuenta o de blíster aplica una ventana de recuperación de 15 días mediante borrado lógico. Pasado ese plazo, el proceso de purga elimina físicamente los datos asociados según la arquitectura del proyecto.',
+      'Un blíster eliminado puede recuperarse durante 15 días. Después, el proceso periódico de purga elimina físicamente los datos asociados.',
+      'Eliminar la cuenta anonimiza su identidad, revoca sus accesos y retira sus datos de atención e historial. La cuenta no dispone de recuperación. El registro residual anonimizado se elimina mediante la purga periódica a partir de los 15 días.',
     ],
   },
   {
