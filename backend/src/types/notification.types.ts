@@ -23,4 +23,5 @@ export interface NotificationDocument {
   isRead: boolean;
   dismissedAt?: Date | null;
   createdAt: Date;
+  dedupeKey?: string;
 }

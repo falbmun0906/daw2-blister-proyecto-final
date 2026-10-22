@@ -8,7 +8,7 @@ import {
   DEFAULT_REFRESH_TOKEN_TTL,
 } from '../constants/security.constants';
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'test') dotenv.config();
 
 const normalizeOrigin = (origin: string): string => origin.replace(/\/+$/, '');
 
@@ -47,6 +47,7 @@ const envSchema = z.object({
   WEB_PUSH_VAPID_PUBLIC_KEY: z.string().trim().optional(),
   WEB_PUSH_VAPID_PRIVATE_KEY: z.string().trim().optional(),
   WEB_PUSH_VAPID_SUBJECT: z.string().trim().default('mailto:admin@example.com'),
+  WEB_PUSH_ALLOWED_HOSTS: z.string().default(''),
   PUSH_REMINDER_SCAN_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
   RESEND_API_KEY: z.string().trim().optional(),
 });
@@ -81,6 +82,7 @@ export const env = {
   webPushVapidPublicKey: parsedEnv.data.WEB_PUSH_VAPID_PUBLIC_KEY,
   webPushVapidPrivateKey: parsedEnv.data.WEB_PUSH_VAPID_PRIVATE_KEY,
   webPushVapidSubject: parsedEnv.data.WEB_PUSH_VAPID_SUBJECT,
+  webPushAllowedHosts: parsedEnv.data.WEB_PUSH_ALLOWED_HOSTS.split(',').map((host) => host.trim().toLowerCase()).filter(Boolean),
   pushReminderScanIntervalMs: parsedEnv.data.PUSH_REMINDER_SCAN_INTERVAL_MS,
   resendApiKey: parsedEnv.data.RESEND_API_KEY,
 } as const;

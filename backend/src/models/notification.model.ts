@@ -7,6 +7,7 @@ import {
 import { type NotificationDocument } from '../types/notification.types';
 
 const notificationSchema = new Schema<NotificationDocument>({
+  dedupeKey: { type: String },
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -66,6 +67,7 @@ const notificationSchema = new Schema<NotificationDocument>({
 
 notificationSchema.index({ userId: 1, dismissedAt: 1, isRead: 1, createdAt: -1 });
 notificationSchema.index({ blisterId: 1, type: 1, createdAt: -1 });
+notificationSchema.index({ dedupeKey: 1 }, { unique: true, sparse: true });
 
 export const NotificationModel =
   models.Notification ?? model<NotificationDocument>('Notification', notificationSchema);

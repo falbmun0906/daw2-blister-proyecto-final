@@ -125,7 +125,29 @@ const createNotifications = async (
     return;
   }
 
-  const createdNotifications = await NotificationModel.insertMany(notifications);
+  const createdNotifications: NotificationDocument[] = [];
+  for (const notification of notifications) {
+    const metadata = notification.metadata;
+    const dedupeKey = typeof metadata?.reminderKey === 'string'
+      ? metadata.reminderKey
+      : notification.type === 'expiration_warning'
+        ? `expiration:${notification.userId}:${metadata?.medicineId}:${metadata?.expDate}:${metadata?.level}`
+        : undefined;
+    if (!dedupeKey) {
+      createdNotifications.push(await NotificationModel.create(notification));
+      continue;
+    }
+    try {
+      const result = await NotificationModel.findOneAndUpdate({ dedupeKey }, {
+        $setOnInsert: { ...notification, dedupeKey },
+      }, { upsert: true, returnDocument: 'after', includeResultMetadata: true });
+      if (result.lastErrorObject?.upserted && result.value) createdNotifications.push(result.value);
+    } catch (error) {
+      // Two processes may race on the first upsert; the unique index picks the
+      // only process allowed to deliver this reminder.
+      if (!(typeof error === 'object' && error !== null && 'code' in error && error.code === 11000)) throw error;
+    }
+  }
   await sendPushForNotifications(createdNotifications);
 };
 
@@ -203,7 +225,7 @@ const buildExpirationWarningNotification = (
   type: 'expiration_warning',
   severity: level === '7d' ? 'critical' : 'warning',
   title: 'Caducidad proxima',
-  message: `El medicamento ${medicine.nombre} caduca en ${EXPIRATION_LEVEL_DAYS[level]} dias.`,
+  message: `El medicamento ${medicine.nombre} caduca en un plazo de ${EXPIRATION_LEVEL_DAYS[level]} días.`,
   metadata: {
     medicineId: medicine._id.toString(),
     expDate: medicine.expDate.toISOString(),
@@ -969,8 +991,8 @@ export const notifyExpirationWarningsForMedicines = async (
       medicine.expDate.getUTCDate(),
     );
     const daysUntilExpiration = Math.ceil((expirationDay - currentDay) / (24 * 60 * 60 * 1000));
-    const level = (Object.entries(EXPIRATION_LEVEL_DAYS).find(
-      ([, days]) => days === daysUntilExpiration,
+    const level = (Object.entries(EXPIRATION_LEVEL_DAYS).sort((a, b) => a[1] - b[1]).find(
+      ([, days]) => daysUntilExpiration >= 0 && daysUntilExpiration <= days,
     )?.[0] ?? null) as ExpirationWarningLevel | null;
 
     if (level) {

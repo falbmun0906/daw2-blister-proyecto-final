@@ -1,5 +1,6 @@
 import webPush from 'web-push';
 import { Types } from 'mongoose';
+import { assertPushEndpoint } from './push-endpoint';
 
 import { env } from '../../config/env';
 import {
@@ -195,6 +196,7 @@ export const notificationsPushSubscribe = async (
   userAgent?: string,
 ): Promise<PushSubscriptionView> => {
   ensureWebPushConfigured();
+  assertPushEndpoint(input.endpoint);
 
   const now = new Date();
   const subscription = await PushSubscriptionModel.findOneAndUpdate(
@@ -274,6 +276,7 @@ export const sendPushForNotifications = async (
       return (subscriptionsByUserId.get(notification.userId.toString()) ?? []).map(
         async (subscription) => {
           try {
+            assertPushEndpoint(subscription.endpoint);
             await webPush.sendNotification(
               {
                 endpoint: subscription.endpoint,
@@ -282,6 +285,7 @@ export const sendPushForNotifications = async (
               payload,
               {
                 TTL: PUSH_NOTIFICATION_TTL_SECONDS,
+                timeout: 10_000,
                 urgency: PUSH_NOTIFICATION_URGENCY,
               },
             );
@@ -295,7 +299,7 @@ export const sendPushForNotifications = async (
               return;
             }
 
-            console.error('Failed to send Web Push notification.', error);
+            console.error('Failed to send Web Push notification.');
           }
         },
       );
