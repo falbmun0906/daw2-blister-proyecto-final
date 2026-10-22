@@ -12,6 +12,7 @@ import { useTreatmentsStore } from './treatments.store';
  * pertenecientes al usuario anterior se reutilicen en otra cuenta.
  */
 export function resetAppStores(): void {
+  sessionStorage.removeItem('blister:mcp-token');
   useBlisterStore.setState({ blisters: [], activeBlisterId: null, activeRole: null });
   useTreatmentsStore.getState().clear();
   useAppointmentsStore.getState().clear();

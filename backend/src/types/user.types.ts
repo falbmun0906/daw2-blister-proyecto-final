@@ -36,6 +36,7 @@ export interface UserDocument {
   emailVerified: boolean;
   pendingEmail?: string | null;
   password: string;
+  credentialVersion?: number;
   mcpToken?: string | null;
   mcpTokenCreatedAt?: Date | null;
   mcpTokenExpiresAt?: Date | null;

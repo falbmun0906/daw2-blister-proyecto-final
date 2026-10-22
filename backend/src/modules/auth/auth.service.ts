@@ -203,7 +203,6 @@ const removeDeletedUserCareData = async (
 ): Promise<void> => {
   const patientTreatments = await TreatmentModel.find({
     patientUserId: userObjectId,
-    deletedAt: null,
   })
     .select('_id')
     .lean();
@@ -236,19 +235,21 @@ const removeDeletedUserCareData = async (
   ]);
 };
 
-const buildAccessTokenPayload = (userId: string): JwtAccessPayload => ({
+const buildAccessTokenPayload = (userId: string, credentialVersion: number): JwtAccessPayload => ({
   sub: userId,
   type: 'access',
+  credentialVersion,
 });
 
-const buildRefreshTokenPayload = (userId: string): JwtRefreshPayload => ({
+const buildRefreshTokenPayload = (userId: string, credentialVersion: number): JwtRefreshPayload => ({
   sub: userId,
   type: 'refresh',
+  credentialVersion,
   jti: randomBytes(8).toString('hex'),
 });
 
-const signAccessToken = (userId: string): string =>
-  jwt.sign(buildAccessTokenPayload(userId), env.jwtSecret, {
+const signAccessToken = (userId: string, credentialVersion: number): string =>
+  jwt.sign(buildAccessTokenPayload(userId, credentialVersion), env.jwtSecret, {
     expiresIn: env.jwtAccessExpiresIn as StringValue,
   });
 
@@ -283,9 +284,15 @@ const assertEmailVerified = (user: Pick<UserDocument, 'emailVerified'>): void =>
 
 const createTokens = async (
   userId: string,
+  expectedVersion?: number,
 ): Promise<AuthTokens & { refreshTokenExpiresAt: Date; refreshTokenJti: string }> => {
-  const accessToken = signAccessToken(userId);
-  const refreshPayload = buildRefreshTokenPayload(userId);
+  const user = await UserModel.findOne({ _id: userId, deletedAt: null }).select('credentialVersion');
+  if (!user) throw new AppError({ code: 'AUTH_USER_INACTIVE', message: 'Account is inactive.', statusCode: 401 });
+  if (expectedVersion !== undefined && (user.credentialVersion ?? 0) !== expectedVersion) {
+    throw new AppError({ code: 'AUTH_INVALID_CREDENTIALS', message: 'Credentials have changed. Sign in again.', statusCode: 401 });
+  }
+  const accessToken = signAccessToken(userId, user.credentialVersion ?? 0);
+  const refreshPayload = buildRefreshTokenPayload(userId, user.credentialVersion ?? 0);
   const refreshToken = signRefreshToken(refreshPayload);
 
   return {
@@ -398,17 +405,19 @@ const createRefreshSession = async ({
 
 const rotateRefreshSession = async ({
   sessionId,
+  previousTokenHash,
   refreshToken,
   refreshTokenJti,
   refreshTokenExpiresAt,
 }: {
   sessionId: Types.ObjectId;
+  previousTokenHash: string;
   refreshToken: string;
   refreshTokenJti: string;
   refreshTokenExpiresAt: Date;
 }): Promise<void> => {
-  await AuthSessionModel.updateOne(
-    { _id: sessionId, revokedAt: null },
+  const result = await AuthSessionModel.updateOne(
+    { _id: sessionId, revokedAt: null, refreshTokenHash: previousTokenHash, expiresAt: { $gt: new Date() } },
     {
       $set: {
         refreshTokenHash: hashValue(refreshToken),
@@ -418,6 +427,9 @@ const rotateRefreshSession = async ({
       },
     },
   );
+  if (result.modifiedCount !== 1) {
+    throw new AppError({ code: 'AUTH_REFRESH_INVALID', message: 'Refresh token has already been used or revoked.', statusCode: 401 });
+  }
 };
 
 const clearLegacyRefreshCredentials = async (userId: string): Promise<void> => {
@@ -444,6 +456,16 @@ const revokeAllRefreshCredentials = async (userId: string): Promise<void> => {
     clearLegacyRefreshCredentials(userId),
     revokeRefreshSessions(userId),
   ]);
+};
+
+const revokeAccountCredentials = async (userId: string): Promise<void> => {
+  // Versioned access tokens and authorization codes become invalid immediately.
+  await UserModel.updateOne({ _id: userId }, {
+    $inc: { credentialVersion: 1 },
+    $unset: { mcpToken: 1 },
+    $set: { mcpTokenCreatedAt: null, mcpTokenExpiresAt: null, mcpTokenLastUsedAt: null },
+  });
+  await Promise.all([revokeAllRefreshCredentials(userId), OAuthTokenModel.deleteMany({ userId })]);
 };
 
 const revokeRefreshSessionByToken = async (
@@ -588,7 +610,7 @@ const findUserForLogin = async (identifier: string) => {
 /**
  * Authenticates a user with email or username and rotates their refresh token.
  */
-export const authLogin = async (input: LoginInput, userAgent?: string): Promise<AuthResult> => {
+export const authVerifyCredentials = async (input: LoginInput): Promise<{ user: PublicUser; credentialVersion: number }> => {
   const user = await findUserForLogin(input.identifier);
 
   if (!user?.password) {
@@ -611,9 +633,14 @@ export const authLogin = async (input: LoginInput, userAgent?: string): Promise<
 
   assertEmailVerified(user);
 
-  const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(user._id.toString());
+  return { user: sanitizeUser(user), credentialVersion: user.credentialVersion ?? 0 };
+};
+
+export const authLogin = async (input: LoginInput, userAgent?: string): Promise<AuthResult> => {
+  const verified = await authVerifyCredentials(input);
+  const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(verified.user.id, verified.credentialVersion);
   await createRefreshSession({
-    userId: user._id.toString(),
+    userId: verified.user.id,
     refreshToken,
     refreshTokenJti,
     refreshTokenExpiresAt,
@@ -621,7 +648,7 @@ export const authLogin = async (input: LoginInput, userAgent?: string): Promise<
   });
 
   return {
-    user: sanitizeUser(user),
+    user: verified.user,
     accessToken,
     refreshToken,
   };
@@ -690,10 +717,12 @@ export const authResetPassword = async (input: ResetPasswordInput): Promise<void
     });
   }
 
+  const consumed = await PasswordResetTokenModel.findOneAndDelete({ _id: resetToken._id, expiresAt: { $gt: new Date() } });
+  if (!consumed) throw new AppError({ code: 'AUTH_PASSWORD_RESET_TOKEN_INVALID', message: 'Password reset token has already been used.', statusCode: 400 });
   user.password = await bcrypt.hash(input.password, BCRYPT_SALT_ROUNDS);
 
   await user.save();
-  await revokeAllRefreshCredentials(user._id.toString());
+  await revokeAccountCredentials(user._id.toString());
   await PasswordResetTokenModel.deleteOne({ _id: resetToken._id });
 };
 
@@ -831,9 +860,10 @@ export const authRefresh = async (input: RefreshTokenInput): Promise<AuthTokens>
       });
     }
 
-    const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(storedUser._id.toString());
+    const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(storedUser._id.toString(), payload.credentialVersion ?? 0);
     await rotateRefreshSession({
       sessionId: storedSession._id,
+      previousTokenHash: tokenHash,
       refreshToken,
       refreshTokenJti,
       refreshTokenExpiresAt,
@@ -858,14 +888,20 @@ export const authRefresh = async (input: RefreshTokenInput): Promise<AuthTokens>
     });
   }
 
-  const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(storedUser._id.toString());
+  const { accessToken, refreshToken, refreshTokenExpiresAt, refreshTokenJti } = await createTokens(storedUser._id.toString(), payload.credentialVersion ?? 0);
+  const consumedLegacy = await UserModel.updateOne(
+    { _id: storedUser._id, deletedAt: null, refreshTokenHash: tokenHash, refreshTokenExpiresAt: { $gt: new Date() } },
+    { $set: { refreshTokenHash: null, refreshTokenExpiresAt: null } },
+  );
+  if (consumedLegacy.modifiedCount !== 1) {
+    throw new AppError({ code: 'AUTH_REFRESH_INVALID', message: 'Refresh token has already been used.', statusCode: 401 });
+  }
   await createRefreshSession({
     userId: storedUser._id.toString(),
     refreshToken,
     refreshTokenJti,
     refreshTokenExpiresAt,
   });
-  await clearLegacyRefreshCredentials(storedUser._id.toString());
 
   return {
     accessToken,
@@ -923,7 +959,6 @@ export const authUpdateProfile = async (
     user.refreshTokenHash = null;
     user.refreshTokenExpiresAt = null;
     shouldRevokeRefreshSessions = true;
-    await OAuthTokenModel.deleteMany({ userId });
   }
 
   if (input.name) {
@@ -948,7 +983,7 @@ export const authUpdateProfile = async (
   await user.save();
 
   if (shouldRevokeRefreshSessions) {
-    await revokeRefreshSessions(userId);
+    await revokeAccountCredentials(userId);
   }
 
   if (requestedEmail) {

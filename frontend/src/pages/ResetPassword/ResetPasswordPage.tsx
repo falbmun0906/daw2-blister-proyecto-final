@@ -61,7 +61,7 @@ function ResetPasswordPage() {
     try {
       await resetPassword({ ...data, token });
       addToast({
-        message: 'Contraseña actualizada. Ya puedes iniciar sesión.',
+        message: 'Contraseña actualizada. Inicia sesión de nuevo y vuelve a conectar tus asistentes MCP.',
         variant: 'success',
       });
       setIsCompleted(true);

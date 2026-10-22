@@ -9,11 +9,13 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export interface JwtAccessPayload {
+  credentialVersion?: number;
   sub: string;
   type: 'access';
 }
 
 export interface JwtMcpOAuthPayload {
+  credentialVersion?: number;
   sub: string;
   type: 'mcp_oauth';
   aud: string;
@@ -22,6 +24,7 @@ export interface JwtMcpOAuthPayload {
 }
 
 export interface JwtMcpOAuthRefreshPayload {
+  credentialVersion?: number;
   sub: string;
   type: 'mcp_oauth_refresh';
   aud: string;
@@ -31,6 +34,7 @@ export interface JwtMcpOAuthRefreshPayload {
 }
 
 export interface JwtRefreshPayload {
+  credentialVersion?: number;
   sub: string;
   type: 'refresh';
   jti: string;

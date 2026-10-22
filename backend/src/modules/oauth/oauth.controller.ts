@@ -1,4 +1,6 @@
 import type { Request, Response } from 'express';
+import { env } from '../../config/env';
+import { AppError } from '../../utils/app-error';
 
 import { HTTP_STATUS_OK } from '../../constants/http.constants';
 import { OAUTH_SCOPE } from './oauth.constants';
@@ -10,8 +12,7 @@ import {
   validateAuthorizeQuery,
 } from './oauth.service';
 
-const getIssuer = (request: Request): string =>
-  `${request.protocol}://${request.get('host')}`;
+const getIssuer = (_request: Request): string => new URL(env.backendUrl).origin;
 
 const escapeHtml = (value: string): string =>
   value
@@ -43,7 +44,7 @@ const OAUTH_AUTHORIZE_SCRIPT = `(() => {
 })();`;
 
 const renderAuthorizePage = (
-  params: ReturnType<typeof validateAuthorizeQuery>,
+  params: Awaited<ReturnType<typeof validateAuthorizeQuery>>,
   errorMessage?: string,
 ): string => {
   const hiddenInputs = Object.entries(params)
@@ -274,7 +275,8 @@ const renderAuthorizePage = (
         <span class="c-oauth-authorize__title-accent">Autorizar</span> asistente
       </h1>
       <section class="c-card" aria-label="Formulario de autorización MCP">
-        <p class="c-oauth-authorize__intro">Claude Desktop solicita acceso MCP a Blíster para consultar y actualizar tus datos según tus permisos.</p>
+        <p class="c-oauth-authorize__intro">${escapeHtml(params.client_name)} solicita acceso MCP a Blíster para consultar y actualizar tus datos según tus permisos. El nombre lo proporciona el cliente y no acredita su identidad.</p>
+        <p>Destino de la autorización: <strong>${escapeHtml(new URL(params.redirect_uri).origin)}</strong></p>
         ${errorMessage ? `<p class="c-oauth-authorize__error">${escapeHtml(errorMessage)}</p>` : ''}
         <form class="c-oauth-authorize__form" method="post" action="/oauth/authorize">
         ${hiddenInputs}
@@ -288,7 +290,7 @@ const renderAuthorizePage = (
         </label>
         <label class="c-checkbox">
           <input class="c-checkbox__input" name="consent" type="checkbox" required />
-          <span>Permitir que Claude Desktop use el endpoint MCP de Blister con mi cuenta.</span>
+          <span>Permitir el acceso a mi cuenta al cliente y destino indicados.</span>
         </label>
         <button class="c-btn c-btn--primary" type="submit" autocomplete="off">
           <span class="c-btn__label">Autorizar conexión</span>
@@ -322,7 +324,7 @@ export const oauthMetadataController = (request: Request, response: Response): v
     registration_endpoint: `${issuer}/oauth/register`,
     response_types_supported: ['code'],
     grant_types_supported: ['authorization_code', 'refresh_token'],
-    token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
+    token_endpoint_auth_methods_supported: ['none'],
     code_challenge_methods_supported: ['S256'],
     scopes_supported: [OAUTH_SCOPE],
   });
@@ -363,7 +365,7 @@ export const oauthAuthorizeSubmitController = async (
     const result = await createAuthorizationCode(request.body);
     response.redirect(302, result.redirectUri);
   } catch (error: unknown) {
-    if (error instanceof Error) {
+    if (error instanceof AppError) {
       response
         .status(HTTP_STATUS_OK)
         .type('html')
@@ -386,7 +388,7 @@ export const oauthTokenController = async (request: Request, response: Response)
 /**
  * Registers the public MCP OAuth client metadata used by external clients.
  */
-export const oauthRegisterController = (request: Request, response: Response): void => {
-  const result = registerOAuthClient(request.body);
+export const oauthRegisterController = async (request: Request, response: Response): Promise<void> => {
+  const result = await registerOAuthClient(request.body);
   response.status(201).json(result);
 };

@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { AuthSession, User } from '../types/auth.types';
 
 interface AuthState {
+  sessionVersion: number;
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
@@ -24,17 +25,19 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       ...initialState,
+      sessionVersion: 0,
       setSession: (session) =>
-        set({
+        set((state) => ({
+          sessionVersion: state.sessionVersion + 1,
           user: session.user,
           accessToken: session.accessToken,
           refreshToken: session.refreshToken,
-        }),
+        })),
       updateUser: (user) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...user } : state.user,
         })),
-      clearSession: () => set({ ...initialState }),
+      clearSession: () => set((state) => ({ ...initialState, sessionVersion: state.sessionVersion + 1 })),
     }),
     {
       name: AUTH_STORAGE_KEY,

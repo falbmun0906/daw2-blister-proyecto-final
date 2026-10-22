@@ -60,6 +60,7 @@ const userSettingsSchema = new Schema<UserDocument['settings']>(
 );
 
 const userSchema = new Schema<UserDocument>({
+  credentialVersion: { type: Number, default: 0, min: 0 },
   name: {
     type: String,
     required: true,

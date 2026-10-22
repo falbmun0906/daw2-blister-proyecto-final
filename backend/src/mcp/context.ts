@@ -16,7 +16,7 @@ const hashToken = (token: string): string => createHash('sha256').update(token).
 const MCP_TOKEN_SELECT = '+mcpToken +mcpTokenCreatedAt +mcpTokenExpiresAt +mcpTokenLastUsedAt';
 const getMcpResourceAudience = (): string => new URL('/mcp', env.backendUrl).toString();
 
-const resolveMcpOAuthUserId = (token: string): string | null => {
+const resolveMcpOAuthPayload = (token: string): JwtMcpOAuthPayload | null => {
   try {
     const payload = jwt.verify(token, env.jwtSecret, {
       audience: getMcpResourceAudience(),
@@ -26,7 +26,7 @@ const resolveMcpOAuthUserId = (token: string): string | null => {
       return null;
     }
 
-    return payload.sub;
+    return payload;
   } catch {
     return null;
   }
@@ -86,7 +86,8 @@ const toMcpBlisterContext = (blister: {
 };
 
 export const resolveMcpContextFromToken = async (token: string): Promise<McpAuthContext> => {
-  const oauthUserId = resolveMcpOAuthUserId(token);
+  const oauthPayload = resolveMcpOAuthPayload(token);
+  const oauthUserId = oauthPayload?.sub;
 
   if (oauthUserId) {
     if (!Types.ObjectId.isValid(oauthUserId)) {
@@ -102,7 +103,7 @@ export const resolveMcpContextFromToken = async (token: string): Promise<McpAuth
       deletedAt: null,
     }).lean();
 
-    if (!user) {
+    if (!user || !user.emailVerified || (user.credentialVersion ?? 0) !== (oauthPayload?.credentialVersion ?? 0)) {
       throw new AppError({
         code: 'MCP_TOKEN_INVALID',
         message: 'MCP OAuth token is invalid or revoked.',

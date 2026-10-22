@@ -6,6 +6,7 @@ import request from 'supertest';
 import { createApp } from '../../../app';
 import { env } from '../../../config/env';
 import { resolveMcpContextFromToken } from '../../../mcp/context';
+import { OAuthClientModel } from '../../../models/oauthClient.model';
 import { OAuthTokenModel } from '../../../models/oauthToken.model';
 import { UserModel } from '../../../models/user.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../../types/auth.types';
@@ -71,7 +72,11 @@ describe('oauth.routes', () => {
     await connectTestDatabase();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await OAuthClientModel.create([
+      { clientId: OAUTH_CLIENT_ID, name: 'claude-desktop', redirectUris: [redirectUri] },
+      { clientId: OAUTH_DEFAULT_CLIENT_ID, name: 'Test MCP client', redirectUris: [redirectUri] },
+    ]);
     jest.spyOn(authEmailService, 'sendEmailVerificationEmail').mockResolvedValue(undefined);
   });
 
@@ -91,10 +96,10 @@ describe('oauth.routes', () => {
       .set('Host', 'blister.test');
 
     expect(response.status).toBe(200);
-    expect(response.body.issuer).toBe('http://blister.test');
-    expect(response.body.authorization_endpoint).toBe('http://blister.test/oauth/authorize');
-    expect(response.body.token_endpoint).toBe('http://blister.test/oauth/token');
-    expect(response.body.registration_endpoint).toBe('http://blister.test/oauth/register');
+    expect(response.body.issuer).toBe(env.backendUrl);
+    expect(response.body.authorization_endpoint).toBe(`${env.backendUrl}/oauth/authorize`);
+    expect(response.body.token_endpoint).toBe(`${env.backendUrl}/oauth/token`);
+    expect(response.body.registration_endpoint).toBe(`${env.backendUrl}/oauth/register`);
     expect(response.body.response_types_supported).toContain('code');
     expect(response.body.grant_types_supported).toContain('authorization_code');
     expect(response.body.grant_types_supported).toContain('refresh_token');
@@ -108,10 +113,10 @@ describe('oauth.routes', () => {
       .set('Host', 'blister.test');
 
     expect(response.status).toBe(200);
-    expect(response.body.issuer).toBe('http://blister.test');
-    expect(response.body.authorization_endpoint).toBe('http://blister.test/oauth/authorize');
-    expect(response.body.token_endpoint).toBe('http://blister.test/oauth/token');
-    expect(response.body.registration_endpoint).toBe('http://blister.test/oauth/register');
+    expect(response.body.issuer).toBe(env.backendUrl);
+    expect(response.body.authorization_endpoint).toBe(`${env.backendUrl}/oauth/authorize`);
+    expect(response.body.token_endpoint).toBe(`${env.backendUrl}/oauth/token`);
+    expect(response.body.registration_endpoint).toBe(`${env.backendUrl}/oauth/register`);
     expect(response.body.response_types_supported).toContain('code');
     expect(response.body.grant_types_supported).toContain('authorization_code');
     expect(response.body.grant_types_supported).toContain('refresh_token');
@@ -125,8 +130,8 @@ describe('oauth.routes', () => {
       .set('Host', 'blister.test');
 
     expect(response.status).toBe(200);
-    expect(response.body.resource).toBe('http://blister.test/mcp');
-    expect(response.body.authorization_servers).toContain('http://blister.test');
+    expect(response.body.resource).toBe(`${env.backendUrl}/mcp`);
+    expect(response.body.authorization_servers).toContain(env.backendUrl);
     expect(response.body.bearer_methods_supported).toContain('header');
     expect(response.body.scopes_supported).toContain('mcp');
   });
@@ -174,7 +179,8 @@ describe('oauth.routes', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
+    expect(response.body.client_id).toEqual(expect.any(String));
+    expect(response.body.client_id).not.toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(response.body.grant_types).toContain('refresh_token');
     expect(response.body.redirect_uris).toContain(dynamicRedirectUri);
     expect(response.body.token_endpoint_auth_method).toBe('none');
@@ -191,7 +197,8 @@ describe('oauth.routes', () => {
       });
 
     expect(response.status).toBe(201);
-    expect(response.body.client_id).toBe(OAUTH_DEFAULT_CLIENT_ID);
+    expect(response.body.client_id).toEqual(expect.any(String));
+    expect(response.body.client_id).not.toBe(OAUTH_DEFAULT_CLIENT_ID);
     expect(response.body.redirect_uris).toEqual([dynamicRedirectUri]);
   });
 
@@ -204,7 +211,7 @@ describe('oauth.routes', () => {
     expect(response.status).toBe(401);
     expect(response.headers['www-authenticate']).toContain('Bearer realm="Blister MCP"');
     expect(response.headers['www-authenticate']).toContain(
-      'resource_metadata="http://blister.test/.well-known/oauth-protected-resource"',
+      `resource_metadata="${env.backendUrl}/.well-known/oauth-protected-resource"`,
     );
   });
 

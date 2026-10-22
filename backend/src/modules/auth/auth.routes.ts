@@ -15,13 +15,13 @@ import {
   revokeMcpTokenSchema,
 } from '../../../../shared/schemas/index';
 import {
-  AUTH_LOGIN_RATE_LIMIT_MAX,
   AUTH_PASSWORD_RESET_RATE_LIMIT_MAX,
   AUTH_REGISTER_RATE_LIMIT_MAX,
   FIFTEEN_MINUTES_IN_MS,
   ONE_HOUR_IN_MS,
 } from '../../constants/security.constants';
 import { authenticate } from '../../middleware/authenticate';
+import { loginLimiter } from '../../middleware/login-limiter';
 import { validate } from '../../middleware/validate';
 import {
   authCreateMcpTokenController,
@@ -41,13 +41,6 @@ import {
 const registerLimiter = rateLimit({
   windowMs: ONE_HOUR_IN_MS,
   max: AUTH_REGISTER_RATE_LIMIT_MAX,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const loginLimiter = rateLimit({
-  windowMs: FIFTEEN_MINUTES_IN_MS,
-  max: AUTH_LOGIN_RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
 });

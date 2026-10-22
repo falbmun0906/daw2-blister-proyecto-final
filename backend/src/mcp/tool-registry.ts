@@ -36,13 +36,15 @@ import {
 } from './tools';
 import { type McpAuthContext } from './types';
 
+type ContextSource = McpAuthContext | (() => Promise<McpAuthContext>);
+
 const toToolErrorMessage = (error: unknown): string => {
   if (error instanceof AppError) {
     return `${error.code}: ${error.message}`;
   }
 
   if (error instanceof Error) {
-    return `MCP_TOOL_ERROR: ${error.message}`;
+    return 'MCP_TOOL_ERROR: Unexpected tool execution error.';
   }
 
   return 'MCP_TOOL_ERROR: Unknown MCP tool execution error.';
@@ -50,7 +52,7 @@ const toToolErrorMessage = (error: unknown): string => {
 
 const registerTool = <TInput extends object, TResult>(
   server: McpServer,
-  context: McpAuthContext,
+  context: ContextSource,
   tool: {
     name: string;
     description: string;
@@ -63,7 +65,8 @@ const registerTool = <TInput extends object, TResult>(
     inputSchema: schema,
   }, async (input) => {
     try {
-      const result = await tool.run(context, input as TInput);
+      const currentContext = typeof context === 'function' ? await context() : context;
+      const result = await tool.run(currentContext, input as TInput);
 
       return {
         content: [
@@ -87,7 +90,7 @@ const registerTool = <TInput extends object, TResult>(
   });
 };
 
-export const createMcpServerForContext = (context: McpAuthContext): McpServer => {
+export const createMcpServerForContext = (context: ContextSource): McpServer => {
   const server = new McpServer({
     name: 'blister-mcp-server',
     version: '1.0.0',

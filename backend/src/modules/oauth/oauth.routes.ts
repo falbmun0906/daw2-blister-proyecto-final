@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { loginLimiter } from '../../middleware/login-limiter';
 
 import {
   oauthAuthorizePageController,
@@ -31,6 +33,7 @@ oauthRouter.get(
 );
 oauthRouter.post(
   '/authorize',
+  loginLimiter,
   validate({ body: oauthAuthorizeSubmitSchema }),
   attachOAuthAuthorizeBody,
   oauthAuthorizeSubmitController,
@@ -260,4 +263,4 @@ oauthRouter.post(
  */
 
 oauthRouter.post('/token', validate({ body: oauthTokenRequestSchema }), oauthTokenController);
-oauthRouter.post('/register', validate({ body: oauthRegisterRequestSchema }), oauthRegisterController);
+oauthRouter.post('/register', rateLimit({ windowMs: 60 * 60 * 1000, limit: 20, standardHeaders: true, legacyHeaders: false }), validate({ body: oauthRegisterRequestSchema }), oauthRegisterController);

@@ -10,11 +10,12 @@ import {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../../constants/http.constants';
 import { OAuthTokenModel } from '../../models/oauthToken.model';
+import { OAuthClientModel } from '../../models/oauthClient.model';
 import { UserModel } from '../../models/user.model';
 import { type JwtMcpOAuthPayload, type JwtMcpOAuthRefreshPayload } from '../../types/auth.types';
 import { AppError } from '../../utils/app-error';
-import { authLogin } from '../auth/auth.service';
-import { OAUTH_CLIENT_ID, OAUTH_DEFAULT_CLIENT_ID, OAUTH_SCOPE } from './oauth.constants';
+import { authVerifyCredentials } from '../auth/auth.service';
+import { OAUTH_SCOPE } from './oauth.constants';
 
 const AUTHORIZATION_CODE_TTL_MS = 5 * 60 * 1000;
 const CODE_VERIFIER_PATTERN = /^[A-Za-z0-9._~-]{43,128}$/;
@@ -30,6 +31,7 @@ interface AuthorizeQuery {
 }
 
 interface AuthorizeInput {
+  client_name: string;
   response_type: string;
   client_id: string;
   redirect_uri: string;
@@ -46,6 +48,7 @@ interface LoginConsentInput extends AuthorizeQuery {
 }
 
 interface AuthorizationCodeRecord {
+  credentialVersion: number;
   userId: string;
   clientId: string;
   redirectUri: string;
@@ -110,6 +113,7 @@ const assertOAuthError = (condition: boolean, code: string, message: string): vo
 const isAllowedRedirectUri = (redirectUri: string): boolean => {
   try {
     const url = new URL(redirectUri);
+    if (redirectUri.length > 2048 || url.hash || url.username || url.password) return false;
 
     if (url.protocol === 'https:') {
       return true;
@@ -121,10 +125,10 @@ const isAllowedRedirectUri = (redirectUri: string): boolean => {
   }
 };
 
-const isSupportedClientId = (clientId: string | undefined): boolean =>
-  clientId === OAUTH_CLIENT_ID || clientId === OAUTH_DEFAULT_CLIENT_ID;
+const isSupportedClientId = async (clientId: string | undefined): Promise<boolean> =>
+  Boolean(clientId && await OAuthClientModel.exists({ clientId }));
 
-const normalizeAuthorizeInput = (input: AuthorizeQuery): AuthorizeInput => {
+const normalizeAuthorizeInput = async (input: AuthorizeQuery): Promise<AuthorizeInput> => {
   const responseType = asString(input.response_type);
   const clientId = asString(input.client_id);
   const redirectUri = asString(input.redirect_uri);
@@ -134,15 +138,19 @@ const normalizeAuthorizeInput = (input: AuthorizeQuery): AuthorizeInput => {
   const scope = asString(input.scope) ?? OAUTH_SCOPE;
 
   assertOAuthError(responseType === 'code', 'OAUTH_RESPONSE_TYPE_INVALID', 'Only response_type=code is supported.');
-  assertOAuthError(isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
+  const client = clientId ? await OAuthClientModel.findOne({ clientId }).lean() : null;
+  assertOAuthError(Boolean(client), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid. Register the client first.');
   assertOAuthError(Boolean(redirectUri), 'OAUTH_REDIRECT_URI_MISSING', 'OAuth redirect_uri is required.');
   assertOAuthError(isAllowedRedirectUri(redirectUri!), 'OAUTH_REDIRECT_URI_INVALID', 'OAuth redirect_uri is not allowed.');
+  assertOAuthError(Boolean(client?.redirectUris.includes(redirectUri!)), 'OAUTH_REDIRECT_URI_INVALID', 'OAuth redirect_uri is not registered for this client.');
   assertOAuthError(Boolean(codeChallenge), 'OAUTH_PKCE_MISSING', 'OAuth code_challenge is required.');
+  assertOAuthError(/^[A-Za-z0-9_-]{43}$/.test(codeChallenge ?? ''), 'OAUTH_PKCE_INVALID', 'Invalid S256 challenge.');
   assertOAuthError(codeChallengeMethod === 'S256', 'OAUTH_PKCE_METHOD_INVALID', 'Only PKCE S256 is supported.');
-  assertOAuthError(scope.split(/\s+/).includes(OAUTH_SCOPE), 'OAUTH_SCOPE_INVALID', 'OAuth scope must include mcp.');
+  assertOAuthError(scope === OAUTH_SCOPE, 'OAUTH_SCOPE_INVALID', 'Only the mcp scope is supported.');
 
   return {
     response_type: responseType!,
+    client_name: client!.name,
     client_id: clientId!,
     redirect_uri: redirectUri!,
     code_challenge: codeChallenge!,
@@ -155,7 +163,8 @@ const normalizeAuthorizeInput = (input: AuthorizeQuery): AuthorizeInput => {
 const buildPkceChallenge = (codeVerifier: string): string =>
   createHash('sha256').update(codeVerifier).digest('base64url');
 
-const buildMcpOAuthPayload = (userId: string, clientId: string): JwtMcpOAuthPayload => ({
+const buildMcpOAuthPayload = (userId: string, clientId: string, credentialVersion: number): JwtMcpOAuthPayload => ({
+  credentialVersion,
   sub: userId,
   type: 'mcp_oauth',
   aud: getMcpResourceAudience(),
@@ -163,7 +172,8 @@ const buildMcpOAuthPayload = (userId: string, clientId: string): JwtMcpOAuthPayl
   scope: OAUTH_SCOPE,
 });
 
-const buildMcpOAuthRefreshPayload = (userId: string, clientId: string): JwtMcpOAuthRefreshPayload => ({
+const buildMcpOAuthRefreshPayload = (userId: string, clientId: string, credentialVersion: number): JwtMcpOAuthRefreshPayload => ({
+  credentialVersion,
   sub: userId,
   type: 'mcp_oauth_refresh',
   aud: getMcpResourceAudience(),
@@ -172,13 +182,13 @@ const buildMcpOAuthRefreshPayload = (userId: string, clientId: string): JwtMcpOA
   jti: randomBytes(16).toString('hex'),
 });
 
-const signMcpAccessToken = (userId: string, clientId: string): string =>
-  jwt.sign(buildMcpOAuthPayload(userId, clientId), env.jwtSecret, {
+const signMcpAccessToken = (userId: string, clientId: string, version: number): string =>
+  jwt.sign(buildMcpOAuthPayload(userId, clientId, version), env.jwtSecret, {
     expiresIn: env.jwtAccessExpiresIn as StringValue,
   });
 
-const signMcpRefreshToken = (userId: string, clientId: string): string =>
-  jwt.sign(buildMcpOAuthRefreshPayload(userId, clientId), env.jwtSecret, {
+const signMcpRefreshToken = (userId: string, clientId: string, version: number): string =>
+  jwt.sign(buildMcpOAuthRefreshPayload(userId, clientId, version), env.jwtSecret, {
     expiresIn: env.jwtRefreshExpiresIn as StringValue,
   });
 
@@ -248,7 +258,7 @@ const persistMcpRefreshToken = async (userId: string, clientId: string, refreshT
   });
 };
 
-const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuthTokenResult> => {
+const issueOAuthTokens = async (userId: string, clientId: string, version: number): Promise<OAuthTokenResult> => {
   if (!Types.ObjectId.isValid(userId)) {
     throw new AppError({
       code: 'OAUTH_USER_INACTIVE',
@@ -257,9 +267,9 @@ const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuth
     });
   }
 
-  const userExists = await UserModel.exists({ _id: userId, deletedAt: null });
+  const user = await UserModel.findOne({ _id: userId, deletedAt: null }).select('credentialVersion emailVerified');
 
-  if (!userExists) {
+  if (!user || !user.emailVerified || (user.credentialVersion ?? 0) !== version) {
     throw new AppError({
       code: 'OAUTH_USER_INACTIVE',
       message: 'OAuth session is invalid or expired.',
@@ -267,8 +277,8 @@ const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuth
     });
   }
 
-  const accessToken = signMcpAccessToken(userId, clientId);
-  const refreshToken = signMcpRefreshToken(userId, clientId);
+  const accessToken = signMcpAccessToken(userId, clientId, version);
+  const refreshToken = signMcpRefreshToken(userId, clientId, version);
 
   await persistMcpRefreshToken(userId, clientId, refreshToken);
 
@@ -284,13 +294,13 @@ const issueOAuthTokens = async (userId: string, clientId: string): Promise<OAuth
 /**
  * Validates and normalizes OAuth authorization request parameters.
  */
-export const validateAuthorizeQuery = (input: AuthorizeQuery): AuthorizeInput =>
+export const validateAuthorizeQuery = (input: AuthorizeQuery): Promise<AuthorizeInput> =>
   normalizeAuthorizeInput(input);
 
 /**
  * Registers the public MCP OAuth client and returns metadata for the caller.
  */
-export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegistrationResult => {
+export const registerOAuthClient = async (input: RegisterClientInput): Promise<OAuthClientRegistrationResult> => {
   const redirectUrisInput = input.redirect_uris;
   const redirectUris = typeof input.redirect_uri === 'string'
     ? [input.redirect_uri]
@@ -302,14 +312,17 @@ export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegi
   const clientName = asString(input.client_name);
   const scope = asString(input.scope) ?? OAUTH_SCOPE;
 
-  assertOAuthError(scope.split(/\s+/).includes(OAUTH_SCOPE), 'OAUTH_SCOPE_INVALID', 'OAuth scope must include mcp.');
+  assertOAuthError(scope === OAUTH_SCOPE, 'OAUTH_SCOPE_INVALID', 'Only the mcp scope is supported.');
+  assertOAuthError(redirectUris.length <= 10 && (clientName?.length ?? 0) <= 100, 'OAUTH_CLIENT_INVALID', 'Client metadata is too large.');
   assertOAuthError(redirectUris.length > 0, 'OAUTH_REDIRECT_URI_MISSING', 'At least one OAuth redirect_uri is required.');
   redirectUris.forEach((redirectUri) => {
     assertOAuthError(isAllowedRedirectUri(redirectUri), 'OAUTH_REDIRECT_URI_INVALID', 'OAuth redirect_uri is not allowed.');
   });
 
+  const clientId = randomBytes(24).toString('base64url');
+  await OAuthClientModel.create({ clientId, name: clientName ?? 'Cliente MCP', redirectUris });
   return {
-    client_id: OAUTH_DEFAULT_CLIENT_ID,
+    client_id: clientId,
     client_id_issued_at: Math.floor(Date.now() / 1000),
     client_name: clientName,
     redirect_uris: redirectUris,
@@ -324,7 +337,7 @@ export const registerOAuthClient = (input: RegisterClientInput): OAuthClientRegi
  * Authenticates the user, records a short-lived authorization code and returns the redirect URI.
  */
 export const createAuthorizationCode = async (input: LoginConsentInput): Promise<{ redirectUri: string }> => {
-  const normalized = normalizeAuthorizeInput(input);
+  const normalized = await normalizeAuthorizeInput(input);
   const identifier = asString(input.identifier);
   const password = asString(input.password);
 
@@ -332,7 +345,7 @@ export const createAuthorizationCode = async (input: LoginConsentInput): Promise
   assertOAuthError(Boolean(password), 'OAUTH_LOGIN_REQUIRED', 'Blister user password is required.');
   assertOAuthError(input.consent === 'on' || input.consent === true, 'OAUTH_CONSENT_REQUIRED', 'User consent is required.');
 
-  const authResult = await authLogin({
+  const authResult = await authVerifyCredentials({
     identifier: identifier!,
     password: password!,
   });
@@ -341,6 +354,7 @@ export const createAuthorizationCode = async (input: LoginConsentInput): Promise
 
   pruneExpiredCodes();
   authorizationCodes.set(code, {
+    credentialVersion: authResult.credentialVersion,
     userId: authResult.user.id,
     clientId: normalized.client_id,
     redirectUri: normalized.redirect_uri,
@@ -365,7 +379,7 @@ const exchangeAuthorizationCode = async (input: TokenInput): Promise<OAuthTokenR
   const redirectUri = asString(input.redirect_uri);
   const codeVerifier = asString(input.code_verifier);
 
-  assertOAuthError(isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
+  assertOAuthError(await isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
   assertOAuthError(Boolean(code), 'OAUTH_CODE_MISSING', 'OAuth authorization code is required.');
   assertOAuthError(Boolean(redirectUri), 'OAUTH_REDIRECT_URI_MISSING', 'OAuth redirect_uri is required.');
   assertOAuthError(Boolean(codeVerifier), 'OAUTH_PKCE_MISSING', 'OAuth code_verifier is required.');
@@ -388,14 +402,14 @@ const exchangeAuthorizationCode = async (input: TokenInput): Promise<OAuthTokenR
   assertOAuthError(record.redirectUri === redirectUri, 'OAUTH_REDIRECT_URI_INVALID', 'OAuth redirect_uri does not match this code.');
   assertOAuthError(buildPkceChallenge(codeVerifier!) === record.codeChallenge, 'OAUTH_PKCE_INVALID', 'OAuth code_verifier does not match this code.');
 
-  return issueOAuthTokens(record.userId, record.clientId);
+  return issueOAuthTokens(record.userId, record.clientId, record.credentialVersion);
 };
 
 const exchangeRefreshToken = async (input: TokenInput): Promise<OAuthTokenResult> => {
   const clientId = asString(input.client_id);
   const refreshToken = asString(input.refresh_token);
 
-  assertOAuthError(isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
+  assertOAuthError(await isSupportedClientId(clientId), 'OAUTH_CLIENT_INVALID', 'OAuth client_id is invalid.');
   assertOAuthError(Boolean(refreshToken), 'OAUTH_REFRESH_MISSING', 'OAuth refresh_token is required.');
 
   const payload = verifyMcpRefreshToken(refreshToken!);
@@ -403,11 +417,12 @@ const exchangeRefreshToken = async (input: TokenInput): Promise<OAuthTokenResult
 
   assertOAuthError(payload.client_id === clientId, 'OAUTH_CLIENT_INVALID', 'OAuth client_id does not match this refresh token.');
 
-  const record = await OAuthTokenModel.findOne({
+  const record = await OAuthTokenModel.findOneAndDelete({
     refreshToken: tokenHash,
     clientId: payload.client_id,
     userId: payload.sub,
     scope: OAUTH_SCOPE,
+    expiresAt: { $gt: new Date() },
   });
 
   if (
@@ -422,9 +437,7 @@ const exchangeRefreshToken = async (input: TokenInput): Promise<OAuthTokenResult
     });
   }
 
-  await OAuthTokenModel.deleteOne({ _id: record._id });
-
-  return issueOAuthTokens(payload.sub, record.clientId);
+  return issueOAuthTokens(payload.sub, record.clientId, payload.credentialVersion ?? 0);
 };
 
 /**

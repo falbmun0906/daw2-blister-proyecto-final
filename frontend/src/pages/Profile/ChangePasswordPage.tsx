@@ -10,6 +10,8 @@ import { ROUTES } from '../../constants/routes';
 import { usePageTitle } from '../../hooks/use.page-title';
 import { createZodFormResolver } from '../../lib/zod-form-resolver';
 import { updateProfile } from '../../services/auth.service';
+import { useAuthStore } from '../../stores/auth.store';
+import { resetAppStores } from '../../stores/reset-stores';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 
@@ -63,8 +65,10 @@ function ChangePasswordPage() {
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
       });
-      addToast({ message: 'Contraseña actualizada correctamente.', variant: 'success' });
-      navigate(ROUTES.profile);
+      useAuthStore.getState().clearSession();
+      resetAppStores();
+      addToast({ message: 'Contraseña actualizada. Inicia sesión de nuevo y vuelve a conectar tus asistentes MCP.', variant: 'success' });
+      navigate(ROUTES.login, { replace: true });
     } catch (err) {
       if (isApiError(err)) {
         if (err.code === 'AUTH_CURRENT_PASSWORD_INVALID') {
@@ -83,6 +87,7 @@ function ChangePasswordPage() {
 
   return (
     <section className="c-change-password-page">
+      <p>Al cambiar la contraseña se cerrarán tus sesiones y se revocarán los accesos MCP y OAuth.</p>
       <form
         className="c-change-password-page__form"
         onSubmit={handleSubmit(onSubmit)}

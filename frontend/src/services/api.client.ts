@@ -11,6 +11,7 @@ import type { AuthTokens } from '../types/auth.types';
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _sessionVersion?: number;
 }
 
 const rawClient = axios.create({
@@ -30,6 +31,9 @@ export const apiClient = axios.create({
 });
 
 let refreshPromise: Promise<AuthTokens> | null = null;
+let refreshSessionVersion: number | null = null;
+
+const staleSessionError = () => new ApiError('La sesión ha cambiado.', { code: 'AUTH_SESSION_CHANGED' });
 
 const isAuthEndpoint = (url: string | undefined): boolean =>
   Boolean(url && (
@@ -101,8 +105,8 @@ const attachAuthorizationHeader = (
 };
 
 const refreshAccessToken = async (): Promise<AuthTokens> => {
-  if (!refreshPromise) {
-    const { refreshToken, user } = useAuthStore.getState();
+  const { refreshToken, user, sessionVersion } = useAuthStore.getState();
+  if (!refreshPromise || refreshSessionVersion !== sessionVersion) {
 
     if (!refreshToken || !user) {
       clearSessionAndRedirect();
@@ -112,12 +116,14 @@ const refreshAccessToken = async (): Promise<AuthTokens> => {
       });
     }
 
-    refreshPromise = rawClient
+    refreshSessionVersion = sessionVersion;
+    const pending = rawClient
       .post<ApiResponse<AuthTokens>>('/auth/refresh', { refreshToken })
       .then((response) => authTokensSchema.parse(response.data.data))
       .then((tokens) => {
-        useAuthStore.getState().setSession({
-          user,
+        if (useAuthStore.getState().sessionVersion !== sessionVersion) throw staleSessionError();
+        // Token rotation preserves the session identity and current user edits.
+        useAuthStore.setState({
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
         });
@@ -125,19 +131,23 @@ const refreshAccessToken = async (): Promise<AuthTokens> => {
         return tokens;
       })
       .catch((error: unknown) => {
-        clearSessionAndRedirect();
+        if (useAuthStore.getState().sessionVersion === sessionVersion) clearSessionAndRedirect();
         throw normalizeApiError(error);
       })
       .finally(() => {
-        refreshPromise = null;
+        if (refreshPromise === pending) refreshPromise = null;
       });
+    refreshPromise = pending;
   }
 
   return refreshPromise;
 };
 
 apiClient.interceptors.request.use((config) => {
-  const { accessToken } = useAuthStore.getState();
+  const { accessToken, sessionVersion } = useAuthStore.getState();
+  const request = config as RetryableRequestConfig;
+  if (request._sessionVersion !== undefined && request._sessionVersion !== sessionVersion) throw staleSessionError();
+  request._sessionVersion = sessionVersion;
 
   if (accessToken) {
     attachAuthorizationHeader(config as RetryableRequestConfig, accessToken);
@@ -155,9 +165,16 @@ apiClient.interceptors.request.use((config) => {
  * Las rutas de `/auth/*` se excluyen del refresh para evitar bucles.
  */
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    const version = (response.config as RetryableRequestConfig)._sessionVersion;
+    if (version !== undefined && version !== useAuthStore.getState().sessionVersion) throw staleSessionError();
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
+    if (originalRequest?._sessionVersion !== undefined && originalRequest._sessionVersion !== useAuthStore.getState().sessionVersion) {
+      return Promise.reject(staleSessionError());
+    }
 
     if (!originalRequest || !error.response) {
       return Promise.reject(normalizeApiError(error));

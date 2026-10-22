@@ -14,15 +14,39 @@ import {
 import { AppError } from '../utils/app-error';
 import { createMcpServerForContext } from './tool-registry';
 import { resolveMcpContextFromToken, resolveRawMcpToken } from './context';
+import { mcpRequestToken, resolveMcpRequestContext } from './request-context';
 
 const MCP_PATH = '/mcp';
 
 interface McpSessionState {
   transport: StreamableHTTPServerTransport;
+  close: () => Promise<void>;
   userId: string;
+  lastUsedAt: number;
 }
 
 const mcpSessions = new Map<string, McpSessionState>();
+const initializingUsers = new Map<string, number>();
+const MAX_BODY_BYTES = 256 * 1024;
+const MAX_SESSIONS = 256;
+const MAX_USER_SESSIONS = 8;
+const SESSION_IDLE_MS = 15 * 60 * 1000;
+
+export const closeMcpSessions = async (): Promise<void> => {
+  const sessions = [...mcpSessions.values()];
+  mcpSessions.clear();
+  await Promise.allSettled(sessions.map((session) => session.close()));
+};
+
+const sessionCleanupTimer = setInterval(() => {
+  for (const [id, session] of mcpSessions) {
+    if (Date.now() - session.lastUsedAt > SESSION_IDLE_MS) {
+      mcpSessions.delete(id);
+      void session.close().catch(() => undefined);
+    }
+  }
+}, 60_000);
+sessionCleanupTimer.unref();
 
 const sendJson = (
   response: ServerResponse<IncomingMessage>,
@@ -34,43 +58,47 @@ const sendJson = (
   response.end(JSON.stringify(payload));
 };
 
-const getRequestOrigin = (request: IncomingMessage): string | null => {
-  const hostHeader = request.headers.host;
-  const forwardedProtoHeader = request.headers['x-forwarded-proto'];
-  const host = Array.isArray(hostHeader) ? hostHeader[0] : hostHeader;
-  const forwardedProto = Array.isArray(forwardedProtoHeader)
-    ? forwardedProtoHeader[0]
-    : forwardedProtoHeader;
-  const protocol = forwardedProto ?? 'http';
-
-  return host ? `${protocol}://${host}` : null;
-};
-
 const setMcpAuthChallenge = (
-  request: IncomingMessage,
   response: ServerResponse<IncomingMessage>,
 ): void => {
-  const origin = getRequestOrigin(request);
-
-  if (!origin) {
-    response.setHeader('WWW-Authenticate', 'Bearer realm="Blister MCP"');
-    return;
-  }
-
   response.setHeader(
     'WWW-Authenticate',
-    `Bearer realm="Blister MCP", resource_metadata="${origin}/.well-known/oauth-protected-resource"`,
+    `Bearer realm="Blister MCP", resource_metadata="${env.backendUrl}/.well-known/oauth-protected-resource"`,
   );
 };
 
 const readJsonBody = async (request: IncomingMessage): Promise<unknown> => {
-  const chunks: Buffer[] = [];
-
-  for await (const chunk of request) {
-    chunks.push(Buffer.from(chunk));
+  const tooLarge = () => new AppError({ code: 'MCP_BODY_TOO_LARGE', message: 'MCP request body exceeds 256 KiB.', statusCode: 413 });
+  if (Number(request.headers['content-length']) > MAX_BODY_BYTES) {
+    request.resume();
+    throw tooLarge();
   }
-
-  const rawBody = Buffer.concat(chunks).toString('utf8').trim();
+  const rawBody = await new Promise<string>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    const finish = (error?: Error) => {
+      clearTimeout(timer);
+      request.off('data', onData);
+      request.off('end', onEnd);
+      request.off('error', finish);
+      request.off('aborted', onAborted);
+      if (error) { request.resume(); reject(error); }
+      else resolve(Buffer.concat(chunks).toString('utf8').trim());
+    };
+    const onData = (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) finish(tooLarge());
+      else chunks.push(chunk);
+    };
+    const onEnd = () => finish();
+    const onAborted = () => finish(new AppError({ code: 'MCP_BODY_ABORTED', message: 'Request interrupted.', statusCode: 400 }));
+    const timer = setTimeout(() => finish(new AppError({ code: 'MCP_BODY_TIMEOUT', message: 'Request body timed out.', statusCode: 408 })), 15_000);
+    timer.unref();
+    request.on('data', onData);
+    request.once('end', onEnd);
+    request.once('error', finish);
+    request.once('aborted', onAborted);
+  });
 
   if (!rawBody) {
     return null;
@@ -109,7 +137,8 @@ const handleMcpRequest = async (
         });
       }
 
-      await session.transport.handleRequest(request, response, body);
+      session.lastUsedAt = Date.now();
+      await mcpRequestToken.run(token, () => session.transport.handleRequest(request, response, body));
       return;
     }
 
@@ -129,14 +158,23 @@ const handleMcpRequest = async (
       });
     }
 
-    const server = createMcpServerForContext(context);
+    const pending = initializingUsers.get(context.userId) ?? 0;
+    const owned = [...mcpSessions.values()].filter((session) => session.userId === context.userId).length;
+    const pendingTotal = [...initializingUsers.values()].reduce((sum, count) => sum + count, 0);
+    if (owned + pending >= MAX_USER_SESSIONS || mcpSessions.size + pendingTotal >= MAX_SESSIONS) {
+      throw new AppError({ code: 'MCP_SESSION_LIMIT', message: 'Too many MCP sessions. Close an existing session.', statusCode: 429 });
+    }
+    initializingUsers.set(context.userId, pending + 1);
+    const server = createMcpServerForContext(resolveMcpRequestContext);
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
       enableJsonResponse: true,
       onsessioninitialized: (newSessionId) => {
         mcpSessions.set(newSessionId, {
           transport,
+          close: () => server.close(),
           userId: context.userId,
+          lastUsedAt: Date.now(),
         });
       },
     });
@@ -147,12 +185,22 @@ const handleMcpRequest = async (
       }
     };
 
-    await server.connect(transport);
-    await transport.handleRequest(request, response, body);
+    try {
+      await server.connect(transport);
+      await mcpRequestToken.run(token, () => transport.handleRequest(request, response, body));
+      if (!transport.sessionId) await server.close();
+    } catch (error) {
+      await server.close().catch(() => undefined);
+      throw error;
+    } finally {
+      const remaining = (initializingUsers.get(context.userId) ?? 1) - 1;
+      if (remaining > 0) initializingUsers.set(context.userId, remaining);
+      else initializingUsers.delete(context.userId);
+    }
   } catch (error: unknown) {
     if (error instanceof AppError) {
       if (error.statusCode === 401) {
-        setMcpAuthChallenge(request, response);
+        setMcpAuthChallenge(response);
       }
 
       sendJson(response, error.statusCode, {
@@ -244,6 +292,7 @@ const bootstrap = async (): Promise<void> => {
     // eslint-disable-next-line no-console
     console.log(`Received ${signal}. Shutting down MCP server.`);
 
+    await closeMcpSessions();
     server.close(() => {
       void disconnectDb()
         .catch((dbError: unknown) => {

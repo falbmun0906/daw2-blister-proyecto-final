@@ -48,9 +48,9 @@ export const authenticate = (
       });
     }
 
-    void UserModel.findOne({ _id: payload.sub, deletedAt: null }).select('emailVerified')
+    void UserModel.findOne({ _id: payload.sub, deletedAt: null }).select('emailVerified credentialVersion')
       .then((user) => {
-        if (!user) {
+        if (!user || (user.credentialVersion ?? 0) !== (payload.credentialVersion ?? 0)) {
           next(
             new AppError({
               code: 'AUTH_USER_INACTIVE',
