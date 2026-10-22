@@ -1,5 +1,7 @@
 # 08 - Despliegue evaluación
 
+> Esta evidencia es histórica. La actualización local del 22/10/2026 añade replica set obligatorio para stock/adherencia, readiness de MongoDB y dependencia de CI en el YAML de despliegue. Estos requisitos necesitan una nueva evaluación del entorno destino. No se ha verificado ni modificado producción durante estas correcciones.
+
 Este documento complementa a [08-despliegue.md](08-despliegue.md) y se centra exclusivamente en las evidencias necesarias para evaluar la parte de despliegue del proyecto. La descripción histórica, las decisiones de arquitectura y la fase Render se mantienen en el documento general; aquí se concentra la verificación reproducible de los criterios obligatorios 7 y 8 sobre el despliegue real en producción.
 
 ## Índice

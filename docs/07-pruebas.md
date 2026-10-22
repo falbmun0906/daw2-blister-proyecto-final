@@ -1,5 +1,7 @@
 # 07 - Pruebas y validación
 
+> Las suites backend usan replica sets efímeros; una prueba independiente comprueba el rechazo seguro de MongoDB standalone. Correo y Web Push están simulados en la configuración de test.
+
 La estrategia de pruebas de Blíster combina tests automatizados, validaciones de build, linting, pruebas de navegador y comprobaciones manuales. El objetivo es proteger las reglas críticas de salud doméstica: autenticación, permisos, stock, adherencia, citas, notificaciones, CIMA y MCP.
 
 ## Índice
@@ -161,7 +163,7 @@ Suites actuales:
 | `components/atoms/EmptyState.test.tsx` | Renderizado de título, descripción y CTA. |
 | `lib/zod-form-resolver.test.ts` | Mensajes de validación y errores del resolver Zod. |
 | `pages/Login/LoginPage.test.tsx` | Validación requerida, error global de credenciales y persistencia de sesión. |
-| `pages/Register/RegisterPage.test.tsx` | Checklist de contraseña, consentimientos obligatorios, errores de API por campo y sesión creada. |
+| `pages/Register/RegisterPage.test.tsx` | Checklist de contraseña, consentimientos obligatorios, errores de API por campo y pantalla de confirmación de correo sin sesión. |
 
 Comando:
 

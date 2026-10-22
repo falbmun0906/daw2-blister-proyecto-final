@@ -308,7 +308,7 @@ La integración continua se define en `.github/workflows/ci.yml` con tres jobs:
 | :--- | :--- |
 | Backend | `npm ci`, `npm run lint`, `npm run test:coverage`, artefacto de cobertura y `npm run build`. |
 | Frontend | `npm ci`, `npm run lint`, `npm test -- --run` y `npm run build`. |
-| Frontend E2E | En pull requests a `main`: instalación de Chromium, build y Playwright. |
+| Frontend E2E | En pushes y pull requests de `main`/`dev`, y como workflow reutilizable previo al despliegue: Chromium, build y Playwright. |
 
 Los jobs de CI no sustituyen a la validación manual de producto, pero sí protegen los puntos técnicos más sensibles: compilación, lint, contratos compartidos, cobertura backend y pruebas de navegador configuradas. El objetivo es que un pull request no llegue a `main` con errores básicos de build o regresiones obvias.
 

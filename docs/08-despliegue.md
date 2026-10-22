@@ -1,5 +1,7 @@
 # 08 - Despliegue
 
+> Actualización local del 22/10/2026: esta versión exige MongoDB con transacciones, registro individual de clientes OAuth y comprobación `/api/v1/ready`. Los YAML locales incorporan validación previa al despliegue. Los clientes OAuth anteriores deben registrarse de nuevo. No se han ejecutado despliegues ni modificado la infraestructura remota; las evidencias históricas siguientes no validan esta nueva versión.
+
 El despliegue de Blíster evolucionó en tres fases: primero se dockerizó el sistema completo para validar portabilidad; después se publicó backend y frontend en Render usando MongoDB Atlas; finalmente se trasladó el backend a una VPS de Ionos con Docker, Nginx y HTTPS, manteniendo el frontend en Render. Este capítulo documenta esa evolución y la configuración técnica resultante.
 
 > Para la parte específica de evaluación del módulo (criterios 7 y 8 sobre artefactos y verificación de red), véase [08-despliegue-eval.md](08-despliegue-eval.md).

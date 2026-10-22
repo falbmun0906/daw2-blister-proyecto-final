@@ -45,7 +45,7 @@ La instalación requiere herramientas comunes de desarrollo web moderno.
 | :--- | :--- | :--- |
 | Node.js | 22.x | Misma versión usada en CI y Dockerfiles. |
 | npm | Incluido con Node | Instalación de dependencias. |
-| MongoDB | 7.x o MongoDB Atlas | Persistencia de datos. |
+| MongoDB | 7.x en replica set o MongoDB Atlas con transacciones | Stock y adherencia usan transacciones; standalone rechaza las tomas sin aplicar cambios. |
 | Docker Desktop | Versión estable reciente | Ejecución con Compose. |
 | Git | Versión estable reciente | Clonado y control de versiones. |
 
@@ -189,13 +189,15 @@ Para desarrollo local se usan terminales separadas.
 
 ### 6.1 Base de datos
 
-Puede usarse MongoDB local:
+Puede usarse una instancia MongoDB local en replica set. Para una instancia local aislada:
 
 ```bash
-mongod
+mongod --replSet rs0 --bind_ip 127.0.0.1
 ```
 
-O una cadena Atlas en `MONGODB_URI`.
+La primera vez, si esa instancia aún no pertenece a un replica set, inicializarla con `mongosh --eval 'rs.initiate({_id: "rs0", members: [{_id: 0, host: "127.0.0.1:27017"}]})'`. Este comando cambia la configuración de esa instancia; no debe ejecutarse sobre una base compartida o de producción. Usar `mongodb://127.0.0.1:27017/blister?replicaSet=rs0` como URI local. `compose.yaml` prepara su propio replica set dentro de la red Docker.
+
+Atlas debe ofrecer transacciones. `/api/v1/health` comprueba que responde el proceso; `/api/v1/ready` comprueba MongoDB y su topología. Las tomas y su deshacer devuelven `503 TRANSACTIONS_REQUIRED` en standalone, sin escrituras parciales.
 
 ### 6.2 Backend
 

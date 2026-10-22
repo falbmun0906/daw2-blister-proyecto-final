@@ -64,7 +64,7 @@ Las tablas siguientes describen los campos, tipos y restricciones más relevante
 | `emailVerified` | Boolean | Por defecto `false`. |
 | `settings` | Object | `{ theme, font, fontSize, avatarKey }`. |
 | `mcpToken` | String | Hash SHA-256 del token MCP. Índice sparse único. |
-| `deletedAt` | Date | Soft delete. Purga a los 30 días. |
+| `deletedAt` | Date | Registro residual anonimizado de cuenta. Purga periódica a partir de 15 días; la cuenta no es recuperable. |
 
 **`blisters`**
 
@@ -81,7 +81,7 @@ Las tablas siguientes describen los campos, tipos y restricciones más relevante
 | Campo | Tipo | Notas |
 | :--- | :--- | :--- |
 | `blisterId` | ObjectId | Referencia a `blisters`. |
-| `nregist` | String | Número de registro CIMA/AEMPS. Único por blíster. |
+| `nregist` | String | Número de registro CIMA/AEMPS. Puede repetirse por envase; la identidad local es `_id`. |
 | `nombre` | String | Nombre oficial CIMA. |
 | `alias` | String | Nombre personalizado opcional. |
 | `pactivos` | String | Principios activos CIMA. |
@@ -141,7 +141,7 @@ Las tablas siguientes describen los campos, tipos y restricciones más relevante
 | `title` | String | Requerido. |
 | `message` | String | Requerido. |
 | `isRead` | Boolean | Por defecto `false`. |
-| `dismissedAt` | Date | Nullable. TTL de 30 días tras lectura. |
+| `dismissedAt` | Date | Nullable. Oculta el aviso; no existe TTL de 30 días. La purga por cuenta/blíster elimina los avisos asociados. |
 
 ## 2. Diagrama entidad-relación
 
@@ -331,10 +331,12 @@ sequenceDiagram
     B->>B: Rate limit y validación shared
     B->>DB: Crea usuario con password bcrypt
     B->>DB: Crea blíster inicial o aplica invitación
-    B->>DB: Guarda refresh token hasheado
-    B->>Mail: Envía verificación si procede
-    B-->>F: 201 success + usuario + tokens
-    F->>U: Redirige a Inicio
+    B->>DB: Guarda token de verificación hasheado
+    B->>Mail: Envía verificación de correo
+    B-->>F: 201 success + usuario sin sesión
+    F->>U: Muestra confirmación de envío
+    U->>B: Confirma correo mediante token
+    U->>F: Inicia sesión
 ```
 
 ### 4.2 Alta de medicamento desde CIMA
@@ -524,7 +526,7 @@ La documentación OpenAPI se publica en `/api/v1/docs` y se genera desde comenta
 
 | Método | Endpoint | Auth | Respuesta principal |
 | :--- | :--- | :---: | :--- |
-| `POST` | `/api/v1/auth/register` | No | `201` usuario y tokens. |
+| `POST` | `/api/v1/auth/register` | No | `201` usuario sin tokens; exige confirmar el correo antes del login. |
 | `POST` | `/api/v1/auth/login` | No | `200` usuario y tokens. |
 | `POST` | `/api/v1/auth/refresh` | No | `200` tokens rotados. |
 | `POST` | `/api/v1/auth/logout` | Sí | `200` sesión cerrada. |

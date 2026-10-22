@@ -69,7 +69,7 @@ Blíster es una aplicación web progresiva para gestionar medicamentos, tratamie
 | :--- | :--- | :--- |
 | Node.js | 22 LTS | Backend, frontend, scripts de desarrollo y pruebas |
 | npm | 10+ | Gestor de paquetes del monorepo |
-| MongoDB | 7+ (local) o Atlas | Persistencia de datos |
+| MongoDB | 7+ en replica set (local) o Atlas con transacciones | Stock y adherencia atómicos; standalone no admite estas operaciones |
 | Docker Engine | 24+ | Validación reproducible y producción |
 | Docker Compose | v2 | Orquestación local y de backend |
 
