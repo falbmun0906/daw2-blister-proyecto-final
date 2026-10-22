@@ -12,6 +12,10 @@ export interface AdherenceLogDocument {
   treatmentId: Types.ObjectId;
   status: AdherenceLogStatus;
   amount: number;
+  deductedAmount?: number;
+  patientUserId?: Types.ObjectId;
+  stockUnit?: string;
+  occurrenceKey?: string;
   timestamp: Date;
   createdAt?: Date;
   updatedAt?: Date;

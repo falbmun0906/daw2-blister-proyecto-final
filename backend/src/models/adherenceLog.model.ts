@@ -3,6 +3,10 @@ import { model, models, Schema } from 'mongoose';
 import { type AdherenceLogDocument } from '../types/adherence-log.types';
 
 const adherenceLogSchema = new Schema<AdherenceLogDocument>({
+  deductedAmount: { type: Number, min: 0 },
+  patientUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+  stockUnit: { type: String },
+  occurrenceKey: { type: String },
   blisterId: {
     type: Schema.Types.ObjectId,
     ref: 'Blister',
@@ -57,6 +61,8 @@ const adherenceLogSchema = new Schema<AdherenceLogDocument>({
 });
 
 adherenceLogSchema.index({ blisterId: 1, timestamp: -1 });
+// Legacy logs are left intact; new writes have a stable occurrence identity.
+adherenceLogSchema.index({ occurrenceKey: 1 }, { unique: true, sparse: true });
 
 export const AdherenceLogModel =
   models.AdherenceLog ?? model<AdherenceLogDocument>('AdherenceLog', adherenceLogSchema);

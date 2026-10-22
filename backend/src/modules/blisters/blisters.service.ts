@@ -90,13 +90,7 @@ const toBlisterView = (
         : {}),
     };
   }),
-  inviteCode: blister!.inviteCode
-    ? {
-        code: blister!.inviteCode.code,
-        exp: blister!.inviteCode.exp,
-        role: blister!.inviteCode.role,
-      }
-    : null,
+  // Invitation secrets are returned only by the OWNER-only creation endpoint.
 });
 
 const createInviteCode = (): string => randomBytes(4).toString('hex').slice(0, 8).toUpperCase();

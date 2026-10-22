@@ -1,4 +1,5 @@
-import { Types } from 'mongoose';
+import { Types, type ClientSession } from 'mongoose';
+import { inTransaction } from '../../utils/transaction';
 
 import { ADHERENCE_LOG_UNDO_WINDOW_MS } from '../../constants/domain.constants';
 import {
@@ -38,6 +39,9 @@ interface AdherenceLogView {
   treatmentId: string;
   status: 'taken' | 'skipped';
   amount: number;
+  deductedAmount: number;
+  patientUserId: string | null;
+  stockUnit: string | null;
   timestamp: Date;
   createdAt: Date;
   isForced: boolean;
@@ -66,6 +70,9 @@ const toAdherenceLogView = (
   treatmentId: adherenceLog!.treatmentId.toString(),
   status: adherenceLog!.status ?? 'taken',
   amount: adherenceLog!.amount,
+  deductedAmount: adherenceLog!.deductedAmount ?? adherenceLog!.amount,
+  patientUserId: adherenceLog!.patientUserId?.toString() ?? null,
+  stockUnit: adherenceLog!.stockUnit ?? null,
   timestamp: adherenceLog!.timestamp,
   createdAt: adherenceLog!.createdAt ?? adherenceLog!.timestamp,
   isForced: adherenceLog!.isForced,
@@ -82,12 +89,12 @@ const ensureWriterRole = (blisterRole: BlisterRole): void => {
   }
 };
 
-const getMedicineDocument = async (blisterId: string, medicineId: string) => {
+const getMedicineDocument = async (blisterId: string, medicineId: string, session?: ClientSession) => {
   const medicine = await MedicineModel.findOne({
     _id: new Types.ObjectId(medicineId),
     blisterId: new Types.ObjectId(blisterId),
     deletedAt: null,
-  });
+  }).session(session ?? null);
 
   if (!medicine) {
     throw new AppError({
@@ -100,12 +107,12 @@ const getMedicineDocument = async (blisterId: string, medicineId: string) => {
   return medicine;
 };
 
-const getTreatmentDocument = async (blisterId: string, treatmentId: string) => {
+const getTreatmentDocument = async (blisterId: string, treatmentId: string, session?: ClientSession) => {
   const treatment = await TreatmentModel.findOne({
     _id: new Types.ObjectId(treatmentId),
     blisterId: new Types.ObjectId(blisterId),
     deletedAt: null,
-  });
+  }).session(session ?? null);
 
   if (!treatment) {
     throw new AppError({
@@ -118,11 +125,11 @@ const getTreatmentDocument = async (blisterId: string, treatmentId: string) => {
   return treatment;
 };
 
-const getBlisterDocument = async (blisterId: string) => {
+const getBlisterDocument = async (blisterId: string, session?: ClientSession) => {
   const blister = await BlisterModel.findOne({
     _id: new Types.ObjectId(blisterId),
     deletedAt: null,
-  });
+  }).session(session ?? null);
 
   if (!blister) {
     throw new AppError({
@@ -135,11 +142,11 @@ const getBlisterDocument = async (blisterId: string) => {
   return blister;
 };
 
-const getAdherenceLogDocument = async (blisterId: string, adherenceLogId: string) => {
+const getAdherenceLogDocument = async (blisterId: string, adherenceLogId: string, session?: ClientSession) => {
   const adherenceLog = await AdherenceLogModel.findOne({
     _id: new Types.ObjectId(adherenceLogId),
     blisterId: new Types.ObjectId(blisterId),
-  });
+  }).session(session ?? null);
 
   if (!adherenceLog) {
     throw new AppError({
@@ -174,7 +181,7 @@ const getTreatmentMedicineEntry = (
 const resolveRequestedAmount = (inputAmount: number | undefined, treatmentAmount: number): number => {
   const requestedAmount = inputAmount ?? treatmentAmount;
 
-  if (requestedAmount <= 0) {
+  if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
     throw new AppError({
       code: 'ADHERENCE_AMOUNT_INVALID',
       message: 'The amount must be greater than 0.',
@@ -275,82 +282,106 @@ export const adherenceLogsCreate = async (
 ): Promise<AdherenceLogView> => {
   ensureWriterRole(blisterRole);
 
-  const medicine = await getMedicineDocument(blisterId, input.medicineId);
-  const treatment = await getTreatmentDocument(blisterId, input.treatmentId);
-  const treatmentMedicine = getTreatmentMedicineEntry(treatment.medicines, input.medicineId);
-  const treatmentAmount = treatmentMedicine.amount;
-  const status = input.status ?? 'taken';
-  const requestedAmount = status === 'skipped'
-    ? 0
-    : resolveRequestedAmount(input.amount, treatmentAmount);
+  const committed = await inTransaction(async (session) => {
+    const blister = await getBlisterDocument(blisterId, session);
+    const member = blister.members.find((entry: { userId: Types.ObjectId }) => entry.userId.toString() === userId);
+    if (!member) throw new AppError({ code: 'BLISTER_ACCESS_FORBIDDEN', message: 'Blister membership is required.', statusCode: 403 });
+    ensureWriterRole(member.role);
+    const medicine = await getMedicineDocument(blisterId, input.medicineId, session);
+    const treatment = await getTreatmentDocument(blisterId, input.treatmentId, session);
+    if (!treatment.active || !blister.members.some((entry: { userId: Types.ObjectId }) => entry.userId.equals(treatment.patientUserId))) {
+      throw new AppError({ code: 'TREATMENT_INACTIVE', message: 'The treatment or its patient is no longer active.', statusCode: 409 });
+    }
+    // Serialize taken AND skipped logs and concurrent treatment edits. Retried
+    // transactions re-read the current schedule, stock and duplicate predicate.
+    await TreatmentModel.updateOne({ _id: treatment._id }, { $inc: { __v: 1 } }, { session });
+    const treatmentMedicine = getTreatmentMedicineEntry(treatment.medicines, input.medicineId);
+    const treatmentAmount = treatmentMedicine.amount;
+    const status = input.status ?? 'taken';
+    const requestedAmount = status === 'skipped'
+      ? 0
+      : resolveRequestedAmount(input.amount, treatmentAmount);
 
-  const requestedTimestamp = input.timestamp ?? new Date();
-  const { effectiveTimestamp, toleranceMs } = resolveDoseAlignment(
-    treatment,
-    treatmentMedicine,
-    requestedTimestamp,
-  );
+    const requestedTimestamp = input.timestamp ?? new Date();
+    const { effectiveTimestamp, toleranceMs } = resolveDoseAlignment(
+      treatment,
+      treatmentMedicine,
+      requestedTimestamp,
+    );
 
-  const dedupeFrom = new Date(effectiveTimestamp.getTime() - toleranceMs);
-  const dedupeTo = new Date(effectiveTimestamp.getTime() + toleranceMs);
-  const existingLog = await AdherenceLogModel.findOne({
-    blisterId: new Types.ObjectId(blisterId),
-    treatmentId: new Types.ObjectId(input.treatmentId),
-    medicineId: new Types.ObjectId(input.medicineId),
-    timestamp: { $gte: dedupeFrom, $lte: dedupeTo },
-  })
-    .sort({ timestamp: 1 })
-    .lean();
+    const dedupeFrom = new Date(effectiveTimestamp.getTime() - toleranceMs);
+    const dedupeTo = new Date(effectiveTimestamp.getTime() + toleranceMs);
+    const existingLog = await AdherenceLogModel.findOne({
+      blisterId: new Types.ObjectId(blisterId),
+      treatmentId: new Types.ObjectId(input.treatmentId),
+      medicineId: new Types.ObjectId(input.medicineId),
+      timestamp: { $gte: dedupeFrom, $lte: dedupeTo },
+    })
+      .session(session)
+      .sort({ timestamp: 1 })
+      .lean();
 
-  if (existingLog) {
-    throw new AppError({
-      code: 'ADHERENCE_LOG_DUPLICATE',
-      message: 'This scheduled dose is already logged.',
-      statusCode: HTTP_STATUS_CONFLICT,
-      details: [
-        `adherenceLogId=${(existingLog._id as Types.ObjectId).toString()}`,
-        `status=${existingLog.status ?? 'taken'}`,
-        `timestamp=${(existingLog.timestamp as Date).toISOString()}`,
-      ],
-    });
-  }
+    if (existingLog) {
+      throw new AppError({
+        code: 'ADHERENCE_LOG_DUPLICATE',
+        message: 'This scheduled dose is already logged.',
+        statusCode: HTTP_STATUS_CONFLICT,
+        details: [
+          `adherenceLogId=${(existingLog._id as Types.ObjectId).toString()}`,
+          `status=${existingLog.status ?? 'taken'}`,
+          `timestamp=${(existingLog.timestamp as Date).toISOString()}`,
+        ],
+      });
+    }
 
-  const remainingStock = medicine.stock - requestedAmount;
-  if (status === 'taken' && remainingStock < 0 && !input.force) {
-    throw new AppError({
-      code: 'ADHERENCE_STOCK_INSUFFICIENT',
-      message: 'Insufficient stock. Retry with force: true to confirm a forced log.',
-      statusCode: HTTP_STATUS_UNPROCESSABLE_ENTITY,
-    });
-  }
+    const remainingStock = medicine.stock - requestedAmount;
+    if (status === 'taken' && remainingStock < 0 && !input.force) {
+      throw new AppError({
+        code: 'ADHERENCE_STOCK_INSUFFICIENT',
+        message: 'Insufficient stock. Retry with force: true to confirm a forced log.',
+        statusCode: HTTP_STATUS_UNPROCESSABLE_ENTITY,
+      });
+    }
 
-  const isForced = status === 'taken' && remainingStock < 0;
-  const deductedAmount = isForced ? medicine.stock : requestedAmount;
-  if (status === 'taken') {
-    medicine.stock = isForced ? 0 : remainingStock;
-    await medicine.save();
-  }
+    const isForced = status === 'taken' && remainingStock < 0;
+    const deductedAmount = isForced ? medicine.stock : requestedAmount;
+    if (status === 'taken') {
+      medicine.stock = isForced ? 0 : remainingStock;
+      await medicine.save({ session });
+    }
 
-  const adherenceLog = await AdherenceLogModel.create({
-    blisterId: new Types.ObjectId(blisterId),
-    medicineId: new Types.ObjectId(input.medicineId),
-    userId: new Types.ObjectId(userId),
-    treatmentId: new Types.ObjectId(input.treatmentId),
-    status,
-    amount: deductedAmount,
-    isForced,
-    notes: input.notes ?? null,
-    timestamp: effectiveTimestamp,
+    const [adherenceLog] = await AdherenceLogModel.create([{
+      blisterId: new Types.ObjectId(blisterId),
+      medicineId: new Types.ObjectId(input.medicineId),
+      userId: new Types.ObjectId(userId),
+      treatmentId: new Types.ObjectId(input.treatmentId),
+      status,
+      amount: requestedAmount,
+      deductedAmount,
+      patientUserId: treatment.patientUserId,
+      stockUnit: medicine.stockUnit,
+      occurrenceKey: `${blisterId}:${input.treatmentId}:${input.medicineId}:${effectiveTimestamp.toISOString()}`,
+      isForced,
+      notes: input.notes ?? null,
+      timestamp: effectiveTimestamp,
+    }], { session });
+    return { adherenceLog, medicine, blister, status, isForced };
   });
 
-  const blister = await getBlisterDocument(blisterId);
+  const { adherenceLog, medicine, blister, status, isForced } = committed;
 
-  if (status === 'taken' && medicine.stock <= medicine.threshold) {
-    await notifyStockLow(medicine, blister);
-  }
+  // Integrations run after commit and cannot turn a successful dose into an
+  // apparent failed write. They must never be retried inside a transaction.
+  try {
+    if (status === 'taken' && medicine.stock <= medicine.threshold) {
+      await notifyStockLow(medicine, blister);
+    }
 
-  if (isForced) {
-    await notifyAdherenceForced(adherenceLog, medicine, blister);
+    if (isForced) {
+      await notifyAdherenceForced(adherenceLog, medicine, blister);
+    }
+  } catch {
+    console.error('Adherence committed; notification delivery failed.');
   }
 
   return toAdherenceLogView(adherenceLog);
@@ -364,29 +395,31 @@ export const adherenceLogsDelete = async (
   adherenceLogId: string,
   userId: string,
 ): Promise<void> => {
-  const adherenceLog = await getAdherenceLogDocument(blisterId, adherenceLogId);
+  await inTransaction(async (session) => {
+    const adherenceLog = await getAdherenceLogDocument(blisterId, adherenceLogId, session);
 
-  if (adherenceLog.userId.toString() !== userId) {
-    throw new AppError({
-      code: 'ADHERENCE_LOG_AUTHOR_FORBIDDEN',
-      message: 'Only the author can undo this adherence log.',
-      statusCode: HTTP_STATUS_FORBIDDEN,
-    });
-  }
+    if (adherenceLog.userId.toString() !== userId) {
+      throw new AppError({
+        code: 'ADHERENCE_LOG_AUTHOR_FORBIDDEN',
+        message: 'Only the author can undo this adherence log.',
+        statusCode: HTTP_STATUS_FORBIDDEN,
+      });
+    }
 
-  const undoReferenceTime = adherenceLog.createdAt ?? adherenceLog.timestamp;
+    const undoReferenceTime = adherenceLog.createdAt ?? adherenceLog.timestamp;
 
-  if (Date.now() - undoReferenceTime.getTime() > ADHERENCE_LOG_UNDO_WINDOW_MS) {
-    throw new AppError({
-      code: 'ADHERENCE_LOG_UNDO_WINDOW_EXPIRED',
-      message: 'This adherence log can no longer be undone.',
-      statusCode: HTTP_STATUS_UNPROCESSABLE_ENTITY,
-    });
-  }
+    if (Date.now() - undoReferenceTime.getTime() > ADHERENCE_LOG_UNDO_WINDOW_MS) {
+      throw new AppError({
+        code: 'ADHERENCE_LOG_UNDO_WINDOW_EXPIRED',
+        message: 'This adherence log can no longer be undone.',
+        statusCode: HTTP_STATUS_UNPROCESSABLE_ENTITY,
+      });
+    }
 
-  const medicine = await getMedicineDocument(blisterId, adherenceLog.medicineId.toString());
-  medicine.stock += adherenceLog.amount;
+    const medicine = await getMedicineDocument(blisterId, adherenceLog.medicineId.toString(), session);
+    medicine.stock += adherenceLog.deductedAmount ?? adherenceLog.amount;
 
-  await medicine.save();
-  await adherenceLog.deleteOne();
+    await medicine.save({ session });
+    await adherenceLog.deleteOne({ session });
+  });
 };

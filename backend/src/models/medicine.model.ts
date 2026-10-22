@@ -128,5 +128,6 @@ const medicineSchema = new Schema<MedicineDocument>({
 
 medicineSchema.index({ blisterId: 1, nregist: 1 });
 medicineSchema.index({ blisterId: 1, deletedAt: 1 });
+medicineSchema.set('optimisticConcurrency', true);
 
 export const MedicineModel = models.Medicine ?? model<MedicineDocument>('Medicine', medicineSchema);

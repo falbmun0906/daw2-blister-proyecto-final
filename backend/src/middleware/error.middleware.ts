@@ -12,6 +12,10 @@ export const errorMiddleware = (
   response: Response,
   _next: NextFunction,
 ): void => {
+  if (error instanceof Error && error.name === 'VersionError') {
+    response.status(409).json({ success: false, error: { code: 'RESOURCE_CHANGED', message: 'El recurso ha cambiado. Recarga los datos antes de volver a intentarlo.' } });
+    return;
+  }
   if (error instanceof AppError) {
     response.status(error.statusCode).json({
       success: false,

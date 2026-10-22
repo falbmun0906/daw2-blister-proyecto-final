@@ -23,6 +23,7 @@ describe('adherence.service', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await clearTestDatabase();
   });
 
@@ -265,7 +266,8 @@ describe('adherence.service', () => {
     const storedMedicine = await MedicineModel.findById(medicine._id);
 
     expect(result.isForced).toBe(true);
-    expect(result.amount).toBe(1);
+    expect(result.amount).toBe(2);
+    expect(result.deductedAmount).toBe(1);
     expect(storedMedicine?.stock).toBe(0);
   });
 
@@ -331,6 +333,49 @@ describe('adherence.service', () => {
         (notification) => notification.userId.toString() !== observer._id.toString(),
       ),
     ).toBe(true);
+  });
+
+  it('serializes duplicate requests and different doses without losing stock', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext();
+    const input = { medicineId: medicine.id, treatmentId: treatment.id, timestamp: new Date('2030-11-02T08:00:00Z') };
+    const results = await Promise.allSettled([
+      adherenceLogsCreate(blister.id, user.id, 'OWNER', input),
+      adherenceLogsCreate(blister.id, user.id, 'OWNER', input),
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(await AdherenceLogModel.countDocuments({})).toBe(1);
+    expect((await MedicineModel.findById(medicine.id))?.stock).toBe(8);
+    await Promise.all([
+      adherenceLogsCreate(blister.id, user.id, 'OWNER', { ...input, timestamp: new Date('2030-11-02T16:00:00Z') }),
+      adherenceLogsCreate(blister.id, user.id, 'OWNER', { ...input, timestamp: new Date('2030-11-03T00:00:00Z') }),
+    ]);
+    expect(await AdherenceLogModel.countDocuments({})).toBe(3);
+    expect((await MedicineModel.findById(medicine.id))?.stock).toBe(4);
+  });
+
+  it('rolls back stock when creating the log fails', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext();
+    jest.spyOn(AdherenceLogModel, 'create').mockRejectedValueOnce(new Error('synthetic write failure'));
+    await expect(adherenceLogsCreate(blister.id, user.id, 'OWNER', { medicineId: medicine.id, treatmentId: treatment.id })).rejects.toThrow('synthetic write failure');
+    expect((await MedicineModel.findById(medicine.id))?.stock).toBe(10);
+    expect(await AdherenceLogModel.countDocuments({})).toBe(0);
+  });
+
+  it('rolls back a failed undo and restores only the deducted amount once', async () => {
+    const { user, blister, medicine, treatment } = await createAdherenceContext('OWNER', 1);
+    const log = await adherenceLogsCreate(blister.id, user.id, 'OWNER', { medicineId: medicine.id, treatmentId: treatment.id, force: true });
+    expect(log.amount).toBe(2);
+    expect(log.deductedAmount).toBe(1);
+    jest.spyOn(AdherenceLogModel.prototype, 'deleteOne').mockRejectedValueOnce(new Error('synthetic undo failure'));
+    await expect(adherenceLogsDelete(blister.id, log.id, user.id)).rejects.toThrow('synthetic undo failure');
+    expect((await MedicineModel.findById(medicine.id))?.stock).toBe(0);
+    const results = await Promise.allSettled([
+      adherenceLogsDelete(blister.id, log.id, user.id),
+      adherenceLogsDelete(blister.id, log.id, user.id),
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect((await MedicineModel.findById(medicine.id))?.stock).toBe(1);
+    expect(await AdherenceLogModel.countDocuments({})).toBe(0);
   });
 
   it('blocks observer writes', async () => {
@@ -477,7 +522,8 @@ describe('adherence.service', () => {
       timestamp: new Date('2030-11-02T08:00:00.000Z'),
     });
 
-    treatment.medicines = [
+    const updatedTreatment = await TreatmentModel.findById(treatment._id);
+    updatedTreatment!.medicines = [
       {
         medicineId: medicine._id,
         amount: 1,
@@ -488,7 +534,7 @@ describe('adherence.service', () => {
         isRecurring: true,
       },
     ];
-    await treatment.save();
+    await updatedTreatment!.save();
 
     const created = await adherenceLogsCreate(
       blister._id.toString(),

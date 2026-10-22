@@ -79,7 +79,17 @@ const treatmentFields = {
   timeZone: timeZoneSchema.default(DEFAULT_MEDICATION_TIME_ZONE),
   medicines: z
     .array(treatmentMedicineSchema)
-    .min(1, 'El tratamiento debe incluir al menos un medicamento.'),
+    .min(1, 'El tratamiento debe incluir al menos un medicamento.')
+    .max(50, 'El tratamiento admite como máximo 50 medicamentos.')
+    .superRefine((entries, context) => {
+      const seen = new Set<string>();
+      entries.forEach((entry, index) => {
+        if (seen.has(entry.medicineId)) {
+          context.addIssue({ code: 'custom', path: [index, 'medicineId'], message: 'Este medicamento ya está incluido. Edita su pauta existente.' });
+        }
+        seen.add(entry.medicineId);
+      });
+    }),
   startDate: dateSchema('startDate'),
   endDate: dateSchema('endDate').optional(),
   active: z.boolean().optional(),

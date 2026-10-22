@@ -184,7 +184,8 @@ describe('adherence.routes', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.isForced).toBe(true);
-    expect(response.body.data.amount).toBe(1);
+    expect(response.body.data.amount).toBe(2);
+    expect(response.body.data.deductedAmount).toBe(1);
     expect(storedMedicine?.stock).toBe(0);
   });
 

@@ -89,4 +89,6 @@ blisterSchema.index(
   },
 );
 
+blisterSchema.set('optimisticConcurrency', true);
+
 export const BlisterModel = models.Blister ?? model<BlisterDocument>('Blister', blisterSchema);

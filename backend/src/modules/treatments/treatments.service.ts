@@ -6,6 +6,7 @@ import {
   HTTP_STATUS_NOT_FOUND,
 } from '../../constants/http.constants';
 import { AppointmentModel } from '../../models/appointment.model';
+import { AdherenceLogModel } from '../../models/adherenceLog.model';
 import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { NotificationModel } from '../../models/notification.model';
@@ -123,9 +124,12 @@ const getTreatmentDocument = async (blisterId: string, treatmentId: string) => {
 
 const ensureMedicinesBelongToBlister = async (
   blisterId: string,
-  medicines: CreateTreatmentServiceInput['medicines'],
+  medicines: ReadonlyArray<{ medicineId: string | Types.ObjectId }>,
 ): Promise<void> => {
-  const medicineIds = [...new Set(medicines.map((entry) => entry.medicineId))];
+  const medicineIds = [...new Set(medicines.map((entry) => entry.medicineId.toString()))];
+  if (medicineIds.length !== medicines.length) {
+    throw new AppError({ code: 'TREATMENT_MEDICINE_DUPLICATE', message: 'Use one schedule per medicine in a treatment.', statusCode: 400 });
+  }
   const totalMatches = await MedicineModel.countDocuments({
     blisterId: new Types.ObjectId(blisterId),
     deletedAt: null,
@@ -251,6 +255,16 @@ export const treatmentsUpdate = async (
 
   const treatment = await getTreatmentDocument(blisterId, treatmentId);
   const hasEndDate = Object.prototype.hasOwnProperty.call(input, 'endDate');
+
+  if (input.patientUserId && input.patientUserId !== treatment.patientUserId.toString()
+    && await AdherenceLogModel.exists({ treatmentId: treatment._id })) {
+    throw new AppError({ code: 'TREATMENT_PATIENT_HAS_HISTORY', message: 'A treatment with adherence history cannot be assigned to another patient. Create a new treatment.', statusCode: 409 });
+  }
+
+  if (input.active === true) {
+    await ensurePatientIsBlisterMember(blisterId, input.patientUserId ?? treatment.patientUserId.toString());
+    await ensureMedicinesBelongToBlister(blisterId, input.medicines ?? treatment.medicines);
+  }
 
   if (input.patientUserId !== undefined) {
     await ensurePatientIsBlisterMember(blisterId, input.patientUserId);

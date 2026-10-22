@@ -136,6 +136,7 @@ const treatmentSchema = new Schema<TreatmentDocument>({
 });
 
 treatmentSchema.index({ blisterId: 1, deletedAt: 1, active: 1 });
+treatmentSchema.set('optimisticConcurrency', true);
 
 treatmentSchema.path('endDate').validate(function validateEndDate(this: TreatmentDocument, value: Date | null | undefined) {
   return !value || value > this.startDate;
