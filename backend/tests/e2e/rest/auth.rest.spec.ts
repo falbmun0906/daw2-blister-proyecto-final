@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import request from 'supertest';
 
 import { createApp } from '../../../src/app';
-import { env } from '../../../src/config/env';
+import * as authEmailService from '../../../src/modules/auth/auth-email.service';
 import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from '../../../src/modules/auth/_tests_/auth-test.utils';
 
 const app = createApp({
@@ -16,6 +16,7 @@ describe('REST auth e2e', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await clearTestDatabase();
   });
 
@@ -34,13 +35,22 @@ describe('REST auth e2e', () => {
   };
 
   it('registers, logs in and protects authenticated routes', async () => {
+    const mail = jest.spyOn(authEmailService, 'sendEmailVerificationEmail').mockResolvedValue(undefined);
     const registerResponse = await request(app)
       .post('/api/v1/auth/register')
       .send(registerPayload);
 
     expect(registerResponse.status).toBe(201);
-    expect(registerResponse.body.data.accessToken).toBeTruthy();
-    expect(registerResponse.body.data.refreshToken).toBeTruthy();
+    expect(registerResponse.body.data.emailVerified).toBe(false);
+    expect(registerResponse.body.data.accessToken).toBeUndefined();
+    expect(registerResponse.body.data.refreshToken).toBeUndefined();
+    const unverifiedLogin = await request(app).post('/api/v1/auth/login').send({
+      identifier: registerPayload.email, password: registerPayload.password,
+    });
+    expect(unverifiedLogin.status).toBe(403);
+    const token = new URL(mail.mock.calls[0][0].confirmUrl).searchParams.get('token');
+    const confirmation = await request(app).post('/api/v1/auth/confirm-email').send({ token });
+    expect(confirmation.status).toBe(200);
 
     const loginResponse = await request(app).post('/api/v1/auth/login').send({
       identifier: registerPayload.email,

@@ -80,8 +80,13 @@ export async function mockBlisterApi(page: Page, options: MockApiOptions = {}): 
     const apiPath = url.pathname.replace('/api/v1', '') || '/';
     const method = request.method();
 
-    if (method === 'POST' && (apiPath === '/auth/login' || apiPath === '/auth/register')) {
-      await fulfillJson(route, success({ user: testUser, accessToken: 'access-token', refreshToken: 'refresh-token' }), apiPath === '/auth/register' ? 201 : 200);
+    if (method === 'POST' && apiPath === '/auth/register') {
+      await fulfillJson(route, success({ ...testUser, emailVerified: false }), 201);
+      return;
+    }
+
+    if (method === 'POST' && apiPath === '/auth/login') {
+      await fulfillJson(route, success({ user: testUser, accessToken: 'access-token', refreshToken: 'refresh-token' }), 200);
       return;
     }
 
@@ -162,10 +167,7 @@ export async function seedAuthenticatedState(
 ): Promise<void> {
   const blister = buildBlister(role);
   await page.addInitScript(({ user, activeBlister }) => {
-    window.sessionStorage.setItem('blister-ui', JSON.stringify({
-      hasSeenOnboarding: true,
-      canReplayOnboarding: false,
-    }));
+    window.localStorage.setItem('blister-has-seen-onboarding', 'true');
     window.sessionStorage.setItem('blister-desktop-use-here', 'true');
     window.sessionStorage.setItem('blister-auth', JSON.stringify({
       state: {
@@ -188,16 +190,13 @@ export async function seedAuthenticatedState(
 
 export async function seedSeenOnboarding(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    window.sessionStorage.setItem('blister-ui', JSON.stringify({
-      hasSeenOnboarding: true,
-      canReplayOnboarding: false,
-    }));
+    window.localStorage.setItem('blister-has-seen-onboarding', 'true');
     window.sessionStorage.setItem('blister-desktop-use-here', 'true');
   });
 }
 
 export async function ensureEvidenceDirectory(): Promise<string> {
-  const directory = path.resolve(process.cwd(), '../docs/assets/evidence');
+  const directory = path.resolve(process.cwd(), process.env.E2E_EVIDENCE_DIR ?? '../docs/assets/evidence');
   await mkdir(directory, { recursive: true });
   return directory;
 }

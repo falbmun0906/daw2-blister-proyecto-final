@@ -21,22 +21,23 @@ test('login stores a session and reaches the authenticated home', async ({ page 
   await expect(page.getByRole('heading', { name: 'Blíster', exact: true })).toBeVisible();
 });
 
-test('registration stores a session after required privacy consents', async ({ page }) => {
+test('registration requires email confirmation before starting a session', async ({ page }) => {
   await mockBlisterApi(page);
   await seedSeenOnboarding(page);
 
   await page.goto('/register');
-  await page.getByLabel('Nombre completo').fill('Ana Lopez');
+  await page.getByLabel('Nombre y apellido').fill('Ana Lopez');
   await page.getByLabel('Nombre de usuario').fill('ana.lopez');
-  await page.getByLabel('Correo electronico').fill('ana@example.com');
+  await page.getByLabel('Correo electrónico').fill('ana@example.com');
   await page.locator('input[name="password"]').fill('Password1!');
   await page.locator('input[name="confirmPassword"]').fill('Password1!');
   await page.getByLabel(/Acepto la/).check();
-  await page.getByLabel('Confirmo que tengo 18 años o mas').check();
+  await page.getByLabel('Confirmo que tengo 18 años o más').check();
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
-  await expect(page).toHaveURL(/\/home$/);
-  await expect(page.getByRole('heading', { name: 'Blíster', exact: true })).toBeVisible();
+  await expect(page.getByText(/Te hemos enviado un correo de confirmación a/)).toBeVisible();
+  await expect(page).toHaveURL(/\/register$/);
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('blister-auth') ?? '{}').state?.accessToken ?? null)).toBeNull();
 });
 
 test('authenticated caregiver flow creates a medical appointment', async ({ page }) => {

@@ -33,6 +33,7 @@ describe('MCP e2e', () => {
 
   const createUser = async (suffix: string) =>
     UserModel.create({
+      emailVerified: true,
       name: `User ${suffix}`,
       username: `user${suffix}`,
       email: `user${suffix}@example.com`,
@@ -278,5 +279,33 @@ describe('MCP e2e', () => {
     await client.close();
     await transport.close();
     await server.stop();
+  });
+
+  it('revalidates roles and memberships inside an already-open SDK session', async () => {
+    const owner = await createUser('session-owner');
+    const blister = await BlisterModel.create({ name: 'Shared home', members: [{ userId: owner._id, role: 'OWNER' }] });
+    const medicine = await MedicineModel.create({ blisterId: blister._id, nregist: '123456', nombre: 'Synthetic', pactivos: 'Synthetic', formaOficial: 'COMPRIMIDO', dosisOficial: '1 mg', iconType: 'pill', stock: 10, stockUnit: 'pastillas', threshold: 0, expDate: new Date('2035-01-01') });
+    const token = await createMcpToken(createAccessToken(owner._id.toString()));
+    const server = await startMcpTestServer();
+    const client = new Client({ name: 'revocation-test', version: '1.0.0' });
+    const transport = new StreamableHTTPClientTransport(new URL(server.baseUrl), { requestInit: { headers: { Authorization: `Bearer ${token}` } } });
+    try {
+      await client.connect(transport);
+      await BlisterModel.updateOne({ _id: blister._id }, { $set: { 'members.0.role': 'OBSERVER' } });
+      const denied = await client.callTool({ name: 'stock_modifier', arguments: { blisterId: blister._id.toString(), medicineId: medicine._id.toString(), mode: 'set', value: 19 } });
+      expect(denied.isError).toBe(true);
+      expect(denied.content[0].text).toContain('BLISTER_ROLE_FORBIDDEN');
+      expect((await MedicineModel.findById(medicine._id))?.stock).toBe(10);
+      // Keep another valid membership so transport authentication still succeeds.
+      await BlisterModel.create({ name: 'Personal', members: [{ userId: owner._id, role: 'OWNER' }] });
+      await BlisterModel.updateOne({ _id: blister._id }, { $set: { members: [] } });
+      const removed = await client.callTool({ name: 'inventory_query', arguments: { blisterId: blister._id.toString() } });
+      expect(removed.isError).toBe(true);
+      expect(removed.content[0].text).toContain('BLISTER_ACCESS_FORBIDDEN');
+    } finally {
+      await client.close();
+      await transport.close();
+      await server.stop();
+    }
   });
 });

@@ -1,14 +1,14 @@
-import { createServer, type Server } from 'node:http';
+import { type Server } from 'node:http';
 
 import { type AddressInfo } from 'node:net';
 
-import { createMcpHttpServer } from '../../src/mcp/server';
+import { closeMcpSessions, createMcpHttpServer } from '../../src/mcp/server';
 
 export const startMcpTestServer = async (): Promise<{ server: Server; baseUrl: string; stop: () => Promise<void> }> => {
   const server = createMcpHttpServer();
 
   await new Promise<void>((resolve) => {
-    server.listen(0, resolve);
+    server.listen(0, '127.0.0.1', resolve);
   });
 
   const address = server.address() as AddressInfo;
@@ -18,6 +18,7 @@ export const startMcpTestServer = async (): Promise<{ server: Server; baseUrl: s
     server,
     baseUrl,
     stop: async () => {
+      await closeMcpSessions();
       await new Promise<void>((resolve) => {
         server.close(() => resolve());
       });

@@ -29,6 +29,7 @@ describe('REST medicines e2e', () => {
 
   const createUser = async (suffix: string) =>
     UserModel.create({
+      emailVerified: true,
       name: `User ${suffix}`,
       username: `user${suffix}`,
       email: `user${suffix}@example.com`,
