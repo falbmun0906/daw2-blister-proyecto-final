@@ -47,6 +47,7 @@ const fetchCimaJson = async <T>(pathname: string, searchParams: Record<string, s
 
   try {
     response = await fetch(buildCimaUrl(pathname, searchParams), {
+      signal: AbortSignal.timeout(10_000),
       headers: {
         Accept: 'application/json',
       },
@@ -67,7 +68,11 @@ const fetchCimaJson = async <T>(pathname: string, searchParams: Record<string, s
     });
   }
 
-  return (await response.json()) as T;
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new AppError({ code: 'CIMA_RESPONSE_INVALID', message: 'CIMA returned an invalid or incomplete response.', statusCode: HTTP_STATUS_BAD_GATEWAY });
+  }
 };
 
 const toCimaEstado = (estado?: CimaApiState): 1 | 2 | 3 => {

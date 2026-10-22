@@ -212,15 +212,11 @@ const processRegistroCambiosItem = async (item: CimaRegistroCambiosItem): Promis
 
   for (const medicine of medicines) {
     const changeLog = await createChangeLogFromRegistroCambios(item, medicine._id);
-    let officialMedicine: ExternalMedicineInfo | null = null;
-
     if ((item.cambios ?? []).length > 0) {
-      try {
-        officialMedicine = await externalService.externalGetMedicineInfo(nregist);
-        await applyOfficialMedicineInfo(medicine, officialMedicine);
-      } catch {
-        officialMedicine = null;
-      }
+      // Keep the checkpoint unchanged if any fetch/write fails, so the next
+      // incremental run retries that change instead of losing it permanently.
+      const officialMedicine = await externalService.externalGetMedicineInfo(nregist);
+      await applyOfficialMedicineInfo(medicine, officialMedicine);
     }
 
     const blister = await BlisterModel.findOne({
@@ -232,9 +228,6 @@ const processRegistroCambiosItem = async (item: CimaRegistroCambiosItem): Promis
       await notifyCimaChange(medicine, blister, changeLog);
     }
 
-    if (!officialMedicine) {
-      continue;
-    }
   }
 };
 
@@ -249,8 +242,16 @@ export const syncCimaFromRegistroCambios = async (): Promise<void> => {
   try {
     const changes = await externalService.externalGetRegistroCambios(requestedFecha);
 
+    let failures = 0;
     for (const item of changes) {
-      await processRegistroCambiosItem(item);
+      try {
+        await processRegistroCambiosItem(item);
+      } catch {
+        failures += 1;
+      }
+    }
+    if (failures > 0) {
+      throw new Error(`CIMA sync incomplete: ${failures} changes could not be applied. Checkpoint retained.`);
     }
 
     await updateCimaSyncMeta({

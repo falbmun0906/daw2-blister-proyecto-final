@@ -449,7 +449,12 @@ describe('cima-sync.service', () => {
       };
     });
 
-    await syncCimaFromRegistroCambios();
+    await updateCimaSyncMeta({ lastCimaSync: '01/01/2026' });
+    await expect(syncCimaFromRegistroCambios()).rejects.toThrow('CIMA sync incomplete');
+    const meta = await getCimaSyncMeta();
+    expect(meta.lastErrorAt).toBeInstanceOf(Date);
+    expect(meta.lastSuccessAt).toBeNull();
+    expect(meta.lastCimaSync).toBe('01/01/2026');
 
     const logs = await CimaChangeLogModel.find({});
     const secondMedicine = await MedicineModel.findOne({ nregist: '444444' });
