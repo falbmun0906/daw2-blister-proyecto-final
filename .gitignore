@@ -31,4 +31,8 @@ Thumbs.db
 # Otros
 
 .oculto
+/oculto/
+/tmp/
+/frontend/test-results/
+/frontend/playwright-report/
 apple-touch-icon2.png
