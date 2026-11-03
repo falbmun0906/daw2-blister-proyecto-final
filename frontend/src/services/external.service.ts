@@ -25,6 +25,7 @@ function sanitizeOptional(text: string | null | undefined): string | null {
 
 function sanitizeSearchItem(raw: ExternalSearchItem): ExternalSearchItem {
   return {
+    ...raw,
     nregist: sanitize(raw.nregist),
     nombre: sanitize(raw.nombre),
     pactivos: sanitize(raw.pactivos),
@@ -45,7 +46,13 @@ function sanitizeInfo(raw: ExternalMedicineInfo): ExternalMedicineInfo {
     formaOficial: sanitizeOptional(raw.formaOficial),
     formaSimplificada: sanitizeOptional(raw.formaSimplificada),
     dosisOficial: sanitizeOptional(raw.dosisOficial),
+    ...(raw.presentationName ? { presentationName: sanitize(raw.presentationName) } : {}),
   };
+}
+
+export async function getCimaByNationalCode(cn: string): Promise<ExternalMedicineInfo> {
+  const response = await apiClient.get(`/external/national-code/${encodeURIComponent(cn)}`);
+  return sanitizeInfo(externalMedicineInfoSchema.parse(normalizeApiResponse(response)));
 }
 
 /** Busca medicamentos en CIMA por texto libre. */

@@ -98,6 +98,7 @@ export default defineConfig({
         clientsClaim: false,
         skipWaiting: false,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,otf,woff,woff2}'],
+        globIgnores: ['**/ocr/**', '**/medicine-barcode.worker-*.js', '**/medicine-ocr.worker-*.js'],
         importScripts: ['push-sw.js'],
         runtimeCaching: [
           {
