@@ -86,7 +86,7 @@ export function DesktopDeviceShell({ children }: DesktopDeviceShellProps) {
 
   return (
     <div className="c-desktop-device-shell c-desktop-device-shell--app">
-      <div className="c-desktop-device-shell__device" aria-label="Vista móvil simulada">
+      <div className="c-desktop-device-shell__device">
         <span className="c-desktop-device-shell__notch" aria-hidden="true" />
         <span className="c-desktop-device-shell__speaker" aria-hidden="true" />
         <span className="c-desktop-device-shell__camera" aria-hidden="true" />

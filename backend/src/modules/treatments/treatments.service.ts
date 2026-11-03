@@ -147,6 +147,17 @@ const ensureMedicinesBelongToBlister = async (
   }
 };
 
+const lockMedicineIdentities = async (blisterId: string, medicines: ReadonlyArray<{ medicineId: string | Types.ObjectId }>): Promise<void> => {
+  // Reserve identity before a treatment can reference it. The lock is permanent,
+  // including when a treatment is later archived or its schedule is replaced.
+  await MedicineModel.updateMany({
+    blisterId: new Types.ObjectId(blisterId),
+    _id: { $in: medicines.map(({ medicineId }) => new Types.ObjectId(medicineId)) },
+    source: 'custom',
+    identityLocked: { $ne: true },
+  }, { $set: { identityLocked: true }, $inc: { __v: 1 } });
+};
+
 const ensureValidDateRange = (startDate: Date, endDate?: Date | null): void => {
   if (endDate && endDate <= startDate) {
     throw new AppError({
@@ -226,6 +237,7 @@ export const treatmentsCreate = async (
   ensureValidDateRange(input.startDate, input.endDate ?? null);
   await ensurePatientIsBlisterMember(blisterId, input.patientUserId);
   await ensureMedicinesBelongToBlister(blisterId, input.medicines);
+  await lockMedicineIdentities(blisterId, input.medicines);
 
   const treatment = await TreatmentModel.create({
     blisterId: new Types.ObjectId(blisterId),
@@ -304,6 +316,7 @@ export const treatmentsUpdate = async (
     treatment.active = input.active;
   }
 
+  await lockMedicineIdentities(blisterId, treatment.medicines);
   await treatment.save();
 
   return toTreatmentView(treatment);

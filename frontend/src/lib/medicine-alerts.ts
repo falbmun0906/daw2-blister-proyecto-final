@@ -19,7 +19,8 @@ export interface MedicineAlertItem {
   detail?: string;
 }
 
-function getDaysUntilExpiry(expDate: string): number | null {
+function getDaysUntilExpiry(expDate: string | null): number | null {
+  if (!expDate) return null;
   const expiry = new Date(expDate);
   if (Number.isNaN(expiry.getTime())) return null;
   return Math.ceil((expiry.getTime() - Date.now()) / MS_PER_DAY);
@@ -51,6 +52,8 @@ export function getMedicineAlerts(
   ) {
     alerts.push({ kind: 'expiring', label: 'Caduca pronto' });
   }
+
+  if (medicine.source === 'custom' || !medicine.cimaStatus) return alerts;
 
   if (!medicine.cimaStatus.comerc) {
     alerts.push({ kind: 'not-commercialized', label: 'No comercializado', detail: 'CIMA indica que no está comercializado actualmente.' });

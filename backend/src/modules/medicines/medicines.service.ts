@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import { type BlisterRole } from '../../types/blister.types';
+import { type MedicineDocument } from '../../types/medicine.types';
 import {
   HTTP_STATUS_CONFLICT,
   HTTP_STATUS_FORBIDDEN,
@@ -10,9 +11,11 @@ import { BlisterModel } from '../../models/blister.model';
 import { MedicineModel } from '../../models/medicine.model';
 import { NotificationModel } from '../../models/notification.model';
 import { TreatmentModel } from '../../models/treatment.model';
+import { AdherenceLogModel } from '../../models/adherenceLog.model';
 import { AppError } from '../../utils/app-error';
 import {
   externalGetMedicineInfo,
+  externalGetMedicineInfoByCn,
 } from '../external/external.service';
 import {
   normalizeMedicineIconType,
@@ -20,30 +23,16 @@ import {
 import { notifyStockLow } from '../notifications/notifications.service';
 import {
   type CreateMedicineInput,
+  type CreateCimaMedicineInput,
   type MedicinesListQuery,
   type UpdateMedicineInput,
 } from '../../../../shared/schemas';
 
-interface MedicineView {
+interface MedicineView extends Omit<MedicineDocument, '_id' | 'blisterId' | 'deletedAt'> {
   id: string;
   _id: string;
   blisterId: string;
-  nregist: string;
-  nombre: string;
   alias: string | null;
-  pactivos: string;
-  formaOficial: string;
-  dosisOficial: string;
-  iconType: string;
-  stock: number;
-  stockUnit: string;
-  threshold: number;
-  expDate: Date;
-  cimaStatus: {
-    psum: boolean;
-    estado: 1 | 2 | 3;
-    hasAlerts: boolean;
-  };
 }
 
 interface MedicinesListResult {
@@ -64,9 +53,15 @@ const toMedicineView = (medicine: Awaited<ReturnType<typeof MedicineModel.findOn
   id: medicine!._id.toString(),
   _id: medicine!._id.toString(),
   blisterId: medicine!.blisterId.toString(),
+  source: medicine!.source ?? 'cima',
+  identityLocked: medicine!.source !== 'custom' || medicine!.identityLocked === true,
+  captureMethod: medicine!.captureMethod ?? 'search',
+  customDetails: medicine!.customDetails ?? null,
   nregist: medicine!.nregist,
+  cn: medicine!.cn ?? null,
+  presentationName: medicine!.presentationName ?? null,
   nombre: medicine!.nombre,
-  alias: medicine!.alias ?? null,
+  alias: medicine!.alias?.trim() || null,
   pactivos: medicine!.pactivos,
   formaOficial: medicine!.formaOficial,
   dosisOficial: medicine!.dosisOficial,
@@ -117,6 +112,17 @@ const dropLegacyMedicineUniqueIndex = async (): Promise<void> => {
   }
 };
 
+const createInventoryDocument = async (data: Partial<MedicineDocument>) => {
+  try {
+    return await MedicineModel.create(data);
+  } catch (error: unknown) {
+    if (!isMongoDuplicateError(error)) throw error;
+    // Old deployments used a unique registry/blister index, including null registries.
+    await dropLegacyMedicineUniqueIndex();
+    return MedicineModel.create(data);
+  }
+};
+
 const ensureWriterRole = (blisterRole: BlisterRole, allowedRoles: BlisterRole[] = WRITER_ROLES): void => {
   if (!allowedRoles.includes(blisterRole)) {
     throw new AppError({
@@ -130,14 +136,18 @@ const ensureWriterRole = (blisterRole: BlisterRole, allowedRoles: BlisterRole[] 
 const createMedicineDocument = async (
   blisterObjectId: Types.ObjectId,
   officialMedicine: OfficialMedicineInfo,
-  input: CreateMedicineInput,
+  input: CreateCimaMedicineInput,
   formaOficial: string,
 ) =>
-  MedicineModel.create({
+  createInventoryDocument({
     blisterId: blisterObjectId,
+    source: 'cima',
+    captureMethod: input.captureMethod ?? 'search',
     nregist: officialMedicine.nregist,
+    cn: officialMedicine.cn ?? null,
+    presentationName: officialMedicine.presentationName ?? null,
     nombre: officialMedicine.nombre,
-    alias: input.alias,
+    alias: input.alias?.trim() || null,
     pactivos: officialMedicine.pactivos,
     formaOficial,
     dosisOficial: officialMedicine.dosisOficial ?? 'No disponible',
@@ -181,7 +191,7 @@ export const medicinesList = async (
 };
 
 /**
- * Creates a medicine in a blister by enriching the local record with official CIMA data.
+ * Creates a user-defined product or enriches a medicine with official CIMA data.
  */
 export const medicinesCreate = async (
   blisterId: string,
@@ -190,24 +200,43 @@ export const medicinesCreate = async (
 ): Promise<MedicineView> => {
   ensureWriterRole(blisterRole);
 
-  const officialMedicine = await externalGetMedicineInfo(input.nregist);
+  if (input.source === 'custom') {
+    const medicine = await createInventoryDocument({
+      blisterId: new Types.ObjectId(blisterId),
+      source: 'custom',
+      captureMethod: input.captureMethod ?? 'manual',
+      nombre: input.nombre,
+      customDetails: input.customDetails,
+      alias: input.alias?.trim() || null,
+      nregist: null,
+      pactivos: null,
+      formaOficial: null,
+      dosisOficial: null,
+      cimaStatus: null,
+      iconType: normalizeMedicineIconType(input.customDetails.format ?? ''),
+      stock: input.stock,
+      stockUnit: input.stockUnit,
+      threshold: input.threshold,
+      expDate: input.expDate,
+    });
+    return toMedicineView(medicine);
+  }
+
+  const officialMedicine = input.cn
+    ? await externalGetMedicineInfoByCn(input.cn)
+    : await externalGetMedicineInfo(input.nregist);
+  if (officialMedicine.nregist !== input.nregist) {
+    throw new AppError({
+      code: 'MEDICINE_CODE_MISMATCH',
+      message: 'El Código Nacional no corresponde al medicamento seleccionado. Repite la búsqueda.',
+      statusCode: 400,
+    });
+  }
   const formaOficial = officialMedicine.formaOficial ?? officialMedicine.formaSimplificada ?? 'DESCONOCIDA';
   const blisterObjectId = new Types.ObjectId(blisterId);
 
-  try {
-    const medicine = await createMedicineDocument(blisterObjectId, officialMedicine, input, formaOficial);
-
-    return toMedicineView(medicine);
-  } catch (error: unknown) {
-    if (!isMongoDuplicateError(error)) {
-      throw error;
-    }
-
-    await dropLegacyMedicineUniqueIndex();
-    const medicine = await createMedicineDocument(blisterObjectId, officialMedicine, input, formaOficial);
-
-    return toMedicineView(medicine);
-  }
+  const medicine = await createMedicineDocument(blisterObjectId, officialMedicine, input, formaOficial);
+  return toMedicineView(medicine);
 };
 
 /**
@@ -223,8 +252,40 @@ export const medicinesUpdate = async (
 
   const medicine = await getMedicineDocument(blisterId, medicineId);
 
+  if (
+    medicine.source !== 'custom' &&
+    (input.nombre !== undefined || input.customDetails !== undefined || input.expDate === null)
+  ) {
+    throw new AppError({
+      code: 'OFFICIAL_MEDICINE_FIELDS',
+      message: 'Los datos oficiales no son editables y la caducidad es obligatoria para medicamentos CIMA.',
+      statusCode: 400,
+    });
+  }
+  const detailKeys = ['productType', 'brand', 'composition', 'format', 'strength'] as const;
+  const identityChanged =
+    (input.nombre !== undefined && input.nombre.trim() !== medicine.nombre) ||
+    (input.customDetails !== undefined && detailKeys.some((key) =>
+      (input.customDetails?.[key]?.trim() || '') !== (medicine.customDetails?.[key]?.trim() || ''),
+    ));
+  const identityError = () => new AppError({
+    code: 'MEDICINE_IDENTITY_LOCKED',
+    message: 'Este producto ya se ha utilizado en una pauta o toma. Crea otro producto para cambiar su identidad; puedes editar alias, stock, umbral y caducidad.',
+    statusCode: HTTP_STATUS_CONFLICT,
+  });
+  if (identityChanged && (medicine.identityLocked ||
+    await TreatmentModel.exists({ blisterId: medicine.blisterId, 'medicines.medicineId': medicine._id }) ||
+    await AdherenceLogModel.exists({ blisterId: medicine.blisterId, medicineId: medicine._id }))) {
+    throw identityError();
+  }
+  if (input.nombre !== undefined) medicine.nombre = input.nombre;
+  if (input.customDetails !== undefined) {
+    medicine.customDetails = input.customDetails;
+    medicine.iconType = normalizeMedicineIconType(input.customDetails.format ?? '');
+  }
+
   if (input.alias !== undefined) {
-    medicine.alias = input.alias;
+    medicine.alias = input.alias.trim() || null;
   }
 
   if (input.stock !== undefined) {
@@ -239,7 +300,25 @@ export const medicinesUpdate = async (
     medicine.expDate = input.expDate;
   }
 
-  await medicine.save();
+  try {
+    await medicine.save();
+  } catch (error) {
+    // Assignment increments the version before referencing a custom product.
+    if (error instanceof Error && error.name === 'VersionError') {
+      if (identityChanged) throw identityError();
+      throw new AppError({ code: 'MEDICINE_UPDATE_CONFLICT', message: 'El producto ha cambiado. Recarga los datos antes de guardar.', statusCode: HTTP_STATUS_CONFLICT });
+    }
+    throw error;
+  }
+
+  if (input.expDate !== undefined) {
+    await NotificationModel.deleteMany({
+      blisterId: medicine.blisterId,
+      type: 'expiration_warning',
+      dismissedAt: null,
+      'metadata.medicineId': medicineId,
+    });
+  }
 
   if (
     (input.stock !== undefined || input.threshold !== undefined) &&

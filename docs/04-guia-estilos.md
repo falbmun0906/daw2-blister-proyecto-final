@@ -439,6 +439,9 @@ Resumen de criterios aplicados:
 | Color no exclusivo | Los estados se acompañan de texto, iconos o badges. |
 | Foco visible | Controles interactivos diferenciables al navegar con teclado. |
 | Estados de sistema | Carga, vacío, error y éxito representados con componentes específicos. |
+| Alta del botiquín | Opciones de búsqueda, fotografía y producto personalizado; revisión antes de guardar y regreso al paso anterior. |
+| Fotografía | Marco de recorte con controles de 44 px, puntero, flechas y rangos. Cámara y selector de archivos separados; cancelación y error recuperable. |
+| Procedencia | Personalizados identificados como datos declarados, sin estados o enlaces CIMA; caducidad desconocida expresada como texto. |
 | Estructura mobile-first | Navegación inferior, cabecera estable y contenido jerarquizado. |
 | Responsive | Capturas Playwright en 375, 768 y 1280 px, sin overflow horizontal. |
 | WCAG automático | Axe WCAG A/AA sin violaciones serias o críticas en pantallas privadas verificadas. |

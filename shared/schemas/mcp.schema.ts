@@ -10,6 +10,7 @@ import {
   timeZoneSchema,
 } from './common.schema';
 import { adherenceLogStatuses, stockUnits } from './schema.constants';
+import { captureMethodSchema, createMedicineSchema, customMedicineDetailsSchema, nationalCodeParamsSchema } from './medicine.schema';
 
 const mcpInputDateStringSchema = (fieldName: string) =>
   z
@@ -99,15 +100,29 @@ export const medicineCatalogSearchInputSchema = z.object({
 
 export const medicineAddInputSchema = z.object({
   ...blisterLocatorShape,
-  nregist: z.string().trim().regex(/^\d+$/, 'El número de registro debe ser numérico.'),
+  source: z.enum(['cima', 'custom']).optional(),
+  captureMethod: captureMethodSchema.optional(),
+  cn: nationalCodeParamsSchema.shape.cn.optional(),
+  nregist: z.string().trim().regex(/^\d+$/, 'El número de registro debe ser numérico.').optional(),
+  nombre: nonEmptyTrimmedString('Name', 200).optional(),
+  customDetails: customMedicineDetailsSchema.optional(),
   alias: z.string().trim().max(100, 'El alias no puede superar los 100 caracteres.').optional(),
   stock: nonNegativeQuantitySchema('Stock'),
   stockUnit: z.enum(stockUnits),
   threshold: nonNegativeQuantitySchema('Threshold').default(5),
   expDate: mcpInputDateSchema('expDate').refine((value) => value.getTime() > Date.now(), {
     message: 'La fecha de caducidad debe ser futura.',
-  }),
-}).superRefine(validateRequiredBlisterLocator);
+  }).nullable(),
+}).superRefine((value, context) => {
+  validateRequiredBlisterLocator(value, context);
+  const { blisterId, blisterName, ...medicine } = value;
+  const result = createMedicineSchema.safeParse(medicine);
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      context.addIssue({ code: 'custom', path: issue.path, message: issue.message });
+    }
+  }
+});
 
 export const adherenceLoggerInputSchema = z.object({
   ...blisterLocatorShape,

@@ -16,7 +16,7 @@ interface MedicineCardProps {
 
 type CimaPhoto = Awaited<ReturnType<typeof getCimaDetail>>['fotos'][number];
 type MedicineImageState = {
-  nregist: string;
+  nregist: string | null;
   url: string | null;
   failed: boolean;
 };
@@ -40,6 +40,7 @@ export function MedicineCard({ medicine, blisterId, treatmentCount = 0 }: Medici
   const imageUrl = loadedImage?.failed ? null : loadedImage?.url ?? null;
 
   useEffect(() => {
+    if (medicine.source === 'custom' || !medicine.nregist) return;
     let cancelled = false;
 
     getCimaDetail(medicine.nregist)
@@ -61,7 +62,7 @@ export function MedicineCard({ medicine, blisterId, treatmentCount = 0 }: Medici
     return () => {
       cancelled = true;
     };
-  }, [medicine.nregist]);
+  }, [medicine.nregist, medicine.source]);
 
   return (
     <article className="c-medicine-card">
@@ -88,6 +89,7 @@ export function MedicineCard({ medicine, blisterId, treatmentCount = 0 }: Medici
           <div className="c-medicine-card__copy">
             <h2 className="c-medicine-card__alias">{displayName}</h2>
             <p className="c-medicine-card__real-name">{medicine.nombre}</p>
+            {medicine.source === 'custom' ? <p className="c-medicine-card__real-name">Producto personalizado</p> : null}
           </div>
           <ul className="c-medicine-card__summary" aria-label="Resumen del medicamento">
             <li className="c-medicine-card__summary-item">

@@ -78,6 +78,18 @@ describe('external.routes', () => {
     expect(response.body.error.code).toBe('AUTH_TOKEN_MISSING');
   });
 
+  it('authenticates and validates national code requests before contacting CIMA', async () => {
+    expect((await request(app).get('/api/v1/external/national-code/656338')).status).toBe(401);
+    const user = await createUser('cn');
+    setFetchResponse({ nregistro: '12345', nombre: 'Producto', presentaciones: [{ cn: '656338', nombre: '20 cápsulas' }] });
+    const auth = `Bearer ${createAccessToken(user._id.toString())}`;
+    expect((await request(app).get('/api/v1/external/national-code/abc').set('Authorization', auth)).status).toBe(400);
+    expect(fetch).not.toHaveBeenCalled();
+    const result = await request(app).get('/api/v1/external/national-code/656338').set('Authorization', auth);
+    expect(result.status).toBe(200);
+    expect(result.body.data).toMatchObject({ cn: '656338', nregist: '12345', presentationName: '20 cápsulas' });
+  });
+
   it('proxies medicine search results from CIMA', async () => {
     const user = await createUser('51');
     setFetchResponse([

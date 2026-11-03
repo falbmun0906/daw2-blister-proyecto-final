@@ -160,7 +160,7 @@ export const meUpcomingDoses = async (
   const medicineById = new Map(
     medicines.map((medicine) => [
       medicine._id.toString(),
-      { name: (medicine.alias as string | undefined) ?? medicine.nombre, stockUnit: medicine.stockUnit },
+      { name: (medicine.alias as string | undefined)?.trim() || medicine.nombre, stockUnit: medicine.stockUnit },
     ]),
   );
   const patients = await buildPatientMap(

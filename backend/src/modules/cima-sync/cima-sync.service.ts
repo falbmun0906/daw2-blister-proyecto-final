@@ -202,6 +202,7 @@ const processRegistroCambiosItem = async (item: CimaRegistroCambiosItem): Promis
 
   const medicines = await MedicineModel.find({
     nregist,
+    source: { $ne: 'custom' },
     deletedAt: null,
   });
 

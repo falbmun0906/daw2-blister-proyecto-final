@@ -37,7 +37,7 @@ Blíster usa MongoDB con Mongoose. Aunque la base de datos es documental, el dom
 | :--- | :--- | :--- |
 | `users` | Identidad, credenciales, preferencias, sesión, email y MCP clásico. | Miembro de blísteres, autor de logs y comentarios, receptor de notificaciones. |
 | `blisters` | Espacio sanitario compartido con miembros, roles, invitación y borrado lógico. | Contiene medicamentos, tratamientos, citas y logs. |
-| `medicines` | Medicamento local vinculado a CIMA por `nregist`. | Pertenece a un blíster y puede formar parte de tratamientos y logs. |
+| `medicines` | Entrada de origen `cima` o producto declarado `custom`. | Pertenece a un blíster y puede formar parte de tratamientos y logs. |
 | `treatments` | Pauta médica con paciente, fechas y medicamentos asociados. | Pertenece a un blíster, referencia usuario paciente y medicamentos. |
 | `adherenceLogs` | Registro de toma u omisión con autoría, cantidad, estado y toma forzada. | Referencia blíster, medicamento, tratamiento y usuario autor. |
 | `appointments` | Citas médicas con paciente, fecha, tratamiento opcional y comentarios. | Referencia blíster, paciente, tratamiento y autores de comentarios. |
@@ -81,16 +81,23 @@ Las tablas siguientes describen los campos, tipos y restricciones más relevante
 | Campo | Tipo | Notas |
 | :--- | :--- | :--- |
 | `blisterId` | ObjectId | Referencia a `blisters`. |
-| `nregist` | String | Número de registro CIMA/AEMPS. Puede repetirse por envase; la identidad local es `_id`. |
-| `nombre` | String | Nombre oficial CIMA. |
+| `source` | Enum | `cima` o `custom`, inmutable. Ausencia heredada equivale a `cima`. |
+| `captureMethod` | Enum | `search`, `manual`, `ocr` o `barcode`; no certifica exactitud. |
+| `identityLocked` | Boolean | Reserva permanente de identidad personalizada al asignarla a una pauta. |
+| `customDetails` | Object/null | Tipo, marca, composición, formato y concentración declarada. Obligatorio en `custom`, nulo en CIMA. |
+| `nregist` | String/null | Registro CIMA; nulo para personalizados. Puede repetirse por envase; la identidad local es `_id`. |
+| `cn`, `presentationName` | String/null | Presentación resuelta por Código Nacional y verificada contra el registro; nulos para personalizados. |
+| `nombre` | String | Nombre oficial CIMA o nombre declarado del producto personalizado. |
 | `alias` | String | Nombre personalizado opcional. |
-| `pactivos` | String | Principios activos CIMA. |
+| `pactivos`, `formaOficial`, `dosisOficial` | String/null | Datos oficiales CIMA; nulos para personalizados. |
 | `iconType` | String | Derivado de la forma farmacéutica. |
 | `stock` | Number | Cantidad actual; mínimo 0. |
 | `stockUnit` | String | Enum: `pastillas`, `ml`, `gotas`, `dosis`, `sobres`, `g`. |
 | `threshold` | Number | Umbral de alerta. Por defecto 5. |
-| `expDate` | Date | Caducidad informada por el usuario. |
-| `cimaStatus` | Object | `{ estado, hasAlerts, psum }`. Sincronizado periódicamente. |
+| `expDate` | Date/null | Caducidad informada; puede ser desconocida solo para personalizados. |
+| `cimaStatus` | Object/null | `{ estado, hasAlerts, psum, comerc, notas, materialesInf }`. Solo se sincroniza para CIMA. |
+
+La respuesta compartida es una unión discriminada por `source`. Al crear o actualizar se normaliza el alias vacío a `null`; las vistas de tomas usan el nombre como alternativa. La primera asignación de un personalizado a una pauta reserva su identidad e incrementa la versión del documento antes de guardar la referencia. Una edición concurrente basada en una lectura anterior falla por control optimista. El bloqueo se conserva al retirar o archivar la pauta; una reserva seguida de un fallo al guardar la pauta también conserva el bloqueo por prudencia. Los cambios de identidad devuelven `409 MEDICINE_IDENTITY_LOCKED`; los cambios de inventario siguen permitidos. El servicio también comprueba referencias heredadas en tratamientos y adherencia.
 
 **`treatments`**
 
@@ -199,6 +206,11 @@ erDiagram
     MEDICINE {
         ObjectId _id
         ObjectId blisterId
+        string source
+        string captureMethod
+        boolean identityLocked
+        object customDetails_nullable
+        string cn_nullable
         string nregist
         string nombre
         string alias
@@ -206,8 +218,8 @@ erDiagram
         string stockUnit
         number stock
         number threshold
-        date expDate
-        object cimaStatus
+        date expDate_nullable
+        object cimaStatus_nullable
     }
 
     TREATMENT {
@@ -361,6 +373,10 @@ sequenceDiagram
     B->>DB: Guarda datos oficiales mínimos + datos locales
     B-->>F: 201 success + medicamento
 ```
+
+### 4.2.1 Alta por fotografía o producto personalizado
+
+El escáner local intenta leer el código del envase y después su texto; no hace solicitudes de identificación hasta que el usuario revisa el resultado y pulsa buscar. Un CN se resuelve mediante `/external/national-code/:cn`, y el alta oficial vuelve a verificar en servidor su correspondencia con `nregist`. Un producto `custom` omite por completo la consulta CIMA: el servidor valida nombre, detalles declarados e inventario, y guarda los campos oficiales como nulos. Los dos caminos requieren confirmación explícita y no generan tratamientos. MCP usa el mismo servicio y conserva `source`, `captureMethod`, CN y presentación en sus respuestas.
 
 ### 4.3 Registro de toma y control de stock
 
@@ -559,8 +575,8 @@ La documentación OpenAPI se publica en `/api/v1/docs` y se genera desde comenta
 | Método | Endpoint | Rol | Respuesta principal |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/blisters/:blisterId/medicines` | Miembro | `200` inventario paginado. |
-| `POST` | `/api/v1/blisters/:blisterId/medicines` | OWNER, CAREGIVER | `201` medicamento creado desde CIMA. |
-| `PATCH` | `/api/v1/blisters/:blisterId/medicines/:id` | OWNER, CAREGIVER | `200` datos locales actualizados. |
+| `POST` | `/api/v1/blisters/:blisterId/medicines` | OWNER, CAREGIVER | `201` entrada CIMA o personalizada, validada según `source`. |
+| `PATCH` | `/api/v1/blisters/:blisterId/medicines/:id` | OWNER, CAREGIVER | `200` datos locales actualizados; `409` si se cambia una identidad ya usada. |
 | `DELETE` | `/api/v1/blisters/:blisterId/medicines/:id` | OWNER | `200` medicamento eliminado. |
 
 ### 6.4 Tratamientos
@@ -600,6 +616,7 @@ La documentación OpenAPI se publica en `/api/v1/docs` y se genera desde comenta
 | `GET` | `/api/v1/me/calendar` | Sí | `200` citas y dosis agregadas por rango. |
 | `GET` | `/api/v1/external/search?q=...` | Sí | `200` resultados CIMA. |
 | `GET` | `/api/v1/external/info/:nregist` | Sí | `200` ficha oficial normalizada. |
+| `GET` | `/api/v1/external/national-code/:cn` | Sí | `200` ficha y presentación por CN de seis cifras; límite de 30 consultas/minuto por IP. |
 | `GET` | `/api/v1/blisters/:blisterId/external/search` | Sí | `200` búsqueda CIMA en contexto de blíster. |
 | `GET` | `/api/v1/notifications` | Sí | `200` bandeja paginada. |
 | `PATCH` | `/api/v1/notifications/:id/read` | Sí | `200` notificación leída. |
@@ -632,7 +649,7 @@ Herramientas MCP principales:
 | `inventory_query` | Lectura | Consulta inventario y stock. |
 | `medicine_catalog_search` | Lectura | Busca medicamentos en CIMA. |
 | `medicine_lookup` | Lectura | Busca medicamentos registrados. |
-| `medicine_add` | Escritura | Añade medicamento desde `nregist`. |
+| `medicine_add` | Escritura | Añade CIMA por `nregist` y CN opcional, o `custom` con nombre y detalles declarados; exige revisión del usuario. |
 | `adherence_logger` | Escritura | Registra una toma. |
 | `stock_modifier` | Escritura | Ajusta stock. |
 | `schedule_assistant` | Lectura | Calcula próximas dosis. |

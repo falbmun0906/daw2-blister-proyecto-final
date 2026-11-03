@@ -7,7 +7,7 @@ import {
 } from '../constants/domain.constants';
 import { type MedicineDocument } from '../types/medicine.types';
 
-const cimaStatusSchema = new Schema<MedicineDocument['cimaStatus']>(
+const cimaStatusSchema = new Schema<NonNullable<MedicineDocument['cimaStatus']>>(
   {
     psum: {
       type: Boolean,
@@ -46,7 +46,33 @@ const cimaStatusSchema = new Schema<MedicineDocument['cimaStatus']>(
   },
 );
 
+const isOfficial = function (this: MedicineDocument): boolean {
+  return this.source !== 'custom';
+};
+const customDetailsSchema = new Schema({
+  productType: { type: String, enum: ['medicine', 'supplement', 'other'], required: true },
+  brand: { type: String, trim: true, maxlength: 100 },
+  composition: { type: String, trim: true, maxlength: 300 },
+  format: { type: String, trim: true, maxlength: 100 },
+  strength: { type: String, trim: true, maxlength: 100 },
+}, { _id: false });
+
 const medicineSchema = new Schema<MedicineDocument>({
+  identityLocked: { type: Boolean, default: false },
+  source: { type: String, enum: ['cima', 'custom'], default: 'cima', immutable: true },
+  cn: { type: String, match: /^\d{6}$/, default: null },
+  presentationName: { type: String, maxlength: 400, default: null },
+  captureMethod: {
+    type: String,
+    enum: ['search', 'manual', 'ocr', 'barcode'],
+    default: 'search',
+    immutable: true,
+  },
+  customDetails: {
+    type: customDetailsSchema,
+    required: function () { return this.source === 'custom'; },
+    default: null,
+  },
   blisterId: {
     type: Schema.Types.ObjectId,
     ref: 'Blister',
@@ -55,9 +81,14 @@ const medicineSchema = new Schema<MedicineDocument>({
   },
   nregist: {
     type: String,
-    required: true,
+    required: isOfficial,
+    default: null,
     trim: true,
     match: /^\d+$/,
+    validate: {
+      validator: function (value: unknown) { return this.get('source') !== 'custom' || value == null; },
+      message: 'Un producto personalizado no tiene registro CIMA.',
+    },
   },
   nombre: {
     type: String,
@@ -72,19 +103,22 @@ const medicineSchema = new Schema<MedicineDocument>({
   },
   pactivos: {
     type: String,
-    required: true,
+    required: isOfficial,
+    default: null,
     trim: true,
     maxlength: 300,
   },
   formaOficial: {
     type: String,
-    required: true,
+    required: isOfficial,
+    default: null,
     trim: true,
     maxlength: 200,
   },
   dosisOficial: {
     type: String,
-    required: true,
+    required: isOfficial,
+    default: null,
     trim: true,
     maxlength: 100,
   },
@@ -113,12 +147,17 @@ const medicineSchema = new Schema<MedicineDocument>({
   },
   expDate: {
     type: Date,
-    required: true,
+    required: isOfficial,
+    default: null,
   },
   cimaStatus: {
     type: cimaStatusSchema,
-    required: true,
-    default: () => ({}),
+    required: isOfficial,
+    default: function () { return this.source === 'custom' ? null : {}; },
+    validate: {
+      validator: function (value: unknown) { return this.get('source') !== 'custom' || value == null; },
+      message: 'Un producto personalizado no tiene estado CIMA.',
+    },
   },
   deletedAt: {
     type: Date,

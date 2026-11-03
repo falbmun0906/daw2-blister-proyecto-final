@@ -82,6 +82,9 @@ export const officialSourceLinkerTool: McpOfficialSourceLinkerTool = {
       });
     }
 
+    if (medicine.source === 'custom' || !medicine.nregist) {
+      throw new AppError({ code: 'OFFICIAL_SOURCE_NOT_APPLICABLE', message: 'Producto personalizado: los datos son del usuario y no hay ficha CIMA vinculada. Esto no indica ausencia de riesgos o interacciones.', statusCode: 422 });
+    }
     const blister = context.blisters.find((entry) => entry.blisterId === medicine.blisterId.toString()) ?? null;
     const official = await externalGetMedicineInfo(medicine.nregist);
     const docs = official.docs

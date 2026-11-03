@@ -345,8 +345,12 @@ export const adherenceLogsCreate = async (
 
     const isForced = status === 'taken' && remainingStock < 0;
     const deductedAmount = isForced ? medicine.stock : requestedAmount;
+    const lockIdentity = medicine.source === 'custom' && !medicine.identityLocked;
+    if (lockIdentity) medicine.identityLocked = true;
     if (status === 'taken') {
       medicine.stock = isForced ? 0 : remainingStock;
+    }
+    if (status === 'taken' || lockIdentity) {
       await medicine.save({ session });
     }
 

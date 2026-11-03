@@ -60,7 +60,8 @@ medicinesRouter.use(authenticate);
  *       404:
  *         description: Blister not found.
  *   post:
- *     summary: Add a medicine to the blister inventory from CIMA
+ *     summary: Add a CIMA medicine or a user-defined product to the inventory
+ *     description: An omitted source retains the legacy CIMA behavior. Custom products never accept official metadata. The user must review photo recognition before submitting.
  *     tags:
  *       - Medicines
  *     security:
@@ -77,24 +78,63 @@ medicinesRouter.use(authenticate);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [nregist, stock, stockUnit, expDate]
+ *             required: [stock, stockUnit, expDate]
  *             properties:
- *               nregist:
- *                 type: string
  *               alias:
  *                 type: string
  *               stock:
- *                 type: integer
+ *                 type: number
+ *                 minimum: 0
+ *                 multipleOf: 0.5
  *               stockUnit:
  *                 type: string
  *               threshold:
- *                 type: integer
- *               expDate:
+ *                 type: number
+ *                 minimum: 0
+ *                 multipleOf: 0.5
+ *                 default: 5
+ *               captureMethod:
  *                 type: string
- *                 format: date-time
+ *                 enum: [search, manual, ocr, barcode]
+ *             oneOf:
+ *               - type: object
+ *                 required: [nregist]
+ *                 properties:
+ *                   source:
+ *                     type: string
+ *                     enum: [cima]
+ *                   nregist:
+ *                     type: string
+ *                     pattern: '^\d+$'
+ *                   cn:
+ *                     type: string
+ *                     pattern: '^\d{6}$'
+ *                     description: Optional national presentation code, verified against nregist by the server.
+ *                   expDate:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Future expiry date.
+ *               - type: object
+ *                 required: [source, nombre, customDetails]
+ *                 properties:
+ *                   source:
+ *                     type: string
+ *                     enum: [custom]
+ *                   nombre:
+ *                     type: string
+ *                     maxLength: 200
+ *                   customDetails:
+ *                     $ref: '#/components/schemas/CustomMedicineDetails'
+ *                   expDate:
+ *                     type: string
+ *                     format: date-time
+ *                     nullable: true
+ *                     description: Future expiry date, or null when unknown.
  *     responses:
  *       201:
- *         description: Medicine created from official CIMA data.
+ *         description: Inventory item created. Custom records have null official metadata and may have null expDate.
+ *       400:
+ *         description: Invalid fields or a national code that does not match the registry.
  *       401:
  *         description: Missing or invalid JWT.
  *       403:
@@ -120,7 +160,8 @@ medicinesRouter.post(
  * @openapi
  * /blisters/{blisterId}/medicines/{id}:
  *   patch:
- *     summary: Update local stock metadata for a blister medicine
+ *     summary: Update inventory data or user-defined product details
+ *     description: Identity fields nombre and customDetails are only editable for custom products. Only custom products can clear expDate with null. Source, stockUnit and official data cannot change.
  *     tags:
  *       - Medicines
  *     security:
@@ -136,9 +177,38 @@ medicinesRouter.post(
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             minProperties: 1
+ *             properties:
+ *               alias:
+ *                 type: string
+ *               stock:
+ *                 type: number
+ *                 minimum: 0
+ *                 multipleOf: 0.5
+ *               threshold:
+ *                 type: number
+ *                 minimum: 0
+ *                 multipleOf: 0.5
+ *               expDate:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *               nombre:
+ *                 type: string
+ *                 maxLength: 200
+ *               customDetails:
+ *                 $ref: '#/components/schemas/CustomMedicineDetails'
  *     responses:
  *       200:
  *         description: Medicine updated.
+ *       409:
+ *         description: MEDICINE_IDENTITY_LOCKED if identity has been used in a treatment or dose; MEDICINE_UPDATE_CONFLICT for a concurrent inventory edit.
  *       401:
  *         description: Missing or invalid JWT.
  *       403:
@@ -186,3 +256,30 @@ medicinesRouter.delete(
   authorize(['OWNER']),
   medicinesDeleteController,
 );
+
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     CustomMedicineDetails:
+ *       type: object
+ *       additionalProperties: false
+ *       required: [productType]
+ *       properties:
+ *         productType:
+ *           type: string
+ *           enum: [medicine, supplement, other]
+ *         brand:
+ *           type: string
+ *           maxLength: 100
+ *         composition:
+ *           type: string
+ *           maxLength: 300
+ *         format:
+ *           type: string
+ *           maxLength: 100
+ *         strength:
+ *           type: string
+ *           maxLength: 100
+ *           description: User-entered label text. Never a prescribed dose or stock conversion.
+ */

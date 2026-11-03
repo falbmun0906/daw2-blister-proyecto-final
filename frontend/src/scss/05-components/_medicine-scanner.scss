@@ -1,0 +1,133 @@
+.c-medicine-scanner,
+.c-medicine-entry-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.c-medicine-scanner {
+  padding-bottom: var(--space-6);
+  p {
+    margin: 0;
+  }
+  form,
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  &__video {
+    width: 100%;
+    max-height: 22rem;
+    border-radius: var(--radius-md);
+    background: var(--color-text);
+  }
+  &__preview {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  }
+  &__crop {
+    position: absolute;
+    border: 3px solid var(--color-primary);
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 40%);
+    pointer-events: none;
+  }
+  &__crop-move,
+  &__crop-resize {
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font: inherit;
+  }
+  &__crop-move { top: 0; left: 0; cursor: move; }
+  &__crop-resize { bottom: 0; right: 0; cursor: nwse-resize; }
+  &__text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 14rem;
+    overflow: auto;
+  }
+  &__suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  &__results {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-3);
+  }
+  &__results .c-btn {
+    text-align: left;
+    white-space: normal;
+  }
+  &__results small {
+    display: block;
+    margin-top: var(--space-2);
+    font-weight: normal;
+  }
+  summary {
+    cursor: pointer;
+    padding-block: var(--space-3);
+  }
+  fieldset {
+    min-width: 0;
+    border: 0;
+    padding: 0;
+  }
+  input[type='file'] {
+    width: 100%;
+    font: inherit;
+    font-size: var(--text-sm);
+
+    &::file-selector-button {
+      min-height: 44px;
+      padding: var(--space-2) var(--space-3);
+      margin-right: var(--space-2);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      color: var(--color-primary);
+      font: inherit;
+      cursor: pointer;
+    }
+  }
+  progress {
+    width: 100%;
+  }
+}
+
+.c-custom-medicine-details {
+  summary {
+    padding-block: var(--space-3);
+    cursor: pointer;
+  }
+  &__fields {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+  }
+}
+
+.c-add-medicine-page__notice {
+  padding: var(--space-4);
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  margin: 0;
+}

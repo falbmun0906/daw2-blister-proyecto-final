@@ -676,10 +676,13 @@ export default function HomePage() {
   return (
     <section className="c-home" aria-label="Resumen de todos tus blísteres">
       {searchBlister ? (
+        <>
+        {canSearchBlisterMutate ? <Button variant="secondary" onClick={() => navigate(ROUTES.addMedicine(searchBlister._id))}>Añadir al botiquín</Button> : null}
         <CimaSearchDropdown
           blisterId={searchBlister._id}
           canMutate={canSearchBlisterMutate}
         />
+        </>
       ) : null}
 
       {showAlertZone ? (

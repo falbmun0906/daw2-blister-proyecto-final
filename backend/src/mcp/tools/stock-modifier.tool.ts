@@ -57,7 +57,7 @@ export const stockModifierTool: McpStockModifierTool = {
     return {
       blisterId: updated.blisterId,
       medicineId: updated.id,
-      medicineName: updated.alias ?? updated.nombre,
+      medicineName: updated.alias?.trim() || updated.nombre,
       stockBefore,
       stockAfter: updated.stock,
       stockStatus: getStockStatus(updated.stock, updated.threshold),

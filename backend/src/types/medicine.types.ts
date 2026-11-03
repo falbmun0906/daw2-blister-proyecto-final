@@ -1,4 +1,5 @@
 import { type Types } from 'mongoose';
+import type { CustomMedicineDetails } from '../../../shared/schemas/medicine.schema';
 
 import {
   type CIMA_MEDICINE_STATUS,
@@ -22,17 +23,23 @@ export interface MedicineCimaStatus {
 export interface MedicineDocument {
   _id: Types.ObjectId;
   blisterId: Types.ObjectId;
-  nregist: string;
+  source?: 'cima' | 'custom';
+  identityLocked?: boolean;
+  captureMethod?: 'search' | 'manual' | 'ocr' | 'barcode';
+  customDetails?: CustomMedicineDetails | null;
+  nregist: string | null;
+  cn?: string | null;
+  presentationName?: string | null;
   nombre: string;
   alias?: string | null;
-  pactivos: string;
-  formaOficial: string;
-  dosisOficial: string;
+  pactivos: string | null;
+  formaOficial: string | null;
+  dosisOficial: string | null;
   iconType: IconType;
   stock: number;
   stockUnit: StockUnit;
   threshold: number;
-  expDate: Date;
-  cimaStatus: MedicineCimaStatus;
+  expDate: Date | null;
+  cimaStatus: MedicineCimaStatus | null;
   deletedAt?: Date | null;
 }

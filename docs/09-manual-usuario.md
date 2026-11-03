@@ -196,7 +196,7 @@ Los estados ayudan a priorizar:
 ### 5.2 Añadir medicamento
 
 1. Entrar en Botiquín.
-2. Pulsar añadir medicamento.
+2. Pulsar **Añadir al botiquín** y elegir **Buscar medicamento**.
 3. Buscar por nombre en CIMA/AEMPS.
 4. Seleccionar el resultado oficial.
 5. Completar stock, unidad, umbral, caducidad y alias opcional.
@@ -206,9 +206,21 @@ Los datos oficiales no se escriben manualmente. La aplicación los obtiene a par
 
 Si la búsqueda no devuelve resultados, se recomienda probar con una parte del nombre comercial o revisar la escritura. Blíster no inventa medicamentos: si no puede localizar información oficial, no se debe crear una ficha oficial falsa.
 
+**Escanear un envase:** en Añadir al botiquín, elegir **Escanear envase**. Abrir la cámara o seleccionar una fotografía JPG, PNG o WebP de hasta 12 MB y 40 megapíxeles. Se puede recortar la zona del nombre o código antes de pulsar **Leer etiqueta o código**. Corregir el nombre o Código Nacional detectado, buscar coincidencias y comprobar nombre, concentración y formato antes de confirmar. Leer una imagen no crea productos ni pautas automáticamente.
+
+La cámara necesita HTTPS (o localhost) y permiso del navegador. Si no está disponible, se puede elegir una fotografía o escribir el nombre. El OCR se ejecuta en el dispositivo; la primera lectura descarga los archivos del motor desde Blíster. La consulta CIMA y el guardado requieren conexión. No se guarda ni se sube la fotografía. Una imagen borrosa, con reflejos o varios productos puede requerir repetir la captura.
+
+**Crear un producto personalizado:** elegir esa opción para introducir el nombre, tipo (medicamento sin vincular a CIMA, complemento u otro), marca, composición, formato y concentración declarada. Configurar stock, unidad y umbral. La caducidad puede dejarse vacía si se desconoce; en ese caso no habrá avisos de caducidad. Pulsar **Confirmar y añadir producto**.
+
+Estos productos se identifican como datos del usuario. Pueden incorporarse a tratamientos y registrar tomas con las unidades de stock existentes, en incrementos de 0,5. La concentración escrita en la etiqueta no se convierte automáticamente en cantidad por toma. No tienen ficha ni alertas oficiales de CIMA; los avisos disponibles son de stock y caducidad.
+
 ### 5.3 Editar medicamento
 
 OWNER y CAREGIVER pueden editar datos locales como alias, stock, umbral y caducidad. OWNER puede eliminar medicamentos del blíster.
+
+En los productos personalizados se pueden editar el nombre y sus datos declarados mientras no se hayan asignado a una pauta. A partir de ese momento se conserva su identidad, incluso si se retira la pauta, para no reinterpretar tomas anteriores: para otro producto hay que crear una entrada nueva. El alias, stock, umbral y caducidad siguen siendo editables. La unidad de stock se conserva al editar para mantener coherentes las tomas del historial. Los datos oficiales de un medicamento CIMA siguen siendo de solo lectura.
+
+El recorte de fotografías se puede mover y redimensionar arrastrando el marco y su esquina; también admite flechas del teclado y controles de rango. El botón Atrás vuelve al paso anterior del alta. Si se regresa al escáner desde la confirmación, se conserva el texto revisado, pero la fotografía se descarta. Si se abandona un formulario durante el guardado, la respuesta no cambia la pantalla actual; conviene consultar el inventario antes de repetir el alta, porque el servidor puede haberla completado.
 
 El stock debe actualizarse cuando se compra una caja nueva, se retira medicación caducada o se corrige un recuento manual. Esta información alimenta avisos y decisiones de toma.
 

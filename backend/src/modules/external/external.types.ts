@@ -24,6 +24,7 @@ export interface CimaNamedEntry {
 }
 
 export interface CimaApiItem {
+  presentaciones?: Array<{ cn?: string; nombre?: string }>;
   nregistro?: string;
   nombre?: string;
   pactivos?: string;
@@ -72,6 +73,8 @@ export interface ExternalSearchItem {
 }
 
 export interface ExternalMedicineInfo {
+  cn?: string;
+  presentationName?: string;
   nregist: string;
   nombre: string;
   pactivos: string;
