@@ -17,7 +17,7 @@ export async function listMedicines(blisterId: string): Promise<Medicine[]> {
   return listCollection(`/blisters/${blisterId}/medicines`, (item) => medicineSchema.parse(item));
 }
 
-/** Crea una entrada de medicamento desde CIMA en el botiquín. */
+/** Crea una entrada CIMA o un producto personalizado en el botiquín. */
 export async function createMedicine(
   blisterId: string,
   input: CreateMedicineInput,
@@ -27,7 +27,7 @@ export async function createMedicine(
   return medicineSchema.parse(normalizeApiResponse(response));
 }
 
-/** Actualiza campos locales (alias, stock, threshold, expDate). */
+/** Actualiza inventario e identidad personalizada si todavía es editable. */
 export async function updateMedicine(
   blisterId: string,
   medicineId: string,
@@ -41,7 +41,7 @@ export async function updateMedicine(
   return medicineSchema.parse(normalizeApiResponse(response));
 }
 
-/** Elimina un medicamento del botiquín. Requiere OWNER o CAREGIVER. */
+/** Archiva un medicamento del botiquín. Requiere OWNER. */
 export async function removeMedicine(
   blisterId: string,
   medicineId: string,

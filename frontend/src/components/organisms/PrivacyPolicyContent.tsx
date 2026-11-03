@@ -64,6 +64,13 @@ const PRIVACY_SECTIONS: PrivacyPolicySection[] = [
     ],
   },
   {
+    title: 'Fotografías y productos personalizados',
+    paragraphs: [
+      'La cámara solo se solicita al pulsar Abrir cámara. La fotografía y el texto completo reconocido se procesan en el navegador y se descartan al cerrar el escáner. El nombre o código revisado puede conservarse en el estado de navegación del navegador para volver al paso anterior. No se envía la fotografía a nuestros servidores. El navegador puede almacenar los archivos públicos del motor y los idiomas para acelerar futuras lecturas.',
+      'Al pulsar Buscar se envía únicamente el nombre o Código Nacional que hayas revisado para consultar CIMA/AEMPS. Al confirmar el alta se guardan los campos del producto y el método de captura. Los datos de un producto personalizado proceden del usuario y son visibles para los miembros de su blíster según sus permisos.',
+    ],
+  },
+  {
     title: 'Conservación y borrado',
     paragraphs: [
       'Los datos se conservan mientras la cuenta o el blíster estén activos y sean necesarios para el servicio. Las credenciales y tokens temporales tienen caducidad y se guardan hasheados cuando procede.',
@@ -102,7 +109,7 @@ export function PrivacyPolicyContent({ id, titleId = 'privacy-title', className 
       aria-labelledby={titleId}
     >
       <header className="c-privacy-page__header">
-        <p className="c-privacy-page__meta">Última actualización: mayo de 2026</p>
+        <p className="c-privacy-page__meta">Última actualización: noviembre de 2026</p>
         <h1 id={titleId} className="c-privacy-page__title">
           Política de privacidad
         </h1>

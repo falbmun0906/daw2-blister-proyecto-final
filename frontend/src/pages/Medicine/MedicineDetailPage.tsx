@@ -51,7 +51,8 @@ const quantityFormatter = new Intl.NumberFormat('es-ES', {
   maximumFractionDigits: 1,
 });
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null): string {
+  if (!iso) return 'Desconocida';
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString('es-ES');
 }
@@ -145,7 +146,8 @@ function MedicineDetailPage() {
             return;
           }
 
-          const cimaInfo = await getCimaDetail(loadedMedicine.nregist).catch(() => null);
+          const cimaInfo = loadedMedicine.source !== 'custom' && loadedMedicine.nregist
+            ? await getCimaDetail(loadedMedicine.nregist).catch(() => null) : null;
 
           if (!cancelled) {
             setState({
@@ -257,18 +259,18 @@ function MedicineDetailPage() {
               />
               {menuOpen ? (
                 <div className="c-action-menu__popover c-medicine-detail-page__menu-popover" role="menu">
-                  <button
+                  {medicine.source !== 'custom' && medicine.nregist ? <button
                     type="button"
                     className="c-action-menu__item"
                     role="menuitem"
                     onClick={() => {
                       setMenuOpen(false);
-                      navigate(ROUTES.cimaMedicineDetail(medicine.nregist));
+                      if (medicine.nregist) navigate(ROUTES.cimaMedicineDetail(medicine.nregist));
                     }}
                   >
                     <TbExternalLink aria-hidden="true" />
                     <span>Ficha CIMA</span>
-                  </button>
+                  </button> : null}
                   {canMutate ? (
                     <Link
                       className="c-action-menu__item"
@@ -325,11 +327,42 @@ function MedicineDetailPage() {
                 <dd>{formatDate(medicine.expDate)}</dd>
               </div>
               <div className="c-medicine-detail-page__fact">
-                <dt>Nº registro</dt>
-                <dd>{medicine.nregist}</dd>
+                <dt>Origen</dt>
+                <dd>{medicine.source === 'custom' ? 'Producto personalizado' : `CIMA · ${medicine.nregist}`}</dd>
               </div>
+              {medicine.cn ? (
+                <div className="c-medicine-detail-page__fact">
+                  <dt>Código Nacional</dt>
+                  <dd>{medicine.cn}{medicine.presentationName ? ` · ${medicine.presentationName}` : ''}</dd>
+                </div>
+              ) : null}
             </dl>
           </section>
+
+          {medicine.source === 'custom' ? (
+            <section className="c-medicine-detail-page__section" aria-label="Datos del producto personalizado">
+              <h2 className="c-medicine-detail-page__section-title">Datos introducidos por el usuario</h2>
+              <dl className="c-medicine-detail-page__facts">
+                {Object.entries({
+                  Tipo: medicine.customDetails?.productType === 'supplement'
+                    ? 'Complemento alimenticio'
+                    : medicine.customDetails?.productType === 'medicine'
+                      ? 'Medicamento sin vincular a CIMA'
+                      : 'Otro producto',
+                  Marca: medicine.customDetails?.brand,
+                  Composición: medicine.customDetails?.composition,
+                  Formato: medicine.customDetails?.format,
+                  'Concentración declarada': medicine.customDetails?.strength,
+                }).map(([label, value]) => value ? (
+                  <div key={label} className="c-medicine-detail-page__fact">
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ) : null)}
+              </dl>
+              <p>Sin ficha CIMA vinculada. Las alertas de este producto solo cubren stock y caducidad; no evalúan interacciones ni seguridad de uso.</p>
+            </section>
+          ) : null}
 
           <section className="c-medicine-detail-page__section" aria-labelledby="medicine-alerts-title">
             <h2 id="medicine-alerts-title" className="c-medicine-detail-page__section-title">

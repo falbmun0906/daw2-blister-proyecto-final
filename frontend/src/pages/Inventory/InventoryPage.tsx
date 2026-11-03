@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Button } from '../../components/atoms/Button';
 
 import { EmptyState } from '../../components/atoms/EmptyState';
 import { ErrorState } from '../../components/atoms/ErrorState';
@@ -21,14 +22,16 @@ function filterMedicines(list: ReturnType<typeof useMedicines>['medicines'], que
     const name = (medicine.alias?.trim() || medicine.nombre).toLowerCase();
     return (
       name.includes(q)
-      || medicine.pactivos.toLowerCase().includes(q)
-      || medicine.nregist.includes(q)
+      || medicine.pactivos?.toLowerCase().includes(q)
+      || medicine.nregist?.includes(q)
+      || medicine.customDetails?.brand?.toLowerCase().includes(q)
     );
   });
 }
 
 function InventoryPage() {
   usePageTitle('Botiquín');
+  const navigate = useNavigate();
   const { blisterId: routeBlisterId } = useParams<{ blisterId: string }>();
   const blisters = useBlisterStore((state) => state.blisters);
   const activeBlisterId = useBlisterStore((state) => state.activeBlisterId);
@@ -78,6 +81,7 @@ function InventoryPage() {
 
   return (
     <section className="c-inventory-page" aria-label="Botiquín">
+      {canMutate ? <Button onClick={() => navigate(ROUTES.addMedicine(blisterId))}>Añadir al botiquín</Button> : null}
       <CimaSearchDropdown
         blisterId={blisterId}
         canMutate={canMutate}
@@ -98,11 +102,11 @@ function InventoryPage() {
           title="Tu botiquín está vacío"
           description={
             canMutate
-              ? 'Busca un medicamento en CIMA y pulsa + para añadirlo.'
+              ? 'Busca un medicamento, escanea su envase o crea un producto personalizado.'
               : 'Pide al administrador del blíster que añada medicamentos.'
           }
-          ctaLabel={canMutate ? 'Buscar en CIMA' : undefined}
-          onCtaClick={canMutate ? () => searchInputRef.current?.focus() : undefined}
+          ctaLabel={canMutate ? 'Añadir al botiquín' : undefined}
+          onCtaClick={canMutate ? () => navigate(ROUTES.addMedicine(blisterId)) : undefined}
         />
       ) : (
         <ul className="c-inventory-page__list">

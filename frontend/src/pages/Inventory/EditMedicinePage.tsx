@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useMutationContext } from '../../hooks/use.mutation-context';
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { TbCalendar, TbNumbers, TbTag } from 'react-icons/tb';
@@ -23,31 +24,42 @@ import { useMedicinesStore } from '../../stores/medicines.store';
 import { useUiStore } from '../../stores/ui.store';
 import { isApiError } from '../../types/api.types';
 import type { Medicine } from '../../types/medicine.types';
+import { CustomMedicineForm } from '../../components/organisms/CustomMedicineForm';
 
 const formSchema = z.object({
   alias: z.string().trim().max(100, 'El alias no puede superar los 100 caracteres.').optional(),
-  stock: z.coerce.number().min(0, 'El stock no puede ser negativo.').refine(
-    (value) => Number.isInteger(value * 2),
-    'El stock debe ir en incrementos de 0,5.',
-  ),
-  threshold: z.coerce.number().min(0, 'El umbral no puede ser negativo.').refine(
-    (value) => Number.isInteger(value * 2),
-    'El umbral debe ir en incrementos de 0,5.',
-  ),
+  stock: z.coerce
+    .number()
+    .min(0, 'El stock no puede ser negativo.')
+    .refine((value) => Number.isInteger(value * 2), 'El stock debe ir en incrementos de 0,5.'),
+  threshold: z.coerce
+    .number()
+    .min(0, 'El umbral no puede ser negativo.')
+    .refine((value) => Number.isInteger(value * 2), 'El umbral debe ir en incrementos de 0,5.'),
   expDate: z.string().optional(),
 });
 type FormValues = z.infer<typeof formSchema>;
 
-function toDateInputValue(iso: string): string {
+function toDateInputValue(iso: string | null): string {
+  if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   return d.toISOString().slice(0, 10);
 }
 
 function EditMedicinePage() {
+  const location = useLocation();
+  return <EditMedicineContent key={location.key} />;
+}
+
+function EditMedicineContent() {
   usePageTitle('Editar medicamento');
   const navigate = useNavigate();
-  const { blisterId: routeBlisterId, medicineId } = useParams<{ blisterId: string; medicineId: string }>();
+  const captureMutation = useMutationContext();
+  const { blisterId: routeBlisterId, medicineId } = useParams<{
+    blisterId: string;
+    medicineId: string;
+  }>();
   const activeBlisterId = useBlisterStore((s) => s.activeBlisterId);
   const activeRole = useBlisterStore((s) => s.activeRole);
   const blisters = useBlisterStore((s) => s.blisters);
@@ -63,12 +75,18 @@ function EditMedicinePage() {
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const blisterId = routeBlisterId ?? activeBlisterId;
-  const routeRole = blisters
-    .find((blister) => blister._id === blisterId)
-    ?.members.find((member) => member.userId === userId)
-    ?.role ?? null;
+  const routeRole =
+    blisters
+      .find((blister) => blister._id === blisterId)
+      ?.members.find((member) => member.userId === userId)?.role ?? null;
 
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
     resolver: createZodFormResolver(formSchema),
     defaultValues: { alias: '', stock: 0, threshold: 0, expDate: '' },
   });
@@ -112,11 +130,12 @@ function EditMedicinePage() {
   if (!medicineId) return <Navigate to={ROUTES.blisterMedications(blisterId)} replace />;
 
   const onSubmit = async (data: FormValues) => {
+    const isCurrent = captureMutation();
     setSubmitError(null);
 
     try {
       const payload: UpdateMedicineInput = {
-        alias: data.alias || undefined,
+        alias: data.alias ?? '',
         stock: data.stock,
         threshold: data.threshold,
       };
@@ -126,23 +145,29 @@ function EditMedicinePage() {
       }
 
       const updated = await updateMedicine(blisterId, medicineId, payload);
+      if (!isCurrent()) return;
       upsertMedicine(updated);
       await refreshNotifications();
+      if (!isCurrent()) return;
       addToast({ message: 'Medicamento actualizado.', variant: 'success' });
       navigate(ROUTES.medicineDetail(blisterId, medicineId));
     } catch (err) {
+      if (!isCurrent()) return;
       setSubmitError(isApiError(err) ? err.message : 'No se ha podido actualizar.');
     }
   };
 
   const handleDelete = async () => {
+    const isCurrent = captureMutation();
     setDeleting(true);
     try {
       await removeMedicine(blisterId, medicineId);
+      if (!isCurrent()) return;
       removeFromStore(medicineId);
       addToast({ message: 'Medicamento eliminado.', variant: 'success' });
       navigate(ROUTES.blisterMedications(blisterId));
     } catch (err) {
+      if (!isCurrent()) return;
       setSubmitError(isApiError(err) ? err.message : 'No se ha podido eliminar.');
       setDeleting(false);
     }
@@ -158,6 +183,47 @@ function EditMedicinePage() {
           <Skeleton height="3rem" />
           <Skeleton height="3rem" />
         </div>
+      ) : medicine.source === 'custom' ? (
+        <>
+          <CustomMedicineForm
+            key={medicine._id}
+            initial={medicine}
+            onSave={async (input) => {
+              const isCurrent = captureMutation();
+              const expiryChanged =
+                (input.expDate?.toISOString().slice(0, 10) ?? '') !==
+                toDateInputValue(medicine.expDate);
+              const updated = await updateMedicine(blisterId, medicineId, {
+                nombre: input.nombre,
+                customDetails: input.customDetails,
+                alias: input.alias,
+                stock: input.stock,
+                threshold: input.threshold,
+                ...(expiryChanged ? { expDate: input.expDate } : {}),
+              });
+              if (!isCurrent()) return;
+              upsertMedicine(updated);
+              await refreshNotifications();
+              if (!isCurrent()) return;
+              addToast({ message: 'Producto actualizado.', variant: 'success' });
+              navigate(ROUTES.medicineDetail(blisterId, medicineId));
+            }}
+          />
+          {role === 'OWNER' ? (
+            <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} loading={deleting}>
+              Eliminar del botiquín
+            </Button>
+          ) : null}
+          {submitError ? <ErrorState message={submitError} /> : null}
+          <ConfirmDialog
+            open={confirmDeleteOpen}
+            title="Eliminar producto"
+            message="Se conservará el histórico. Si tiene un tratamiento activo, primero debes editar o finalizar esa pauta."
+            onCancel={() => setConfirmDeleteOpen(false)}
+            onConfirm={handleDelete}
+            ariaLabel="Confirmar eliminación del producto"
+          />
+        </>
       ) : (
         <form className="c-add-medicine-page__form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="c-add-medicine-page__selected">
@@ -171,12 +237,7 @@ function EditMedicinePage() {
             hint="Un nombre corto que solo verás tú (opcional)."
             icon={<TbTag />}
           >
-            <Input
-              label="Alias"
-              type="text"
-              {...register('alias')}
-              error={errors.alias?.message}
-            />
+            <Input label="Alias" type="text" {...register('alias')} error={errors.alias?.message} />
           </FormSection>
 
           <FormSection label="Fecha de caducidad" icon={<TbCalendar />}>
@@ -224,7 +285,13 @@ function EditMedicinePage() {
           <Button type="submit" variant="primary" fullWidth loading={isSubmitting}>
             Guardar cambios
           </Button>
-          <Button type="button" variant="danger" fullWidth onClick={() => setConfirmDeleteOpen(true)} loading={deleting}>
+          <Button
+            type="button"
+            variant="danger"
+            fullWidth
+            onClick={() => setConfirmDeleteOpen(true)}
+            loading={deleting}
+          >
             Eliminar del botiquín
           </Button>
           <ConfirmDialog
