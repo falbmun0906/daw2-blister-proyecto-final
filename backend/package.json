@@ -4,6 +4,7 @@
   "description": "Blister backend",
   "main": "dist/backend/src/index.js",
   "scripts": {
+    "medicines:migrate-origins": "ts-node src/modules/medicines/migrate-medicine-origins.ts",
     "test": "jest --runInBand",
     "test:coverage": "jest --coverage --runInBand",
     "test:e2e": "jest --runInBand --config jest.e2e.config.ts",

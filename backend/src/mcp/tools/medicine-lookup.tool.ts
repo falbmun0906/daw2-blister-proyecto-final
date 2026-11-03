@@ -1,10 +1,11 @@
+import { toMcpInventoryItem } from '../medicine-serializer';
 import { Types } from 'mongoose';
 
 import { type MedicineLookupInput } from '../../../../shared/schemas';
 import { MedicineModel } from '../../models/medicine.model';
 import { type MedicineDocument } from '../../types/medicine.types';
 import { resolveMcpBlisterTargets } from '../blister-resolver';
-import { type McpBlisterContext, type McpInventoryItem, type McpMedicineLookupTool } from '../types';
+import { type McpInventoryItem, type McpMedicineLookupTool } from '../types';
 
 const normalizeText = (value: string): string =>
   value
@@ -18,24 +19,9 @@ const matchesMedicineText = (input: MedicineLookupInput, item: McpInventoryItem)
     return true;
   }
 
-  const haystack = `${item.nombre} ${item.alias ?? ''} ${item.nregist}`;
+  const haystack = `${item.nombre} ${item.alias ?? ''} ${item.nregist ?? ''} ${item.cn ?? ''} ${item.presentationName ?? ''}`;
   return normalizeText(haystack).includes(normalizeText(input.text));
 };
-
-const mapMedicine = (medicine: MedicineDocument, blister: McpBlisterContext): McpInventoryItem => ({
-  id: medicine._id.toString(),
-  blisterId: medicine.blisterId.toString(),
-  blisterName: blister.blisterName,
-  role: blister.role,
-  nregist: medicine.nregist,
-  nombre: medicine.nombre,
-  alias: medicine.alias ?? null,
-  stock: medicine.stock,
-  stockUnit: medicine.stockUnit,
-  threshold: medicine.threshold,
-  expDate: medicine.expDate,
-  cimaStatus: medicine.cimaStatus,
-});
 
 export const medicineLookupTool: McpMedicineLookupTool = {
   name: 'medicine_lookup',
@@ -69,7 +55,7 @@ export const medicineLookupTool: McpMedicineLookupTool = {
     const filtered = medicines
       .map((medicine) => {
         const blister = blisterById.get(medicine.blisterId.toString());
-        return blister ? mapMedicine(medicine, blister) : null;
+        return blister ? toMcpInventoryItem(medicine, blister) : null;
       })
       .filter((item): item is McpInventoryItem => item !== null)
       .filter((item) => matchesMedicineText(input, item));

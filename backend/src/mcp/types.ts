@@ -1,4 +1,5 @@
 import { type BlisterRole } from '../types/blister.types';
+import type { CustomMedicineDetails } from '../../../shared/schemas/medicine.schema';
 
 import {
   type AdherenceLoggerInput,
@@ -35,22 +36,27 @@ export interface McpToolDefinition<TInput, TResult> {
 }
 
 export interface McpInventoryItem {
+  cn: string | null;
+  presentationName: string | null;
+  captureMethod: 'search' | 'manual' | 'ocr' | 'barcode';
+  source?: 'cima' | 'custom';
+  customDetails?: CustomMedicineDetails | null;
   id: string;
   blisterId: string;
   blisterName: string;
   role: BlisterRole;
-  nregist: string;
+  nregist: string | null;
   nombre: string;
   alias: string | null;
   stock: number;
   stockUnit: string;
   threshold: number;
-  expDate: Date;
+  expDate: Date | null;
   cimaStatus: {
     psum: boolean;
     estado: 1 | 2 | 3;
     hasAlerts: boolean;
-  };
+  } | null;
 }
 
 export interface McpMedicineCatalogItem {

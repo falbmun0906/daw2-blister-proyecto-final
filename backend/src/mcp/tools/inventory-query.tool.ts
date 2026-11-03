@@ -1,11 +1,13 @@
+import { toMcpInventoryItem } from '../medicine-serializer';
 import { type InventoryQueryInput } from '../../../../shared/schemas';
 import { medicinesList } from '../../modules/medicines/medicines.service';
-import { type McpAuthContext, type McpInventoryItem, type McpInventoryQueryTool } from '../types';
+import { type McpInventoryItem, type McpInventoryQueryTool } from '../types';
 import { resolveMcpBlisterTargets } from '../blister-resolver';
 
-const isExpired = (expDate: Date): boolean => expDate.getTime() < Date.now();
+const isExpired = (expDate: Date | null): boolean => expDate !== null && expDate.getTime() < Date.now();
 
-const isExpiringInDays = (expDate: Date, days: number): boolean => {
+const isExpiringInDays = (expDate: Date | null, days: number): boolean => {
+  if (!expDate) return false;
   const now = Date.now();
   const cutoff = now + days * 24 * 60 * 60 * 1000;
   const exp = expDate.getTime();
@@ -28,7 +30,7 @@ const withFilters = (input: InventoryQueryInput, items: McpInventoryItem[]): Mcp
 
   return items.filter((item) => {
     if (normalizedText) {
-      const haystack = `${item.nombre} ${item.alias ?? ''}`.toLowerCase();
+      const haystack = `${item.nombre} ${item.alias ?? ''} ${item.cn ?? ''} ${item.presentationName ?? ''}`.toLowerCase();
 
       if (!haystack.includes(normalizedText)) {
         return false;
@@ -69,20 +71,7 @@ export const inventoryQueryTool: McpInventoryQueryTool = {
           limit: 100,
         });
 
-        return result.medicines.map<McpInventoryItem>((medicine) => ({
-          id: medicine.id,
-          blisterId: medicine.blisterId,
-          blisterName: blister.blisterName,
-          role: blister.role,
-          nregist: medicine.nregist,
-          nombre: medicine.nombre,
-          alias: medicine.alias,
-          stock: medicine.stock,
-          stockUnit: medicine.stockUnit,
-          threshold: medicine.threshold,
-          expDate: medicine.expDate,
-          cimaStatus: medicine.cimaStatus,
-        }));
+        return result.medicines.map((medicine) => toMcpInventoryItem(medicine, blister));
       }),
     );
 

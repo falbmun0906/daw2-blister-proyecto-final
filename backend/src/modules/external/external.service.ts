@@ -208,6 +208,25 @@ export const externalGetMedicineInfo = async (nregist: string): Promise<External
   return toMedicineInfo(medicine);
 };
 
+/** Resolve a national presentation code, never a guessed registry number. */
+export const externalGetMedicineInfoByCn = async (cn: string): Promise<ExternalMedicineInfo> => {
+  const payload = await fetchCimaJson<unknown>('/medicamento', { cn });
+  const medicine = normalizeCimaResponse<CimaApiItem>(payload)[0] ?? (payload as CimaApiItem | null);
+  if (!medicine?.nregistro || !medicine.nombre) {
+    throw new AppError({
+      code: 'CIMA_MEDICINE_NOT_FOUND',
+      message: 'No se ha encontrado un medicamento para ese Código Nacional.',
+      statusCode: HTTP_STATUS_NOT_FOUND,
+    });
+  }
+  const presentation = medicine.presentaciones?.find((item) => item.cn === cn);
+  return {
+    ...toMedicineInfo(medicine),
+    cn,
+    ...(presentation?.nombre ? { presentationName: presentation.nombre } : {}),
+  };
+};
+
 /**
  * Retrieves the incremental CIMA change registry from the requested dd/mm/yyyy date.
  */

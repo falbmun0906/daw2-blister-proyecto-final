@@ -228,7 +228,7 @@ const buildExpirationWarningNotification = (
   message: `El medicamento ${medicine.nombre} caduca en un plazo de ${EXPIRATION_LEVEL_DAYS[level]} días.`,
   metadata: {
     medicineId: medicine._id.toString(),
-    expDate: medicine.expDate.toISOString(),
+    expDate: medicine.expDate?.toISOString(),
     level,
   },
 });
@@ -547,6 +547,7 @@ export const notifyExpirationWarning = async (
   blister: BlisterDocument,
   level: ExpirationWarningLevel,
 ): Promise<void> => {
+  if (!medicine.expDate) return;
   const recipientIds = getAllRecipientIds(blister);
   const duplicateChecks = await Promise.all(
     recipientIds.map(async (userId) => ({
@@ -668,6 +669,7 @@ export const notifyCimaChange = async (
   blister: BlisterDocument,
   changeLog: CimaChangeLogDocument,
 ): Promise<void> => {
+  if (medicine.source === 'custom') return;
   const recipientIds = getRecipientIdsByRoles(blister, STOCK_ALERT_ROLES);
   const changeSignature = [
     changeLog.tipoCambio,
@@ -981,7 +983,7 @@ export const notifyExpirationWarningsForMedicines = async (
   );
 
   for (const medicine of medicines) {
-    if (medicine.deletedAt) {
+    if (medicine.deletedAt || !medicine.expDate) {
       continue;
     }
 

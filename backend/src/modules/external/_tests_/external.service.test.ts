@@ -1,9 +1,23 @@
 import {
   externalGetMedicineInfo,
+  externalGetMedicineInfoByCn,
   externalSearchMedicines,
 } from '../external.service';
 
 describe('external.service', () => {
+  it('resolves national codes with cn, preserving the matched presentation', async () => {
+    mockFetch({ nregistro: '12345', nombre: 'Producto oficial', presentaciones: [{ cn: '656338', nombre: '20 cápsulas' }] });
+    const result = await externalGetMedicineInfoByCn('656338');
+    expect(result).toMatchObject({ nregist: '12345', cn: '656338', presentationName: '20 cápsulas' });
+    const requestedUrl = new URL((fetch as jest.Mock).mock.calls[0][0]);
+    expect(requestedUrl.searchParams.get('cn')).toBe('656338');
+    expect(requestedUrl.searchParams.has('nregistro')).toBe(false);
+  });
+
+  it('does not invent a medicine for an unmatched national code', async () => {
+    mockFetch({ resultados: [] });
+    await expect(externalGetMedicineInfoByCn('000000')).rejects.toMatchObject({ code: 'CIMA_MEDICINE_NOT_FOUND' });
+  });
   afterEach(() => {
     jest.restoreAllMocks();
   });
