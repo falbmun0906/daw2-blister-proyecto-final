@@ -437,3 +437,44 @@ export function createZodFormResolver<TFieldValues extends FieldValues>(
 El resolver evita que un `ZodError` llegue sin capturar a la interfaz y garantiza mensajes visibles junto al input afectado.
 
 En conjunto, estas decisiones permiten que Blíster mantenga una base técnica coherente, segura y ampliable.
+
+## 11. Alta por fotografía y productos personalizados
+
+El inventario conserva el stack React, Express y MongoDB. `source: 'cima' | 'custom'` identifica la procedencia del registro; `captureMethod: 'search' | 'manual' | 'ocr' | 'barcode'` describe cómo se inició el alta y no garantiza su exactitud. Omitir `source` mantiene el contrato CIMA de clientes anteriores.
+
+Los productos personalizados requieren nombre, tipo (`medicine`, `supplement` u `other`), stock y unidad; admiten marca, composición, formato y concentración declarada. Sus campos oficiales (`nregist`, `pactivos`, `formaOficial`, `dosisOficial`, `cimaStatus`) son `null`. Una caducidad desconocida se representa como `expDate: null`, sin generar avisos de caducidad. El origen es inmutable; los productos personalizados no participan en la sincronización CIMA ni muestran documentación oficial. La ausencia de una coincidencia CIMA no clasifica automáticamente el producto.
+
+Los dos orígenes usan los mismos permisos OWNER/CAREGIVER, aislamiento por botiquín, tratamientos, descuento y reversión de stock. Se mantiene el incremento de 0,5 y la unidad original de cada entrada. La concentración de la etiqueta nunca configura dosis ni convierte unidades. REST y MCP comparten la validación y los servicios de inventario.
+
+### 11.1 Lectura local y revisión
+
+1. El usuario abre la cámara o selecciona una fotografía JPG, PNG o WebP (hasta 12 MB y 40 megapíxeles). La cámara integrada exige HTTPS o localhost y permiso explícito del navegador. La selección de archivo sigue disponible cuando la cámara no funciona.
+2. Se normaliza la imagen a un máximo de 2000 píxeles por lado mayor y se permite recortar la zona de interés. La imagen permanece en memoria del navegador: no existe un endpoint de subida, ni se registra la fotografía o el texto OCR en telemetría.
+3. ZXing intenta leer un código compatible en un worker cancelable, con un máximo de 5 segundos. Un fallo de carga o decodificación da paso al OCR. Solo se deriva un CN de un NTIN español `847000 + CN + dígito de control`, comprobando el checksum; también se acepta su representación GTIN-14 con cero inicial y GS1 DataMatrix cuyo primer campo sea AI 01. No se deduce un CN de otros GTIN ni se interpreta AI 712.
+4. Si no hay un código compatible, Tesseract.js lee español e inglés en un worker aislado. Se carga bajo demanda, permite cancelación incluso durante la inicialización y tiene un límite de 60 segundos. Al salir se termina el worker y se detienen las pistas de cámara. La imagen se descarta; no se guarda como foto del inventario.
+5. El usuario revisa o corrige el nombre/CN y pulsa buscar. Solo entonces se envía ese texto a la API. `GET /external/national-code/:cn` resuelve códigos de seis cifras mediante CIMA; el servidor verifica la correspondencia CN/número de registro al crear la entrada. La búsqueda por nombre utiliza el servicio existente.
+6. Se selecciona una coincidencia y se confirma el formulario, o se crea un producto personalizado. El escaneo nunca guarda automáticamente, ni completa stock, caducidad o pautas de toma.
+
+La lectura de texto no garantiza identificación: debe comprobarse nombre, concentración, formato y presentación. Las fotografías desenfocadas, reflejos, fuentes pequeñas o dispositivos con poca memoria pueden requerir repetir o introducir el nombre manualmente. No se promete funcionamiento sin conexión: la búsqueda oficial requiere red y el primer OCR descarga el motor.
+
+### 11.2 Assets y despliegue
+
+La cámara y la lectura tienen hooks separados (`useMedicineCamera`, `useMedicineScanner`); las fases de preparación, lectura, revisión y búsqueda son excluyentes. El marco de recorte admite puntero, teclado y controles de rango. Atrás vuelve al paso anterior y conserva solo el texto revisado al volver del formulario. Los efectos de guardado se descartan cuando cambia la ruta, sesión o botiquín; el servidor puede haber completado la escritura y la siguiente consulta recuperará el dato.
+
+`npm ci` en `frontend` instala versiones fijadas por el lockfile. Los scripts `predev` y `prebuild` ejecutan `scripts/prepare-ocr-assets.mjs`, que copia el worker, los núcleos WASM y los modelos `spa`/`eng` desde las dependencias a `public/ocr/tesseract-7/`. No se usa un CDN externo para OCR. Esa carpeta se ignora en Git, se incluye en `dist` y se excluye del precache PWA para evitar descargar los modelos al instalar la aplicación. Los bundles de los workers de lectura también quedan fuera del precache y se cargan al leer una imagen.
+
+El alojamiento debe servir los archivos de `dist/ocr/` y permitir workers y WASM del mismo origen en su CSP. La política CSP de producción debe comprobarse en el entorno de despliegue, especialmente `worker-src`, `script-src` con soporte WASM y `connect-src`. No se ha modificado ni publicado infraestructura remota como parte de esta implementación.
+
+### 11.3 Compatibilidad y migración opcional
+
+Los registros sin `source` se leen como CIMA. La migración idempotente `npm run medicines:migrate-origins` (desde `backend`, con la configuración de la base de destino y copia de seguridad) completa `source/captureMethod` y elimina el antiguo índice único `nregist_1_blisterId_1` si existe. La creación ya tolera ese índice legado y lo retira cuando impide varias entradas, como hacía el flujo oficial. El modelo actual mantiene índices no únicos. No se convierte ningún medicamento existente en producto personalizado.
+
+La migración se valida en una base temporal de pruebas; no se ejecuta automáticamente contra los datos de la aplicación.
+
+### 11.4 Comprobación local
+
+Las pruebas cubren contratos compartidos, permisos, aislamiento, campos oficiales inmutables, caducidad desconocida, tratamientos y stock, MCP, resolución CN y migración. El frontend comprueba extracción de códigos, alertas y cancelación del worker. `frontend/e2e/medicine-entry.spec.ts` usa el motor OCR real con una etiqueta sintética y APIs simuladas para comprobar revisión previa, alta/edición y accesibilidad automatizada.
+
+Después de compilar el frontend, se ejecuta `npm run test:e2e -- e2e/medicine-entry.spec.ts`. Puede definirse `PLAYWRIGHT_CHANNEL=chrome` para usar un Chrome instalado y `PLAYWRIGHT_PORT=4987` para seleccionar un puerto libre. El servidor de preview usa puerto estricto y no reutiliza servidores ajenos. Si se omite el canal se utiliza el Chromium de Playwright. La precisión con envases reales y la captura física deben validarse adicionalmente en los móviles objetivo (Safari/iOS y Chrome/Android); la prueba sintética no sustituye ese ensayo.
+
+La consulta `npm audit --omit=dev` durante esta implementación detectó 8 avisos de dependencias de producción (5 altos y 3 moderados), en `axios`, `dompurify`, `follow-redirects`, `form-data`, `react-router`, `react-router-dom`, `@remix-run/router` y `zod`. Se comprobó que sus versiones ya estaban en el lockfile anterior y permanecen iguales. El registro no señaló las dependencias OCR añadidas. Resolver esos avisos requiere una actualización y validación específica de las dependencias existentes; no se ejecutó `npm audit fix` como parte de este cambio.

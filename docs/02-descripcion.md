@@ -140,9 +140,9 @@ El sistema evita dejar un blíster sin propietario y limita el número de blíst
 
 ### 5.3 Botiquín e inventario
 
-El alta de medicamentos parte de una búsqueda en CIMA/AEMPS. El usuario selecciona un medicamento oficial y añade información local: alias, stock, unidad, umbral y fecha de caducidad. Los datos oficiales no se editan manualmente.
+El alta permite buscar un medicamento en CIMA/AEMPS, leer una etiqueta con cámara/fotografía o introducir un producto personalizado (por ejemplo, magnesio o melatonina). La lectura se realiza en el dispositivo; el usuario revisa el texto antes de buscar y confirma el alta. Nunca se deducen pautas a partir de una imagen.
 
-Cada medicamento conserva `nregist`, nombre, principios activos, forma, dosis oficial, estado CIMA, stock y caducidad. La interfaz marca estados como stock bajo, stock crítico o caducidad próxima.
+El origen `cima` conserva datos oficiales no editables y requiere caducidad. El origen `custom` conserva nombre y detalles declarados por el usuario, sin registro ni estado CIMA; puede tener caducidad desconocida (`null`), sin avisos de vencimiento. Ambos comparten stock, unidad, umbral, permisos y tratamientos. La identidad personalizada se bloquea al asignarla a una pauta para conservar el significado del historial; alias, stock, umbral y caducidad siguen siendo editables. No se cambia de origen una entrada existente.
 
 ### 5.4 Tratamientos y pautas
 

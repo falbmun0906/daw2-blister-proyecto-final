@@ -329,6 +329,7 @@ La cobertura automatizada es especialmente sólida en backend y shared. La cober
 | Auth | Registro, login, refresh, recuperación, confirmación y MCP token. |
 | RBAC | Acceso por blíster, roles y operaciones no permitidas. |
 | Inventario | Alta, edición, stock, CIMA y errores. |
+| OCR y personalizados | Lectura local real sobre etiqueta sintética, revisión previa, cámara denegada/tardía, recorte accesible, navegación y errores del worker de códigos. Contratos por origen, alias vacíos e identidad bloqueada tras asignación a pautas. |
 | Tratamientos | Pautas, pacientes y medicamentos asociados. |
 | Adherencia | Toma normal, toma forzada y deshacer. |
 | Citas | CRUD y comentarios. |
@@ -341,6 +342,10 @@ La cobertura automatizada es especialmente sólida en backend y shared. La cober
 Esta cobertura funcional protege las reglas principales de servidor y añade evidencia de navegador sobre recorridos autenticados, permisos, accesibilidad WCAG A/AA y adaptación responsive. La parte frontend sigue siendo más selectiva que backend, pero ya cubre los formularios de acceso, la creación de citas y pantallas privadas sensibles.
 
 ## 10. Limitaciones y evolución de pruebas
+
+Las regresiones del alta están en `frontend/e2e/medicine-entry.spec.ts`, los ciclos de workers en `medicine-ocr.service.test.ts` y las garantías de dominio en `backend/src/modules/medicines/_tests_/custom-medicines.test.ts`. Estas últimas cubren identidad concurrente mediante control optimista, conservación del historial, alias vacíos en próximas dosis/MCP, permisos, caducidad desconocida y reversión de stock. Los contratos comprueban respuestas heredadas y rechazan mezclas de datos oficiales y personalizados.
+
+Playwright permite `PLAYWRIGHT_CHANNEL=chrome` y `PLAYWRIGHT_PORT=4987` para usar un navegador instalado y un puerto local libre. Arranca un servidor de preview propio con puerto estricto. Las APIs se simulan en estas pruebas de UI, pero Tesseract ejecuta los modelos locales reales; un fallo simulado del bundle de códigos comprueba la continuidad hacia OCR. La captura física y la precisión con envases reales siguen pendientes de comprobación en Safari/iOS y Chrome/Android. Axe y teclado complementan esa validación, sin sustituir las pruebas manuales.
 
 | Riesgo | Situación actual | Mejora propuesta |
 | :--- | :--- | :--- |

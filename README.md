@@ -28,6 +28,8 @@ Blíster es una aplicación web progresiva para gestionar medicamentos, tratamie
 ## Características principales
 
 - Botiquín digital con alta de medicamentos desde la API oficial CIMA/AEMPS, control de stock, umbral de aviso y caducidad.
+- Alta asistida por fotografía con OCR local, lectura de códigos NTIN españoles y consulta por Código Nacional; revisión antes de guardar.
+- Productos personalizados con composición declarada, stock, caducidad opcional y compatibilidad con tratamientos y MCP.
 - Tratamientos con paciente asociado, dosis, frecuencias, fechas y seguimiento de progreso.
 - Registro de adherencia con autoría, descuento de stock automático, toma forzada y deshacer.
 - Calendario de citas médicas con tratamiento opcional y comentarios.
